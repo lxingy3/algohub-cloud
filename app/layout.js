@@ -1,4 +1,4 @@
-import '../src/index.css';
+import './globals.css';
 
 export const metadata = {
   title: 'AlgoHub',

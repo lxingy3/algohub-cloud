@@ -27,7 +27,7 @@ export default async function StoriesPage() {
               <h2 className="font-semibold">{testimony.title}</h2>
               <p className="mt-2 text-sm text-slate-600">{testimony.summary}</p>
               <p className="mt-3 text-xs text-slate-500">
-                {testimony._count.reactions} reactions · {testimony._count.comments} comments
+                {testimony._count.reactions} reactions - {testimony._count.comments} comments
               </p>
             </Link>
           ))}

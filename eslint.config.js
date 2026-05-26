@@ -12,11 +12,7 @@ export default [
     files: [
       "app/**/*.{js,mjs,cjs,jsx}",
       "lib/**/*.{js,mjs,cjs,jsx}",
-      "src/components/**/*.{js,mjs,cjs,jsx}",
-      "src/pages/**/*.{js,mjs,cjs,jsx}",
-      "src/Layout.jsx",
     ],
-    ignores: ["src/lib/**/*", "src/components/ui/**/*"],
     ...pluginJs.configs.recommended,
     ...pluginReact.configs.flat.recommended,
     languageOptions: {

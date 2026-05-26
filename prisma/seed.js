@@ -18,11 +18,10 @@ import {
 
 const prisma = new PrismaClient();
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const projectRoot = join(__dirname, '..');
 const jurisdictionId = process.env.JURISDICTION_ID || 'pittsburgh';
 
 function readStaticData(fileName, exportName) {
-  const filePath = join(projectRoot, 'src', 'components', 'data', fileName);
+  const filePath = join(__dirname, 'seed-data', fileName);
   const code = readFileSync(filePath, 'utf8').replace(
     `export const ${exportName} =`,
     `const ${exportName} =`,

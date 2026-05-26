@@ -59,7 +59,7 @@ export default async function AlgorithmsPage({ searchParams }) {
                 </span>
               </div>
               <p className="mt-2 line-clamp-2 text-sm text-slate-600">{algorithm.description}</p>
-              <p className="mt-3 text-sm text-slate-500">{algorithm.useCase} · {algorithm.location}</p>
+              <p className="mt-3 text-sm text-slate-500">{algorithm.useCase} - {algorithm.location}</p>
             </Link>
           ))}
         </div>

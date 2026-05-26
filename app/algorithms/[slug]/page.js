@@ -47,7 +47,7 @@ export default async function AlgorithmDetailPage({ params }) {
             {algorithm.documents.map((document) => (
               <li key={document.id} className="rounded-md bg-slate-50 p-3 text-sm">
                 {document.title}
-                {document.sourceUrl ? <span className="text-slate-500"> · {document.sourceUrl}</span> : null}
+                {document.sourceUrl ? <span className="text-slate-500"> - {document.sourceUrl}</span> : null}
               </li>
             ))}
           </ul>
