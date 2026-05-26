@@ -1,5 +1,4 @@
 export const storiesData = [
-  // Housing Prioritization (Housing Allocation Algorithm)
   {
     "id": "story-housing-1",
     "title": "The unhoused individuals should have a voice",
@@ -88,7 +87,6 @@ export const storiesData = [
     "comments": 0,
     "created_date": "2026-02-08T15:43:39.507000"
   },
-  // Child Welfare (Allegheny Family Screening Tool)
   {
     "id": "story-childwelfare-1",
     "title": "This tool is not supporting families",

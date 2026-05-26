@@ -84,7 +84,7 @@ Open the Vercel site and test:
 9. Comment moderation.
 10. User role management.
 
-## Seeded Test Accounts
+## Test Accounts
 
 - `admin@algostories.local`
 - `nora.admin@algostories.local`
@@ -95,4 +95,4 @@ Open the Vercel site and test:
 - `community@algostories.local`
 - `jamal.community@algostories.local`
 
-The login form uses seeded email-only accounts for demo testing.
+The current login flow uses email-only accounts for access checks.

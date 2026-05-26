@@ -1,7 +1,3 @@
-/**
- * Community Events data
- * Schema: id, title, description, date, time, location, isPast, isVirtual, registrationLink, tags, imageURL
- */
 export const eventsData = [
   {
     id: "evt-001",

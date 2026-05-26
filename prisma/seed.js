@@ -330,8 +330,8 @@ const extraStories = [
     id: 'seed-story-pending-1',
     title: 'Pending testimony about a school risk score',
     city: 'Pittsburgh',
-    summary: 'A seeded pending testimony for testing the moderation queue.',
-    content: 'This seeded testimony should appear in the admin queue first. It describes a family trying to understand a school risk score.',
+    summary: 'A parent describes confusion about a school risk score and asks for clearer notice.',
+    content: 'Our family received a notice about a risk score, but it was not clear what information was used or how we could respond. We need a way to ask questions before support decisions are made.',
     image_url: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800',
     use_case: 'Student Support',
     story_type: 'text',
@@ -340,10 +340,10 @@ const extraStories = [
   },
   {
     id: 'seed-story-flagged-1',
-    title: 'Flagged testimony for moderation testing',
+    title: 'Flagged testimony about child welfare screening',
     city: 'Pittsburgh',
-    summary: 'A seeded flagged testimony so the dashboard has more than one moderation state.',
-    content: 'This seeded item is intentionally flagged so moderators can test filtering and status changes.',
+    summary: 'A testimony held for additional moderator review before publication.',
+    content: 'A family describes a difficult child welfare screening experience and asks for clearer explanations about how prior records influence current decisions.',
     image_url: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=800',
     use_case: 'Child Welfare',
     story_type: 'text',
@@ -412,7 +412,7 @@ const seededCommentThreads = [
     replies: [
       {
         userEmail: 'maria.facilitator@algostories.local',
-        content: 'We can add this example to the next benefits clinic agenda.',
+        content: 'We can add this case to the next benefits clinic agenda.',
         status: ModerationStatus.APPROVED,
       },
     ],
@@ -440,7 +440,7 @@ const seededCommentThreads = [
   {
     testimonySourceId: 'seed-story-pending-1',
     userEmail: 'mei.community@algostories.local',
-    content: 'Seeded pending comment for moderation testing.',
+    content: 'This question should be reviewed before it appears publicly.',
     status: ModerationStatus.PENDING,
     replies: [],
   },
@@ -461,18 +461,18 @@ const seededBriefings = [
     slug: 'benefits-review-delay-watch',
     briefingType: 'THEMATIC',
     targetTheme: 'Benefits delays',
-    executiveSummary: 'Seeded testimony shows how review flags can create short-term harm even when corrected later.',
+    executiveSummary: 'Community testimony shows how review flags can create short-term harm even when corrected later.',
     keyFindings: ['Flagged applications need clear notices.', 'Review timelines affect housing and food security.'],
     recommendations: ['Show the reason for each review flag.', 'Escalate cases with urgent rent or food deadlines.'],
   },
   {
-    title: 'Engagement Moderation Readiness',
+    title: 'Community Engagement Review Workflow',
     slug: 'engagement-moderation-readiness',
     briefingType: 'CROSS_CUTTING',
     targetTheme: 'Moderation workflow',
-    executiveSummary: 'Seeded comments and testimonies cover approved, pending, and flagged moderation states for dashboard testing.',
-    keyFindings: ['Admin queues have sample pending content.', 'Public pages only show approved content.'],
-    recommendations: ['Test approve, reject, and flag actions after cloud deployment.'],
+    executiveSummary: 'Community engagement records cover approved, pending, and flagged moderation states for staff review.',
+    keyFindings: ['Admin queues include pending content for review.', 'Public pages only show approved content.'],
+    recommendations: ['Review approve, reject, and flag actions after deployment.'],
   },
 ];
 
@@ -603,7 +603,7 @@ async function main() {
       name: 'AlgoStories Team',
       slug: 'algo-stories-team',
       role: 'community_partner',
-      description: 'Default partner organization for development seed data.',
+      description: 'Project partner organization for baseline accounts and content.',
     },
   });
 
@@ -798,7 +798,7 @@ async function main() {
   const firstTestimony = await prisma.testimony.findFirst({ where: { jurisdictionId: jurisdiction.id } });
   const communityUser = usersByRole.get('COMMUNITY_MEMBER');
   if (firstTestimony) {
-    const seedCommentContent = 'Seed comment for testing moderation and threading.';
+    const seedCommentContent = 'This thread shows how residents can discuss a published testimony.';
     const comment =
       (await prisma.comment.findFirst({
         where: {
@@ -973,7 +973,7 @@ async function main() {
   }
 
   const newsTitles = [
-    'New dashboard seed data is available',
+    'Dashboard baseline data is available',
     'Language access routing listening session announced',
     'Housing prioritization briefing published',
   ];
@@ -989,7 +989,7 @@ async function main() {
       {
         jurisdictionId: jurisdiction.id,
         title: newsTitles[0],
-        body: 'The seed dataset now includes algorithms, testimonies, comments, reactions, events, organizations, users, and briefings for cloud testing.',
+        body: 'The database includes algorithms, testimonies, comments, reactions, events, organizations, users, and briefings for review.',
         updateType: NewsUpdateType.PLATFORM_UPDATE,
         publishedAt: new Date('2026-05-01T12:00:00.000Z'),
       },
@@ -1003,7 +1003,7 @@ async function main() {
       {
         jurisdictionId: jurisdiction.id,
         title: newsTitles[2],
-        body: 'A seeded briefing summarizes community signals about housing prioritization and appeals.',
+        body: 'A briefing summarizes community signals about housing prioritization and appeals.',
         updateType: NewsUpdateType.NEWS,
         publishedAt: new Date('2026-05-05T12:00:00.000Z'),
       },

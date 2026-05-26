@@ -1,6 +1,6 @@
 # Database map
 
-This is a simple map for the current Prisma schema and where the main fields show up in the site.
+This document maps the current Prisma schema to the main website surfaces.
 
 ## ERD
 

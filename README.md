@@ -8,7 +8,7 @@ Next.js App Router implementation for the cloud-backed AlgoHub build.
 - Admin dashboard pages for algorithm CRUD, event management, organization management, testimony moderation, comment moderation, and user role management.
 - Prisma PostgreSQL schema for jurisdictions, taxonomy, algorithms, testimonies, users, roles, organizations, comments, reactions, events, briefings, and news updates.
 - API routes for algorithms, admin workflows, auth/session handling, testimony submission, comments, comment likes, and story reactions.
-- Cloud seed data for a working demo database.
+- Seed data for the initial cloud database.
 - ERD and UI/database field mapping in `database-map.md`.
 
 ## Cloud Architecture
@@ -39,7 +39,7 @@ npm run db:deploy
 npm run db:seed
 ```
 
-The seed creates sample algorithms, testimonies, comments, replies, likes, reactions, organizations, users, roles, community events, briefings, and news updates.
+The seed creates algorithms, testimonies, comments, replies, likes, reactions, organizations, users, roles, community events, briefings, and news updates.
 
 ## Deploy To Vercel
 
@@ -55,7 +55,7 @@ npm run build
 
 The build script runs `prisma generate` before `next build`.
 
-## Seeded Test Accounts
+## Test Accounts
 
 - `admin@algostories.local`
 - `nora.admin@algostories.local`
@@ -66,7 +66,7 @@ The build script runs `prisma generate` before `next build`.
 - `community@algostories.local`
 - `jamal.community@algostories.local`
 
-The login form uses seeded email-only accounts for cloud demo testing.
+The current login flow uses email-only accounts for access checks.
 
 ## Useful Commands
 
