@@ -141,7 +141,7 @@
     <text x="20" y="118" class="field">registrationUrl, imageUrl</text>
   </g>
 
-  <g id="news" transform="translate(1120 820)">
+  <g id="news" transform="translate(1270 820)">
     <rect class="box feed" width="330" height="138" />
     <text x="20" y="32" class="label title">NewsUpdate</text>
     <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
@@ -149,7 +149,7 @@
     <text x="20" y="98" class="field">relatedEventId FK, title, body</text>
   </g>
 
-  <g id="fullbriefing" transform="translate(1120 1020)">
+  <g id="fullbriefing" transform="translate(1270 1020)">
     <rect class="box report" width="330" height="152" />
     <text x="20" y="32" class="label title">Briefing</text>
     <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
@@ -158,14 +158,14 @@
     <text x="20" y="118" class="field">reviewStatus, publishedAt</text>
   </g>
 
-  <g id="taxonomy" transform="translate(1120 1240)">
+  <g id="taxonomy" transform="translate(1270 1240)">
     <rect class="box scope" width="330" height="118" />
     <text x="20" y="32" class="label title">SharedTaxonomy</text>
     <text x="20" y="58" class="field">id PK, category, label</text>
     <text x="20" y="78" class="field">description, parentId FK</text>
   </g>
 
-  <g id="user" transform="translate(1580 330)">
+  <g id="user" transform="translate(1620 330)">
     <rect class="box auth" width="300" height="158" />
     <text x="20" y="32" class="label title">User</text>
     <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
@@ -174,35 +174,35 @@
     <text x="20" y="118" class="field">emailVerified, createdAt</text>
   </g>
 
-  <g id="account" transform="translate(1580 560)">
+  <g id="account" transform="translate(1620 560)">
     <rect class="box auth" width="300" height="118" />
     <text x="20" y="32" class="label title">Account</text>
     <text x="20" y="58" class="field">id PK, userId FK</text>
     <text x="20" y="78" class="field">provider, providerAccountId, tokens</text>
   </g>
 
-  <g id="session" transform="translate(1580 740)">
+  <g id="session" transform="translate(1620 740)">
     <rect class="box auth" width="300" height="118" />
     <text x="20" y="32" class="label title">Session</text>
     <text x="20" y="58" class="field">id PK, userId FK</text>
     <text x="20" y="78" class="field">sessionToken, expires</text>
   </g>
 
-  <g id="role" transform="translate(1920 560)">
+  <g id="role" transform="translate(1960 560)">
     <rect class="box auth" width="230" height="118" />
     <text x="20" y="32" class="label title">Role</text>
     <text x="20" y="58" class="field">id PK, name</text>
     <text x="20" y="78" class="field">description</text>
   </g>
 
-  <g id="userrole" transform="translate(1920 740)">
+  <g id="userrole" transform="translate(1960 740)">
     <rect class="box auth" width="230" height="118" />
     <text x="20" y="32" class="label title">UserRole</text>
     <text x="20" y="58" class="field">userId PK/FK</text>
     <text x="20" y="78" class="field">roleId PK/FK</text>
   </g>
 
-  <g id="token" transform="translate(1920 920)">
+  <g id="token" transform="translate(1960 920)">
     <rect class="box auth" width="230" height="118" />
     <text x="20" y="32" class="label title">VerificationToken</text>
     <text x="20" y="58" class="field">identifier, token</text>
@@ -226,13 +226,13 @@
   <path class="line" d="M890 470 L930 470 L930 864 L950 864" />
   <path class="line" d="M890 674 L930 674 L930 1069 L950 1069" />
   <path class="line" d="M890 674 L1090 674 L1090 780 L1285 780 L1285 820" />
-  <path class="line" d="M1450 409 L1580 409" />
+  <path class="line" d="M1450 409 L1620 409" />
   <path class="line" d="M1285 488 L1285 610" />
   <path class="line" d="M1285 760 L1285 820" />
-  <path class="line" d="M1880 619 L1920 619" />
-  <path class="line" d="M1880 619 L1900 619 L1900 799 L1920 799" />
-  <path class="line2" d="M1730 488 L1730 560" />
-  <path class="line2" d="M1580 430 L1560 430 L1560 799 L1580 799" />
+  <path class="line" d="M1920 619 L1960 619" />
+  <path class="line" d="M1920 619 L1940 619 L1940 799 L1960 799" />
+  <path class="line2" d="M1770 488 L1770 560" />
+  <path class="line2" d="M1620 430 L1600 430 L1600 799 L1620 799" />
 
   <text x="242" y="535" class="tagtext">has claims</text>
   <text x="430" y="397" class="tagtext">has documents</text>
