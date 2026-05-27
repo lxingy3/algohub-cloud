@@ -403,7 +403,7 @@ const extraEvents = [
   },
 ];
 
-const seededCommentThreads = [
+const commentThreads = [
   {
     testimonySourceId: 'seed-story-benefits-1',
     userEmail: 'jamal.community@algostories.local',
@@ -446,7 +446,7 @@ const seededCommentThreads = [
   },
 ];
 
-const seededBriefings = [
+const briefingRecords = [
   {
     title: 'Housing Prioritization Community Signals',
     slug: 'housing-prioritization-community-signals',
@@ -844,7 +844,7 @@ async function main() {
     }
   }
 
-  for (const thread of seededCommentThreads) {
+  for (const thread of commentThreads) {
     const testimony = testimoniesBySourceId.get(thread.testimonySourceId);
     const user = usersByEmail.get(thread.userEmail);
     if (!testimony || !user) continue;
@@ -940,7 +940,7 @@ async function main() {
     }
   }
 
-  for (const briefing of seededBriefings) {
+  for (const briefing of briefingRecords) {
     const targetAlgorithm = briefing.targetUseCase
       ? algorithmsByUseCase.get(briefing.targetUseCase)?.[0]
       : null;

@@ -23,7 +23,7 @@ export default async function SubmitTestimonyPage({ searchParams }) {
           <PenLine className="h-8 w-8 text-amber-600" />
           <h1 className="mt-4 text-3xl font-black">Share your story</h1>
           <p className="mt-3 leading-7 text-slate-600">
-            Submitted testimony is saved to the cloud database and starts in the pending moderation queue before it appears publicly.
+            Submitted testimony is saved to the database and starts in the pending moderation queue before it appears publicly.
           </p>
           <div className="mt-6 rounded-md bg-amber-50 p-4 text-sm text-slate-700">
             <div className="flex items-center gap-2 font-semibold text-slate-950">

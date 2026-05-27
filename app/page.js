@@ -62,7 +62,7 @@ export default async function HomePage() {
               Stories of automated systems shaping daily life.
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-amber-50/90">
-              Browse public algorithm records, read community testimony, and manage review workflows through one cloud-backed platform.
+              Browse public algorithm records, read community testimony, and manage review workflows in one shared application.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/algorithms" className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-5 py-3 font-semibold text-amber-200 shadow-lg shadow-black/20 hover:bg-slate-800">

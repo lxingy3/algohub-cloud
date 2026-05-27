@@ -1,6 +1,6 @@
 # Database Architecture and UI Field Map
 
-This document covers Week 3 Part 1.5: the visual database diagram and the field-level map between Prisma tables and the website.
+Week 3 Part 1.5 requires two deliverables: a visual ERD and a field-level map between Prisma tables and website surfaces.
 
 ## Visual ERD
 
@@ -9,7 +9,7 @@ Open the SVG diagram in the deployed app or from the repository:
 - `/database-erd.svg`
 - `public/database-erd.svg`
 
-The diagram shows the production PostgreSQL schema used by the Next.js app on Vercel and Neon. Dashed orange lines indicate jurisdiction scoping. Solid lines indicate foreign-key relationships.
+The diagram shows the PostgreSQL schema used by the Next.js app on Vercel and Neon. Dashed orange lines indicate jurisdiction scoping. Solid lines indicate foreign-key relationships.
 
 ## Mermaid ERD
 

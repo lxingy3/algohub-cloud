@@ -9,7 +9,7 @@ export default async function LoginPage({ searchParams }) {
       <div className="mx-auto max-w-md rounded-lg border bg-white p-6">
         <h1 className="text-2xl font-semibold">Login</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Use one of the seeded role accounts to test permissions.
+          Use one of the role accounts to check permissions.
         </p>
         {hasError ? <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">User not found.</p> : null}
         <form action="/api/auth/login" method="post" className="mt-5 space-y-4">

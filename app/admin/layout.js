@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }) {
         <div className="mx-auto max-w-md rounded-lg border bg-white p-6">
           <h1 className="text-2xl font-semibold">Admin login needed</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Log in with the seeded admin account first: admin@algostories.local
+            Log in with the admin account first: admin@algostories.local
           </p>
           <Link href="/login" className="mt-5 inline-block rounded-md bg-slate-900 px-4 py-2 text-white">
             Go to login

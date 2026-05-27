@@ -36,7 +36,7 @@ npm run db:deploy
 npm run db:seed
 ```
 
-The seed creates sample data for:
+The seed creates initial records for:
 
 - jurisdictions and taxonomy
 - algorithms and official claims
