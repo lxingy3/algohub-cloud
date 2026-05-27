@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1280" viewBox="0 0 1900 1280" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1500" viewBox="0 0 2200 1500" role="img" aria-labelledby="title desc">
   <title id="title">AlgoHub database ERD</title>
   <desc id="desc">Entity relationship diagram for the AlgoHub PostgreSQL schema.</desc>
   <defs>
@@ -8,8 +8,10 @@
     <style>
       .page { fill: #f8fafc; }
       .label { fill: #0f172a; font-family: Arial, Helvetica, sans-serif; }
-      .small { fill: #475569; font-family: Arial, Helvetica, sans-serif; font-size: 13px; }
+      .muted { fill: #475569; font-family: Arial, Helvetica, sans-serif; font-size: 13px; }
+      .section { fill: #334155; font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: 700; letter-spacing: .14em; }
       .box { fill: #fff; stroke: #cbd5e1; stroke-width: 1.4; rx: 12; }
+      .scope { fill: #fff7ed; stroke: #d97706; }
       .core { fill: #fffbeb; stroke: #d97706; }
       .join { fill: #fff7ed; stroke: #ea580c; }
       .engage { fill: #ecfdf5; stroke: #059669; }
@@ -17,159 +19,112 @@
       .report { fill: #f5f3ff; stroke: #7c3aed; }
       .feed { fill: #f0f9ff; stroke: #0284c7; }
       .title { font-size: 18px; font-weight: 700; }
-      .field { fill: #475569; font-size: 12.5px; }
-      .section { fill: #334155; font-size: 14px; font-weight: 700; letter-spacing: .12em; }
+      .field { fill: #475569; font-family: Arial, Helvetica, sans-serif; font-size: 12.5px; }
       .line { stroke: #334155; stroke-width: 1.7; fill: none; marker-end: url(#arrow); }
-      .scope { stroke: #d97706; stroke-width: 1.6; fill: none; stroke-dasharray: 7 7; marker-end: url(#arrow); }
-      .soft { stroke: #94a3b8; stroke-width: 1.3; fill: none; marker-end: url(#arrow); }
-      .note { fill: #64748b; font-size: 12px; font-family: Arial, Helvetica, sans-serif; }
+      .line2 { stroke: #64748b; stroke-width: 1.45; fill: none; marker-end: url(#arrow); }
+      .legend { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; rx: 10; }
+      .tag { fill: #f8fafc; stroke: #cbd5e1; rx: 5; }
+      .tagtext { fill: #334155; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: 700; }
     </style>
   </defs>
 
-  <rect class="page" width="1900" height="1280" />
-  <text x="70" y="56" class="label" font-size="30" font-weight="800">AlgoHub Database ERD</text>
-  <text x="70" y="86" class="small">PostgreSQL schema used by the Next.js application. Dashed orange lines show jurisdiction scoping.</text>
+  <rect class="page" width="2200" height="1500" />
+  <text x="70" y="58" class="label" font-size="31" font-weight="800">AlgoHub Database ERD</text>
+  <text x="70" y="88" class="muted">Clean relationship map for the PostgreSQL schema. Connectors leave and enter table boxes only at their edges.</text>
 
-  <g transform="translate(760 115)">
-    <rect class="box core" width="380" height="118" />
-    <text x="20" y="32" class="label title">Jurisdiction</text>
-    <text x="20" y="58" class="field">id PK</text>
-    <text x="20" y="78" class="field">name, state, country, timezone, config, isActive</text>
-    <text x="20" y="98" class="field">deployment scope selected by JURISDICTION_ID</text>
+  <g transform="translate(70 118)">
+    <rect class="box scope" width="2060" height="120" />
+    <text x="24" y="34" class="label title">Jurisdiction Scope</text>
+    <text x="24" y="62" class="field">Jurisdiction.id is the deployment scope. The current deployment uses JURISDICTION_ID=pittsburgh.</text>
+    <text x="24" y="86" class="field">Tables with jurisdictionId: Algorithm, AlgorithmClaim, AlgorithmDocument, Testimony, TestimonyBrief, Comment, TestimonyReaction, User, Organization, CommunityEvent, Briefing, NewsUpdate, SharedTaxonomy.</text>
   </g>
 
-  <text x="70" y="275" class="section">CORE REGISTRY</text>
-  <text x="1260" y="275" class="section">IDENTITY AND ACCESS</text>
-  <text x="70" y="720" class="section">COMMUNITY ENGAGEMENT</text>
-  <text x="1260" y="720" class="section">EVENTS, BRIEFINGS, AND FEED</text>
+  <text x="70" y="295" class="section">REGISTRY</text>
+  <text x="520" y="295" class="section">TESTIMONY AND ENGAGEMENT</text>
+  <text x="1120" y="295" class="section">ORGANIZATIONS AND PUBLIC FEED</text>
+  <text x="1580" y="295" class="section">IDENTITY AND ACCESS</text>
 
-  <g transform="translate(70 315)">
-    <rect class="box core" width="330" height="172" />
+  <g id="algorithm" transform="translate(70 330)">
+    <rect class="box core" width="330" height="168" />
     <text x="20" y="32" class="label title">Algorithm</text>
     <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
     <text x="20" y="78" class="field">name, slug, description, purpose</text>
-    <text x="20" y="98" class="field">agencyName, agencyType, useCase, location</text>
-    <text x="20" y="118" class="field">dataUsed, decisionType, yearIntroduced</text>
+    <text x="20" y="98" class="field">agencyName, useCase, location</text>
+    <text x="20" y="118" class="field">dataUsed, decisionType</text>
     <text x="20" y="138" class="field">status, impactLevel, documentationUrl</text>
   </g>
 
-  <g transform="translate(70 535)">
-    <rect class="box core" width="330" height="132" />
+  <g id="claim" transform="translate(70 570)">
+    <rect class="box core" width="330" height="128" />
     <text x="20" y="32" class="label title">AlgorithmClaim</text>
-    <text x="20" y="58" class="field">id PK, algorithmId FK, jurisdictionId</text>
-    <text x="20" y="78" class="field">claimText, claimSource, claimDate</text>
-    <text x="20" y="98" class="field">official statements shown on detail pages</text>
+    <text x="20" y="58" class="field">id PK, algorithmId FK</text>
+    <text x="20" y="78" class="field">jurisdictionId, claimText</text>
+    <text x="20" y="98" class="field">claimSource, claimDate</text>
   </g>
 
-  <g transform="translate(455 535)">
-    <rect class="box core" width="330" height="132" />
+  <g id="document" transform="translate(70 760)">
+    <rect class="box core" width="330" height="148" />
     <text x="20" y="32" class="label title">AlgorithmDocument</text>
-    <text x="20" y="58" class="field">id PK, algorithmId FK, jurisdictionId</text>
-    <text x="20" y="78" class="field">title, sourceType, sourceUrl, storageUrl</text>
-    <text x="20" y="98" class="field">rawText, tokenizedText, uploadedAt</text>
+    <text x="20" y="58" class="field">id PK, algorithmId FK</text>
+    <text x="20" y="78" class="field">jurisdictionId, title, sourceType</text>
+    <text x="20" y="98" class="field">sourceUrl, storageUrl</text>
+    <text x="20" y="118" class="field">rawText, tokenizedText</text>
   </g>
 
-  <g transform="translate(515 315)">
-    <rect class="box core" width="360" height="196" />
+  <g id="testimony" transform="translate(520 330)">
+    <rect class="box core" width="370" height="198" />
     <text x="20" y="32" class="label title">Testimony</text>
     <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
-    <text x="20" y="78" class="field">title, summary, narrativeText, city, imageUrl</text>
+    <text x="20" y="78" class="field">title, summary, narrativeText, city</text>
     <text x="20" y="98" class="field">userId, partnerOrgId, facilitatorId</text>
     <text x="20" y="118" class="field">affectedDomain, selfReportedImpact</text>
-    <text x="20" y="138" class="field">aiThemes, aiConfidenceScore, aiProcessedAt</text>
-    <text x="20" y="158" class="field">moderationStatus, submittedAt, updatedAt</text>
+    <text x="20" y="138" class="field">aiThemes, aiConfidenceScore</text>
+    <text x="20" y="158" class="field">moderationStatus, submittedAt</text>
   </g>
 
-  <g transform="translate(455 755)">
-    <rect class="box join" width="360" height="132" />
+  <g id="link" transform="translate(520 610)">
+    <rect class="box join" width="370" height="128" />
     <text x="20" y="32" class="label title">TestimonyAlgorithmLink</text>
     <text x="20" y="58" class="field">testimonyId PK/FK</text>
     <text x="20" y="78" class="field">algorithmId PK/FK</text>
     <text x="20" y="98" class="field">linkType, confidence</text>
   </g>
 
-  <g transform="translate(70 755)">
-    <rect class="box engage" width="330" height="152" />
+  <g id="brief" transform="translate(520 800)">
+    <rect class="box engage" width="370" height="148" />
     <text x="20" y="32" class="label title">TestimonyBrief</text>
-    <text x="20" y="58" class="field">id PK, testimonyId FK, jurisdictionId</text>
-    <text x="20" y="78" class="field">summary, keyExcerpts, modelName</text>
-    <text x="20" y="98" class="field">reviewStatus, reviewedBy, generatedAt</text>
-    <text x="20" y="118" class="field">reviewed story summary</text>
+    <text x="20" y="58" class="field">id PK, testimonyId FK</text>
+    <text x="20" y="78" class="field">jurisdictionId, summary, keyExcerpts</text>
+    <text x="20" y="98" class="field">modelName, reviewedBy</text>
+    <text x="20" y="118" class="field">reviewStatus, generatedAt</text>
   </g>
 
-  <g transform="translate(70 955)">
-    <rect class="box engage" width="330" height="152" />
+  <g id="comment" transform="translate(520 1010)">
+    <rect class="box engage" width="370" height="150" />
     <text x="20" y="32" class="label title">Comment</text>
-    <text x="20" y="58" class="field">id PK, testimonyId FK, jurisdictionId</text>
-    <text x="20" y="78" class="field">userId FK, parentCommentId FK</text>
-    <text x="20" y="98" class="field">authorName, content, moderationStatus</text>
-    <text x="20" y="118" class="field">threaded public discussion</text>
+    <text x="20" y="58" class="field">id PK, testimonyId FK</text>
+    <text x="20" y="78" class="field">jurisdictionId, userId FK</text>
+    <text x="20" y="98" class="field">parentCommentId FK</text>
+    <text x="20" y="118" class="field">authorName, content, moderationStatus</text>
   </g>
 
-  <g transform="translate(455 975)">
-    <rect class="box engage" width="330" height="112" />
+  <g id="like" transform="translate(950 1010)">
+    <rect class="box engage" width="310" height="118" />
     <text x="20" y="32" class="label title">CommentLike</text>
-    <text x="20" y="58" class="field">id PK, commentId FK, userId FK</text>
-    <text x="20" y="78" class="field">unique like per user and comment</text>
+    <text x="20" y="58" class="field">id PK, commentId FK</text>
+    <text x="20" y="78" class="field">userId FK</text>
   </g>
 
-  <g transform="translate(840 955)">
-    <rect class="box engage" width="330" height="132" />
+  <g id="reaction" transform="translate(950 800)">
+    <rect class="box engage" width="310" height="128" />
     <text x="20" y="32" class="label title">TestimonyReaction</text>
-    <text x="20" y="58" class="field">id PK, testimonyId FK, userId FK</text>
-    <text x="20" y="78" class="field">reactionType: EYE_OPENING or SUPPORT</text>
-    <text x="20" y="98" class="field">public reaction counts</text>
+    <text x="20" y="58" class="field">id PK, testimonyId FK</text>
+    <text x="20" y="78" class="field">userId FK</text>
+    <text x="20" y="98" class="field">reactionType</text>
   </g>
 
-  <g transform="translate(1260 315)">
-    <rect class="box auth" width="300" height="172" />
-    <text x="20" y="32" class="label title">User</text>
-    <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
-    <text x="20" y="78" class="field">email, name, image</text>
-    <text x="20" y="98" class="field">organizationId FK</text>
-    <text x="20" y="118" class="field">emailVerified, createdAt</text>
-  </g>
-
-  <g transform="translate(1260 535)">
-    <rect class="box auth" width="300" height="132" />
-    <text x="20" y="32" class="label title">Role</text>
-    <text x="20" y="58" class="field">id PK, name, description</text>
-    <text x="20" y="78" class="field">admin-managed access labels</text>
-  </g>
-
-  <g transform="translate(1600 535)">
-    <rect class="box auth" width="250" height="132" />
-    <text x="20" y="32" class="label title">UserRole</text>
-    <text x="20" y="58" class="field">userId PK/FK</text>
-    <text x="20" y="78" class="field">roleId PK/FK</text>
-    <text x="20" y="98" class="field">many-to-many bridge</text>
-  </g>
-
-  <g transform="translate(1600 315)">
-    <rect class="box auth" width="250" height="132" />
-    <text x="20" y="32" class="label title">Account</text>
-    <text x="20" y="58" class="field">id PK, userId FK</text>
-    <text x="20" y="78" class="field">provider, providerAccountId</text>
-    <text x="20" y="98" class="field">token fields</text>
-  </g>
-
-  <g transform="translate(1600 725)">
-    <rect class="box auth" width="250" height="122" />
-    <text x="20" y="32" class="label title">Session</text>
-    <text x="20" y="58" class="field">id PK, userId FK</text>
-    <text x="20" y="78" class="field">sessionToken, expires</text>
-  </g>
-
-  <g transform="translate(1600 890)">
-    <rect class="box auth" width="250" height="122" />
-    <text x="20" y="32" class="label title">VerificationToken</text>
-    <text x="20" y="58" class="field">identifier, token</text>
-    <text x="20" y="78" class="field">expires</text>
-    <text x="20" y="98" class="field">standalone token table</text>
-  </g>
-
-  <g transform="translate(940 315)">
-    <rect class="box core" width="280" height="152" />
+  <g id="organization" transform="translate(1120 330)">
+    <rect class="box core" width="330" height="158" />
     <text x="20" y="32" class="label title">Organization</text>
     <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
     <text x="20" y="78" class="field">name, slug, description</text>
@@ -177,8 +132,8 @@
     <text x="20" y="118" class="field">role, isActive</text>
   </g>
 
-  <g transform="translate(1260 755)">
-    <rect class="box feed" width="300" height="152" />
+  <g id="event" transform="translate(1120 610)">
+    <rect class="box feed" width="330" height="150" />
     <text x="20" y="32" class="label title">CommunityEvent</text>
     <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
     <text x="20" y="78" class="field">title, description, eventType</text>
@@ -186,61 +141,109 @@
     <text x="20" y="118" class="field">registrationUrl, imageUrl</text>
   </g>
 
-  <g transform="translate(1260 955)">
-    <rect class="box report" width="300" height="152" />
+  <g id="news" transform="translate(1120 820)">
+    <rect class="box feed" width="330" height="138" />
+    <text x="20" y="32" class="label title">NewsUpdate</text>
+    <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
+    <text x="20" y="78" class="field">relatedAlgorithmId FK</text>
+    <text x="20" y="98" class="field">relatedEventId FK, title, body</text>
+  </g>
+
+  <g id="fullbriefing" transform="translate(1120 1020)">
+    <rect class="box report" width="330" height="152" />
     <text x="20" y="32" class="label title">Briefing</text>
     <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
-    <text x="20" y="78" class="field">targetAlgorithmId, targetTheme</text>
+    <text x="20" y="78" class="field">targetAlgorithmId FK</text>
     <text x="20" y="98" class="field">executiveSummary, keyFindings</text>
     <text x="20" y="118" class="field">reviewStatus, publishedAt</text>
   </g>
 
-  <g transform="translate(940 755)">
-    <rect class="box feed" width="280" height="132" />
-    <text x="20" y="32" class="label title">NewsUpdate</text>
-    <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
-    <text x="20" y="78" class="field">relatedAlgorithmId, relatedEventId</text>
-    <text x="20" y="98" class="field">title, body, updateType</text>
-  </g>
-
-  <g transform="translate(940 975)">
-    <rect class="box core" width="280" height="112" />
+  <g id="taxonomy" transform="translate(1120 1240)">
+    <rect class="box scope" width="330" height="118" />
     <text x="20" y="32" class="label title">SharedTaxonomy</text>
     <text x="20" y="58" class="field">id PK, category, label</text>
-    <text x="20" y="78" class="field">parentId FK, jurisdictionId optional</text>
+    <text x="20" y="78" class="field">description, parentId FK</text>
   </g>
 
-  <path class="scope" d="M950 233 L950 260 L235 260 L235 315" />
-  <path class="scope" d="M950 260 L695 260 L695 315" />
-  <path class="scope" d="M950 260 L1080 260 L1080 315" />
-  <path class="scope" d="M950 260 L1410 260 L1410 315" />
-  <path class="scope" d="M950 260 L1410 260 L1410 755" />
-  <path class="scope" d="M950 260 L1410 260 L1410 955" />
-  <path class="scope" d="M950 260 L1080 260 L1080 755" />
-  <path class="scope" d="M950 260 L1080 260 L1080 975" />
-  <path class="scope" d="M950 260 L235 260 L235 755" />
-  <path class="scope" d="M950 260 L1005 260 L1005 955" />
+  <g id="user" transform="translate(1580 330)">
+    <rect class="box auth" width="300" height="158" />
+    <text x="20" y="32" class="label title">User</text>
+    <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
+    <text x="20" y="78" class="field">email, name, image</text>
+    <text x="20" y="98" class="field">organizationId FK</text>
+    <text x="20" y="118" class="field">emailVerified, createdAt</text>
+  </g>
 
-  <path class="line" d="M235 487 L235 535" />
-  <path class="line" d="M400 401 L455 401 L455 601" />
-  <path class="line" d="M400 401 L635 401 L635 755" />
-  <path class="line" d="M695 511 L695 755" />
-  <path class="line" d="M695 511 L235 511 L235 755" />
-  <path class="line" d="M695 511 L695 930 L235 930 L235 955" />
-  <path class="line" d="M695 511 L1005 511 L1005 955" />
-  <path class="line" d="M875 413 L940 413" />
-  <path class="line" d="M1080 467 L1080 755" />
-  <path class="line" d="M1220 391 L1260 391" />
-  <path class="line" d="M1410 487 L1410 535" />
-  <path class="line" d="M1560 391 L1600 391" />
-  <path class="line" d="M1560 601 L1600 601" />
-  <path class="line" d="M1410 667 L1410 725 L1600 725" />
-  <path class="line" d="M400 1031 L455 1031" />
-  <path class="line" d="M400 1031 L840 1031" />
-  <path class="line" d="M815 821 L940 821" />
-  <path class="line" d="M1560 831 L1600 831" />
-  <path class="line" d="M1080 887 L1080 975" />
-  <path class="soft" d="M1080 1087 C1020 1145 990 1145 950 1087" />
+  <g id="account" transform="translate(1580 560)">
+    <rect class="box auth" width="300" height="118" />
+    <text x="20" y="32" class="label title">Account</text>
+    <text x="20" y="58" class="field">id PK, userId FK</text>
+    <text x="20" y="78" class="field">provider, providerAccountId, tokens</text>
+  </g>
 
-  <text x="70" y="1198" class="note">Reading guide: Algorithm and Testimony are the main content tables. TestimonyAlgorithmLink connects public stories to algorithm records. Comment, CommentLike, and TestimonyReaction preserve the community interaction from the original site in the database. User, Role, UserRole, Account, Session, and VerificationToken support authentication and admin access. CommunityEvent, Briefing, NewsUpdate, and SharedTaxonomy support events, reporting, updates, and shared filters.</text>
+  <g id="session" transform="translate(1580 740)">
+    <rect class="box auth" width="300" height="118" />
+    <text x="20" y="32" class="label title">Session</text>
+    <text x="20" y="58" class="field">id PK, userId FK</text>
+    <text x="20" y="78" class="field">sessionToken, expires</text>
+  </g>
+
+  <g id="role" transform="translate(1920 560)">
+    <rect class="box auth" width="230" height="118" />
+    <text x="20" y="32" class="label title">Role</text>
+    <text x="20" y="58" class="field">id PK, name</text>
+    <text x="20" y="78" class="field">description</text>
+  </g>
+
+  <g id="userrole" transform="translate(1920 740)">
+    <rect class="box auth" width="230" height="118" />
+    <text x="20" y="32" class="label title">UserRole</text>
+    <text x="20" y="58" class="field">userId PK/FK</text>
+    <text x="20" y="78" class="field">roleId PK/FK</text>
+  </g>
+
+  <g id="token" transform="translate(1920 920)">
+    <rect class="box auth" width="230" height="118" />
+    <text x="20" y="32" class="label title">VerificationToken</text>
+    <text x="20" y="58" class="field">identifier, token</text>
+    <text x="20" y="78" class="field">expires</text>
+  </g>
+
+  <g id="legend" transform="translate(70 1240)">
+    <rect class="legend" width="820" height="118" />
+    <text x="20" y="32" class="label title">Relationship notes</text>
+    <text x="20" y="58" class="field">User also links to submitted testimonies, facilitated testimonies, moderated testimonies, comments, comment likes, and reactions.</text>
+    <text x="20" y="80" class="field">Organization links to users, partner testimonies, and community events. NewsUpdate can reference either an Algorithm or a CommunityEvent.</text>
+    <text x="20" y="102" class="field">VerificationToken is standalone for token-based auth and is intentionally not connected by a foreign key.</text>
+  </g>
+
+  <path class="line" d="M235 498 L235 570" />
+  <path class="line" d="M400 414 L445 414 L445 834 L400 834" />
+  <path class="line" d="M400 414 L470 414 L470 674 L520 674" />
+  <path class="line" d="M705 528 L705 610" />
+  <path class="line" d="M890 430 L920 430 L920 874 L890 874" />
+  <path class="line" d="M890 450 L920 450 L920 1085 L890 1085" />
+  <path class="line" d="M890 470 L930 470 L930 864 L950 864" />
+  <path class="line" d="M890 674 L930 674 L930 1069 L950 1069" />
+  <path class="line" d="M890 674 L1090 674 L1090 780 L1285 780 L1285 820" />
+  <path class="line" d="M1450 409 L1580 409" />
+  <path class="line" d="M1285 488 L1285 610" />
+  <path class="line" d="M1285 760 L1285 820" />
+  <path class="line" d="M1880 619 L1920 619" />
+  <path class="line" d="M1880 619 L1900 619 L1900 799 L1920 799" />
+  <path class="line2" d="M1730 488 L1730 560" />
+  <path class="line2" d="M1580 430 L1560 430 L1560 799 L1580 799" />
+
+  <text x="242" y="535" class="tagtext">has claims</text>
+  <text x="430" y="397" class="tagtext">has documents</text>
+  <text x="430" y="654" class="tagtext">linked by</text>
+  <text x="714" y="585" class="tagtext">links</text>
+  <text x="714" y="775" class="tagtext">summary</text>
+  <text x="714" y="987" class="tagtext">comments</text>
+  <text x="1008" y="846" class="tagtext">reactions</text>
+  <text x="958" y="1048" class="tagtext">likes</text>
+  <text x="1294" y="585" class="tagtext">organizes</text>
+  <text x="1294" y="800" class="tagtext">feeds</text>
+  <text x="1460" y="392" class="tagtext">members</text>
+  <text x="1890" y="602" class="tagtext">roles</text>
 </svg>
