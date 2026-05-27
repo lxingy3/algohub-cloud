@@ -9,7 +9,7 @@ Next.js App Router implementation for the cloud-backed AlgoHub build.
 - Prisma PostgreSQL schema for jurisdictions, taxonomy, algorithms, testimonies, users, roles, organizations, comments, reactions, events, briefings, and news updates.
 - API routes for algorithms, admin workflows, auth/session handling, testimony submission, comments, comment likes, and story reactions.
 - Seed data for the initial cloud database.
-- ERD and UI/database field mapping in `database-map.md`.
+- Visual ERD in `public/database-erd.svg` and UI/database field mapping in `database-map.md`.
 
 ## Cloud Architecture
 

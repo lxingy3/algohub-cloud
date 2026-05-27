@@ -11,6 +11,7 @@ const testimonySchema = z.object({
   city: z.string().trim().optional(),
   narrativeText: z.string().trim().min(1),
   algorithmId: z.string().trim().optional(),
+  selfReportedImpact: z.enum(['POSITIVE', 'NEGATIVE', 'MIXED', 'UNCLEAR']).optional(),
 });
 
 export async function GET(request) {
@@ -56,13 +57,14 @@ export async function POST(request) {
     city: formData.get('city'),
     narrativeText: formData.get('narrativeText'),
     algorithmId: formData.get('algorithmId'),
+    selfReportedImpact: formData.get('selfReportedImpact') || 'UNCLEAR',
   });
 
   if (!result.success) {
     return NextResponse.json({ error: 'Invalid testimony submission' }, { status: 400 });
   }
 
-  const { title, city, narrativeText, algorithmId } = result.data;
+  const { title, city, narrativeText, algorithmId, selfReportedImpact } = result.data;
 
   const testimony = await prisma.testimony.create({
     data: {
@@ -76,6 +78,7 @@ export async function POST(request) {
       submitterEmail: user?.email,
       isAnonymous: !user,
       submissionMethod: 'WEB_FORM',
+      selfReportedImpact,
       moderationStatus: 'PENDING',
     },
   });

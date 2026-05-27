@@ -1,0 +1,203 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
+  <title id="title">AlgoHub database entity relationship diagram</title>
+  <desc id="desc">Entity relationship diagram for the cloud PostgreSQL schema used by AlgoHub.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#475569" />
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .group { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.4; rx: 12; }
+      .core { fill: #fffbeb; stroke: #d97706; }
+      .engage { fill: #ecfdf5; stroke: #059669; }
+      .auth { fill: #eef2ff; stroke: #4f46e5; }
+      .text { fill: #0f172a; font-family: Arial, Helvetica, sans-serif; }
+      .title { font-weight: 700; font-size: 19px; }
+      .field { font-size: 13px; fill: #475569; }
+      .line { stroke: #475569; stroke-width: 1.6; fill: none; marker-end: url(#arrow); }
+      .scope { stroke: #d97706; stroke-width: 1.5; fill: none; marker-end: url(#arrow); stroke-dasharray: 6 6; }
+    </style>
+  </defs>
+  <rect class="bg" width="1600" height="1120" />
+  <text x="60" y="54" class="text" font-size="30" font-weight="800">AlgoHub Cloud Database ERD</text>
+  <text x="60" y="82" class="text field">Next.js on Vercel uses Prisma to read and write this Neon PostgreSQL schema.</text>
+
+  <g transform="translate(60 125)">
+    <rect class="group core" width="250" height="135" />
+    <text x="18" y="32" class="text title">Jurisdiction</text>
+    <text x="18" y="58" class="text field">id PK</text>
+    <text x="18" y="78" class="text field">name, state, timezone</text>
+    <text x="18" y="98" class="text field">config, isActive</text>
+    <text x="18" y="118" class="text field">scope for city deployment</text>
+  </g>
+
+  <g transform="translate(390 115)">
+    <rect class="group core" width="260" height="170" />
+    <text x="18" y="32" class="text title">Algorithm</text>
+    <text x="18" y="58" class="text field">id PK, jurisdictionId FK</text>
+    <text x="18" y="78" class="text field">name, slug, description</text>
+    <text x="18" y="98" class="text field">agencyName, useCase, location</text>
+    <text x="18" y="118" class="text field">dataUsed, decisionType</text>
+    <text x="18" y="138" class="text field">status, impactLevel</text>
+  </g>
+
+  <g transform="translate(735 95)">
+    <rect class="group core" width="270" height="210" />
+    <text x="18" y="32" class="text title">Testimony</text>
+    <text x="18" y="58" class="text field">id PK, jurisdictionId FK</text>
+    <text x="18" y="78" class="text field">title, summary, narrativeText</text>
+    <text x="18" y="98" class="text field">submitterName, submitterEmail</text>
+    <text x="18" y="118" class="text field">userId, partnerOrgId</text>
+    <text x="18" y="138" class="text field">affectedDomain, impact</text>
+    <text x="18" y="158" class="text field">moderationStatus</text>
+    <text x="18" y="178" class="text field">submittedAt, updatedAt</text>
+  </g>
+
+  <g transform="translate(1085 115)">
+    <rect class="group core" width="250" height="170" />
+    <text x="18" y="32" class="text title">Organization</text>
+    <text x="18" y="58" class="text field">id PK, jurisdictionId FK</text>
+    <text x="18" y="78" class="text field">name, slug, description</text>
+    <text x="18" y="98" class="text field">contactEmail, websiteUrl</text>
+    <text x="18" y="118" class="text field">role, isActive</text>
+  </g>
+
+  <g transform="translate(1185 375)">
+    <rect class="group core" width="280" height="155" />
+    <text x="18" y="32" class="text title">CommunityEvent</text>
+    <text x="18" y="58" class="text field">id PK, jurisdictionId FK</text>
+    <text x="18" y="78" class="text field">title, description, eventType</text>
+    <text x="18" y="98" class="text field">date, endDate, location</text>
+    <text x="18" y="118" class="text field">organizerOrgId FK</text>
+  </g>
+
+  <g transform="translate(390 360)">
+    <rect class="group" width="260" height="135" />
+    <text x="18" y="32" class="text title">AlgorithmClaim</text>
+    <text x="18" y="58" class="text field">id PK, algorithmId FK</text>
+    <text x="18" y="78" class="text field">jurisdictionId</text>
+    <text x="18" y="98" class="text field">claimText, claimSource</text>
+    <text x="18" y="118" class="text field">claimDate</text>
+  </g>
+
+  <g transform="translate(390 550)">
+    <rect class="group" width="260" height="145" />
+    <text x="18" y="32" class="text title">AlgorithmDocument</text>
+    <text x="18" y="58" class="text field">id PK, algorithmId FK</text>
+    <text x="18" y="78" class="text field">title, sourceType</text>
+    <text x="18" y="98" class="text field">sourceUrl, storageUrl</text>
+    <text x="18" y="118" class="text field">rawText, tokenizedText</text>
+  </g>
+
+  <g transform="translate(735 385)">
+    <rect class="group engage" width="270" height="155" />
+    <text x="18" y="32" class="text title">TestimonyAlgorithmLink</text>
+    <text x="18" y="58" class="text field">testimonyId PK/FK</text>
+    <text x="18" y="78" class="text field">algorithmId PK/FK</text>
+    <text x="18" y="98" class="text field">linkType, confidence</text>
+    <text x="18" y="118" class="text field">many-to-many bridge</text>
+  </g>
+
+  <g transform="translate(735 600)">
+    <rect class="group engage" width="270" height="150" />
+    <text x="18" y="32" class="text title">TestimonyBrief</text>
+    <text x="18" y="58" class="text field">id PK, testimonyId FK</text>
+    <text x="18" y="78" class="text field">summary, keyExcerpts</text>
+    <text x="18" y="98" class="text field">modelName, generatedAt</text>
+    <text x="18" y="118" class="text field">reviewStatus, reviewedBy</text>
+  </g>
+
+  <g transform="translate(1085 600)">
+    <rect class="group engage" width="250" height="155" />
+    <text x="18" y="32" class="text title">Comment</text>
+    <text x="18" y="58" class="text field">id PK, testimonyId FK</text>
+    <text x="18" y="78" class="text field">userId FK, parentCommentId FK</text>
+    <text x="18" y="98" class="text field">content, authorName</text>
+    <text x="18" y="118" class="text field">moderationStatus</text>
+  </g>
+
+  <g transform="translate(1085 810)">
+    <rect class="group engage" width="250" height="130" />
+    <text x="18" y="32" class="text title">CommentLike</text>
+    <text x="18" y="58" class="text field">id PK</text>
+    <text x="18" y="78" class="text field">commentId FK</text>
+    <text x="18" y="98" class="text field">userId FK</text>
+  </g>
+
+  <g transform="translate(735 810)">
+    <rect class="group engage" width="270" height="130" />
+    <text x="18" y="32" class="text title">TestimonyReaction</text>
+    <text x="18" y="58" class="text field">id PK, testimonyId FK</text>
+    <text x="18" y="78" class="text field">userId FK</text>
+    <text x="18" y="98" class="text field">reactionType</text>
+  </g>
+
+  <g transform="translate(60 360)">
+    <rect class="group auth" width="250" height="170" />
+    <text x="18" y="32" class="text title">User</text>
+    <text x="18" y="58" class="text field">id PK, jurisdictionId FK</text>
+    <text x="18" y="78" class="text field">email, name, image</text>
+    <text x="18" y="98" class="text field">organizationId FK</text>
+    <text x="18" y="118" class="text field">emailVerified, createdAt</text>
+  </g>
+
+  <g transform="translate(60 600)">
+    <rect class="group auth" width="250" height="135" />
+    <text x="18" y="32" class="text title">Role / UserRole</text>
+    <text x="18" y="58" class="text field">Role: id, name, description</text>
+    <text x="18" y="78" class="text field">UserRole: userId + roleId</text>
+    <text x="18" y="98" class="text field">admin can change assignments</text>
+  </g>
+
+  <g transform="translate(60 810)">
+    <rect class="group auth" width="250" height="150" />
+    <text x="18" y="32" class="text title">Auth Tables</text>
+    <text x="18" y="58" class="text field">Account: provider identities</text>
+    <text x="18" y="78" class="text field">Session: sessionToken, userId</text>
+    <text x="18" y="98" class="text field">VerificationToken</text>
+    <text x="18" y="118" class="text field">email/token login support</text>
+  </g>
+
+  <g transform="translate(390 810)">
+    <rect class="group core" width="260" height="150" />
+    <text x="18" y="32" class="text title">Briefing / NewsUpdate</text>
+    <text x="18" y="58" class="text field">Briefing: summary reports</text>
+    <text x="18" y="78" class="text field">reviewStatus, publishedAt</text>
+    <text x="18" y="98" class="text field">NewsUpdate: platform feed</text>
+    <text x="18" y="118" class="text field">relatedAlgorithmId / eventId</text>
+  </g>
+
+  <g transform="translate(1185 965)">
+    <rect class="group core" width="280" height="110" />
+    <text x="18" y="32" class="text title">SharedTaxonomy</text>
+    <text x="18" y="58" class="text field">id PK, category, label</text>
+    <text x="18" y="78" class="text field">parentId for hierarchy</text>
+  </g>
+
+  <path class="scope" d="M310 190 C350 190 350 200 390 200" />
+  <path class="scope" d="M310 205 C520 205 520 200 735 200" />
+  <path class="scope" d="M310 220 C690 220 690 200 1085 200" />
+  <path class="scope" d="M310 235 C780 235 780 452 1185 452" />
+  <path class="scope" d="M310 250 C520 250 520 870 390 870" />
+  <path class="scope" d="M310 230 C355 230 355 445 60 445" />
+  <path class="line" d="M520 285 L520 360" />
+  <path class="line" d="M520 285 C520 365 520 470 520 550" />
+  <path class="line" d="M650 200 C700 200 700 455 735 455" />
+  <path class="line" d="M870 305 L870 385" />
+  <path class="line" d="M870 305 C870 430 870 520 870 600" />
+  <path class="line" d="M1005 205 C1045 205 1045 675 1085 675" />
+  <path class="line" d="M1005 225 C1045 225 1045 875 735 875" />
+  <path class="line" d="M1085 285 C1050 340 1050 430 1005 455" />
+  <path class="line" d="M1085 220 C1035 220 360 420 310 445" />
+  <path class="line" d="M310 445 C520 445 520 675 735 675" />
+  <path class="line" d="M310 445 C510 445 875 675 1085 675" />
+  <path class="line" d="M1210 755 L1210 810" />
+  <path class="line" d="M310 665 C480 665 910 875 1085 875" />
+  <path class="line" d="M310 665 C455 665 600 875 735 875" />
+  <path class="line" d="M310 685 C360 730 360 820 310 865" />
+  <path class="line" d="M1005 205 C1105 205 1115 452 1185 452" />
+  <path class="line" d="M1335 452 C1390 520 1390 845 650 885" />
+  <path class="line" d="M1335 452 C1415 570 1415 1020 1185 1020" />
+
+  <text x="60" y="1040" class="text field">Dashed orange lines show jurisdiction scoping. Solid lines show foreign-key relationships used by public pages, admin dashboards, moderation, reactions, comments, and seed data.</text>
+</svg>
