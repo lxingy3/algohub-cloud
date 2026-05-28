@@ -12,6 +12,7 @@ const testimonySchema = z.object({
   narrativeText: z.string().trim().min(1),
   algorithmId: z.string().trim().optional(),
   selfReportedImpact: z.enum(['POSITIVE', 'NEGATIVE', 'MIXED', 'UNCLEAR']).optional(),
+  idempotencyKey: z.string().trim().min(8).max(120).optional(),
 });
 
 export async function GET(request) {
@@ -58,34 +59,43 @@ export async function POST(request) {
     narrativeText: formData.get('narrativeText'),
     algorithmId: formData.get('algorithmId'),
     selfReportedImpact: formData.get('selfReportedImpact') || 'UNCLEAR',
+    idempotencyKey: formData.get('idempotencyKey') || undefined,
   });
 
   if (!result.success) {
     return NextResponse.json({ error: 'Invalid testimony submission' }, { status: 400 });
   }
 
-  const { title, city, narrativeText, algorithmId, selfReportedImpact } = result.data;
+  const { title, city, narrativeText, algorithmId, selfReportedImpact, idempotencyKey } = result.data;
+  const sourceId = idempotencyKey ? `submission:${jurisdictionId}:${idempotencyKey}` : null;
+  const testimonyData = {
+    sourceId,
+    jurisdictionId,
+    title,
+    city: city || '',
+    narrativeText,
+    summary: narrativeText.length > 160 ? `${narrativeText.slice(0, 157)}...` : narrativeText,
+    userId: user?.id,
+    submitterName: user?.name,
+    submitterEmail: user?.email,
+    isAnonymous: !user,
+    submissionMethod: 'WEB_FORM',
+    selfReportedImpact,
+    moderationStatus: 'PENDING',
+  };
 
-  const testimony = await prisma.testimony.create({
-    data: {
-      jurisdictionId,
-      title,
-      city: city || '',
-      narrativeText,
-      summary: narrativeText.length > 160 ? `${narrativeText.slice(0, 157)}...` : narrativeText,
-      userId: user?.id,
-      submitterName: user?.name,
-      submitterEmail: user?.email,
-      isAnonymous: !user,
-      submissionMethod: 'WEB_FORM',
-      selfReportedImpact,
-      moderationStatus: 'PENDING',
-    },
-  });
+  const testimony = await createIdempotentTestimony(sourceId, testimonyData);
 
   if (algorithmId) {
-    await prisma.testimonyAlgorithmLink.create({
-      data: {
+    await prisma.testimonyAlgorithmLink.upsert({
+      where: {
+        testimonyId_algorithmId: {
+          testimonyId: testimony.id,
+          algorithmId,
+        },
+      },
+      update: {},
+      create: {
         testimonyId: testimony.id,
         algorithmId,
         linkType: 'SUBMITTER_IDENTIFIED',
@@ -95,4 +105,23 @@ export async function POST(request) {
   }
 
   return NextResponse.redirect(new URL(user ? '/my-stories' : '/stories', request.url), { status: 303 });
+}
+
+async function createIdempotentTestimony(sourceId, testimonyData) {
+  if (!sourceId) {
+    return prisma.testimony.create({ data: testimonyData });
+  }
+
+  const existing = await prisma.testimony.findUnique({ where: { sourceId } });
+  if (existing) return existing;
+
+  try {
+    return await prisma.testimony.create({ data: testimonyData });
+  } catch (error) {
+    if (error?.code === 'P2002') {
+      const duplicate = await prisma.testimony.findUnique({ where: { sourceId } });
+      if (duplicate) return duplicate;
+    }
+    throw error;
+  }
 }

@@ -1,15 +1,18 @@
 import Link from 'next/link';
+import { randomUUID } from 'node:crypto';
 import { PenLine, Send, Shield } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
 import { SiteNav } from '../components/SiteNav';
+import { SubmitButton } from '../components/SubmitButton';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SubmitTestimonyPage({ searchParams }) {
   const params = await searchParams;
   const user = await getCurrentUser();
+  const idempotencyKey = randomUUID();
   const algorithms = await prisma.algorithm.findMany({
     where: { jurisdictionId: getJurisdictionId() },
     orderBy: { name: 'asc' },
@@ -31,6 +34,7 @@ export default async function SubmitTestimonyPage({ searchParams }) {
 
       <div className="mx-auto max-w-3xl px-6 py-10">
         <form action="/api/testimonies" method="post" className="space-y-8 rounded-2xl border border-gray-200 bg-white p-8 shadow-xl">
+          <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
           <section className="space-y-4">
             <h2 className="border-b border-gray-200 pb-2 text-xl font-semibold text-gray-900">What Happened?</h2>
             <label className="block text-sm font-medium text-gray-700">
@@ -84,10 +88,10 @@ export default async function SubmitTestimonyPage({ searchParams }) {
             </div>
           </section>
 
-          <button className="flex w-full items-center justify-center rounded-md bg-yellow-500 px-5 py-3 font-semibold text-gray-900 hover:bg-yellow-400">
+          <SubmitButton className="flex w-full items-center justify-center rounded-md bg-yellow-500 px-5 py-3 font-semibold text-gray-900 hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-yellow-200">
             <Send className="mr-2 h-4 w-4" />
             Share Your Story
-          </button>
+          </SubmitButton>
         </form>
         <div className="mt-6 text-center text-sm text-gray-500">
           <Link href="/stories" className="font-semibold text-amber-800 hover:text-amber-950">Read public stories</Link>
