@@ -57,12 +57,12 @@ export default async function HomePage() {
         </svg>
         <div className="relative mx-auto grid max-w-6xl gap-10 px-6 py-16 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-amber-100">Community accountability workspace</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-amber-100">Transparency in public algorithms</p>
             <h1 className="mt-4 max-w-3xl text-4xl font-black leading-tight md:text-6xl">
-              Stories of automated systems shaping daily life.
+              Stories of Automated Systems Shaping Our Daily Lives
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-amber-50/90">
-              Browse public algorithm records, read community testimony, and manage review workflows in one shared application.
+              Explore how these systems function in our community through clear overviews and shared stories of their real-world impact.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/algorithms" className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-5 py-3 font-semibold text-amber-200 shadow-lg shadow-black/20 hover:bg-slate-800">
@@ -113,7 +113,7 @@ export default async function HomePage() {
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold">Featured Algorithms</h2>
-              <p className="text-sm text-slate-600">Database records with linked community testimony counts.</p>
+              <p className="text-sm text-slate-600">Algorithm profiles linked to community stories.</p>
             </div>
             <Link href="/algorithms" className="text-sm font-semibold text-amber-700 hover:text-amber-900">View all</Link>
           </div>
@@ -157,7 +157,7 @@ export default async function HomePage() {
                 <Users className="h-6 w-6 text-amber-600" />
                 Community Voices
               </h2>
-              <p className="text-sm text-slate-600">Approved public stories with database-backed reactions and comments.</p>
+              <p className="text-sm text-slate-600">Public stories with reactions and comments.</p>
             </div>
             <Link href="/stories" className="text-sm font-semibold text-amber-700 hover:text-amber-900">Read stories</Link>
           </div>

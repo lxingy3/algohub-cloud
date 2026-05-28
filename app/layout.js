@@ -2,7 +2,7 @@ import './globals.css';
 
 export const metadata = {
   title: 'AlgoHub',
-  description: 'AlgoHub database-backed platform',
+  description: 'Public algorithm registry and community stories',
 };
 
 export default function RootLayout({ children }) {
