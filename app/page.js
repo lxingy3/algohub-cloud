@@ -5,16 +5,14 @@ import { getJurisdictionId } from '../lib/jurisdiction';
 import { getCurrentUser } from '../lib/auth';
 import { SiteNav } from './components/SiteNav';
 import { formatDate, formatStatus } from './components/Formatters';
+import { AISystemsDiagram } from './components/AISystemsDiagram';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const jurisdictionId = getJurisdictionId();
   const user = await getCurrentUser();
-  const [algorithmCount, testimonyCount, eventCount, featuredAlgorithms, recentStories, upcomingEvents] = await Promise.all([
-    prisma.algorithm.count({ where: { jurisdictionId } }),
-    prisma.testimony.count({ where: { jurisdictionId, moderationStatus: 'APPROVED' } }),
-    prisma.communityEvent.count({ where: { jurisdictionId } }),
+  const [featuredAlgorithms, recentStories, upcomingEvents] = await Promise.all([
     prisma.algorithm.findMany({
       where: { jurisdictionId },
       orderBy: [{ impactLevel: 'asc' }, { name: 'asc' }],
@@ -89,19 +87,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section id="about" className="border-b border-gray-100 bg-white py-16">
-        <div className="mx-auto max-w-6xl px-6 text-center">
-          <h2 className="mb-2 text-2xl font-bold text-gray-900 md:text-3xl">A.I. Systems in Local Government</h2>
-          <p className="mx-auto max-w-3xl text-gray-600">
-            AlgoStories connects public algorithm records with testimony from people affected by those systems.
-          </p>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <Metric value={algorithmCount} label="Algorithms documented" />
-            <Metric value={testimonyCount} label="Community stories" />
-            <Metric value={eventCount} label="Community events" />
-          </div>
-        </div>
-      </section>
+      <AISystemsDiagram />
 
       <section className="mx-auto max-w-6xl px-6 py-16">
         <div className="mb-10 text-center">
@@ -168,14 +154,5 @@ export default async function HomePage() {
         </div>
       </section>
     </main>
-  );
-}
-
-function Metric({ value, label }) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="text-3xl font-bold text-gray-900">{value}</div>
-      <div className="mt-1 text-sm text-gray-500">{label}</div>
-    </div>
   );
 }
