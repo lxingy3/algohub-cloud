@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, PenLine, Search } from 'lucide-react';
+import { BookOpen, Calendar, FileText, Mic, PenLine, Search, Video } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
@@ -37,7 +37,6 @@ export default async function StoriesPage({ searchParams }) {
       where,
       orderBy: { submittedAt: 'desc' },
       include: {
-        algorithmLinks: { include: { algorithm: true } },
         _count: { select: { comments: true, reactions: true } },
       },
     }),
@@ -49,92 +48,88 @@ export default async function StoriesPage({ searchParams }) {
 
   const useCases = [...new Set(allStories.map((item) => item.affectedDomain).filter(Boolean))];
   const cities = [...new Set(allStories.map((item) => item.city).filter(Boolean))];
-  const negativeCount = testimonies.filter((item) => item.selfReportedImpact === 'NEGATIVE').length;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-slate-100 text-slate-950">
+    <main className="min-h-screen bg-gradient-to-br from-amber-50 to-slate-100 text-gray-900">
       <SiteNav currentUser={user} />
-      <section className="relative overflow-hidden bg-gradient-to-r from-slate-950 via-stone-900 to-amber-900 text-white">
-        <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(rgba(255,255,255,0.16)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.16)_1px,transparent_1px)] [background-size:38px_38px]" />
-        <div className="relative mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-6 px-6 py-14">
+      <section className="relative overflow-hidden border-b border-white/15 bg-gradient-to-r from-[#201805] via-[#4b3508] to-[#0a0a0a]">
+        <div className="absolute inset-0 opacity-[0.2] [background-image:linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:38px_38px]" />
+        <svg aria-hidden="true" viewBox="0 0 1200 220" preserveAspectRatio="none" className="absolute inset-0 h-full w-full opacity-[0.24]">
+          <g fill="none" stroke="rgba(255,255,255,.18)" strokeWidth="1.1">
+            <path d="M0 170 L120 130 L240 160 L350 118 L470 146 L590 108 L720 136 L860 96 L980 130 L1200 84" />
+            <path d="M0 210 L130 176 L250 204 L375 166 L505 194 L635 158 L770 188 L900 152 L1040 178 L1200 138" />
+          </g>
+        </svg>
+        <div className="relative mx-auto flex max-w-6xl flex-col gap-4 px-6 py-14 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-200">Community testimony</p>
-            <h1 className="mt-3 flex items-center gap-3 text-4xl font-black">
-              <BookOpen className="h-9 w-9 text-amber-300" />
+            <h1 className="flex items-center gap-3 text-3xl font-bold text-white md:text-4xl">
+              <BookOpen className="h-8 w-8 text-yellow-300" />
               Stories
             </h1>
-            <p className="mt-3 max-w-2xl text-amber-50/85">Approved community experiences with public algorithms and automated decisions.</p>
+            <p className="mt-2 text-yellow-100/80">Community's stories and perspectives on public algorithms</p>
           </div>
-          <Link href="/submit-testimony" className="inline-flex items-center gap-2 rounded-md bg-white px-5 py-3 font-semibold text-slate-950 hover:bg-amber-100">
-            <PenLine className="h-5 w-5" />
+          <Link href="/submit-testimony" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 font-semibold text-gray-900 shadow-sm transition-colors hover:bg-yellow-100">
+            <PenLine className="h-4 w-4" />
             Share Your Story
           </Link>
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-6 py-8">
-        <form className="-mt-14 rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
+      <div className="relative z-10 mx-auto max-w-6xl px-6 py-6">
+        <form className="-mt-14 space-y-5 rounded-2xl border border-gray-200/80 bg-white/95 p-4 shadow-xl backdrop-blur-sm">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-            <input name="search" defaultValue={search} placeholder="Search stories" className="w-full rounded-md border border-slate-200 bg-white px-10 py-3" />
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <input name="search" defaultValue={search} placeholder="Search stories..." className="w-full rounded-md border border-gray-200 bg-white py-2 pl-10 pr-3 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300/70" />
           </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-            <label className="text-sm font-medium text-slate-600">
-              Domain
-              <select name="useCase" defaultValue={useCase} className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-950">
-                <option value="all">All domains</option>
+          <div className="grid grid-cols-1 gap-4 border-t border-gray-200 pt-4 sm:grid-cols-2">
+            <label className="space-y-1.5 text-sm font-medium text-gray-600">
+              Use Case
+              <select name="useCase" defaultValue={useCase} className="w-full rounded-md border border-gray-200 bg-white px-3 py-2">
+                <option value="all">All Use Cases</option>
                 {useCases.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
             </label>
-            <label className="text-sm font-medium text-slate-600">
+            <label className="space-y-1.5 text-sm font-medium text-gray-600">
               City
-              <select name="city" defaultValue={city} className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-950">
-                <option value="all">All cities</option>
+              <select name="city" defaultValue={city} className="w-full rounded-md border border-gray-200 bg-white px-3 py-2">
+                <option value="all">All Cities</option>
                 {cities.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
             </label>
-            <button className="self-end rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Apply filters</button>
           </div>
+          <button className="rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md">
+            Apply filters
+          </button>
         </form>
+      </div>
 
-        <section className="mt-8 grid gap-4 md:grid-cols-3">
-          <Metric value={testimonies.length} label="Visible stories" />
-          <Metric value={negativeCount} label="Negative impact reports" />
-          <Metric value={testimonies.reduce((sum, item) => sum + item._count.comments, 0)} label="Approved comments" />
-        </section>
-
-        <section className="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          {testimonies.map((testimony) => (
-            <Link key={testimony.id} href={`/stories/${testimony.id}`} className="block border-b border-slate-100 p-5 last:border-b-0 hover:bg-amber-50/40">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-black">{testimony.title}</h2>
-                  <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{testimony.summary}</p>
-                </div>
-                <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{formatDate(testimony.submittedAt)}</span>
+      <section className="mx-auto max-w-6xl px-6 pb-16">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          {testimonies.map((story, index) => (
+            <Link key={story.id} href={`/stories/${story.id}`} className="group flex w-full items-start px-4 py-3 text-left transition-colors hover:bg-gray-50/80">
+              <div className={`mr-3 mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${index % 3 === 0 ? 'border-rose-200 bg-rose-50 text-rose-600' : index % 3 === 1 ? 'border-purple-200 bg-purple-50 text-purple-600' : 'border-blue-200 bg-blue-50 text-blue-600'}`}>
+                {index % 3 === 0 ? <Video className="h-4 w-4" /> : index % 3 === 1 ? <Mic className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
               </div>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
-                <span>{testimony.city || 'City not listed'}</span>
-                <span>/</span>
-                <span>{testimony.affectedDomain || 'Domain not listed'}</span>
-                <span>/</span>
-                <span>{testimony._count.reactions} reactions</span>
-                <span>/</span>
-                <span>{testimony._count.comments} comments</span>
+              <div className="min-w-0 flex-1 py-0.5">
+                <h3 className="mb-1 line-clamp-2 text-base font-bold text-gray-900 transition-colors group-hover:text-yellow-600">{story.title}</h3>
+                <p className="mb-1.5 line-clamp-2 text-sm text-gray-600">
+                  <span className="mr-1.5 inline rounded bg-gray-100 px-1 py-0.5 align-middle text-[9px] font-medium uppercase tracking-wider text-gray-400">Summary</span>
+                  {story.summary}
+                </p>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                  {story.affectedDomain ? <span className="rounded border border-gray-300 bg-gray-50 px-1.5 text-[10px] text-gray-700">{story.affectedDomain}</span> : null}
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {formatDate(story.submittedAt)}
+                  </span>
+                  <span>{story._count.reactions} reactions</span>
+                  <span>{story._count.comments} comments</span>
+                </div>
               </div>
             </Link>
           ))}
-        </section>
-      </div>
+        </div>
+      </section>
     </main>
-  );
-}
-
-function Metric({ value, label }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="text-3xl font-black">{value}</div>
-      <div className="mt-1 text-sm text-slate-500">{label}</div>
-    </div>
   );
 }
