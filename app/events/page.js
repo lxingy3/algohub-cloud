@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Calendar, Clock, MapPin, Video } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
@@ -7,7 +8,12 @@ import { formatDate, formatStatus } from '../components/Formatters';
 
 export const dynamic = 'force-dynamic';
 
-export default async function EventsPage() {
+const eventTypeOptions = ['WORKSHOP', 'TESTIMONY_SESSION', 'TOWN_HALL', 'TRAINING', 'PANEL', 'OFFICE_HOURS', 'OTHER'];
+
+export default async function EventsPage({ searchParams }) {
+  const params = await searchParams;
+  const activeFilter = String(params?.filter || 'all');
+  const eventType = String(params?.eventType || 'all');
   const [user, events] = await Promise.all([
     getCurrentUser(),
     prisma.communityEvent.findMany({
@@ -18,8 +24,17 @@ export default async function EventsPage() {
   ]);
 
   const now = new Date();
-  const upcomingEvents = events.filter((event) => new Date(event.date) >= now);
-  const pastEvents = events.filter((event) => new Date(event.date) < now);
+  const filteredEvents = events.filter((event) => {
+    const isPast = new Date(event.date) < now;
+    const matchesFilter =
+      activeFilter === 'all' ||
+      (activeFilter === 'upcoming' && !isPast) ||
+      (activeFilter === 'past' && isPast);
+    const matchesType = eventType === 'all' || event.eventType === eventType;
+    return matchesFilter && matchesType;
+  });
+  const upcomingEvents = filteredEvents.filter((event) => new Date(event.date) >= now);
+  const pastEvents = filteredEvents.filter((event) => new Date(event.date) < now);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 to-slate-100 text-gray-900">
@@ -41,11 +56,46 @@ export default async function EventsPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-4xl space-y-12 px-6 py-10">
-        <EventSection title="Upcoming Events" events={upcomingEvents} />
-        <EventSection title="Past Events" events={pastEvents} muted />
+      <div className="relative z-10 mx-auto max-w-6xl px-6 py-6 -mt-8">
+        <div className="space-y-6 rounded-2xl border border-gray-200/80 bg-white/95 p-6 shadow-xl backdrop-blur-sm">
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-gray-700">Filter</p>
+            <div className="flex flex-wrap gap-2">
+              <FilterLink active={activeFilter === 'all'} href={`/events?filter=all&eventType=${eventType}`}>All Events</FilterLink>
+              <FilterLink active={activeFilter === 'upcoming'} href={`/events?filter=upcoming&eventType=${eventType}`}>Upcoming</FilterLink>
+              <FilterLink active={activeFilter === 'past'} href={`/events?filter=past&eventType=${eventType}`}>Past</FilterLink>
+            </div>
+          </div>
+          <form className="flex flex-col gap-2 border-t border-gray-200 pt-6 sm:flex-row sm:items-center">
+            <input type="hidden" name="filter" value={activeFilter} />
+            <label htmlFor="eventType" className="shrink-0 text-sm font-semibold text-gray-700 sm:w-28">Event Type</label>
+            <select id="eventType" name="eventType" defaultValue={eventType} className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm sm:w-[220px]">
+              <option value="all">All event types</option>
+              {eventTypeOptions.map((item) => (
+                <option key={item} value={item}>{formatStatus(item)}</option>
+              ))}
+            </select>
+            <button className="w-fit rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md">Apply filters</button>
+          </form>
+        </div>
+      </div>
+
+      <section className="mx-auto max-w-4xl space-y-12 px-6 pb-16">
+        {(activeFilter === 'all' || activeFilter === 'upcoming') ? <EventSection title="Upcoming Events" events={upcomingEvents} /> : null}
+        {(activeFilter === 'all' || activeFilter === 'past') ? <EventSection title="Past Events" events={pastEvents} muted /> : null}
       </section>
     </main>
+  );
+}
+
+function FilterLink({ href, active, children }) {
+  return (
+    <Link
+      href={href}
+      className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${active ? 'bg-yellow-500 text-gray-900 shadow-md' : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}
+    >
+      {children}
+    </Link>
   );
 }
 

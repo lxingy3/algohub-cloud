@@ -4,19 +4,19 @@ import { prisma } from '../lib/prisma';
 import { getJurisdictionId } from '../lib/jurisdiction';
 import { getCurrentUser } from '../lib/auth';
 import { SiteNav } from './components/SiteNav';
-import { formatDate, formatStatus } from './components/Formatters';
+import { formatDate } from './components/Formatters';
 import { AISystemsDiagram } from './components/AISystemsDiagram';
+import { HomeUseCaseExplorer } from './components/HomeUseCaseExplorer';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const jurisdictionId = getJurisdictionId();
   const user = await getCurrentUser();
-  const [featuredAlgorithms, recentStories, upcomingEvents] = await Promise.all([
+  const [algorithms, recentStories, upcomingEvents] = await Promise.all([
     prisma.algorithm.findMany({
       where: { jurisdictionId },
-      orderBy: [{ impactLevel: 'asc' }, { name: 'asc' }],
-      take: 3,
+      orderBy: [{ name: 'asc' }],
       include: { _count: { select: { testimonyLinks: true } } },
     }),
     prisma.testimony.findMany({
@@ -89,27 +89,18 @@ export default async function HomePage() {
 
       <AISystemsDiagram />
 
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="mb-10 text-center">
-          <h2 className="mb-2 text-2xl font-bold text-gray-900 md:text-3xl">Algorithms Used in Public Services</h2>
-          <p className="text-gray-600">Browse the algorithms powering public services in your city.</p>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          {featuredAlgorithms.map((algorithm) => (
-            <Link key={algorithm.id} href={`/algorithms/${algorithm.slug}`} className="group flex h-full flex-col rounded-lg border border-gray-200 border-l-4 border-l-yellow-500 bg-white p-6 shadow-sm transition-all hover:shadow-lg">
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="min-h-14 text-lg font-semibold text-gray-900 transition-colors group-hover:text-yellow-600">{algorithm.name}</h3>
-                <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">{formatStatus(algorithm.status)}</span>
-              </div>
-              <p className="mt-3 line-clamp-2 min-h-10 text-sm text-gray-600">{algorithm.description}</p>
-              <div className="mt-5 flex items-center justify-between text-sm text-gray-600">
-                <span>{algorithm.location}</span>
-                <span>{algorithm._count.testimonyLinks} stories</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+      <HomeUseCaseExplorer
+        algorithms={algorithms.map((algorithm) => ({
+          id: algorithm.id,
+          slug: algorithm.slug,
+          name: algorithm.name,
+          description: algorithm.description,
+          location: algorithm.location,
+          status: algorithm.status,
+          useCase: algorithm.useCase,
+          storyCount: algorithm._count.testimonyLinks,
+        }))}
+      />
 
       <section className="bg-white py-16">
         <div className="mx-auto max-w-6xl px-6">

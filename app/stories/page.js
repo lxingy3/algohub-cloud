@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, Calendar, FileText, Mic, PenLine, Search, Video } from 'lucide-react';
+import { BarChart3, BookOpen, Calendar, FileText, Mic, PenLine, Search, Video } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
@@ -42,12 +42,24 @@ export default async function StoriesPage({ searchParams }) {
     }),
     prisma.testimony.findMany({
       where: { jurisdictionId, moderationStatus: 'APPROVED' },
-      select: { affectedDomain: true, city: true },
+      select: { affectedDomain: true, city: true, _count: { select: { reactions: true } } },
     }),
   ]);
 
   const useCases = [...new Set(allStories.map((item) => item.affectedDomain).filter(Boolean))];
   const cities = [...new Set(allStories.map((item) => item.city).filter(Boolean))];
+  const storiesByUseCase = allStories.reduce((acc, story) => {
+    const key = story.affectedDomain || 'Other';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const metrics = {
+    storiesShared: allStories.length,
+    algorithmsAffected: Object.keys(storiesByUseCase).length,
+    statesRepresented: cities.length,
+    voicesUnited: allStories.reduce((sum, story) => sum + story._count.reactions, 0),
+    storiesByUseCase,
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 to-slate-100 text-gray-900">
@@ -130,6 +142,61 @@ export default async function StoriesPage({ searchParams }) {
           ))}
         </div>
       </section>
+
+      <CommunityImpact metrics={metrics} />
     </main>
+  );
+}
+
+function CommunityImpact({ metrics }) {
+  const entries = Object.entries(metrics.storiesByUseCase).sort((a, b) => b[1] - a[1]);
+  const colors = ['bg-yellow-400', 'bg-yellow-500', 'bg-amber-500', 'bg-amber-600', 'bg-yellow-200', 'bg-amber-200'];
+
+  return (
+    <section className="relative overflow-hidden border-y border-slate-200/80 bg-gradient-to-br from-amber-50 to-slate-100">
+      <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(51,65,85,0.14)_1px,transparent_1px),linear-gradient(90deg,rgba(51,65,85,0.14)_1px,transparent_1px)] [background-size:34px_34px]" />
+      <div className="relative mx-auto max-w-6xl px-6 py-12 md:py-14">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white/80 px-4 py-2 shadow-sm">
+          <BarChart3 className="h-4 w-4 text-amber-700" />
+          <span className="text-sm font-medium text-amber-800">Community Metrics</span>
+        </div>
+        <h2 className="mb-8 flex items-center gap-2 text-2xl font-bold text-gray-900 md:text-3xl">
+          <BarChart3 className="h-6 w-6 text-amber-700" />
+          Community Impact
+        </h2>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <MetricCard label="Stories Shared" value={metrics.storiesShared} />
+          <div className="flex min-h-[210px] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_14px_32px_rgba(15,23,42,0.12)]">
+            <span className="mb-4 block text-sm font-medium text-gray-600">Algorithms Affected</span>
+            <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-full border-[18px] border-yellow-400 bg-white text-3xl font-bold text-gray-900">
+              {metrics.algorithmsAffected}
+            </div>
+            <ul className="w-full max-w-[190px] space-y-1">
+              {entries.slice(0, 6).map(([name, value], index) => (
+                <li key={name} className="flex items-center justify-between gap-2 text-xs text-gray-600">
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className={`h-2 w-2 shrink-0 rounded-full ${colors[index % colors.length]}`} />
+                    <span className="truncate">{name}</span>
+                  </span>
+                  <span className="font-medium text-gray-900">{value}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <MetricCard label="States Represented" value={metrics.statesRepresented} />
+          <MetricCard label="Voices United" value={metrics.voicesUnited} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MetricCard({ label, value }) {
+  return (
+    <div className="flex min-h-[210px] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_14px_32px_rgba(15,23,42,0.12)]">
+      <span className="mb-3 block text-sm font-medium text-gray-600">{label}</span>
+      <span className="text-4xl font-bold tabular-nums text-gray-900 md:text-5xl">{value}</span>
+    </div>
   );
 }

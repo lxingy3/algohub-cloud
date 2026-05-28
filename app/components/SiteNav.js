@@ -5,7 +5,7 @@ const navItems = [
   ['/algorithms', 'Algorithms'],
   ['/stories', 'Stories'],
   ['/events', 'Community Events'],
-  ['/#about', 'About'],
+  ['/about', 'About'],
 ];
 
 export function SiteNav({ currentUser }) {
