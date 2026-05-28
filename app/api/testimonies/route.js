@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createHash } from 'node:crypto';
 import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../lib/auth';
@@ -67,7 +68,10 @@ export async function POST(request) {
   }
 
   const { title, city, narrativeText, algorithmId, selfReportedImpact, idempotencyKey } = result.data;
-  const sourceId = idempotencyKey ? `submission:${jurisdictionId}:${idempotencyKey}` : null;
+  const fingerprint = buildSubmissionFingerprint({ jurisdictionId, user, title, city, narrativeText, algorithmId, selfReportedImpact });
+  const sourceId = idempotencyKey
+    ? `submission:${jurisdictionId}:${idempotencyKey}`
+    : `submission:${jurisdictionId}:auto:${hashSubmissionFingerprint(fingerprint)}`;
   const testimonyData = {
     sourceId,
     jurisdictionId,
@@ -84,44 +88,89 @@ export async function POST(request) {
     moderationStatus: 'PENDING',
   };
 
-  const testimony = await createIdempotentTestimony(sourceId, testimonyData);
-
-  if (algorithmId) {
-    await prisma.testimonyAlgorithmLink.upsert({
-      where: {
-        testimonyId_algorithmId: {
-          testimonyId: testimony.id,
-          algorithmId,
-        },
-      },
-      update: {},
-      create: {
-        testimonyId: testimony.id,
-        algorithmId,
-        linkType: 'SUBMITTER_IDENTIFIED',
-        confidence: 1,
-      },
-    });
-  }
+  await createIdempotentTestimony({
+    sourceId,
+    testimonyData,
+    algorithmId,
+  });
 
   return NextResponse.redirect(new URL(user ? '/my-stories' : '/stories', request.url), { status: 303 });
 }
 
-async function createIdempotentTestimony(sourceId, testimonyData) {
-  if (!sourceId) {
-    return prisma.testimony.create({ data: testimonyData });
+function buildSubmissionFingerprint({ jurisdictionId, user, title, city, narrativeText, algorithmId, selfReportedImpact }) {
+  const twoMinuteBucket = Math.floor(Date.now() / (2 * 60 * 1000));
+  return [
+    'testimony-submission',
+    twoMinuteBucket,
+    jurisdictionId,
+    user?.id || user?.email || 'anonymous',
+    title.trim().toLowerCase(),
+    (city || '').trim().toLowerCase(),
+    narrativeText.trim(),
+    algorithmId || '',
+    selfReportedImpact || 'UNCLEAR',
+  ].join('|');
+}
+
+function hashSubmissionFingerprint(value) {
+  return createHash('sha256').update(value).digest('hex').slice(0, 32);
+}
+
+async function createIdempotentTestimony({ sourceId, testimonyData, algorithmId }) {
+  let testimony = sourceId ? await prisma.testimony.findUnique({ where: { sourceId } }) : null;
+
+  if (!testimony) {
+    const recentDuplicate = await findRecentDuplicateTestimony(prisma, testimonyData, algorithmId);
+    testimony = recentDuplicate || await createTestimonyFromSubmission(sourceId, testimonyData);
   }
 
-  const existing = await prisma.testimony.findUnique({ where: { sourceId } });
-  if (existing) return existing;
+  if (algorithmId) {
+    await prisma.testimonyAlgorithmLink.createMany({
+      data: [
+        {
+          testimonyId: testimony.id,
+          algorithmId,
+          linkType: 'SUBMITTER_IDENTIFIED',
+          confidence: 1,
+        },
+      ],
+      skipDuplicates: true,
+    });
+  }
 
+  return testimony;
+}
+
+async function createTestimonyFromSubmission(sourceId, testimonyData) {
   try {
     return await prisma.testimony.create({ data: testimonyData });
   } catch (error) {
-    if (error?.code === 'P2002') {
+    if (sourceId && error?.code === 'P2002') {
       const duplicate = await prisma.testimony.findUnique({ where: { sourceId } });
       if (duplicate) return duplicate;
     }
     throw error;
   }
+}
+
+async function findRecentDuplicateTestimony(tx, testimonyData, algorithmId) {
+  const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+  const userFilter = testimonyData.userId
+    ? { userId: testimonyData.userId }
+    : { submitterEmail: testimonyData.submitterEmail, isAnonymous: testimonyData.isAnonymous };
+
+  return tx.testimony.findFirst({
+    where: {
+      ...userFilter,
+      jurisdictionId: testimonyData.jurisdictionId,
+      title: testimonyData.title,
+      city: testimonyData.city,
+      narrativeText: testimonyData.narrativeText,
+      selfReportedImpact: testimonyData.selfReportedImpact,
+      submissionMethod: testimonyData.submissionMethod,
+      submittedAt: { gte: twoMinutesAgo },
+      ...(algorithmId ? { algorithmLinks: { some: { algorithmId } } } : {}),
+    },
+    orderBy: { submittedAt: 'desc' },
+  });
 }
