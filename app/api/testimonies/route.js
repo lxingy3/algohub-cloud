@@ -94,5 +94,5 @@ export async function POST(request) {
     });
   }
 
-  return NextResponse.redirect(new URL('/stories', request.url), { status: 303 });
+  return NextResponse.redirect(new URL(user ? '/my-stories' : '/stories', request.url), { status: 303 });
 }

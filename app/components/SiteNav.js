@@ -27,6 +27,11 @@ export function SiteNav({ currentUser }) {
           ))}
         </nav>
         <div className="flex items-center gap-2 text-sm">
+          {currentUser ? (
+            <Link href="/my-stories" className="rounded-md px-3 py-2 font-medium text-gray-700 hover:bg-gray-100">
+              My Stories
+            </Link>
+          ) : null}
           <Link href="/login" className="rounded-md px-3 py-2 font-medium text-gray-700 hover:bg-gray-100">
             Login
           </Link>

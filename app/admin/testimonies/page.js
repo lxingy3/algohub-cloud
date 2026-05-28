@@ -23,7 +23,7 @@ export default async function AdminTestimoniesPage() {
               </div>
               <span className="rounded-full bg-slate-100 px-2 py-1 text-xs">{testimony.moderationStatus}</span>
             </div>
-            <textarea name="notes" placeholder="Moderation notes" className="mt-3 w-full rounded-md border px-3 py-2" />
+            <textarea name="notes" placeholder="Moderation notes" defaultValue={testimony.moderationNotes || ''} className="mt-3 w-full rounded-md border px-3 py-2" />
             <div className="mt-2 flex gap-2">
               <button name="status" value="APPROVED" className="rounded-md border px-3 py-2 text-sm">Approve</button>
               <button name="status" value="FLAGGED" className="rounded-md border px-3 py-2 text-sm">Flag</button>
