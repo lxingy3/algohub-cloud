@@ -39,6 +39,22 @@
     @apply bg-background text-foreground;
   }
 
+  .goog-te-banner-frame,
+  .goog-te-balloon-frame,
+  .goog-te-gadget,
+  .skiptranslate {
+    display: none !important;
+  }
+
+  body {
+    top: 0 !important;
+  }
+
+  font {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
   @media (max-width: 767px) {
     input,
     select,
