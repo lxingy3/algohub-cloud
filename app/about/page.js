@@ -42,8 +42,8 @@ export default async function AboutPage() {
             <path d="M120 160 L130 206 M240 190 L250 234 M350 148 L375 196 M470 176 L505 224 M590 138 L635 188 M720 166 L770 218 M860 126 L900 182 M980 160 L1040 208" />
           </g>
         </svg>
-        <div className="relative mx-auto max-w-4xl px-6 py-16 text-center">
-          <h1 className="mb-6 text-4xl font-bold text-white md:text-5xl">
+        <div className="relative mx-auto max-w-4xl px-4 py-12 text-center sm:px-6 sm:py-16">
+          <h1 className="mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
             Understanding the tools behind<br />Pittsburgh's public services.
           </h1>
           <p className="mx-auto max-w-2xl text-xl text-yellow-100/85">
@@ -52,7 +52,7 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
         <div className="mb-12 text-center">
           <h2 className="mb-2 text-3xl font-bold text-gray-900">How AlgoStories Works</h2>
           <p className="text-gray-600">Building a shared understanding of Pittsburgh's public services.</p>
@@ -75,12 +75,12 @@ export default async function AboutPage() {
 
       <section className="relative overflow-hidden bg-gradient-to-r from-[#201805] via-[#4b3508] to-[#0a0a0a] py-16 text-white">
         <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(255,255,255,0.09)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.09)_1px,transparent_1px)] [background-size:36px_36px]" />
-        <div className="relative mx-auto max-w-4xl px-6 text-center">
+        <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
           <h2 className="mb-4 text-3xl font-bold">Algorithms are just code until they affect you.</h2>
           <p className="mx-auto mb-8 max-w-2xl text-yellow-100/75">
             We can't see the full picture without your help. If you have an experience with a public service decision that didn't make sense, let us know.
           </p>
-          <Link href="/stories" className="inline-flex h-12 items-center rounded-md bg-yellow-400 px-7 text-base font-semibold text-gray-900 shadow-[0_0_0_1px_rgba(250,204,21,0.35),0_0_24px_rgba(250,204,21,0.22)] hover:bg-yellow-300">
+          <Link href="/stories" className="inline-flex min-h-12 items-center rounded-md bg-yellow-400 px-7 text-base font-semibold text-gray-900 shadow-[0_0_0_1px_rgba(250,204,21,0.35),0_0_24px_rgba(250,204,21,0.22)] hover:bg-yellow-300">
             Share Your Story Safely
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>

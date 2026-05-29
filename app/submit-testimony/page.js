@@ -23,7 +23,7 @@ export default async function SubmitTestimonyPage({ searchParams }) {
       <SiteNav currentUser={user} />
       <section className="relative overflow-hidden border-b border-white/15 bg-gradient-to-r from-[#201805] via-[#4b3508] to-[#0a0a0a]">
         <div className="absolute inset-0 opacity-[0.2] [background-image:linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:38px_38px]" />
-        <div className="relative mx-auto max-w-3xl px-6 py-12">
+        <div className="relative mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-12">
           <h1 className="mb-2 flex items-center gap-3 text-3xl font-bold text-white md:text-4xl">
             <PenLine className="h-8 w-8 text-yellow-300" />
             Share Your Story
@@ -32,14 +32,14 @@ export default async function SubmitTestimonyPage({ searchParams }) {
         </div>
       </section>
 
-      <div className="mx-auto max-w-3xl px-6 py-10">
-        <form action="/api/testimonies" method="post" className="space-y-8 rounded-2xl border border-gray-200 bg-white p-8 shadow-xl">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+        <form action="/api/testimonies" method="post" className="space-y-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-xl sm:p-8">
           <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
           <section className="space-y-4">
             <h2 className="border-b border-gray-200 pb-2 text-xl font-semibold text-gray-900">What Happened?</h2>
             <label className="block text-sm font-medium text-gray-700">
               Select an algorithm related to your experience
-              <select name="algorithmId" defaultValue={params?.algorithmId || ''} className="mt-2 w-full rounded-md border border-gray-200 px-3 py-2">
+              <select name="algorithmId" defaultValue={params?.algorithmId || ''} className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2">
                 <option value="">Not sure / not listed</option>
                 {algorithms.map((algorithm) => (
                   <option key={algorithm.id} value={algorithm.id}>{algorithm.name}</option>
@@ -48,7 +48,7 @@ export default async function SubmitTestimonyPage({ searchParams }) {
             </label>
             <label className="block text-sm font-medium text-gray-700">
               Short title
-              <input name="title" className="mt-2 w-full rounded-md border border-gray-200 px-3 py-2" required />
+              <input name="title" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" required />
             </label>
           </section>
 
@@ -64,11 +64,11 @@ export default async function SubmitTestimonyPage({ searchParams }) {
             <h2 className="border-b border-gray-200 pb-2 text-xl font-semibold text-gray-900">About You</h2>
             <label className="block text-sm font-medium text-gray-700">
               City
-              <input name="city" placeholder="e.g. Pittsburgh, Philadelphia" className="mt-2 w-full rounded-md border border-gray-200 px-3 py-2" />
+              <input name="city" placeholder="e.g. Pittsburgh, Philadelphia" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
             </label>
             <label className="block text-sm font-medium text-gray-700">
               Impact
-              <select name="selfReportedImpact" defaultValue="UNCLEAR" className="mt-2 w-full rounded-md border border-gray-200 px-3 py-2">
+              <select name="selfReportedImpact" defaultValue="UNCLEAR" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2">
                 <option value="NEGATIVE">Negative</option>
                 <option value="MIXED">Mixed</option>
                 <option value="POSITIVE">Positive</option>
@@ -88,7 +88,7 @@ export default async function SubmitTestimonyPage({ searchParams }) {
             </div>
           </section>
 
-          <SubmitButton className="flex w-full items-center justify-center rounded-md bg-yellow-500 px-5 py-3 font-semibold text-gray-900 hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-yellow-200">
+          <SubmitButton className="flex min-h-12 w-full items-center justify-center rounded-md bg-yellow-500 px-5 py-3 font-semibold text-gray-900 hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-yellow-200">
             <Send className="mr-2 h-4 w-4" />
             Share Your Story
           </SubmitButton>

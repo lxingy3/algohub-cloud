@@ -47,7 +47,7 @@ export default async function EventsPage({ searchParams }) {
             <path d="M0 210 L130 176 L250 204 L375 166 L505 194 L635 158 L770 188 L900 152 L1040 178 L1200 138" />
           </g>
         </svg>
-        <div className="relative mx-auto max-w-6xl px-6 py-14">
+        <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-14">
           <h1 className="flex items-center gap-3 text-3xl font-bold text-white md:text-4xl">
             <Calendar className="h-8 w-8 text-yellow-300" />
             Community Events
@@ -56,8 +56,8 @@ export default async function EventsPage({ searchParams }) {
         </div>
       </section>
 
-      <div className="relative z-10 mx-auto max-w-6xl px-6 py-6 -mt-8">
-        <div className="space-y-6 rounded-2xl border border-gray-200/80 bg-white/95 p-6 shadow-xl backdrop-blur-sm">
+      <div className="relative z-10 mx-auto -mt-8 max-w-6xl px-4 py-6 sm:px-6">
+        <div className="space-y-6 rounded-2xl border border-gray-200/80 bg-white/95 p-4 shadow-xl backdrop-blur-sm sm:p-6">
           <div className="space-y-3">
             <p className="text-sm font-semibold text-gray-700">Filter</p>
             <div className="flex flex-wrap gap-2">
@@ -69,18 +69,18 @@ export default async function EventsPage({ searchParams }) {
           <form className="flex flex-col gap-2 border-t border-gray-200 pt-6 sm:flex-row sm:items-center">
             <input type="hidden" name="filter" value={activeFilter} />
             <label htmlFor="eventType" className="shrink-0 text-sm font-semibold text-gray-700 sm:w-28">Event Type</label>
-            <select id="eventType" name="eventType" defaultValue={eventType} className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm sm:w-[220px]">
+            <select id="eventType" name="eventType" defaultValue={eventType} className="min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm sm:w-[220px]">
               <option value="all">All event types</option>
               {eventTypeOptions.map((item) => (
                 <option key={item} value={item}>{formatStatus(item)}</option>
               ))}
             </select>
-            <button className="w-fit rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md">Apply filters</button>
+            <button className="min-h-11 w-full rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md sm:w-fit">Apply filters</button>
           </form>
         </div>
       </div>
 
-      <section className="mx-auto max-w-4xl space-y-12 px-6 pb-16">
+      <section className="mx-auto max-w-4xl space-y-12 px-4 pb-16 sm:px-6">
         {(activeFilter === 'all' || activeFilter === 'upcoming') ? <EventSection title="Upcoming Events" events={upcomingEvents} /> : null}
         {(activeFilter === 'all' || activeFilter === 'past') ? <EventSection title="Past Events" events={pastEvents} muted /> : null}
       </section>
@@ -92,7 +92,7 @@ function FilterLink({ href, active, children }) {
   return (
     <Link
       href={href}
-      className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${active ? 'bg-yellow-500 text-gray-900 shadow-md' : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}
+      className={`inline-flex min-h-10 items-center rounded-full px-4 py-2 text-sm font-medium transition-all ${active ? 'bg-yellow-500 text-gray-900 shadow-md' : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}
     >
       {children}
     </Link>
@@ -121,13 +121,13 @@ function EventSection({ title, events, muted = false }) {
 function EventRow({ event }) {
   const date = new Date(event.date);
   return (
-    <article className="group -mx-4 flex cursor-default gap-6 rounded-lg px-10 py-6 transition-colors hover:bg-amber-50/35">
+    <article className="group flex cursor-default flex-col gap-4 rounded-lg px-4 py-5 transition-colors hover:bg-amber-50/35 sm:-mx-4 sm:flex-row sm:gap-6 sm:px-10 sm:py-6">
       <div className="flex h-16 w-16 flex-shrink-0 flex-col items-center justify-center rounded-lg border-2 border-yellow-300 bg-amber-50">
         <span className="text-xs font-semibold leading-tight text-yellow-700">{date.toLocaleString('en-US', { month: 'short' })}</span>
         <span className="text-xl font-bold leading-tight text-gray-900">{date.getDate()}</span>
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
           <div>
             <div className="mb-1 flex flex-wrap items-center gap-2">
               {event.isVirtual ? (
@@ -153,7 +153,7 @@ function EventRow({ event }) {
             </div>
           </div>
           {event.registrationUrl ? (
-            <a href={event.registrationUrl} className="shrink-0 rounded-md border border-gray-200 px-3 py-2 text-sm font-semibold hover:border-amber-300">
+            <a href={event.registrationUrl} className="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-md border border-gray-200 px-3 py-2 text-sm font-semibold hover:border-amber-300 sm:w-auto">
               Register
             </a>
           ) : null}

@@ -72,7 +72,7 @@ export default async function StoriesPage({ searchParams }) {
             <path d="M0 210 L130 176 L250 204 L375 166 L505 194 L635 158 L770 188 L900 152 L1040 178 L1200 138" />
           </g>
         </svg>
-        <div className="relative mx-auto flex max-w-6xl flex-col gap-4 px-6 py-14 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative mx-auto flex max-w-6xl flex-col gap-4 px-4 py-12 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-14">
           <div>
             <h1 className="flex items-center gap-3 text-3xl font-bold text-white md:text-4xl">
               <BookOpen className="h-8 w-8 text-yellow-300" />
@@ -80,46 +80,46 @@ export default async function StoriesPage({ searchParams }) {
             </h1>
             <p className="mt-2 text-yellow-100/80">Community's stories and perspectives on public algorithms</p>
           </div>
-          <Link href="/submit-testimony" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 font-semibold text-gray-900 shadow-sm transition-colors hover:bg-yellow-100">
+          <Link href="/submit-testimony" className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 font-semibold text-gray-900 shadow-sm transition-colors hover:bg-yellow-100 sm:w-auto">
             <PenLine className="h-4 w-4" />
             Share Your Story
           </Link>
         </div>
       </section>
 
-      <div className="relative z-10 mx-auto max-w-6xl px-6 py-6">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 py-6 sm:px-6">
         <form className="-mt-14 space-y-5 rounded-2xl border border-gray-200/80 bg-white/95 p-4 shadow-xl backdrop-blur-sm">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-            <input name="search" defaultValue={search} placeholder="Search stories..." className="w-full rounded-md border border-gray-200 bg-white py-2 pl-10 pr-3 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300/70" />
+            <input name="search" defaultValue={search} placeholder="Search stories..." className="min-h-11 w-full rounded-md border border-gray-200 bg-white py-2 pl-10 pr-3 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300/70" />
           </div>
           <div className="grid grid-cols-1 gap-4 border-t border-gray-200 pt-4 sm:grid-cols-2">
             <label className="space-y-1.5 text-sm font-medium text-gray-600">
               Use Case
-              <select name="useCase" defaultValue={useCase} className="w-full rounded-md border border-gray-200 bg-white px-3 py-2">
+              <select name="useCase" defaultValue={useCase} className="min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 py-2">
                 <option value="all">All Use Cases</option>
                 {useCases.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
             </label>
             <label className="space-y-1.5 text-sm font-medium text-gray-600">
               City
-              <select name="city" defaultValue={city} className="w-full rounded-md border border-gray-200 bg-white px-3 py-2">
+              <select name="city" defaultValue={city} className="min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 py-2">
                 <option value="all">All Cities</option>
                 {cities.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
             </label>
           </div>
-          <button className="rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md">
+          <button className="min-h-11 w-full rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md sm:w-fit">
             Apply filters
           </button>
         </form>
       </div>
 
-      <section className="mx-auto max-w-6xl px-6 pb-16">
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           {testimonies.map((story, index) => (
-            <Link key={story.id} href={`/stories/${story.id}`} className="group flex w-full items-start px-4 py-3 text-left transition-colors hover:bg-gray-50/80">
-              <div className={`mr-3 mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${index % 3 === 0 ? 'border-rose-200 bg-rose-50 text-rose-600' : index % 3 === 1 ? 'border-purple-200 bg-purple-50 text-purple-600' : 'border-blue-200 bg-blue-50 text-blue-600'}`}>
+            <Link key={story.id} href={`/stories/${story.id}`} className="group flex w-full items-start px-3 py-4 text-left transition-colors hover:bg-gray-50/80 sm:px-4 sm:py-3">
+              <div className={`mr-3 mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border sm:h-8 sm:w-8 ${index % 3 === 0 ? 'border-rose-200 bg-rose-50 text-rose-600' : index % 3 === 1 ? 'border-purple-200 bg-purple-50 text-purple-600' : 'border-blue-200 bg-blue-50 text-blue-600'}`}>
                 {index % 3 === 0 ? <Video className="h-4 w-4" /> : index % 3 === 1 ? <Mic className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
               </div>
               <div className="min-w-0 flex-1 py-0.5">
@@ -155,7 +155,7 @@ function CommunityImpact({ metrics }) {
   return (
     <section className="relative overflow-hidden border-y border-slate-200/80 bg-gradient-to-br from-amber-50 to-slate-100">
       <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(51,65,85,0.14)_1px,transparent_1px),linear-gradient(90deg,rgba(51,65,85,0.14)_1px,transparent_1px)] [background-size:34px_34px]" />
-      <div className="relative mx-auto max-w-6xl px-6 py-12 md:py-14">
+      <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-14">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white/80 px-4 py-2 shadow-sm">
           <BarChart3 className="h-4 w-4 text-amber-700" />
           <span className="text-sm font-medium text-amber-800">Community Metrics</span>

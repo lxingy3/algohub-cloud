@@ -47,7 +47,7 @@ export default async function HomePage() {
             <path d="M110 360 L135 438 M235 405 L250 482 M360 338 L382 420 M490 382 L510 462 M620 318 L645 400 M760 360 L785 445 M900 300 L915 382 M1020 345 L1060 420" />
           </g>
         </svg>
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-6 pb-20 pt-10 md:pb-28 md:pt-16 lg:grid-cols-2 lg:gap-20">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 pb-16 pt-10 sm:px-6 md:pb-28 md:pt-16 lg:grid-cols-2 lg:gap-20">
           <div>
             <h1 className="mb-5 text-3xl font-extrabold leading-[1.12] tracking-tight sm:text-4xl md:text-5xl">
               Stories of Automated Systems{' '}
@@ -56,17 +56,17 @@ export default async function HomePage() {
             <p className="mb-8 text-base leading-relaxed text-yellow-50/85 md:text-lg">
               Explore how these systems function in our community through clear overviews and shared stories of their real-world impact.
             </p>
-            <div className="mb-4 flex flex-wrap gap-4">
-              <Link href="/algorithms" className="inline-flex h-12 items-center rounded-md bg-gray-900 px-7 text-base font-semibold text-yellow-200 shadow-[0_0_0_1px_rgba(250,204,21,0.35),0_0_24px_rgba(250,204,21,0.22)] hover:bg-gray-800">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
+              <Link href="/algorithms" className="inline-flex h-12 items-center justify-center rounded-md bg-gray-900 px-7 text-base font-semibold text-yellow-200 shadow-[0_0_0_1px_rgba(250,204,21,0.35),0_0_24px_rgba(250,204,21,0.22)] hover:bg-gray-800">
                 <Database className="mr-2 h-4 w-4" />
                 Browse Algorithms
               </Link>
-              <Link href="#about" className="inline-flex h-12 items-center rounded-md border border-white/70 bg-white/10 px-7 text-base font-semibold text-white hover:bg-white/20">
+              <Link href="#about" className="inline-flex h-12 items-center justify-center rounded-md border border-white/70 bg-white/10 px-7 text-base font-semibold text-white hover:bg-white/20">
                 Learn More
                 <ExternalLink className="ml-2 h-4 w-4" />
               </Link>
             </div>
-            <div className="flex gap-6 pl-1 text-base text-yellow-50/80">
+            <div className="flex flex-col gap-2 pl-1 text-base text-yellow-50/80 sm:flex-row sm:gap-6">
               <div className="flex items-center gap-2">
                 <Eye className="h-5 w-5 text-yellow-100" />
                 Transparent profiles
@@ -103,7 +103,7 @@ export default async function HomePage() {
       />
 
       <section className="bg-white py-16">
-        <div className="mx-auto max-w-6xl px-6">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mb-8">
             <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
               <Users className="h-6 w-6 text-yellow-600" />
@@ -112,7 +112,7 @@ export default async function HomePage() {
             <p className="mt-1 text-gray-600">Real stories and latest news</p>
           </div>
           <div className="grid items-start gap-12 md:grid-cols-2">
-            <div className="rounded-2xl border-l-4 border-yellow-500 bg-gradient-to-br from-yellow-50 to-yellow-100 p-8">
+            <div className="rounded-2xl border-l-4 border-yellow-500 bg-gradient-to-br from-yellow-50 to-yellow-100 p-5 sm:p-8">
               <h3 className="mb-6 text-2xl font-bold text-gray-900">Community Voices from Pittsburgh</h3>
               {recentStories.map((story) => (
                 <Link key={story.id} href={`/stories/${story.id}`} className="mb-5 block last:mb-0">
@@ -123,7 +123,7 @@ export default async function HomePage() {
                 </Link>
               ))}
             </div>
-            <div className="rounded-2xl bg-gradient-to-br from-yellow-500 to-yellow-600 p-8 text-white">
+            <div className="rounded-2xl bg-gradient-to-br from-yellow-500 to-yellow-600 p-5 text-white sm:p-8">
               <h3 className="mb-6 text-2xl font-bold">What's Happening?</h3>
               <ul className="space-y-6">
                 {upcomingEvents.map((event) => (

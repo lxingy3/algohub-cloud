@@ -53,18 +53,18 @@ export function AISystemsDiagram() {
   const [step, setStep] = useState(1);
 
   return (
-    <section className="border-b border-gray-100 bg-white py-16">
-      <div className="mx-auto max-w-6xl px-6">
+    <section className="border-b border-gray-100 bg-white py-10 md:py-16">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mb-6 text-center">
           <h2 className="mb-2 text-2xl font-bold text-gray-900 md:text-3xl">A.I. Systems in Local Government</h2>
-          <div className="mx-auto flex w-fit items-center justify-center gap-2 rounded-full bg-amber-50 px-4 py-2 font-medium text-gray-500">
-            <MousePointer2 className="h-4 w-4 animate-bounce" />
-            <span>Tap a step below to see how AI moves through government</span>
+          <div className="mx-auto flex w-fit max-w-full items-center justify-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-sm font-medium text-gray-500 sm:px-4">
+            <MousePointer2 className="h-4 w-4 shrink-0 animate-bounce" />
+            <span className="leading-snug">Tap a step below to see how AI moves through government</span>
           </div>
         </div>
 
-        <div className="relative overflow-x-auto rounded-xl border-2 border-gray-200 bg-white p-6 pb-8 shadow-lg">
-          <div className="relative min-w-[900px] pt-4">
+        <div className="relative overflow-x-auto rounded-xl border-2 border-gray-200 bg-white p-3 pb-5 shadow-lg sm:p-6 sm:pb-8">
+          <div className="relative min-w-[760px] pt-4 sm:min-w-[900px]">
             <div className="relative mb-4 h-44 w-full">
               <div className="absolute left-[16.66%] top-[25%] h-0 w-[66.66%] border-t-2 border-dashed border-gray-400" />
               <div className={`absolute left-[16.66%] top-[25%] -mt-1 h-2 w-2 -translate-x-1/2 rounded-full ${step >= 1 ? 'bg-blue-600' : 'bg-gray-300'}`} />
@@ -142,7 +142,7 @@ export function AISystemsDiagram() {
                     type="button"
                     onClick={() => setStep(stepNum)}
                     className={[
-                      'relative rounded-xl border-2 p-4 text-left transition-all duration-300',
+                      'relative min-h-[132px] rounded-xl border-2 p-3 text-left transition-all duration-300 sm:p-4',
                       active ? '-translate-y-2 scale-105 shadow-lg ring-2 ring-offset-2' : 'opacity-75 hover:opacity-100',
                       missingPiece ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-amber-400/60' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
                       active && stepNum === 1 ? 'border-blue-400 bg-blue-50 text-blue-900 ring-blue-200' : '',

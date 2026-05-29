@@ -31,7 +31,7 @@ export function HomeUseCaseExplorer({ algorithms }) {
   const activeAlgorithms = algorithms.filter((algorithm) => algorithm.useCase === activeData?.useCase);
 
   return (
-    <section className="mx-auto max-w-6xl px-6 py-16">
+    <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
       <div className="mb-10 text-center">
         <h2 className="mb-2 text-2xl font-bold text-gray-900 md:text-3xl">
           Algorithms Used in Public Services
@@ -41,7 +41,7 @@ export function HomeUseCaseExplorer({ algorithms }) {
         </p>
       </div>
 
-      <div className="mb-12 flex w-full flex-wrap items-start justify-center gap-8 md:gap-12 lg:gap-16">
+      <div className="mb-12 grid w-full grid-cols-2 gap-x-4 gap-y-8 sm:flex sm:flex-wrap sm:items-start sm:justify-center sm:gap-8 md:gap-12 lg:gap-16">
         {services.map((service) => {
           const Icon = service.icon;
           const isActive = activeService === service.id;
@@ -50,7 +50,7 @@ export function HomeUseCaseExplorer({ algorithms }) {
               key={service.id}
               type="button"
               onClick={() => setActiveService(service.id)}
-              className="group flex flex-col items-center outline-none"
+              className="group flex min-h-[132px] w-full flex-col items-center justify-start outline-none sm:w-auto"
               aria-pressed={isActive}
             >
               <div className={`mb-4 flex h-16 w-16 items-center justify-center rounded-full border-[1.5px] border-yellow-500 transition-all duration-300 md:h-20 md:w-20 ${isActive ? 'scale-110 bg-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.4)]' : 'bg-white hover:scale-105 hover:shadow-[0_0_12px_rgba(234,179,8,0.2)]'}`}>
@@ -59,7 +59,7 @@ export function HomeUseCaseExplorer({ algorithms }) {
                   className={`h-7 w-7 transition-all duration-300 md:h-8 md:w-8 ${isActive ? 'text-white' : 'text-gray-700 group-hover:text-gray-900'}`}
                 />
               </div>
-              <span className={`h-10 max-w-[120px] text-center text-xs font-medium uppercase leading-snug tracking-wide transition-all duration-300 md:h-12 md:text-sm ${isActive ? 'font-bold text-gray-900' : 'text-gray-500 group-hover:text-gray-700'}`}>
+              <span className={`min-h-10 max-w-[120px] text-center text-xs font-medium uppercase leading-snug tracking-wide transition-all duration-300 md:h-12 md:text-sm ${isActive ? 'font-bold text-gray-900' : 'text-gray-500 group-hover:text-gray-700'}`}>
                 {service.label.split(' ').map((word, index) => (
                   <span key={word}>
                     {word}
@@ -78,9 +78,9 @@ export function HomeUseCaseExplorer({ algorithms }) {
           <Link
             key={algorithm.id}
             href={`/algorithms/${algorithm.slug}`}
-            className="group flex h-full flex-col rounded-lg border border-gray-200 border-l-4 border-l-yellow-500 bg-white p-6 shadow-sm transition-all hover:shadow-lg"
+            className="group flex h-full flex-col rounded-lg border border-gray-200 border-l-4 border-l-yellow-500 bg-white p-5 shadow-sm transition-all hover:shadow-lg sm:p-6"
           >
-            <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row">
               <h3 className="text-xl font-bold leading-tight text-gray-900 transition-colors group-hover:text-yellow-600">
                 {algorithm.name}
               </h3>

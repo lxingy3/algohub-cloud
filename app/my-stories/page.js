@@ -31,7 +31,7 @@ export default async function MyStoriesPage() {
 
       <section className="relative overflow-hidden border-b border-white/15 bg-gradient-to-r from-[#201805] via-[#4b3508] to-[#0a0a0a]">
         <div className="absolute inset-0 opacity-[0.2] [background-image:linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:38px_38px]" />
-        <div className="relative mx-auto max-w-4xl px-6 py-12">
+        <div className="relative mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-12">
           <h1 className="flex items-center gap-3 text-3xl font-bold text-white md:text-4xl">
             <FileText className="h-8 w-8 text-yellow-300" />
             My Stories
@@ -40,11 +40,11 @@ export default async function MyStoriesPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-4xl px-6 py-10">
+      <section className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
         {testimonies.length ? (
           <div className="space-y-4">
             {testimonies.map((testimony) => (
-              <article key={testimony.id} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <article key={testimony.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <div className="mb-2 flex flex-wrap items-center gap-2 text-sm text-gray-500">
@@ -57,7 +57,7 @@ export default async function MyStoriesPage() {
                     </p>
                   </div>
                   {testimony.moderationStatus === 'APPROVED' ? (
-                    <Link href={`/stories/${testimony.id}`} className="shrink-0 rounded-md border border-gray-200 px-3 py-2 text-sm font-semibold hover:border-amber-300">
+                    <Link href={`/stories/${testimony.id}`} className="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-md border border-gray-200 px-3 py-2 text-sm font-semibold hover:border-amber-300 sm:w-auto">
                       View public page
                     </Link>
                   ) : null}
@@ -94,7 +94,7 @@ export default async function MyStoriesPage() {
             <FileText className="mx-auto h-10 w-10 text-gray-300" />
             <h2 className="mt-4 text-xl font-semibold text-gray-900">No stories yet</h2>
             <p className="mt-2 text-sm text-gray-500">Stories you submit while logged in will appear here.</p>
-            <Link href="/submit-testimony" className="mt-5 inline-flex rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-yellow-400">
+            <Link href="/submit-testimony" className="mt-5 inline-flex min-h-11 items-center rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-yellow-400">
               Share Your Story
             </Link>
           </div>
