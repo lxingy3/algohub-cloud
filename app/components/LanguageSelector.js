@@ -77,7 +77,8 @@ export function LanguageSelector() {
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY) || 'en';
-    setLanguage(stored);
+    const supported = languages.some(([code]) => code === stored);
+    setLanguage(stored === 'zh' ? 'zh-CN' : supported ? stored : 'en');
   }, []);
 
   useEffect(() => {
