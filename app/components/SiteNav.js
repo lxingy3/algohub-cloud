@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { LanguageSelector } from './LanguageSelector';
 
 const navItems = [
   ['/', 'Home'],
@@ -27,14 +28,17 @@ export function SiteNav({ currentUser }) {
           ))}
         </nav>
         <div className="flex items-center gap-1 text-sm md:gap-2">
+          <LanguageSelector />
           {currentUser ? (
             <Link href="/my-stories" className="hidden rounded-md px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 md:inline-flex">
               My Stories
             </Link>
           ) : null}
-          <Link href="/login" className="inline-flex min-h-11 items-center rounded-md px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 md:min-h-0">
-            Login
-          </Link>
+          {!currentUser ? (
+            <Link href="/login" className="inline-flex min-h-11 items-center rounded-md px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 md:min-h-0">
+              Login
+            </Link>
+          ) : null}
           <Link href="/admin" className="inline-flex min-h-11 items-center rounded-md border border-gray-200 px-3 py-2 font-medium text-gray-800 hover:bg-gray-100 md:min-h-0">
             Admin
           </Link>
