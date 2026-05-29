@@ -30,7 +30,6 @@
 
   <rect class="page" width="2200" height="1500" />
   <text x="70" y="58" class="label" font-size="31" font-weight="800">AlgoHub Database ERD</text>
-  <text x="70" y="88" class="muted">Clean relationship map for the PostgreSQL schema. Connectors leave and enter table boxes only at their edges.</text>
 
   <g transform="translate(70 118)">
     <rect class="box scope" width="2060" height="120" />
