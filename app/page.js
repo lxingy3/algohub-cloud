@@ -32,6 +32,7 @@ export default async function HomePage() {
       include: { organizer: true },
     }),
   ]);
+  const featuredStory = recentStories[0];
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 to-slate-100 text-gray-900">
@@ -98,6 +99,7 @@ export default async function HomePage() {
           location: algorithm.location,
           status: algorithm.status,
           useCase: algorithm.useCase,
+          impactLevel: algorithm.impactLevel,
           storyCount: algorithm._count.testimonyLinks,
         }))}
       />
@@ -114,14 +116,25 @@ export default async function HomePage() {
           <div className="grid items-start gap-12 md:grid-cols-2">
             <div className="rounded-2xl border-l-4 border-yellow-500 bg-gradient-to-br from-yellow-50 to-yellow-100 p-5 sm:p-8">
               <h3 className="mb-6 text-2xl font-bold text-gray-900">Community Voices from Pittsburgh</h3>
-              {recentStories.map((story) => (
-                <Link key={story.id} href={`/stories/${story.id}`} className="mb-5 block last:mb-0">
-                  <Quote className="mb-3 h-8 w-8 text-yellow-400" />
-                  <h4 className="font-semibold text-gray-900">{story.title}</h4>
-                  <p className="mt-2 line-clamp-3 text-gray-700">{story.summary}</p>
-                  <p className="mt-3 text-sm text-gray-500">{story._count.reactions} reactions / {story._count.comments} comments</p>
-                </Link>
-              ))}
+              <Quote className="mb-6 h-12 w-12 text-yellow-400" />
+              {featuredStory ? (
+                <>
+                  <p className="mb-6 text-xl italic leading-8 text-gray-700">
+                    "{featuredStory.summary || featuredStory.narrativeText}"
+                  </p>
+                  <p className="mb-6 text-gray-500">- {featuredStory.submitterName || 'Anonymous Community Member'}</p>
+                </>
+              ) : (
+                <>
+                  <p className="mb-6 text-xl italic leading-8 text-gray-700">
+                    "I didn't realize an algorithm helped determine my application priority until I noticed the decision didn't match my caseworker's expectations."
+                  </p>
+                  <p className="mb-6 text-gray-500">- Anonymous Housing Applicant</p>
+                </>
+              )}
+              <Link href="/stories" className="inline-flex min-h-11 items-center rounded-md bg-gray-900 px-5 py-2 text-sm font-semibold text-white hover:bg-gray-800">
+                Read More Stories
+              </Link>
             </div>
             <div className="rounded-2xl bg-gradient-to-br from-yellow-500 to-yellow-600 p-5 text-white sm:p-8">
               <h3 className="mb-6 text-2xl font-bold">What's Happening?</h3>

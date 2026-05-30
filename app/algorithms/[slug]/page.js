@@ -48,7 +48,7 @@ export default async function AlgorithmDetailPage({ params }) {
             <div>
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">{formatStatus(algorithm.status)}</span>
-                {algorithm.impactLevel ? <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">{formatStatus(algorithm.impactLevel)} impact</span> : null}
+                {algorithm.impactLevel ? <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">{formatStatus(algorithm.impactLevel)} Impact</span> : null}
               </div>
               <h1 className="mt-4 max-w-3xl text-4xl font-black leading-tight">{algorithm.name}</h1>
               <p className="mt-3 max-w-3xl leading-7 text-slate-600">{algorithm.description}</p>

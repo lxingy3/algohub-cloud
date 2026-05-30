@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { Database, MapPin, Search } from 'lucide-react';
+import { Database, Search } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
 import { SiteNav } from '../components/SiteNav';
-import { formatStatus } from '../components/Formatters';
+import { AlgorithmCard } from '../components/AlgorithmCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -117,21 +117,7 @@ export default async function AlgorithmsPage({ searchParams }) {
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {algorithms.map((algorithm) => (
-            <Link key={algorithm.id} href={`/algorithms/${algorithm.slug}`} className="group flex h-full flex-col rounded-lg border border-gray-200 border-l-4 border-l-yellow-500 bg-white p-5 shadow-sm transition-all hover:shadow-lg sm:p-6">
-              <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
-                <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-yellow-600 sm:min-h-14">{algorithm.name}</h3>
-                <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">{formatStatus(algorithm.status)}</span>
-              </div>
-              {algorithm.useCase ? <span className="mt-2 w-fit rounded-full border border-gray-200 px-2 py-1 text-xs text-gray-700">{algorithm.useCase}</span> : null}
-              <p className="mt-3 line-clamp-2 min-h-10 text-sm text-gray-600">{algorithm.description}</p>
-              <div className="mt-auto flex flex-col gap-2 pt-5 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <MapPin className="h-4 w-4 text-gray-400" />
-                  <span className="truncate">{algorithm.location || 'Location not listed'}</span>
-                </span>
-                <span>{algorithm._count.testimonyLinks} stories</span>
-              </div>
-            </Link>
+            <AlgorithmCard key={algorithm.id} algorithm={algorithm} />
           ))}
         </div>
       </section>

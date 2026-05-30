@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { Briefcase, Bus, GraduationCap, Heart, Home as HomeIcon, MapPin, Shield, Zap } from 'lucide-react';
-import { formatStatus } from './Formatters';
+import { Briefcase, Bus, GraduationCap, Heart, Home as HomeIcon, Shield, Zap } from 'lucide-react';
+import { AlgorithmCard } from './AlgorithmCard';
 
 const useCases = [
   { id: 'fraud', label: 'Fraud Detection', icon: Shield, useCase: 'Fraud Detection' },
@@ -75,33 +74,7 @@ export function HomeUseCaseExplorer({ algorithms }) {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {activeAlgorithms.map((algorithm) => (
-          <Link
-            key={algorithm.id}
-            href={`/algorithms/${algorithm.slug}`}
-            className="group flex h-full flex-col rounded-lg border border-gray-200 border-l-4 border-l-yellow-500 bg-white p-5 shadow-sm transition-all hover:shadow-lg sm:p-6"
-          >
-            <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row">
-              <h3 className="text-xl font-bold leading-tight text-gray-900 transition-colors group-hover:text-yellow-600">
-                {algorithm.name}
-              </h3>
-              <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">
-                {formatStatus(algorithm.status)}
-              </span>
-            </div>
-            <span className="mb-4 w-fit rounded-full border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700">
-              {algorithm.useCase}
-            </span>
-            <p className="line-clamp-3 flex-1 text-sm leading-6 text-gray-600">
-              {algorithm.description}
-            </p>
-            <div className="mt-5 flex items-center justify-between text-sm text-gray-600">
-              <span className="flex min-w-0 items-center gap-1">
-                <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
-                <span className="truncate">{algorithm.location}</span>
-              </span>
-              <span className="shrink-0">{algorithm.storyCount} stories</span>
-            </div>
-          </Link>
+          <AlgorithmCard key={algorithm.id} algorithm={algorithm} />
         ))}
       </div>
     </section>
