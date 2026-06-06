@@ -9,6 +9,8 @@ import { getCurrentUser } from '../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+const MAX_MEDIA_UPLOAD_BYTES = 4 * 1024 * 1024;
+
 const testimonySchema = z.object({
   title: z.string().trim().min(1),
   name: z.string().trim().optional(),
@@ -42,12 +44,20 @@ function mediaExtension(file) {
 
 async function saveMediaFile(file, folder) {
   if (!file || typeof file.arrayBuffer !== 'function' || file.size === 0) return null;
+  if (file.size > MAX_MEDIA_UPLOAD_BYTES) {
+    throw new Error('MEDIA_FILE_TOO_LARGE');
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  if (process.env.VERCEL) {
+    return `data:${file.type || 'application/octet-stream'};base64,${buffer.toString('base64')}`;
+  }
 
   const uploadRoot = join(process.cwd(), 'public', 'uploads', 'testimonies', folder);
   const fileName = `${Date.now()}-${randomUUID()}.${mediaExtension(file)}`;
   try {
     await mkdir(uploadRoot, { recursive: true });
-    await writeFile(join(uploadRoot, fileName), Buffer.from(await file.arrayBuffer()));
+    await writeFile(join(uploadRoot, fileName), buffer);
     return `/uploads/testimonies/${folder}/${fileName}`;
   } catch (error) {
     console.error('Could not save local testimony media', error);
@@ -126,8 +136,18 @@ export async function POST(request) {
   } = result.data;
   const audioFile = formData.get('audioFile');
   const videoFile = formData.get('videoFile');
-  const audioFileUrl = storyType === 'voice' ? await saveMediaFile(audioFile, 'audio') : null;
-  const videoFileUrl = storyType === 'video' ? await saveMediaFile(videoFile, 'video') : null;
+  let audioFileUrl = null;
+  let videoFileUrl = null;
+  try {
+    audioFileUrl = storyType === 'voice' ? await saveMediaFile(audioFile, 'audio') : null;
+    videoFileUrl = storyType === 'video' ? await saveMediaFile(videoFile, 'video') : null;
+  } catch (error) {
+    if (error.message === 'MEDIA_FILE_TOO_LARGE') {
+      return NextResponse.json({ error: 'Please upload a media file smaller than 4 MB.' }, { status: 413 });
+    }
+    console.error('Could not process testimony media', error);
+    return NextResponse.json({ error: 'The media file could not be saved.' }, { status: 500 });
+  }
   const fallbackNarrative =
     storyType === 'voice'
       ? 'A voice story was submitted.'

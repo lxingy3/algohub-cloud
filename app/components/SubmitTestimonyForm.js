@@ -9,10 +9,16 @@ const tabs = [
   { id: 'video', label: 'Video', icon: Video },
 ];
 
+const MAX_MEDIA_UPLOAD_BYTES = 4 * 1024 * 1024;
+
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
   const rest = seconds % 60;
   return `${minutes}:${String(rest).padStart(2, '0')}`;
+}
+
+function formatFileSize(bytes) {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUserEmail }) {
@@ -147,6 +153,11 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
   function handleAudioUpload(event) {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_MEDIA_UPLOAD_BYTES) {
+      event.target.value = '';
+      setMessage(`This audio file is ${formatFileSize(file.size)}. Please upload a file smaller than 4 MB.`);
+      return;
+    }
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     setAudioBlob(null);
     setAudioUploadFile(file);
@@ -157,6 +168,11 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
   function handleVideoUpload(event) {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_MEDIA_UPLOAD_BYTES) {
+      event.target.value = '';
+      setMessage(`This video file is ${formatFileSize(file.size)}. Please upload a file smaller than 4 MB.`);
+      return;
+    }
     if (videoUrl) URL.revokeObjectURL(videoUrl);
     setVideoBlob(null);
     setVideoUploadFile(file);
@@ -194,6 +210,14 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
       setMessage('Please record or upload a video story first.');
       return;
     }
+    if (storyType === 'voice' && audioBlob?.size > MAX_MEDIA_UPLOAD_BYTES) {
+      setMessage(`This voice recording is ${formatFileSize(audioBlob.size)}. Please record a shorter clip or upload a file smaller than 4 MB.`);
+      return;
+    }
+    if (storyType === 'video' && videoBlob?.size > MAX_MEDIA_UPLOAD_BYTES) {
+      setMessage(`This video recording is ${formatFileSize(videoBlob.size)}. Please record a shorter clip or upload a file smaller than 4 MB.`);
+      return;
+    }
 
     formData.set('storyType', storyType);
     if (storyType === 'voice' && audioBlob) formData.set('audioFile', new File([audioBlob], 'voice-story.webm', { type: 'audio/webm' }));
@@ -202,13 +226,25 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
     if (storyType === 'video' && !videoBlob && videoUploadFile) formData.set('videoFile', videoUploadFile);
 
     setSubmitting(true);
-    const response = await fetch('/api/testimonies', { method: 'POST', body: formData });
+    let response;
+    try {
+      response = await fetch('/api/testimonies', { method: 'POST', body: formData });
+    } catch {
+      setSubmitting(false);
+      setMessage('The upload did not reach the server. Please use a media file smaller than 4 MB or try again on a stronger connection.');
+      return;
+    }
     if (response.ok || response.redirected) {
       window.location.href = '/stories';
       return;
     }
     setSubmitting(false);
-    setMessage('The story could not be submitted. Please check the form and try again.');
+    if (response.status === 413) {
+      setMessage('This media file is too large for the current deployment. Please upload a file smaller than 4 MB.');
+      return;
+    }
+    const payload = await response.json().catch(() => null);
+    setMessage(payload?.error || 'The story could not be submitted. Please check the form and try again.');
   }
 
   return (
