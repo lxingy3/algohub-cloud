@@ -2,7 +2,7 @@ import './globals.css';
 import { SiteFooter } from './components/SiteFooter';
 
 export const metadata = {
-  title: 'AlgoHub',
+  title: 'AlgoStories',
   description: 'Public algorithm registry and community stories',
 };
 
