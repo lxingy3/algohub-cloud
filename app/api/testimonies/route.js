@@ -29,6 +29,11 @@ function isChecked(value) {
   return value === 'on' || value === 'true' || value === true;
 }
 
+function formText(formData, key) {
+  const value = formData.get(key);
+  return typeof value === 'string' ? value : '';
+}
+
 function mediaExtension(file) {
   const originalExtension = file?.name?.split('.').pop()?.toLowerCase();
   if (originalExtension && /^[a-z0-9]{2,5}$/.test(originalExtension)) return originalExtension;
@@ -104,17 +109,17 @@ export async function POST(request) {
   const formData = await request.formData();
   const jurisdictionId = getJurisdictionId();
   const result = testimonySchema.safeParse({
-    title: formData.get('title'),
-    name: formData.get('name'),
-    city: formData.get('city'),
-    zipCode: formData.get('zipCode'),
-    referralSource: formData.get('referralSource'),
-    narrativeText: formData.get('narrativeText'),
-    algorithmId: formData.get('algorithmId'),
-    selfReportedImpact: formData.get('selfReportedImpact') || 'UNCLEAR',
+    title: formText(formData, 'title'),
+    name: formText(formData, 'name'),
+    city: formText(formData, 'city'),
+    zipCode: formText(formData, 'zipCode'),
+    referralSource: formText(formData, 'referralSource'),
+    narrativeText: formText(formData, 'narrativeText'),
+    algorithmId: formText(formData, 'algorithmId'),
+    selfReportedImpact: formText(formData, 'selfReportedImpact') || 'UNCLEAR',
     publicPosting: isChecked(formData.get('publicPosting')),
     followupConsent: isChecked(formData.get('followupConsent')),
-    storyType: formData.get('storyType') || 'text',
+    storyType: formText(formData, 'storyType') || 'text',
   });
 
   if (!result.success) {
