@@ -1,18 +1,14 @@
 import './globals.css';
-import { SiteFooter } from './components/SiteFooter';
 
 export const metadata = {
   title: 'AlgoHub',
-  description: 'Public algorithm registry and community stories',
+  description: 'AlgoHub database-backed platform',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="flex min-h-screen flex-col">
-        {children}
-        <SiteFooter />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

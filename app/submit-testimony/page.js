@@ -1,20 +1,19 @@
 import Link from 'next/link';
-import { randomUUID } from 'node:crypto';
-import { PenLine, Send, Shield } from 'lucide-react';
+import { PenLine } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
 import { SiteNav } from '../components/SiteNav';
-import { SubmitButton } from '../components/SubmitButton';
+import { SubmitTestimonyForm } from '../components/SubmitTestimonyForm';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SubmitTestimonyPage({ searchParams }) {
   const params = await searchParams;
   const user = await getCurrentUser();
-  const idempotencyKey = randomUUID();
   const algorithms = await prisma.algorithm.findMany({
     where: { jurisdictionId: getJurisdictionId() },
+    select: { id: true, name: true },
     orderBy: { name: 'asc' },
   });
 
@@ -33,66 +32,11 @@ export default async function SubmitTestimonyPage({ searchParams }) {
       </section>
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
-        <form action="/api/testimonies" method="post" className="space-y-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-xl sm:p-8">
-          <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
-          <section className="space-y-4">
-            <h2 className="border-b border-gray-200 pb-2 text-xl font-semibold text-gray-900">What Happened?</h2>
-            <label className="block text-sm font-medium text-gray-700">
-              Select an algorithm related to your experience
-              <select name="algorithmId" defaultValue={params?.algorithmId || ''} className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2">
-                <option value="">Not sure / not listed</option>
-                {algorithms.map((algorithm) => (
-                  <option key={algorithm.id} value={algorithm.id}>{algorithm.name}</option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-sm font-medium text-gray-700">
-              Short title
-              <input name="title" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" required />
-            </label>
-          </section>
-
-          <section className="space-y-4">
-            <h2 className="border-b border-gray-200 pb-2 text-xl font-semibold text-gray-900">Tell us your story</h2>
-            <label className="block text-sm font-medium text-gray-700">
-              Share your experience
-              <textarea name="narrativeText" rows={8} className="mt-2 w-full resize-none rounded-md border border-gray-200 px-3 py-2" required />
-            </label>
-          </section>
-
-          <section className="space-y-4">
-            <h2 className="border-b border-gray-200 pb-2 text-xl font-semibold text-gray-900">About You</h2>
-            <label className="block text-sm font-medium text-gray-700">
-              City
-              <input name="city" placeholder="e.g. Pittsburgh, Philadelphia" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
-            </label>
-            <label className="block text-sm font-medium text-gray-700">
-              Impact
-              <select name="selfReportedImpact" defaultValue="UNCLEAR" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2">
-                <option value="NEGATIVE">Negative</option>
-                <option value="MIXED">Mixed</option>
-                <option value="POSITIVE">Positive</option>
-                <option value="UNCLEAR">Unclear</option>
-              </select>
-            </label>
-          </section>
-
-          <section className="space-y-4">
-            <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
-              <Shield className="h-5 w-5 text-amber-700" />
-              <h2 className="text-xl font-semibold text-gray-900">Consent & Privacy</h2>
-            </div>
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-gray-700">
-              Submitted stories are reviewed before they appear publicly.
-              {user ? ` You are submitting as ${user.email}.` : ' Logging in first will link the story to your account.'}
-            </div>
-          </section>
-
-          <SubmitButton className="flex min-h-12 w-full items-center justify-center rounded-md bg-yellow-500 px-5 py-3 font-semibold text-gray-900 hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-yellow-200">
-            <Send className="mr-2 h-4 w-4" />
-            Share Your Story
-          </SubmitButton>
-        </form>
+        <SubmitTestimonyForm
+          algorithms={algorithms}
+          selectedAlgorithmId={params?.algorithmId || ''}
+          currentUserEmail={user?.email || ''}
+        />
         <div className="mt-6 text-center text-sm text-gray-500">
           <Link href="/stories" className="font-semibold text-amber-800 hover:text-amber-950">Read public stories</Link>
         </div>

@@ -6,28 +6,39 @@ import { sessionCookieName } from '../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+const allowedRoles = new Set(['ADMIN', 'COMMUNITY_MEMBER', 'FACILITATOR', 'ORG_MEMBER', 'RESEARCHER']);
+
 export async function POST(request) {
   const formData = await request.formData();
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const name = String(formData.get('name') || '').trim() || email;
+  const requestedRole = String(formData.get('role') || 'COMMUNITY_MEMBER').trim().toUpperCase();
+  const primaryRoleName = allowedRoles.has(requestedRole) ? requestedRole : 'COMMUNITY_MEMBER';
   const jurisdictionId = getJurisdictionId();
 
   const role = await prisma.role.upsert({
-    where: { name: 'COMMUNITY_MEMBER' },
+    where: { name: primaryRoleName },
     update: {},
     create: {
-      name: 'COMMUNITY_MEMBER',
-      description: 'Regular public user.',
+      name: primaryRoleName,
+      description: `${primaryRoleName.replaceAll('_', ' ').toLowerCase()} account.`,
     },
   });
 
   const user = await prisma.user.upsert({
-    where: { email },
-    update: { name },
+    where: {
+      jurisdictionId_email_primaryRoleName: {
+        jurisdictionId,
+        email,
+        primaryRoleName,
+      },
+    },
+    update: { name, primaryRoleName },
     create: {
       email,
       name,
       jurisdictionId,
+      primaryRoleName,
     },
   });
 

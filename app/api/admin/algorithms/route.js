@@ -9,6 +9,16 @@ function slugify(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+function optionalString(formData, name) {
+  const value = String(formData.get(name) || '').trim();
+  return value || null;
+}
+
+function optionalInt(formData, name) {
+  const value = String(formData.get(name) || '').trim();
+  return value ? Number(value) : null;
+}
+
 export async function POST(request) {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: 'Admin only' }, { status: 403 });
@@ -19,11 +29,22 @@ export async function POST(request) {
     data: {
       jurisdictionId: getJurisdictionId(),
       name,
-      slug: slugify(name),
-      description: String(formData.get('description') || ''),
-      useCase: String(formData.get('useCase') || 'Other'),
-      location: String(formData.get('location') || 'Pittsburgh'),
-      agencyName: String(formData.get('agencyName') || ''),
+      slug: optionalString(formData, 'slug') || slugify(name),
+      description: optionalString(formData, 'description'),
+      purpose: optionalString(formData, 'purpose'),
+      useCase: optionalString(formData, 'useCase') || 'Other',
+      location: optionalString(formData, 'location') || 'Pittsburgh',
+      agencyName: optionalString(formData, 'agencyName'),
+      agencyType: optionalString(formData, 'agencyType'),
+      dataUsed: optionalString(formData, 'dataUsed'),
+      decisionType: optionalString(formData, 'decisionType'),
+      yearIntroduced: optionalInt(formData, 'yearIntroduced'),
+      yearDeployed: optionalInt(formData, 'yearDeployed'),
+      status: optionalString(formData, 'status') || 'ACTIVE',
+      currentVersion: optionalString(formData, 'currentVersion'),
+      impactLevel: optionalString(formData, 'impactLevel'),
+      officialDocumentationUrl: optionalString(formData, 'officialDocumentationUrl'),
+      storyboardSvg: optionalString(formData, 'storyboardSvg'),
     },
   });
 
@@ -34,7 +55,7 @@ export async function POST(request) {
         algorithmId: algorithm.id,
         jurisdictionId: getJurisdictionId(),
         claimText,
-        claimSource: 'Admin form',
+        claimSource: optionalString(formData, 'claimSource') || 'Admin form',
       },
     });
   }

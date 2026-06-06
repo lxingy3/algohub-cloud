@@ -30,6 +30,7 @@
 
   <rect class="page" width="2200" height="1500" />
   <text x="70" y="58" class="label" font-size="31" font-weight="800">AlgoHub Database ERD</text>
+  <text x="70" y="88" class="muted">Clean relationship map for the PostgreSQL schema. Connectors leave and enter table boxes only at their edges.</text>
 
   <g transform="translate(70 118)">
     <rect class="box scope" width="2060" height="120" />
@@ -74,11 +75,11 @@
     <rect class="box core" width="370" height="198" />
     <text x="20" y="32" class="label title">Testimony</text>
     <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
-    <text x="20" y="78" class="field">title, summary, narrativeText, city</text>
-    <text x="20" y="98" class="field">userId, partnerOrgId, facilitatorId</text>
-    <text x="20" y="118" class="field">affectedDomain, selfReportedImpact</text>
-    <text x="20" y="138" class="field">aiThemes, aiConfidenceScore</text>
-    <text x="20" y="158" class="field">moderationStatus, submittedAt</text>
+    <text x="20" y="78" class="field">title, summary, narrativeText, city, zipCode</text>
+    <text x="20" y="98" class="field">submitterName, referralSource, storyType</text>
+    <text x="20" y="118" class="field">publicPosting, followupConsent, media URLs</text>
+    <text x="20" y="138" class="field">userId, partnerOrgId, facilitatorId</text>
+    <text x="20" y="158" class="field">affectedDomain, moderationStatus, submittedAt</text>
   </g>
 
   <g id="link" transform="translate(520 610)">
@@ -168,9 +169,10 @@
     <rect class="box auth" width="300" height="158" />
     <text x="20" y="32" class="label title">User</text>
     <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
-    <text x="20" y="78" class="field">email, name, image</text>
+    <text x="20" y="78" class="field">email, primaryRoleName, name, image</text>
     <text x="20" y="98" class="field">organizationId FK</text>
-    <text x="20" y="118" class="field">emailVerified, createdAt</text>
+    <text x="20" y="118" class="field">unique jurisdictionId + email + role</text>
+    <text x="20" y="138" class="field">emailVerified, createdAt</text>
   </g>
 
   <g id="account" transform="translate(1620 560)">

@@ -206,9 +206,14 @@ model Testimony {
   title                  String?                  @db.VarChar(255)
   summary                String?
   city                   String?                  @db.VarChar(255)
+  zipCode                String?                  @map("zip_code") @db.VarChar(20)
   imageUrl               String?                  @map("image_url")
   submitterName          String?                  @map("submitter_name") @db.VarChar(255)
   submitterEmail         String?                  @map("submitter_email") @db.VarChar(255)
+  referralSource         String?                  @map("referral_source")
+  publicPosting          Boolean                  @default(false) @map("public_posting")
+  followupConsent        Boolean                  @default(false) @map("followup_consent")
+  storyType              String                   @default("text") @map("story_type") @db.VarChar(20)
   isAnonymous            Boolean                  @default(true) @map("is_anonymous")
   userId                 String?                  @map("user_id") @db.Uuid
   partnerOrgId           String?                  @map("partner_org_id") @db.Uuid
@@ -216,6 +221,7 @@ model Testimony {
   narrativeText          String                   @map("narrative_text")
   submissionMethod       SubmissionMethod?        @map("submission_method")
   audioFileUrl           String?                  @map("audio_file_url")
+  videoFileUrl           String?                  @map("video_file_url")
   originalLanguage       String                   @default("en") @map("original_language") @db.VarChar(50)
   affectedDomain         String?                  @map("affected_domain") @db.VarChar(100)
   selfReportedImpact     SelfReportedImpact?      @map("self_reported_impact")
@@ -332,7 +338,8 @@ model TestimonyReaction {
 model User {
   id                       String              @id @default(uuid()) @db.Uuid
   jurisdictionId           String              @map("jurisdiction_id") @db.VarChar(50)
-  email                    String              @unique @db.VarChar(255)
+  email                    String              @db.VarChar(255)
+  primaryRoleName          String              @default("COMMUNITY_MEMBER") @map("primary_role_name") @db.VarChar(50)
   emailVerified            DateTime?           @map("email_verified") @db.Timestamptz(6)
   name                     String              @db.VarChar(255)
   image                    String?
@@ -352,6 +359,7 @@ model User {
   commentLikes             CommentLike[]
   testimonyReactions       TestimonyReaction[]
 
+  @@unique([jurisdictionId, email, primaryRoleName])
   @@index([jurisdictionId])
   @@map("users")
 }

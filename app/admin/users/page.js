@@ -39,7 +39,7 @@ export default async function AdminUsersPage() {
         {users.map((user) => (
           <form key={user.id} action={`/api/admin/users/${user.id}/role`} method="post" className="rounded-lg border bg-white p-4">
             <div className="font-semibold">{user.name}</div>
-            <div className="text-sm text-slate-500">{user.email}</div>
+            <div className="text-sm text-slate-500">{user.email} / {user.primaryRoleName}</div>
             <select name="roleId" defaultValue={user.userRoles[0]?.roleId || ''} className="mt-3 rounded-md border px-3 py-2">
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>{role.name}</option>

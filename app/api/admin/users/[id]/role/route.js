@@ -14,7 +14,14 @@ export async function POST(request, { params }) {
 
   await prisma.userRole.deleteMany({ where: { userId: id } });
   if (roleId) {
+    const role = await prisma.role.findUnique({ where: { id: roleId } });
     await prisma.userRole.create({ data: { userId: id, roleId } });
+    if (role) {
+      await prisma.user.update({
+        where: { id },
+        data: { primaryRoleName: role.name },
+      });
+    }
   }
 
   return NextResponse.redirect(new URL('/admin/users', request.url), { status: 303 });

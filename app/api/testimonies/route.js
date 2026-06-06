@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { createHash } from 'node:crypto';
 import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../lib/auth';
@@ -9,12 +11,44 @@ export const dynamic = 'force-dynamic';
 
 const testimonySchema = z.object({
   title: z.string().trim().min(1),
-  city: z.string().trim().optional(),
-  narrativeText: z.string().trim().min(1),
+  name: z.string().trim().optional(),
+  city: z.string().trim().min(1),
+  zipCode: z.string().trim().optional(),
+  referralSource: z.string().trim().optional(),
+  narrativeText: z.string().trim().optional(),
   algorithmId: z.string().trim().optional(),
   selfReportedImpact: z.enum(['POSITIVE', 'NEGATIVE', 'MIXED', 'UNCLEAR']).optional(),
-  idempotencyKey: z.string().trim().min(8).max(120).optional(),
+  publicPosting: z.boolean(),
+  followupConsent: z.literal(true),
+  storyType: z.enum(['text', 'voice', 'video']),
 });
+
+function isChecked(value) {
+  return value === 'on' || value === 'true' || value === true;
+}
+
+function mediaExtension(file) {
+  if (!file?.type) return 'webm';
+  if (file.type.includes('mp4')) return 'mp4';
+  if (file.type.includes('ogg')) return 'ogg';
+  if (file.type.includes('wav')) return 'wav';
+  return 'webm';
+}
+
+async function saveMediaFile(file, folder) {
+  if (!file || typeof file.arrayBuffer !== 'function' || file.size === 0) return null;
+
+  const uploadRoot = join(process.cwd(), 'public', 'uploads', 'testimonies', folder);
+  const fileName = `${Date.now()}-${randomUUID()}.${mediaExtension(file)}`;
+  try {
+    await mkdir(uploadRoot, { recursive: true });
+    await writeFile(join(uploadRoot, fileName), Buffer.from(await file.arrayBuffer()));
+    return `/uploads/testimonies/${folder}/${fileName}`;
+  } catch (error) {
+    console.error('Could not save local testimony media', error);
+    return null;
+  }
+}
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -56,121 +90,81 @@ export async function POST(request) {
   const jurisdictionId = getJurisdictionId();
   const result = testimonySchema.safeParse({
     title: formData.get('title'),
+    name: formData.get('name'),
     city: formData.get('city'),
+    zipCode: formData.get('zipCode'),
+    referralSource: formData.get('referralSource'),
     narrativeText: formData.get('narrativeText'),
     algorithmId: formData.get('algorithmId'),
     selfReportedImpact: formData.get('selfReportedImpact') || 'UNCLEAR',
-    idempotencyKey: formData.get('idempotencyKey') || undefined,
+    publicPosting: isChecked(formData.get('publicPosting')),
+    followupConsent: isChecked(formData.get('followupConsent')),
+    storyType: formData.get('storyType') || 'text',
   });
 
   if (!result.success) {
     return NextResponse.json({ error: 'Invalid testimony submission' }, { status: 400 });
   }
 
-  const { title, city, narrativeText, algorithmId, selfReportedImpact, idempotencyKey } = result.data;
-  const fingerprint = buildSubmissionFingerprint({ jurisdictionId, user, title, city, narrativeText, algorithmId, selfReportedImpact });
-  const sourceId = idempotencyKey
-    ? `submission:${jurisdictionId}:${idempotencyKey}`
-    : `submission:${jurisdictionId}:auto:${hashSubmissionFingerprint(fingerprint)}`;
-  const testimonyData = {
-    sourceId,
-    jurisdictionId,
+  const {
     title,
-    city: city || '',
+    name,
+    city,
+    zipCode,
+    referralSource,
     narrativeText,
-    summary: narrativeText.length > 160 ? `${narrativeText.slice(0, 157)}...` : narrativeText,
-    userId: user?.id,
-    submitterName: user?.name,
-    submitterEmail: user?.email,
-    isAnonymous: !user,
-    submissionMethod: 'WEB_FORM',
-    selfReportedImpact,
-    moderationStatus: 'PENDING',
-  };
-
-  await createIdempotentTestimony({
-    sourceId,
-    testimonyData,
     algorithmId,
+    selfReportedImpact,
+    publicPosting,
+    followupConsent,
+    storyType,
+  } = result.data;
+  const audioFile = formData.get('audioFile');
+  const videoFile = formData.get('videoFile');
+  const audioFileUrl = storyType === 'voice' ? await saveMediaFile(audioFile, 'audio') : null;
+  const videoFileUrl = storyType === 'video' ? await saveMediaFile(videoFile, 'video') : null;
+  const fallbackNarrative =
+    storyType === 'voice'
+      ? 'A voice story was submitted.'
+      : storyType === 'video'
+        ? 'A video story was submitted.'
+        : '';
+  const storedNarrative = narrativeText?.trim() || fallbackNarrative;
+
+  const testimony = await prisma.testimony.create({
+    data: {
+      jurisdictionId,
+      title,
+      city: city || '',
+      zipCode: zipCode || null,
+      referralSource: referralSource || null,
+      publicPosting,
+      followupConsent,
+      storyType,
+      narrativeText: storedNarrative,
+      summary: storedNarrative.length > 160 ? `${storedNarrative.slice(0, 157)}...` : storedNarrative,
+      userId: user?.id,
+      submitterName: name || user?.name,
+      submitterEmail: user?.email,
+      isAnonymous: !name && !user,
+      submissionMethod: storyType === 'voice' ? 'AUDIO_TRANSCRIPTION' : 'WEB_FORM',
+      audioFileUrl,
+      videoFileUrl,
+      selfReportedImpact,
+      moderationStatus: 'PENDING',
+    },
   });
 
-  return NextResponse.redirect(new URL(user ? '/my-stories' : '/stories', request.url), { status: 303 });
-}
-
-function buildSubmissionFingerprint({ jurisdictionId, user, title, city, narrativeText, algorithmId, selfReportedImpact }) {
-  const twoMinuteBucket = Math.floor(Date.now() / (2 * 60 * 1000));
-  return [
-    'testimony-submission',
-    twoMinuteBucket,
-    jurisdictionId,
-    user?.id || user?.email || 'anonymous',
-    title.trim().toLowerCase(),
-    (city || '').trim().toLowerCase(),
-    narrativeText.trim(),
-    algorithmId || '',
-    selfReportedImpact || 'UNCLEAR',
-  ].join('|');
-}
-
-function hashSubmissionFingerprint(value) {
-  return createHash('sha256').update(value).digest('hex').slice(0, 32);
-}
-
-async function createIdempotentTestimony({ sourceId, testimonyData, algorithmId }) {
-  let testimony = sourceId ? await prisma.testimony.findUnique({ where: { sourceId } }) : null;
-
-  if (!testimony) {
-    const recentDuplicate = await findRecentDuplicateTestimony(prisma, testimonyData, algorithmId);
-    testimony = recentDuplicate || await createTestimonyFromSubmission(sourceId, testimonyData);
-  }
-
   if (algorithmId) {
-    await prisma.testimonyAlgorithmLink.createMany({
-      data: [
-        {
-          testimonyId: testimony.id,
-          algorithmId,
-          linkType: 'SUBMITTER_IDENTIFIED',
-          confidence: 1,
-        },
-      ],
-      skipDuplicates: true,
+    await prisma.testimonyAlgorithmLink.create({
+      data: {
+        testimonyId: testimony.id,
+        algorithmId,
+        linkType: 'SUBMITTER_IDENTIFIED',
+        confidence: 1,
+      },
     });
   }
 
-  return testimony;
-}
-
-async function createTestimonyFromSubmission(sourceId, testimonyData) {
-  try {
-    return await prisma.testimony.create({ data: testimonyData });
-  } catch (error) {
-    if (sourceId && error?.code === 'P2002') {
-      const duplicate = await prisma.testimony.findUnique({ where: { sourceId } });
-      if (duplicate) return duplicate;
-    }
-    throw error;
-  }
-}
-
-async function findRecentDuplicateTestimony(tx, testimonyData, algorithmId) {
-  const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-  const userFilter = testimonyData.userId
-    ? { userId: testimonyData.userId }
-    : { submitterEmail: testimonyData.submitterEmail, isAnonymous: testimonyData.isAnonymous };
-
-  return tx.testimony.findFirst({
-    where: {
-      ...userFilter,
-      jurisdictionId: testimonyData.jurisdictionId,
-      title: testimonyData.title,
-      city: testimonyData.city,
-      narrativeText: testimonyData.narrativeText,
-      selfReportedImpact: testimonyData.selfReportedImpact,
-      submissionMethod: testimonyData.submissionMethod,
-      submittedAt: { gte: twoMinutesAgo },
-      ...(algorithmId ? { algorithmLinks: { some: { algorithmId } } } : {}),
-    },
-    orderBy: { submittedAt: 'desc' },
-  });
+  return NextResponse.redirect(new URL('/stories', request.url), { status: 303 });
 }

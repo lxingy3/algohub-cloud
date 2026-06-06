@@ -77,25 +77,27 @@ erDiagram
 | Linked testimony section | `TestimonyAlgorithmLink`, `Testimony` | `testimonyId`, `algorithmId`, `linkType`, `confidence`, approved testimony `title`, `summary` |
 | Stories list filters | `Testimony` | `title`, `summary`, `narrativeText`, `affectedDomain`, `city`, `moderationStatus` |
 | Stories list rows | `Testimony`, `Comment`, `TestimonyReaction` | `id`, `title`, `summary`, `city`, `affectedDomain`, `submittedAt`, reaction count, comment count |
-| Story detail | `Testimony`, `TestimonyBrief`, `TestimonyAlgorithmLink` | `title`, `summary`, `narrativeText`, `city`, `affectedDomain`, `submittedAt`, `brief.summary`, linked algorithm names |
+| Story detail | `Testimony`, `TestimonyBrief`, `TestimonyAlgorithmLink` | `title`, `summary`, `narrativeText`, `city`, `zipCode`, `affectedDomain`, `submittedAt`, `audioFileUrl`, `videoFileUrl`, `brief.summary`, linked algorithm names |
 | Story reaction buttons | `TestimonyReaction` | `reactionType`, `testimonyId`, `userId`; supports `EYE_OPENING` and `SUPPORT` |
 | Threaded comments | `Comment`, `CommentLike`, `User` | `content`, `authorName`, `parentCommentId`, `moderationStatus`, `user.name`, like count |
-| Submit testimony form | `Testimony`, `TestimonyAlgorithmLink`, `User` | Creates `title`, `city`, `narrativeText`, `summary`, `selfReportedImpact`, `userId`, optional `algorithmId` link, `moderationStatus=PENDING` |
+| Submit testimony form | `Testimony`, `TestimonyAlgorithmLink`, `User` | Creates `title`, `submitterName`, `city`, `zipCode`, `referralSource`, `narrativeText`, `storyType`, `audioFileUrl`, `videoFileUrl`, `publicPosting`, `followupConsent`, `summary`, `selfReportedImpact`, `userId`, optional `algorithmId` link, `moderationStatus=PENDING` |
 | Community events page | `CommunityEvent`, `Organization` | `title`, `description`, `eventType`, `date`, `location`, `isVirtual`, `registrationUrl`, `organizer.name` |
-| Login and signup | `User`, `Role`, `UserRole`, `Session` | `email`, `name`, default `COMMUNITY_MEMBER` role, `sessionToken`, `expires` |
+| Login and signup | `User`, `Role`, `UserRole`, `Session` | `email`, `name`, `primaryRoleName`, selected role, `sessionToken`, `expires`; account identity is `(jurisdictionId, email, primaryRoleName)` |
 | Admin dashboard | `Algorithm`, `Testimony`, `Comment`, `User` | Counts for algorithms, pending testimonies, pending comments, users |
 | Admin algorithm manager | `Algorithm`, `AlgorithmClaim` | Create/update/delete registry fields and official claims |
 | Admin event manager | `CommunityEvent`, `Organization` | Create/update/delete event fields and organizer link |
 | Admin organization manager | `Organization` | `name`, `slug`, `description`, `contactEmail`, `websiteUrl`, `role`, `isActive` |
 | Admin testimony queue | `Testimony`, `User` | Pending/flagged/rejected/approved testimony review with moderation actions |
 | Admin comment queue | `Comment`, `Testimony`, `User` | Pending comment review with approve/reject/flag actions |
-| Admin user manager | `User`, `Role`, `UserRole` | `email`, `name`, assigned role; admin can update role assignment |
+| Admin user manager | `User`, `Role`, `UserRole` | `email`, `name`, `primaryRoleName`, assigned role; admin can update role assignment |
 | API scoping | Every jurisdiction-scoped table | `jurisdictionId` from `JURISDICTION_ID` environment variable |
 | Shared taxonomy | `SharedTaxonomy` | `category`, `label`, `description`, `parentId`, optional `jurisdictionId` |
 
 ## Notes
 
 - `Story` from the prototype is represented as `Testimony` in Prisma.
+- Week 5 adds role-specific accounts, so one email address can appear in multiple `User` rows when each row has a different `primaryRoleName`.
+- Week 5 adds story form metadata and local demo media URLs to `Testimony`.
 - Prototype story reactions and comments are now stored in `TestimonyReaction`, `Comment`, and `CommentLike`.
 - The app uses the same schema locally and on Vercel; the active database is selected by `DATABASE_URL`.
 - The current deployment is scoped to `JURISDICTION_ID=pittsburgh`.
