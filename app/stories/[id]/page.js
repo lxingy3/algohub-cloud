@@ -34,6 +34,8 @@ export default async function StoryPage({ params }) {
 
   const excerpts = Array.isArray(testimony.brief?.keyExcerpts) ? testimony.brief.keyExcerpts : [];
   const mediaType = getMediaType(testimony, excerpts);
+  const hasRealVideo = Boolean(testimony.videoFileUrl);
+  const hasRealAudio = Boolean(testimony.audioFileUrl);
   const citation = getCitation(testimony);
   const eyeOpening = testimony.reactions.filter((reaction) => reaction.reactionType === 'EYE_OPENING').length;
   const support = testimony.reactions.filter((reaction) => reaction.reactionType === 'SUPPORT').length;
@@ -72,20 +74,25 @@ export default async function StoryPage({ params }) {
             <p className="text-lg leading-8 text-gray-600">{testimony.brief?.summary || testimony.summary}</p>
           </div>
 
-          {mediaType === 'video' ? <VideoPanel /> : null}
-          {mediaType === 'voice' ? <VoicePanel /> : null}
+          {mediaType === 'video' ? <VideoPanel storyId={testimony.id} hasMedia={hasRealVideo} /> : null}
+          {mediaType === 'voice' ? <VoicePanel storyId={testimony.id} hasMedia={hasRealAudio} /> : null}
           {excerpts.length ? <KeyExcerpts excerpts={excerpts} citation={citation} /> : null}
 
-          {mediaType === 'text' ? (
-            <div className="prose prose-slate max-w-none">
-              <StoryText text={testimony.narrativeText} />
-              {citation ? (
-                <p className="mt-6 text-sm text-gray-500">
-                  <span className="font-medium text-gray-600">Citation:</span> ({citation})
-                </p>
-              ) : null}
+          <div className="prose prose-slate max-w-none">
+            <div className="mb-3 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-gray-400">
+              Story Details
             </div>
-          ) : null}
+            {testimony.narrativeText ? (
+              <StoryText text={testimony.narrativeText} />
+            ) : (
+              <p className="mb-5 leading-8 text-gray-700">No written story details were submitted.</p>
+            )}
+            {citation ? (
+              <p className="mt-6 text-sm text-gray-500">
+                <span className="font-medium text-gray-600">Citation:</span> ({citation})
+              </p>
+            ) : null}
+          </div>
         </section>
 
         <section className="mt-6 rounded-lg border border-gray-100 bg-white p-5 sm:p-8">
@@ -137,7 +144,21 @@ function EngagementBar({ testimonyId, eyeOpening, support, commentCount }) {
   );
 }
 
-function VideoPanel() {
+function VideoPanel({ storyId, hasMedia }) {
+  if (hasMedia) {
+    return (
+      <div className="mb-8 rounded-xl border border-gray-200 bg-gray-50 p-4">
+        <div className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
+          <Video className="h-4 w-4 text-amber-600" />
+          <span>Video Story</span>
+        </div>
+        <video className="max-h-[32rem] w-full rounded-lg border bg-black object-contain" src={`/api/stories/${storyId}/media/video`} controls preload="metadata">
+          Your browser does not support video playback.
+        </video>
+      </div>
+    );
+  }
+
   return (
     <div className="relative mb-8 flex aspect-video items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-900">
       <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-950" />
@@ -162,7 +183,21 @@ function VideoPanel() {
   );
 }
 
-function VoicePanel() {
+function VoicePanel({ storyId, hasMedia }) {
+  if (hasMedia) {
+    return (
+      <div className="mb-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
+        <div className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
+          <Mic className="h-4 w-4 text-amber-600" />
+          <span>Voice Story</span>
+        </div>
+        <audio className="w-full" src={`/api/stories/${storyId}/media/audio`} controls preload="metadata">
+          Your browser does not support audio playback.
+        </audio>
+      </div>
+    );
+  }
+
   const bars = [14, 18, 26, 16, 34, 22, 12, 28, 38, 20, 24, 32, 18, 30, 40, 24, 16, 26, 36, 18, 22, 34, 28, 14, 30, 42, 24, 16, 34, 20, 28, 38, 18, 26, 32, 16, 22, 40, 24, 14];
   return (
     <div className="mb-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
@@ -260,6 +295,8 @@ function CommentBlock({ comment, testimonyId, user }) {
 }
 
 function getMediaType(testimony, excerpts) {
+  if (testimony.videoFileUrl || testimony.storyType === 'video') return 'video';
+  if (testimony.audioFileUrl || testimony.storyType === 'voice') return 'voice';
   if (testimony.sourceId === 'story-housing-2') return 'voice';
   if (testimony.sourceId === 'story-housing-1') return 'video';
   if (excerpts.length) return 'video';
