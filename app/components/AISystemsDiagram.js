@@ -36,6 +36,11 @@ const steps = [
   },
 ];
 
+const TOOL_START = 16.66;
+const STAFF_START = 50;
+const STAGE_THREE = 66.66;
+const STAGE_FOUR = 83.33;
+
 function toolPosition(step) {
   if (step === 1) return 'left-[16.66%]';
   if (step === 2) return 'left-[50%]';
@@ -50,10 +55,10 @@ function staffPosition(step) {
 }
 
 function positionsForStep(step) {
-  if (step === 1) return { tool: 16.66, staff: 50, coupled: false };
-  if (step === 2) return { tool: 50, staff: 50, coupled: true };
-  if (step === 3) return { tool: 66.66, staff: 66.66, coupled: true };
-  return { tool: 83.33, staff: 83.33, coupled: true };
+  if (step === 1) return { tool: TOOL_START, staff: STAFF_START };
+  if (step === 2) return { tool: STAFF_START, staff: STAFF_START };
+  if (step === 3) return { tool: STAGE_THREE, staff: STAGE_THREE };
+  return { tool: STAGE_FOUR, staff: STAGE_FOUR };
 }
 
 function nearestMovementStep(position) {
@@ -69,18 +74,21 @@ function clamp(value, min, max) {
 
 export function AISystemsDiagram() {
   const [step, setStep] = useState(1);
-  const [toolX, setToolX] = useState(16.66);
-  const [staffX, setStaffX] = useState(50);
-  const [coupled, setCoupled] = useState(false);
+  const [toolX, setToolX] = useState(TOOL_START);
+  const [staffX, setStaffX] = useState(STAFF_START);
   const [dragging, setDragging] = useState(null);
   const diagramRef = useRef(null);
+  const positionsRef = useRef({ toolX: TOOL_START, staffX: STAFF_START, dragging: null });
+
+  useEffect(() => {
+    positionsRef.current = { toolX, staffX, dragging };
+  }, [toolX, staffX, dragging]);
 
   function chooseStep(stepNum) {
     const positions = positionsForStep(stepNum);
     setStep(stepNum);
     setToolX(positions.tool);
     setStaffX(positions.staff);
-    setCoupled(positions.coupled);
   }
 
   function percentFromPointer(clientX) {
@@ -92,31 +100,32 @@ export function AISystemsDiagram() {
   function updateDrag(target, rawPercent) {
     if (rawPercent == null) return;
     if (target === 'tool') {
-      const nextToolX = clamp(rawPercent, 16.66, 83.33);
-      if (coupled) {
+      const nextToolX = clamp(rawPercent, TOOL_START, STAGE_FOUR);
+      if (nextToolX >= STAFF_START) {
         setToolX(nextToolX);
         setStaffX(nextToolX);
-        setCoupled(true);
-        setStep(nearestMovementStep(nextToolX));
-      } else if (nextToolX >= 50) {
-        setToolX(nextToolX);
-        setStaffX(nextToolX);
-        setCoupled(true);
         setStep(nearestMovementStep(nextToolX));
       } else {
         setToolX(nextToolX);
-        setStaffX(50);
-        setCoupled(false);
+        setStaffX(STAFF_START);
         setStep(nearestMovementStep(nextToolX));
       }
       return;
     }
 
-    const nextStaffX = clamp(rawPercent, 16.66, 83.33);
+    const nextStaffX = clamp(rawPercent, STAFF_START, STAGE_FOUR);
     setToolX(nextStaffX);
     setStaffX(nextStaffX);
-    setCoupled(true);
     setStep(nearestMovementStep(nextStaffX));
+  }
+
+  function snapToNearestStep(target) {
+    const current = positionsRef.current;
+    const referencePosition = target === 'staff'
+      ? clamp(current.staffX, STAFF_START, STAGE_FOUR)
+      : current.toolX;
+    const nextStep = nearestMovementStep(referencePosition);
+    chooseStep(nextStep);
   }
 
   useEffect(() => {
@@ -128,6 +137,7 @@ export function AISystemsDiagram() {
     }
 
     function onPointerUp() {
+      snapToNearestStep(dragging);
       setDragging(null);
     }
 
@@ -139,7 +149,7 @@ export function AISystemsDiagram() {
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerUp);
     };
-  }, [coupled, dragging]);
+  }, [dragging]);
 
   return (
     <section className="border-b border-gray-100 bg-white py-10 md:py-16">
