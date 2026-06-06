@@ -86,6 +86,7 @@ export function AISystemsDiagram() {
 
   function chooseStep(stepNum) {
     const positions = positionsForStep(stepNum);
+    positionsRef.current = { ...positionsRef.current, toolX: positions.tool, staffX: positions.staff };
     setStep(stepNum);
     setToolX(positions.tool);
     setStaffX(positions.staff);
@@ -102,10 +103,12 @@ export function AISystemsDiagram() {
     if (target === 'tool') {
       const nextToolX = clamp(rawPercent, TOOL_START, STAGE_FOUR);
       if (nextToolX >= STAFF_START) {
+        positionsRef.current = { ...positionsRef.current, toolX: nextToolX, staffX: nextToolX };
         setToolX(nextToolX);
         setStaffX(nextToolX);
         setStep(nearestMovementStep(nextToolX));
       } else {
+        positionsRef.current = { ...positionsRef.current, toolX: nextToolX, staffX: STAFF_START };
         setToolX(nextToolX);
         setStaffX(STAFF_START);
         setStep(nearestMovementStep(nextToolX));
@@ -114,6 +117,7 @@ export function AISystemsDiagram() {
     }
 
     const nextStaffX = clamp(rawPercent, STAFF_START, STAGE_FOUR);
+    positionsRef.current = { ...positionsRef.current, toolX: nextStaffX, staffX: nextStaffX };
     setToolX(nextStaffX);
     setStaffX(nextStaffX);
     setStep(nearestMovementStep(nextStaffX));
