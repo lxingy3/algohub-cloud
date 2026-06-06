@@ -109,9 +109,11 @@ export default async function StoriesPage({ searchParams }) {
               </select>
             </label>
           </div>
-          <button className="min-h-11 w-full rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md sm:w-fit">
-            Apply filters
-          </button>
+          <div className="flex justify-end">
+            <button className="min-h-11 w-full rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md sm:w-fit">
+              Apply filters
+            </button>
+          </div>
         </form>
       </div>
 
