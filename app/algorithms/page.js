@@ -1,9 +1,9 @@
-import { Database, Filter, Search } from 'lucide-react';
+import Link from 'next/link';
+import { Database, Search } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
 import { SiteNav } from '../components/SiteNav';
-import { formatStatus } from '../components/Formatters';
 import { AlgorithmsRegistry } from '../components/AlgorithmsRegistry';
 
 export const dynamic = 'force-dynamic';
@@ -13,9 +13,6 @@ export default async function AlgorithmsPage({ searchParams }) {
   const search = String(params?.search || '');
   const useCase = String(params?.useCase || 'all');
   const location = String(params?.location || 'all');
-  const status = String(params?.status || 'all');
-  const impact = String(params?.impact || 'all');
-  const sort = String(params?.sort || 'name');
   const jurisdictionId = getJurisdictionId();
   const user = await getCurrentUser();
 
@@ -32,14 +29,12 @@ export default async function AlgorithmsPage({ searchParams }) {
       : {}),
     ...(useCase !== 'all' ? { useCase } : {}),
     ...(location !== 'all' ? { location } : {}),
-    ...(status !== 'all' ? { status } : {}),
-    ...(impact !== 'all' ? { impactLevel: impact } : {}),
   };
 
   const [algorithms, allAlgorithms] = await Promise.all([
     prisma.algorithm.findMany({
       where,
-      orderBy: sort === 'updated' ? { updatedAt: 'desc' } : sort === 'impact' ? { impactLevel: 'asc' } : { name: 'asc' },
+      orderBy: { name: 'asc' },
       include: {
         _count: { select: { testimonyLinks: true } },
         claims: { orderBy: { createdAt: 'asc' } },
@@ -62,15 +57,13 @@ export default async function AlgorithmsPage({ searchParams }) {
     }),
     prisma.algorithm.findMany({
       where: { jurisdictionId },
-      select: { useCase: true, location: true, status: true, impactLevel: true },
+      select: { useCase: true, location: true },
       orderBy: { name: 'asc' },
     }),
   ]);
 
   const useCases = [...new Set(allAlgorithms.map((item) => item.useCase).filter(Boolean))];
   const locations = [...new Set(allAlgorithms.map((item) => item.location).filter(Boolean))];
-  const statuses = [...new Set(allAlgorithms.map((item) => item.status).filter(Boolean))];
-  const impacts = [...new Set(allAlgorithms.map((item) => item.impactLevel).filter(Boolean))];
   const registryItems = algorithms.map((algorithm) => ({
     id: algorithm.id,
     slug: algorithm.slug,
@@ -106,72 +99,91 @@ export default async function AlgorithmsPage({ searchParams }) {
   }));
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-slate-100 text-slate-950">
+    <main className="min-h-screen bg-gradient-to-br from-amber-50 to-slate-100 text-gray-900">
       <SiteNav currentUser={user} />
-      <section className="relative overflow-hidden bg-gradient-to-r from-slate-950 via-stone-900 to-amber-900 text-white">
-        <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(rgba(255,255,255,0.16)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.16)_1px,transparent_1px)] [background-size:38px_38px]" />
-        <div className="relative mx-auto max-w-6xl px-6 py-14">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-200">Registry</p>
-          <h1 className="mt-3 flex items-center gap-3 text-4xl font-black">
-            <Database className="h-9 w-9 text-amber-300" />
+      <section className="relative overflow-hidden border-b border-white/15 bg-gradient-to-r from-[#201805] via-[#4b3508] to-[#0a0a0a]">
+        <div className="absolute inset-0 opacity-[0.22] [background-image:linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:38px_38px]" />
+        <svg aria-hidden="true" viewBox="0 0 1200 220" preserveAspectRatio="none" className="absolute inset-0 h-full w-full opacity-[0.28]">
+          <g fill="none" stroke="rgba(255,255,255,.18)" strokeWidth="1.1">
+            <path d="M0 170 L120 130 L240 160 L350 118 L470 146 L590 108 L720 136 L860 96 L980 130 L1200 84" />
+            <path d="M0 210 L130 176 L250 204 L375 166 L505 194 L635 158 L770 188 L900 152 L1040 178 L1200 138" />
+            <path d="M120 130 L130 176 M240 160 L250 204 M350 118 L375 166 M470 146 L505 194 M590 108 L635 158 M720 136 L770 188 M860 96 L900 152 M980 130 L1040 178" />
+          </g>
+        </svg>
+        <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-14">
+          <h1 className="flex items-center gap-3 text-3xl font-bold text-white md:text-4xl">
+            <Database className="h-8 w-8 text-yellow-300" />
             Algorithm Registry
           </h1>
-          <p className="mt-3 max-w-2xl text-amber-50/85">
-            Search the documented systems, see where they are used, and follow linked community testimony.
-          </p>
+          <p className="mt-2 text-yellow-100/80">Browse and explore all registered public algorithms</p>
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-6 py-8">
-        <form className="-mt-14 rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 py-6 sm:px-6">
+        <form className="-mt-14 space-y-6 rounded-2xl border border-gray-200/80 bg-white/95 p-4 shadow-xl backdrop-blur-sm sm:p-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
               name="search"
               defaultValue={search}
-              placeholder="Search algorithm name, description, or agency"
-              className="w-full rounded-md border border-slate-200 bg-white px-10 py-3"
+              placeholder="Search algorithms..."
+              className="min-h-11 w-full rounded-md border border-gray-200 bg-white py-2 pl-10 pr-3 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300/70"
             />
           </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-5">
-            <SelectField name="useCase" label="Use Case" value={useCase} values={useCases} />
-            <SelectField name="location" label="Location" value={location} values={locations} />
-            <SelectField name="status" label="Status" value={status} values={statuses} formatter={formatStatus} />
-            <SelectField name="impact" label="Impact" value={impact} values={impacts} formatter={formatStatus} />
-            <label className="text-sm font-medium text-slate-600">
-              Sort
-              <select name="sort" defaultValue={sort} className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-950">
-                <option value="name">Name</option>
-                <option value="updated">Recently updated</option>
-                <option value="impact">Impact level</option>
-              </select>
-            </label>
-          </div>
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <Filter className="h-4 w-4" />
-              Showing {algorithms.length} of {allAlgorithms.length} records
+
+          <div className="space-y-4 border-t border-gray-200 pt-6">
+            <p className="text-sm font-semibold text-gray-700">Filters</p>
+            <div className="flex flex-col gap-4 sm:gap-6">
+              <label className="flex flex-col gap-2 text-sm font-medium text-gray-600 sm:flex-row sm:items-center">
+                <span className="sm:w-28">Location</span>
+                <select name="location" defaultValue={location} className="min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 py-2 sm:w-[220px]">
+                  <option value="all">All Locations</option>
+                  {locations.map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </label>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                <span className="shrink-0 pt-1 text-sm font-medium text-gray-600 sm:w-28">Use Case</span>
+                <div className="flex flex-wrap gap-2">
+                  <FilterPill href="/algorithms" active={useCase === 'all'}>All Use Cases</FilterPill>
+                  {useCases.map((item) => (
+                    <FilterPill key={item} href={`/algorithms?useCase=${encodeURIComponent(item)}${location !== 'all' ? `&location=${encodeURIComponent(location)}` : ''}`} active={useCase === item}>
+                      {item}
+                    </FilterPill>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <button className="min-h-11 w-full rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md sm:w-fit">
+                  Apply filters
+                </button>
+              </div>
             </div>
-            <button className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Apply filters</button>
           </div>
         </form>
-
-        <AlgorithmsRegistry algorithms={registryItems} />
       </div>
+
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
+        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">Algorithm Profiles</h2>
+          <p className="text-sm text-gray-600">
+            Showing <span className="font-semibold text-gray-900">{algorithms.length}</span> of {allAlgorithms.length}
+          </p>
+        </div>
+        <AlgorithmsRegistry algorithms={registryItems} />
+      </section>
     </main>
   );
 }
 
-function SelectField({ name, label, value, values, formatter = (item) => item }) {
+function FilterPill({ href, active, children }) {
   return (
-    <label className="text-sm font-medium text-slate-600">
-      {label}
-      <select name={name} defaultValue={value} className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-950">
-        <option value="all">All</option>
-        {values.map((item) => (
-          <option key={item} value={item}>{formatter(item)}</option>
-        ))}
-      </select>
-    </label>
+    <Link
+      href={href}
+      className={active
+        ? 'inline-flex min-h-10 items-center rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md'
+        : 'inline-flex min-h-10 items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50'}
+    >
+      {children}
+    </Link>
   );
 }

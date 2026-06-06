@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowRight, BookOpen, Bot, Code2, Database, Image, Info, Landmark, Settings, User, Users, X } from 'lucide-react';
+import { ArrowRight, BookOpen, Bot, Code2, Database, Image, Info, Landmark, MapPin, Settings, User, Users, X } from 'lucide-react';
 import { formatStatus } from './Formatters';
 
 export function AlgorithmsRegistry({ algorithms }) {
@@ -18,33 +18,41 @@ export function AlgorithmsRegistry({ algorithms }) {
 
   return (
     <>
-      <section className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {algorithms.map((algorithm) => (
           <button
             key={algorithm.id}
             type="button"
             onClick={() => setSelectedAlgorithm(algorithm)}
-            className="group flex h-full flex-col rounded-lg border border-slate-200 border-l-4 border-l-yellow-500 bg-white p-5 text-left shadow-sm transition-all hover:border-amber-300 hover:shadow-md"
+            className="group flex h-full flex-col rounded-lg border border-gray-200 border-l-4 border-l-yellow-500 bg-white p-5 text-left shadow-sm transition-all hover:shadow-lg"
           >
-            <div className="flex items-start justify-between gap-3">
-              <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">{formatStatus(algorithm.status)}</span>
-              <span className={algorithm.storyCount === 0
-                ? 'rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500'
-                : 'rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800'}
-              >
-                {algorithm.storyCount} testimonies
-              </span>
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <h3 className="text-lg font-bold leading-tight text-gray-900 transition-colors group-hover:text-yellow-600">
+                {algorithm.name}
+              </h3>
+              {algorithm.status ? <StatusBadge status={algorithm.status} /> : null}
             </div>
-            <h2 className="mt-4 text-lg font-black leading-snug group-hover:text-amber-800">{algorithm.name}</h2>
-            <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">{algorithm.description}</p>
-            <dl className="mt-5 grid gap-2 text-xs text-slate-500">
-              <div><dt className="font-semibold text-slate-700">Agency</dt><dd>{algorithm.agencyName || 'Not listed'}</dd></div>
-              <div><dt className="font-semibold text-slate-700">Use case</dt><dd>{algorithm.useCase}</dd></div>
-              <div><dt className="font-semibold text-slate-700">Location</dt><dd>{algorithm.location}</dd></div>
-            </dl>
+
+            {algorithm.useCase ? (
+              <span className="mb-4 w-fit rounded-full border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700">
+                {algorithm.useCase}
+              </span>
+            ) : null}
+
+            <p className="line-clamp-3 flex-1 text-sm leading-6 text-gray-600">
+              {algorithm.description}
+            </p>
+
+            <div className="mt-5 flex items-center justify-between gap-3 text-sm text-gray-600">
+              <span className="flex min-w-0 items-center gap-1.5">
+                <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
+                <span className="truncate">{algorithm.location || 'Location not listed'}</span>
+              </span>
+              {algorithm.impactLevel ? <ImpactBadge impactLevel={algorithm.impactLevel} /> : null}
+            </div>
           </button>
         ))}
-      </section>
+      </div>
 
       {selectedAlgorithm ? (
         <AlgorithmModal algorithm={selectedAlgorithm} onClose={() => setSelectedAlgorithm(null)} />
@@ -149,6 +157,37 @@ function AlgorithmModal({ algorithm, onClose }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const label = formatStatus(status);
+  const tone = status === 'UNDER_REVIEW'
+    ? 'bg-orange-100 text-orange-700'
+    : status === 'PROPOSED'
+      ? 'bg-emerald-100 text-emerald-800'
+      : 'bg-emerald-100 text-emerald-800';
+
+  return (
+    <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${tone}`}>
+      {label}
+    </span>
+  );
+}
+
+function ImpactBadge({ impactLevel }) {
+  const label = `${formatStatus(impactLevel)} Impact`;
+  const tone = impactLevel === 'HIGH'
+    ? 'bg-red-100 text-red-700'
+    : impactLevel === 'MEDIUM'
+      ? 'bg-yellow-100 text-yellow-700'
+      : 'bg-green-100 text-green-700';
+
+  return (
+    <span className={`inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-1 text-sm font-bold ${tone}`}>
+      {label}
+      <Info className="h-4 w-4 text-yellow-600" />
+    </span>
   );
 }
 

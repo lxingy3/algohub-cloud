@@ -1,0 +1,68 @@
+import Link from 'next/link';
+import { Info, MapPin } from 'lucide-react';
+import { formatStatus } from './Formatters';
+
+export function AlgorithmCard({ algorithm }) {
+  return (
+    <Link
+      href={`/algorithms/${algorithm.slug}`}
+      className="group flex h-full flex-col rounded-lg border border-gray-200 border-l-4 border-l-yellow-500 bg-white p-5 shadow-sm transition-all hover:shadow-lg"
+    >
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <h3 className="text-lg font-bold leading-tight text-gray-900 transition-colors group-hover:text-yellow-600">
+          {algorithm.name}
+        </h3>
+        {algorithm.status ? <StatusBadge status={algorithm.status} /> : null}
+      </div>
+
+      {algorithm.useCase ? (
+        <span className="mb-4 w-fit rounded-full border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700">
+          {algorithm.useCase}
+        </span>
+      ) : null}
+
+      <p className="line-clamp-3 flex-1 text-sm leading-6 text-gray-600">
+        {algorithm.description}
+      </p>
+
+      <div className="mt-5 flex items-center justify-between gap-3 text-sm text-gray-600">
+        <span className="flex min-w-0 items-center gap-1.5">
+          <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
+          <span className="truncate">{algorithm.location || 'Location not listed'}</span>
+        </span>
+        {algorithm.impactLevel ? <ImpactBadge impactLevel={algorithm.impactLevel} /> : null}
+      </div>
+    </Link>
+  );
+}
+
+function StatusBadge({ status }) {
+  const label = formatStatus(status);
+  const tone = status === 'UNDER_REVIEW'
+    ? 'bg-orange-100 text-orange-700'
+    : status === 'PROPOSED'
+      ? 'bg-emerald-100 text-emerald-800'
+      : 'bg-emerald-100 text-emerald-800';
+
+  return (
+    <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${tone}`}>
+      {label}
+    </span>
+  );
+}
+
+function ImpactBadge({ impactLevel }) {
+  const label = `${formatStatus(impactLevel)} Impact`;
+  const tone = impactLevel === 'HIGH'
+    ? 'bg-red-100 text-red-700'
+    : impactLevel === 'MEDIUM'
+      ? 'bg-yellow-100 text-yellow-700'
+      : 'bg-green-100 text-green-700';
+
+  return (
+    <span className={`inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-1 text-sm font-bold ${tone}`}>
+      {label}
+      <Info className="h-4 w-4 text-yellow-600" />
+    </span>
+  );
+}
