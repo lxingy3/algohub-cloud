@@ -28,8 +28,13 @@ function isChecked(value) {
 }
 
 function mediaExtension(file) {
+  const originalExtension = file?.name?.split('.').pop()?.toLowerCase();
+  if (originalExtension && /^[a-z0-9]{2,5}$/.test(originalExtension)) return originalExtension;
   if (!file?.type) return 'webm';
   if (file.type.includes('mp4')) return 'mp4';
+  if (file.type.includes('mpeg')) return 'mp3';
+  if (file.type.includes('quicktime')) return 'mov';
+  if (file.type.includes('x-m4a')) return 'm4a';
   if (file.type.includes('ogg')) return 'ogg';
   if (file.type.includes('wav')) return 'wav';
   return 'webm';

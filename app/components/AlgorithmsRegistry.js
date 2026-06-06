@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowRight, BookOpen, Bot, Code2, Database, Image, Info, Landmark, MapPin, Settings, User, Users, X } from 'lucide-react';
+import { ArrowRight, BookOpen, Code2, Database, Image, Info, Landmark, MapPin, Settings, User, Users, X } from 'lucide-react';
 import { formatStatus } from './Formatters';
 
 export function AlgorithmsRegistry({ algorithms }) {
@@ -194,23 +194,38 @@ function ImpactBadge({ impactLevel }) {
 function Storyboard({ algorithm }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4">
-      <div className="relative mx-auto min-h-[170px] max-w-3xl overflow-hidden rounded-md bg-white p-4">
-        <div className="absolute left-[12%] right-[12%] top-[46%] border-t-2 border-dashed border-slate-300" />
-        <div className="relative z-10 grid grid-cols-4 items-center gap-4 text-center">
-          <StoryNode icon={<Users className="h-9 w-9 text-slate-900" />} label="DEVELOPMENT TEAM" />
-          <StoryNode icon={<Code2 className="h-8 w-8 text-slate-900" />} label={algorithm.name} subLabel="AI TOOL" />
-          <StoryNode icon={<Landmark className="h-11 w-11 text-slate-900" />} label={algorithm.agencyName || 'PUBLIC AGENCY'} subLabel="USED BY" />
-          <StoryNode
-            icon={<User className="h-9 w-9 text-slate-900" />}
-            label="AGENCY STAFF"
-            title={algorithm.purpose || 'Purpose not listed'}
-          />
-        </div>
-        <div className="relative z-10 mt-6 flex justify-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">
-            <Bot className="h-4 w-4" />
-            Public-service workflow
-            <Settings className="h-4 w-4" />
+      <div className="overflow-x-auto rounded-md bg-white p-4">
+        <div className="relative mx-auto min-h-[230px] min-w-[720px] max-w-4xl">
+          <div className="absolute left-[9%] right-[9%] top-[34%] border-t-2 border-dashed border-slate-300" />
+          <div className="absolute left-[62%] right-[9%] top-[61%] border-t-2 border-dashed border-slate-300" />
+
+          <div className="relative z-10 grid grid-cols-5 items-start gap-4 text-center">
+            <StoryNode
+              icon={
+                <div className="relative">
+                  <Users className="h-10 w-10 text-slate-900" />
+                  <Settings className="absolute -bottom-2 -right-2 h-5 w-5 text-slate-700" />
+                </div>
+              }
+              label="DEVELOPMENT TEAM"
+            />
+            <StoryNode icon={<Code2 className="h-9 w-9 text-slate-900" />} label={algorithm.name} subLabel="AI TOOL" />
+            <StoryNode icon={<Landmark className="h-12 w-12 text-slate-900" />} label={algorithm.agencyName || 'PUBLIC AGENCY'} subLabel="USED BY" />
+            <div className="flex min-h-44 flex-col items-center">
+              <div className="mb-1 flex h-12 items-center justify-center">
+                <Code2 className="h-8 w-8 text-slate-900" />
+              </div>
+              <div className="mb-6 rounded border border-slate-300 bg-white px-2 py-0.5 text-[9px] font-bold uppercase leading-tight text-slate-700 shadow-sm">
+                AI TOOL
+              </div>
+              <div title={algorithm.purpose || 'Purpose not listed'} className="mt-2 flex flex-col items-center">
+                <User className="mb-2 h-8 w-8 text-slate-900" />
+                <div className="flex min-h-10 w-full min-w-32 items-center justify-center rounded border border-slate-300 bg-white px-2 py-1 text-[10px] font-bold uppercase leading-tight text-slate-800 shadow-sm">
+                  AGENCY STAFF
+                </div>
+              </div>
+            </div>
+            <StoryNode icon={<Users className="h-12 w-12 text-slate-900" />} label="PEOPLE" />
           </div>
         </div>
       </div>

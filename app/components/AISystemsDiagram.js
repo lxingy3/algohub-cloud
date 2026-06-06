@@ -93,12 +93,16 @@ export function AISystemsDiagram() {
     if (rawPercent == null) return;
     if (target === 'tool') {
       const nextToolX = clamp(rawPercent, 16.66, 83.33);
-      if (nextToolX >= 50 || coupled) {
-        const linkedX = clamp(nextToolX, 50, 83.33);
-        setToolX(linkedX);
-        setStaffX(linkedX);
+      if (coupled) {
+        setToolX(nextToolX);
+        setStaffX(nextToolX);
         setCoupled(true);
-        setStep(nearestMovementStep(linkedX));
+        setStep(nearestMovementStep(nextToolX));
+      } else if (nextToolX >= 50) {
+        setToolX(nextToolX);
+        setStaffX(nextToolX);
+        setCoupled(true);
+        setStep(nearestMovementStep(nextToolX));
       } else {
         setToolX(nextToolX);
         setStaffX(50);
@@ -108,7 +112,7 @@ export function AISystemsDiagram() {
       return;
     }
 
-    const nextStaffX = clamp(rawPercent, 50, 83.33);
+    const nextStaffX = clamp(rawPercent, 16.66, 83.33);
     setToolX(nextStaffX);
     setStaffX(nextStaffX);
     setCoupled(true);
@@ -180,7 +184,7 @@ export function AISystemsDiagram() {
                 </div>
               </div>
 
-              <div className="absolute left-[50%] top-[75%] h-0 w-[33.33%] border-t-2 border-dashed border-gray-300" />
+              <div className="absolute left-[16.66%] top-[75%] h-0 w-[66.66%] border-t-2 border-dashed border-gray-300" />
               <div className={`absolute left-[50%] top-[75%] -mt-1 h-2 w-2 -translate-x-1/2 rounded-full ${step >= 3 ? 'bg-indigo-500' : 'bg-gray-200'}`} />
               <div className={`absolute left-[83.33%] top-[75%] -mt-1 h-2 w-2 -translate-x-1/2 rounded-full ${step >= 4 && step !== 5 ? 'bg-emerald-500' : 'bg-gray-300'}`} />
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Mic, Pause, Play, Send, Shield, Trash2, Type, Video } from 'lucide-react';
+import { Mic, Pause, Play, Send, Shield, Trash2, Type, Upload, Video } from 'lucide-react';
 
 const tabs = [
   { id: 'text', label: 'Text', icon: Type },
@@ -22,6 +22,8 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState(null);
   const [videoBlob, setVideoBlob] = useState(null);
+  const [audioUploadFile, setAudioUploadFile] = useState(null);
+  const [videoUploadFile, setVideoUploadFile] = useState(null);
   const [audioUrl, setAudioUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -32,6 +34,8 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
   const timerRef = useRef(null);
   const audioRef = useRef(null);
   const videoRef = useRef(null);
+  const audioFileInputRef = useRef(null);
+  const videoFileInputRef = useRef(null);
 
   useEffect(() => {
     return () => {
@@ -125,15 +129,39 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
   function clearAudio() {
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     setAudioBlob(null);
+    setAudioUploadFile(null);
     setAudioUrl('');
     setRecording((state) => ({ ...state, audio: 'idle' }));
+    if (audioFileInputRef.current) audioFileInputRef.current.value = '';
   }
 
   function clearVideo() {
     if (videoUrl) URL.revokeObjectURL(videoUrl);
     setVideoBlob(null);
+    setVideoUploadFile(null);
     setVideoUrl('');
     setRecording((state) => ({ ...state, video: 'idle' }));
+    if (videoFileInputRef.current) videoFileInputRef.current.value = '';
+  }
+
+  function handleAudioUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    setAudioBlob(null);
+    setAudioUploadFile(file);
+    setAudioUrl(URL.createObjectURL(file));
+    setRecording((state) => ({ ...state, audio: 'stopped' }));
+  }
+
+  function handleVideoUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (videoUrl) URL.revokeObjectURL(videoUrl);
+    setVideoBlob(null);
+    setVideoUploadFile(file);
+    setVideoUrl(URL.createObjectURL(file));
+    setRecording((state) => ({ ...state, video: 'stopped' }));
   }
 
   async function handleSubmit(event) {
@@ -142,6 +170,10 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
 
     const formData = new FormData(formRef.current);
     const narrative = String(formData.get('narrativeText') || '').trim();
+    const uploadedAudio = formData.get('audioFile');
+    const uploadedVideo = formData.get('videoFile');
+    const hasUploadedAudio = audioUploadFile || (uploadedAudio && typeof uploadedAudio === 'object' && uploadedAudio.size > 0);
+    const hasUploadedVideo = videoUploadFile || (uploadedVideo && typeof uploadedVideo === 'object' && uploadedVideo.size > 0);
     if (!String(formData.get('city') || '').trim()) {
       setMessage('Please enter your city.');
       return;
@@ -154,18 +186,20 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
       setMessage('Please write your story.');
       return;
     }
-    if (storyType === 'voice' && !audioBlob) {
-      setMessage('Please record a voice story first.');
+    if (storyType === 'voice' && !audioBlob && !hasUploadedAudio) {
+      setMessage('Please record or upload a voice story first.');
       return;
     }
-    if (storyType === 'video' && !videoBlob) {
-      setMessage('Please record a video story first.');
+    if (storyType === 'video' && !videoBlob && !hasUploadedVideo) {
+      setMessage('Please record or upload a video story first.');
       return;
     }
 
     formData.set('storyType', storyType);
-    if (storyType === 'voice') formData.set('audioFile', new File([audioBlob], 'voice-story.webm', { type: 'audio/webm' }));
-    if (storyType === 'video') formData.set('videoFile', new File([videoBlob], 'video-story.webm', { type: 'video/webm' }));
+    if (storyType === 'voice' && audioBlob) formData.set('audioFile', new File([audioBlob], 'voice-story.webm', { type: 'audio/webm' }));
+    if (storyType === 'video' && videoBlob) formData.set('videoFile', new File([videoBlob], 'video-story.webm', { type: 'video/webm' }));
+    if (storyType === 'voice' && !audioBlob && audioUploadFile) formData.set('audioFile', audioUploadFile);
+    if (storyType === 'video' && !videoBlob && videoUploadFile) formData.set('videoFile', videoUploadFile);
 
     setSubmitting(true);
     const response = await fetch('/api/testimonies', { method: 'POST', body: formData });
@@ -228,11 +262,16 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
           {storyType === 'voice' ? (
             <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-6">
               {!audioUrl && recording.audio !== 'recording' ? (
-                <div className="flex justify-center py-6">
+                <div className="flex flex-col items-center gap-4 py-6">
                   <button type="button" onClick={startAudioRecording} className="inline-flex items-center rounded-md bg-red-600 px-5 py-3 font-semibold text-white hover:bg-red-700">
                     <Mic className="mr-2 h-5 w-5" />
                     Start recording
                   </button>
+                  <label className="inline-flex cursor-pointer items-center rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload audio file
+                    <input ref={audioFileInputRef} name="audioFile" type="file" accept="audio/*" className="sr-only" onChange={handleAudioUpload} />
+                  </label>
                 </div>
               ) : null}
               {recording.audio === 'recording' ? (
@@ -253,7 +292,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
                   </div>
                   <button type="button" onClick={clearAudio} className="inline-flex items-center rounded-md border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50">
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete and re-record
+                    Delete and record/upload again
                   </button>
                 </div>
               ) : null}
@@ -263,11 +302,16 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
           {storyType === 'video' ? (
             <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-6">
               {!videoUrl && recording.video !== 'recording' ? (
-                <div className="flex justify-center py-6">
+                <div className="flex flex-col items-center gap-4 py-6">
                   <button type="button" onClick={startVideoRecording} className="inline-flex items-center rounded-md bg-red-600 px-5 py-3 font-semibold text-white hover:bg-red-700">
                     <Video className="mr-2 h-5 w-5" />
                     Start recording
                   </button>
+                  <label className="inline-flex cursor-pointer items-center rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload video file
+                    <input ref={videoFileInputRef} name="videoFile" type="file" accept="video/*" className="sr-only" onChange={handleVideoUpload} />
+                  </label>
                 </div>
               ) : null}
               {recording.video === 'recording' ? (
@@ -282,7 +326,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
                   <video src={videoUrl} controls className="max-h-80 w-full rounded-lg border bg-black object-contain" />
                   <button type="button" onClick={clearVideo} className="inline-flex items-center rounded-md border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50">
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete and re-record
+                    Delete and record/upload again
                   </button>
                 </div>
               ) : null}

@@ -98,24 +98,6 @@ const partners = [
     image: '/team-orgs/image7.png',
     href: 'https://aclalibraries.org/',
   },
-  {
-    name: 'Homewood Digital Justice Center',
-    description: 'Neighborhood partner hosting workshops and testimony collection sessions.',
-    image: '',
-    href: '',
-  },
-  {
-    name: 'Pittsburgh Housing Rights Network',
-    description: 'Housing support partner tracking automated housing decisions and tenant concerns.',
-    image: '',
-    href: '',
-  },
-  {
-    name: 'City Data Governance Lab',
-    description: 'Public-sector partner coordinating algorithm documentation and review.',
-    image: '',
-    href: '',
-  },
 ];
 
 export default async function AboutPage() {
@@ -223,7 +205,7 @@ function PersonCard({ member }) {
   return (
     <article className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
       <Link href={member.href} className="block" target="_blank" rel="noreferrer">
-        <img src={member.image} alt={member.name} className="h-52 w-full rounded-md object-cover grayscale" />
+        <img src={member.image} alt={member.name} className="h-52 w-full rounded-md object-cover" />
       </Link>
       <Link href={member.href} className="mt-4 block text-lg font-bold text-gray-900 hover:text-amber-700" target="_blank" rel="noreferrer">
         {member.name}
