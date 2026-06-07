@@ -1,8 +1,17 @@
 import Link from 'next/link';
+import { TransientNotice } from '../components/TransientNotice';
 
 const roles = ['COMMUNITY_MEMBER', 'FACILITATOR', 'ORG_MEMBER', 'RESEARCHER', 'ADMIN'];
 
-export default function SignupPage() {
+const errors = {
+  'account-exists': 'This email already has an account with that role. Please log in or choose another role.',
+  'name-conflict': 'This email and role already belong to another user name. Use the existing account or choose a different role.',
+};
+
+export default async function SignupPage({ searchParams }) {
+  const params = await searchParams;
+  const errorMessage = errors[params?.error];
+
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-12">
       <div className="mx-auto max-w-md rounded-lg border bg-white p-6">
@@ -10,6 +19,7 @@ export default function SignupPage() {
         <p className="mt-2 text-sm text-slate-600">
           Create the account for one role. The same email can be used again for another role.
         </p>
+        <TransientNotice message={errorMessage} tone="error" />
         <form action="/api/auth/signup" method="post" className="mt-5 space-y-4">
           <label className="block text-sm">
             Name

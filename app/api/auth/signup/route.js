@@ -16,6 +16,23 @@ export async function POST(request) {
   const primaryRoleName = allowedRoles.has(requestedRole) ? requestedRole : 'COMMUNITY_MEMBER';
   const jurisdictionId = getJurisdictionId();
 
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      jurisdictionId_email_primaryRoleName: {
+        jurisdictionId,
+        email,
+        primaryRoleName,
+      },
+    },
+  });
+
+  if (existingUser) {
+    const normalizedExistingName = existingUser.name.trim().toLowerCase();
+    const normalizedSubmittedName = name.trim().toLowerCase();
+    const error = normalizedExistingName === normalizedSubmittedName ? 'account-exists' : 'name-conflict';
+    return NextResponse.redirect(new URL(`/signup?error=${error}`, request.url), { status: 303 });
+  }
+
   const role = await prisma.role.upsert({
     where: { name: primaryRoleName },
     update: {},
@@ -25,22 +42,22 @@ export async function POST(request) {
     },
   });
 
-  const user = await prisma.user.upsert({
-    where: {
-      jurisdictionId_email_primaryRoleName: {
-        jurisdictionId,
+  let user;
+  try {
+    user = await prisma.user.create({
+      data: {
         email,
+        name,
+        jurisdictionId,
         primaryRoleName,
       },
-    },
-    update: { name, primaryRoleName },
-    create: {
-      email,
-      name,
-      jurisdictionId,
-      primaryRoleName,
-    },
-  });
+    });
+  } catch (error) {
+    if (error?.code === 'P2002') {
+      return NextResponse.redirect(new URL('/signup?error=account-exists', request.url), { status: 303 });
+    }
+    throw error;
+  }
 
   await prisma.userRole.upsert({
     where: { userId_roleId: { userId: user.id, roleId: role.id } },

@@ -12,17 +12,41 @@ export async function POST(request, { params }) {
   const formData = await request.formData();
   const roleId = String(formData.get('roleId') || '');
 
-  await prisma.userRole.deleteMany({ where: { userId: id } });
-  if (roleId) {
-    const role = await prisma.role.findUnique({ where: { id: roleId } });
-    await prisma.userRole.create({ data: { userId: id, roleId } });
-    if (role) {
-      await prisma.user.update({
-        where: { id },
-        data: { primaryRoleName: role.name },
-      });
-    }
+  if (!roleId) {
+    return NextResponse.redirect(new URL('/admin/users?error=role-missing', request.url), { status: 303 });
   }
 
-  return NextResponse.redirect(new URL('/admin/users', request.url), { status: 303 });
+  const [user, role] = await Promise.all([
+    prisma.user.findUnique({ where: { id } }),
+    prisma.role.findUnique({ where: { id: roleId } }),
+  ]);
+
+  if (!user || !role) {
+    return NextResponse.redirect(new URL('/admin/users?error=role-missing', request.url), { status: 303 });
+  }
+
+  const duplicate = await prisma.user.findFirst({
+    where: {
+      jurisdictionId: user.jurisdictionId,
+      email: user.email,
+      primaryRoleName: role.name,
+      id: { not: user.id },
+    },
+    select: { id: true },
+  });
+
+  if (duplicate) {
+    return NextResponse.redirect(new URL('/admin/users?error=duplicate-role', request.url), { status: 303 });
+  }
+
+  await prisma.$transaction([
+    prisma.userRole.deleteMany({ where: { userId: id } }),
+    prisma.userRole.create({ data: { userId: id, roleId } }),
+    prisma.user.update({
+      where: { id },
+      data: { primaryRoleName: role.name },
+    }),
+  ]);
+
+  return NextResponse.redirect(new URL('/admin/users?success=role-updated', request.url), { status: 303 });
 }
