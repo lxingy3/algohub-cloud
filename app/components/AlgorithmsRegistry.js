@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowRight, BookOpen, Code2, Database, Image, Info, Landmark, MapPin, Settings, User, Users, X } from 'lucide-react';
+import { ArrowRight, BookOpen, Code2, Database, FileText, Image, Info, Landmark, MapPin, MessageSquareQuote, Settings, User, Users, X } from 'lucide-react';
 import { formatStatus } from './Formatters';
 
 export function AlgorithmsRegistry({ algorithms }) {
@@ -130,6 +130,60 @@ function AlgorithmModal({ algorithm, onClose }) {
             </h3>
             <p className="mb-4 text-sm text-gray-600">A visual narrative of the algorithm's real-world application and function</p>
             <Storyboard algorithm={algorithm} />
+          </section>
+
+          <section className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-lg border border-gray-200 bg-white p-6">
+              <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+                <FileText className="h-5 w-5 text-yellow-600" />
+                Official Documents
+              </h3>
+              {algorithm.documents.length ? (
+                <div className="space-y-3">
+                  {algorithm.documents.map((document) => {
+                    const href = document.sourceUrl || algorithm.officialDocumentationUrl;
+                    const className = 'block rounded-md border border-slate-200 p-4 text-sm hover:border-yellow-300';
+                    const content = (
+                      <>
+                        <span className="font-semibold text-gray-900">{document.title}</span>
+                        <span className="mt-1 block text-xs text-slate-500">{formatStatus(document.sourceType)}</span>
+                      </>
+                    );
+
+                    return href ? (
+                      <a key={document.id} href={href} className={className} target="_blank" rel="noreferrer">
+                        {content}
+                      </a>
+                    ) : (
+                      <div key={document.id} className={className}>
+                        {content}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">No documents have been attached yet.</p>
+              )}
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-6">
+              <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+                <MessageSquareQuote className="h-5 w-5 text-yellow-600" />
+                Official Claims
+              </h3>
+              {algorithm.claims.length ? (
+                <div className="space-y-3">
+                  {algorithm.claims.map((claim) => (
+                    <div key={claim.id} className="rounded-md bg-amber-50 p-4">
+                      <p className="text-sm leading-6 text-slate-800">{claim.claimText}</p>
+                      <p className="mt-2 text-xs text-slate-500">{claim.claimSource || 'Source not listed'}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">No official claims have been attached yet.</p>
+              )}
+            </div>
           </section>
 
           <section className="rounded-lg border border-gray-200 bg-white p-6">
