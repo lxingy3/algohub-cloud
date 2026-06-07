@@ -11,6 +11,7 @@ export async function POST(request, { params }) {
   const { id } = await params;
   const formData = await request.formData();
   const status = String(formData.get('status') || 'PENDING');
+  const returnTo = String(formData.get('returnTo') || '/admin/testimonies');
 
   await prisma.testimony.update({
     where: { id },
@@ -21,5 +22,5 @@ export async function POST(request, { params }) {
     },
   });
 
-  return NextResponse.redirect(new URL('/admin/testimonies', request.url), { status: 303 });
+  return NextResponse.redirect(new URL(returnTo.startsWith('/admin/testimonies') ? returnTo : '/admin/testimonies', request.url), { status: 303 });
 }

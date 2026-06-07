@@ -18,21 +18,36 @@ function fieldValue(value) {
   return value || 'Not provided';
 }
 
-export default async function AdminTestimoniesPage() {
+const statusOrder = { PENDING: 0, FLAGGED: 1, REJECTED: 2, APPROVED: 3 };
+const allowedStatuses = new Set(['PENDING', 'FLAGGED', 'REJECTED', 'APPROVED']);
+
+export default async function AdminTestimoniesPage({ searchParams }) {
+  const params = await searchParams;
+  const statusFilter = String(params?.status || '').toUpperCase();
+  const where = {
+    jurisdictionId: getJurisdictionId(),
+    ...(allowedStatuses.has(statusFilter) ? { moderationStatus: statusFilter } : {}),
+  };
   const testimonies = await prisma.testimony.findMany({
-    where: { jurisdictionId: getJurisdictionId() },
+    where,
     orderBy: { submittedAt: 'desc' },
-    take: 50,
+    take: 100,
     include: {
       user: true,
       partnerOrganization: true,
       algorithmLinks: { include: { algorithm: true } },
     },
   });
+  testimonies.sort((a, b) => (statusOrder[a.moderationStatus] ?? 9) - (statusOrder[b.moderationStatus] ?? 9) || b.submittedAt - a.submittedAt);
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold">Testimony Queue</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-semibold">{statusFilter === 'PENDING' ? 'Pending Testimony Queue' : 'Testimony Queue'}</h1>
+        {statusFilter ? (
+          <a href="/admin/testimonies" className="inline-flex min-h-11 items-center rounded-md border bg-white px-3 py-2 text-sm">Show all</a>
+        ) : null}
+      </div>
       <div className="mt-6 space-y-3">
         {testimonies.map((testimony) => {
           const linkedAlgorithms = testimony.algorithmLinks.map((link) => link.algorithm?.name).filter(Boolean);
@@ -44,6 +59,7 @@ export default async function AdminTestimoniesPage() {
 
           return (
             <form key={testimony.id} action={`/api/admin/testimonies/${testimony.id}/moderate`} method="post" className="rounded-lg border bg-white p-4">
+              {statusFilter ? <input type="hidden" name="returnTo" value={`/admin/testimonies?status=${statusFilter}`} /> : null}
               <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:gap-4">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">

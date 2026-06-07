@@ -9,7 +9,8 @@ import { formatDate, formatStatus } from '../components/Formatters';
 
 export const dynamic = 'force-dynamic';
 
-export default async function MyStoriesPage() {
+export default async function MyStoriesPage({ searchParams }) {
+  const params = await searchParams;
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 
@@ -41,6 +42,11 @@ export default async function MyStoriesPage() {
       </section>
 
       <section className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
+        {params?.resubmitted ? (
+          <div className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+            Your story was resubmitted and is pending review.
+          </div>
+        ) : null}
         {testimonies.length ? (
           <div className="space-y-4">
             {testimonies.map((testimony) => (
@@ -59,6 +65,11 @@ export default async function MyStoriesPage() {
                   {testimony.moderationStatus === 'APPROVED' ? (
                     <Link href={`/stories/${testimony.id}`} className="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-md border border-gray-200 px-3 py-2 text-sm font-semibold hover:border-amber-300 sm:w-auto">
                       View public page
+                    </Link>
+                  ) : null}
+                  {testimony.moderationStatus === 'FLAGGED' || testimony.moderationStatus === 'REJECTED' ? (
+                    <Link href={`/my-stories/${testimony.id}/edit`} className="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-md border border-gray-200 px-3 py-2 text-sm font-semibold hover:border-amber-300 sm:w-auto">
+                      Edit and resubmit
                     </Link>
                   ) : null}
                 </div>

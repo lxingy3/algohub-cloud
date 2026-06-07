@@ -10,10 +10,11 @@ export async function POST(request, { params }) {
 
   const { id } = await params;
   const formData = await request.formData();
+  const returnTo = String(formData.get('returnTo') || '/admin/comments');
   await prisma.comment.update({
     where: { id },
     data: { moderationStatus: String(formData.get('status') || 'PENDING') },
   });
 
-  return NextResponse.redirect(new URL('/admin/comments', request.url), { status: 303 });
+  return NextResponse.redirect(new URL(returnTo.startsWith('/admin/comments') ? returnTo : '/admin/comments', request.url), { status: 303 });
 }

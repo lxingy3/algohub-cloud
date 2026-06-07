@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { requireAdmin } from '../../lib/auth';
 
 const links = [
+  ['/', 'Back to AlgoStories'],
   ['/admin', 'Dashboard'],
   ['/admin/algorithms', 'Algorithms'],
   ['/admin/events', 'Events'],

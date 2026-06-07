@@ -18,8 +18,8 @@ export default async function AdminPage() {
       <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
       <div className="mt-6 grid gap-4 md:grid-cols-4">
         <DashboardCard href="/admin/algorithms" count={algorithms} label="Algorithms" />
-        <DashboardCard href="/admin/testimonies" count={pendingTestimonies} label="Pending testimonies" />
-        <DashboardCard href="/admin/comments" count={pendingComments} label="Pending comments" />
+        <DashboardCard href="/admin/testimonies?status=PENDING" count={pendingTestimonies} label="Pending testimonies" />
+        <DashboardCard href="/admin/comments?status=PENDING" count={pendingComments} label="Pending comments" />
         <DashboardCard href="/admin/users" count={users} label="Users" />
       </div>
     </div>
