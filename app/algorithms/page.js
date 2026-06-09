@@ -36,7 +36,11 @@ export default async function AlgorithmsPage({ searchParams }) {
       where,
       orderBy: { name: 'asc' },
       include: {
-        _count: { select: { testimonyLinks: true } },
+        _count: {
+          select: {
+            testimonyLinks: { where: { testimony: { moderationStatus: 'APPROVED' } } },
+          },
+        },
         claims: { orderBy: { createdAt: 'asc' } },
         documents: { orderBy: { uploadedAt: 'desc' } },
         testimonyLinks: {

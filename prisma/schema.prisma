@@ -207,10 +207,13 @@ model Testimony {
   summary                String?
   city                   String?                  @db.VarChar(255)
   zipCode                String?                  @map("zip_code") @db.VarChar(20)
+  occurredAtText         String?                  @map("occurred_at_text") @db.VarChar(100)
   imageUrl               String?                  @map("image_url")
   submitterName          String?                  @map("submitter_name") @db.VarChar(255)
   submitterEmail         String?                  @map("submitter_email") @db.VarChar(255)
+  contactEmail           String?                  @map("contact_email") @db.VarChar(255)
   referralSource         String?                  @map("referral_source")
+  facilitatorCode        String?                  @map("facilitator_code") @db.VarChar(100)
   publicPosting          Boolean                  @default(false) @map("public_posting")
   followupConsent        Boolean                  @default(false) @map("followup_consent")
   storyType              String                   @default("text") @map("story_type") @db.VarChar(20)
@@ -222,6 +225,13 @@ model Testimony {
   submissionMethod       SubmissionMethod?        @map("submission_method")
   audioFileUrl           String?                  @map("audio_file_url")
   videoFileUrl           String?                  @map("video_file_url")
+  mediaObjectKey         String?                  @map("media_object_key")
+  mediaMimeType          String?                  @map("media_mime_type") @db.VarChar(100)
+  mediaDurationSeconds   Int?                     @map("media_duration_seconds")
+  transcriptionStatus    String                   @default("NOT_REQUIRED") @map("transcription_status") @db.VarChar(50)
+  transcriptionText      String?                  @map("transcription_text")
+  transcriptionError     String?                  @map("transcription_error")
+  transcribedAt          DateTime?                @map("transcribed_at") @db.Timestamptz(6)
   originalLanguage       String                   @default("en") @map("original_language") @db.VarChar(50)
   affectedDomain         String?                  @map("affected_domain") @db.VarChar(100)
   selfReportedImpact     SelfReportedImpact?      @map("self_reported_impact")
@@ -245,11 +255,36 @@ model Testimony {
   brief                  TestimonyBrief?
   comments               Comment[]
   reactions              TestimonyReaction[]
+  transcriptionJobs      TranscriptionJob[]
 
   @@index([jurisdictionId])
   @@index([moderationStatus])
   @@index([affectedDomain])
   @@map("testimonies")
+}
+
+model TranscriptionJob {
+  id             String    @id @default(uuid()) @db.Uuid
+  testimonyId    String    @map("testimony_id") @db.Uuid
+  jurisdictionId String    @map("jurisdiction_id") @db.VarChar(50)
+  mediaKind      String    @map("media_kind") @db.VarChar(20)
+  objectKey      String    @map("object_key")
+  mediaUrl       String    @map("media_url")
+  mimeType       String?   @map("mime_type") @db.VarChar(100)
+  status         String    @default("PENDING") @db.VarChar(50)
+  provider       String    @default("openai-whisper-1") @db.VarChar(100)
+  transcript     String?
+  error          String?
+  attempts       Int       @default(0)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  processedAt    DateTime? @map("processed_at") @db.Timestamptz(6)
+  testimony      Testimony @relation(fields: [testimonyId], references: [id], onDelete: Cascade)
+
+  @@index([jurisdictionId])
+  @@index([status])
+  @@index([testimonyId])
+  @@map("transcription_jobs")
 }
 
 model TestimonyBrief {

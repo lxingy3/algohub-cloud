@@ -6,13 +6,14 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const jurisdictionId = getJurisdictionId();
-  const [algorithms, testimonies, events, organizations, users] = await Promise.all([
+  const [algorithms, testimonies, approvedTestimonies, events, organizations, users] = await Promise.all([
     prisma.algorithm.count({ where: { jurisdictionId } }),
     prisma.testimony.count({ where: { jurisdictionId } }),
+    prisma.testimony.count({ where: { jurisdictionId, moderationStatus: 'APPROVED' } }),
     prisma.communityEvent.count({ where: { jurisdictionId } }),
-    prisma.organization.count({ where: { jurisdictionId } }),
+    prisma.organization.count({ where: { jurisdictionId, isActive: true } }),
     prisma.user.count({ where: { jurisdictionId } }),
   ]);
 
-  return NextResponse.json({ algorithms, testimonies, events, organizations, users });
+  return NextResponse.json({ algorithms, testimonies, approvedTestimonies, events, organizations, users });
 }

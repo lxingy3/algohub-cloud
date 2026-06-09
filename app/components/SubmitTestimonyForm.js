@@ -1,15 +1,26 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Mic, Pause, Play, Send, Shield, Trash2, Type, Upload, Video } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { Check, ChevronLeft, ChevronRight, Mic, Pause, Play, Send, Shield, Trash2, Type, Upload, Users, Video } from 'lucide-react';
 
-const tabs = [
-  { id: 'text', label: 'Text', icon: Type },
-  { id: 'voice', label: 'Voice', icon: Mic },
-  { id: 'video', label: 'Video', icon: Video },
+const steps = ['submit.stepShare', 'submit.stepSystem', 'submit.stepStory', 'submit.stepDetails', 'submit.stepReview'];
+const methods = [
+  { id: 'text', icon: Type, label: 'submit.writeStory' },
+  { id: 'voice', icon: Mic, label: 'submit.recordStory' },
+  { id: 'video', icon: Video, label: 'submit.videoStory' },
+  { id: 'facilitated', icon: Users, label: 'submit.facilitator' },
 ];
-
-const MAX_MEDIA_UPLOAD_BYTES = 4 * 1024 * 1024;
+const domains = ['Housing', 'Child Welfare', 'Benefits', 'Employment', 'Education', 'Public Safety', 'Other'];
+const impacts = [
+  ['POSITIVE', 'submit.positive'],
+  ['NEGATIVE', 'submit.negative'],
+  ['MIXED', 'submit.mixed'],
+  ['UNCLEAR', 'submit.notSureImpact'],
+];
+const DRAFT_KEY = 'algostories-submit-draft';
+const MAX_RECORDING_SECONDS = 600;
 
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
@@ -17,55 +28,113 @@ function formatTime(seconds) {
   return `${minutes}:${String(rest).padStart(2, '0')}`;
 }
 
-function formatFileSize(bytes) {
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+function guessKind(method) {
+  return method === 'video' ? 'video' : 'audio';
 }
 
 export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUserEmail }) {
-  const [storyType, setStoryType] = useState('text');
+  const { t } = useTranslation();
+  const [step, setStep] = useState(0);
   const [message, setMessage] = useState('');
-  const [recording, setRecording] = useState({ audio: 'idle', video: 'idle' });
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [audioBlob, setAudioBlob] = useState(null);
-  const [videoBlob, setVideoBlob] = useState(null);
-  const [audioUploadFile, setAudioUploadFile] = useState(null);
-  const [videoUploadFile, setVideoUploadFile] = useState(null);
-  const [audioUrl, setAudioUrl] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [algorithmSearch, setAlgorithmSearch] = useState('');
+  const [recordingState, setRecordingState] = useState('idle');
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [mediaPreviewUrl, setMediaPreviewUrl] = useState('');
+  const [mediaFile, setMediaFile] = useState(null);
+  const [uploadedMedia, setUploadedMedia] = useState(null);
 
-  const formRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
+  const chunksRef = useRef([]);
   const timerRef = useRef(null);
-  const audioRef = useRef(null);
+  const fileInputRef = useRef(null);
   const videoRef = useRef(null);
-  const audioFileInputRef = useRef(null);
-  const videoFileInputRef = useRef(null);
+
+  const form = useForm({
+    defaultValues: {
+      storyType: 'text',
+      algorithmId: selectedAlgorithmId || '',
+      uncertainSystem: false,
+      affectedDomain: '',
+      title: '',
+      narrativeText: '',
+      name: '',
+      city: '',
+      zipCode: '',
+      referralSource: '',
+      facilitatorCode: '',
+      selfReportedImpact: 'UNCLEAR',
+      occurredAtText: '',
+      wantsContact: 'no',
+      contactEmail: currentUserEmail || '',
+      isAnonymous: true,
+      publicPosting: false,
+      followupConsent: false,
+    },
+  });
+  const values = form.watch();
+  const storyType = values.storyType;
+
+  const filteredAlgorithms = useMemo(() => {
+    const query = algorithmSearch.trim().toLowerCase();
+    if (!query) return algorithms;
+    return algorithms.filter((algorithm) => algorithm.name.toLowerCase().includes(query));
+  }, [algorithms, algorithmSearch]);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(DRAFT_KEY);
+    if (stored) {
+      try {
+        form.reset({ ...form.getValues(), ...JSON.parse(stored), algorithmId: selectedAlgorithmId || JSON.parse(stored).algorithmId || '' });
+      } catch {
+        window.localStorage.removeItem(DRAFT_KEY);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const subscription = form.watch((draft) => {
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        ...draft,
+        mediaObjectKey: undefined,
+        mediaUrl: undefined,
+      }));
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   useEffect(() => {
     return () => {
-      stopTimer();
       stopStream();
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
-      if (videoUrl) URL.revokeObjectURL(videoUrl);
+      stopTimer();
+      if (mediaPreviewUrl) URL.revokeObjectURL(mediaPreviewUrl);
     };
-  }, [audioUrl, videoUrl]);
+  }, [mediaPreviewUrl]);
 
   useEffect(() => {
-    if (recording.video === 'recording' && streamRef.current && videoRef.current) {
+    if (recordingState === 'recording' && storyType === 'video' && streamRef.current && videoRef.current) {
       videoRef.current.srcObject = streamRef.current;
     }
-  }, [recording.video]);
-
-  function startTimer() {
-    setRecordingTime(0);
-    timerRef.current = setInterval(() => setRecordingTime((value) => value + 1), 1000);
-  }
+  }, [recordingState, storyType]);
 
   function stopTimer() {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = null;
+  }
+
+  function startTimer() {
+    stopTimer();
+    setRecordingTime(0);
+    timerRef.current = setInterval(() => {
+      setRecordingTime((current) => {
+        if (current + 1 >= MAX_RECORDING_SECONDS) {
+          stopRecording();
+          return MAX_RECORDING_SECONDS;
+        }
+        return current + 1;
+      });
+    }, 1000);
   }
 
   function stopStream() {
@@ -73,354 +142,464 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
+    if (videoRef.current) videoRef.current.srcObject = null;
   }
 
-  async function startAudioRecording() {
+  function setMedia(file) {
+    if (mediaPreviewUrl) URL.revokeObjectURL(mediaPreviewUrl);
+    setMediaFile(file);
+    setUploadedMedia(null);
+    setMediaPreviewUrl(URL.createObjectURL(file));
+  }
+
+  async function startRecording() {
+    setMessage('');
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia(storyType === 'video' ? { video: true, audio: true } : { audio: true });
       streamRef.current = stream;
+      chunksRef.current = [];
       const recorder = new MediaRecorder(stream);
-      const chunks = [];
       mediaRecorderRef.current = recorder;
       recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunks.push(event.data);
+        if (event.data.size > 0) chunksRef.current.push(event.data);
       };
       recorder.onstop = () => {
+        const type = storyType === 'video' ? 'video/webm' : 'audio/webm';
+        const fileName = storyType === 'video' ? 'video-story.webm' : 'voice-story.webm';
+        setMedia(new File([new Blob(chunksRef.current, { type })], fileName, { type }));
         stopStream();
-        const blob = new Blob(chunks, { type: 'audio/webm' });
-        setAudioBlob(blob);
-        setAudioUrl(URL.createObjectURL(blob));
       };
       recorder.start();
-      setRecording((state) => ({ ...state, audio: 'recording' }));
+      setRecordingState('recording');
       startTimer();
     } catch {
-      setMessage('Microphone access was not available.');
+      setMessage(storyType === 'video' ? 'Camera access was not available.' : 'Microphone access was not available.');
     }
   }
 
-  async function startVideoRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      streamRef.current = stream;
-      const recorder = new MediaRecorder(stream);
-      const chunks = [];
-      mediaRecorderRef.current = recorder;
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunks.push(event.data);
-      };
-      recorder.onstop = () => {
-        stopStream();
-        if (videoRef.current) videoRef.current.srcObject = null;
-        const blob = new Blob(chunks, { type: 'video/webm' });
-        setVideoBlob(blob);
-        setVideoUrl(URL.createObjectURL(blob));
-      };
-      recorder.start();
-      setRecording((state) => ({ ...state, video: 'recording' }));
-      startTimer();
-    } catch {
-      setMessage('Camera access was not available.');
-    }
-  }
-
-  function stopRecording(kind) {
+  function pauseRecording() {
     if (mediaRecorderRef.current?.state === 'recording') {
-      mediaRecorderRef.current.stop();
-      setRecording((state) => ({ ...state, [kind]: 'stopped' }));
+      mediaRecorderRef.current.pause();
+      setRecordingState('paused');
       stopTimer();
     }
   }
 
-  function clearAudio() {
-    if (audioUrl) URL.revokeObjectURL(audioUrl);
-    setAudioBlob(null);
-    setAudioUploadFile(null);
-    setAudioUrl('');
-    setRecording((state) => ({ ...state, audio: 'idle' }));
-    if (audioFileInputRef.current) audioFileInputRef.current.value = '';
-  }
-
-  function clearVideo() {
-    if (videoUrl) URL.revokeObjectURL(videoUrl);
-    setVideoBlob(null);
-    setVideoUploadFile(null);
-    setVideoUrl('');
-    setRecording((state) => ({ ...state, video: 'idle' }));
-    if (videoFileInputRef.current) videoFileInputRef.current.value = '';
-  }
-
-  function handleAudioUpload(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (file.size > MAX_MEDIA_UPLOAD_BYTES) {
-      event.target.value = '';
-      setMessage(`This audio file is ${formatFileSize(file.size)}. Please upload a file smaller than 4 MB.`);
-      return;
+  function resumeRecording() {
+    if (mediaRecorderRef.current?.state === 'paused') {
+      mediaRecorderRef.current.resume();
+      setRecordingState('recording');
+      startTimer();
     }
-    if (audioUrl) URL.revokeObjectURL(audioUrl);
-    setAudioBlob(null);
-    setAudioUploadFile(file);
-    setAudioUrl(URL.createObjectURL(file));
-    setRecording((state) => ({ ...state, audio: 'stopped' }));
   }
 
-  function handleVideoUpload(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (file.size > MAX_MEDIA_UPLOAD_BYTES) {
-      event.target.value = '';
-      setMessage(`This video file is ${formatFileSize(file.size)}. Please upload a file smaller than 4 MB.`);
-      return;
+  function stopRecording() {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
     }
-    if (videoUrl) URL.revokeObjectURL(videoUrl);
-    setVideoBlob(null);
-    setVideoUploadFile(file);
-    setVideoUrl(URL.createObjectURL(file));
-    setRecording((state) => ({ ...state, video: 'stopped' }));
+    setRecordingState('stopped');
+    stopTimer();
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault();
+  function clearMedia() {
+    if (mediaPreviewUrl) URL.revokeObjectURL(mediaPreviewUrl);
+    setMediaPreviewUrl('');
+    setMediaFile(null);
+    setUploadedMedia(null);
+    setRecordingState('idle');
+    setRecordingTime(0);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  async function uploadMediaIfNeeded() {
+    if (!['voice', 'video'].includes(storyType)) return null;
+    if (uploadedMedia) return uploadedMedia;
+    if (!mediaFile) throw new Error(t('submit.uploadFailed'));
+
+    const presign = await fetch('/api/uploads/presign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind: guessKind(storyType),
+        fileName: mediaFile.name,
+        contentType: mediaFile.type || `${guessKind(storyType)}/webm`,
+        size: mediaFile.size,
+      }),
+    });
+    const upload = await presign.json().catch(() => null);
+    if (!presign.ok) throw new Error(upload?.error || t('submit.r2Missing'));
+
+    const put = await fetch(upload.uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': upload.contentType },
+      body: mediaFile,
+    });
+    if (!put.ok) throw new Error(t('submit.uploadFailed'));
+
+    const nextMedia = {
+      objectKey: upload.objectKey,
+      url: upload.publicUrl,
+      mimeType: upload.contentType,
+      durationSeconds: recordingTime || undefined,
+    };
+    setUploadedMedia(nextMedia);
+    return nextMedia;
+  }
+
+  function validateStep(targetStep = step) {
+    const data = form.getValues();
+    if (targetStep === 0 && !data.storyType) return false;
+    if (targetStep === 1 && !data.uncertainSystem && !data.algorithmId && !data.affectedDomain) {
+      setMessage('Please select an algorithm, choose a domain, or mark that you are not sure.');
+      return false;
+    }
+    if (targetStep === 2) {
+      if (!data.title.trim()) {
+        setMessage('Please add a short title.');
+        return false;
+      }
+      if (data.storyType === 'text' && !data.narrativeText.trim()) {
+        setMessage('Please write your story.');
+        return false;
+      }
+      if (['voice', 'video'].includes(data.storyType) && !mediaFile && !uploadedMedia) {
+        setMessage(data.storyType === 'video' ? 'Please record or upload a video story.' : 'Please record or upload a voice story.');
+        return false;
+      }
+      if (data.storyType === 'facilitated' && !data.facilitatorCode.trim()) {
+        setMessage('Please enter the facilitator code.');
+        return false;
+      }
+    }
+    if (targetStep === 3) {
+      if (!data.city.trim()) {
+        setMessage('Please enter your city.');
+        return false;
+      }
+      if (data.wantsContact === 'yes' && !data.contactEmail.trim()) {
+        setMessage('Please enter an email for follow-up.');
+        return false;
+      }
+    }
     setMessage('');
+    return true;
+  }
 
-    const formData = new FormData(formRef.current);
-    const narrative = String(formData.get('narrativeText') || '').trim();
-    const uploadedAudio = formData.get('audioFile');
-    const uploadedVideo = formData.get('videoFile');
-    const hasUploadedAudio = audioUploadFile || (uploadedAudio && typeof uploadedAudio === 'object' && uploadedAudio.size > 0);
-    const hasUploadedVideo = videoUploadFile || (uploadedVideo && typeof uploadedVideo === 'object' && uploadedVideo.size > 0);
-    if (!String(formData.get('city') || '').trim()) {
-      setMessage('Please enter your city.');
-      return;
+  async function nextStep() {
+    if (!validateStep()) return;
+    if (step === 2 && ['voice', 'video'].includes(storyType) && !uploadedMedia) {
+      try {
+        await uploadMediaIfNeeded();
+        setMessage(t('submit.mediaPending'));
+      } catch (error) {
+        setMessage(error.message);
+        return;
+      }
     }
-    if (!formData.get('followupConsent')) {
-      setMessage('Please agree that a reviewer may follow up about this story.');
-      return;
-    }
-    if (storyType === 'text' && !narrative) {
-      setMessage('Please write your story.');
-      return;
-    }
-    if (storyType === 'voice' && !audioBlob && !hasUploadedAudio) {
-      setMessage('Please record or upload a voice story first.');
-      return;
-    }
-    if (storyType === 'video' && !videoBlob && !hasUploadedVideo) {
-      setMessage('Please record or upload a video story first.');
-      return;
-    }
-    if (storyType === 'voice' && audioBlob?.size > MAX_MEDIA_UPLOAD_BYTES) {
-      setMessage(`This voice recording is ${formatFileSize(audioBlob.size)}. Please record a shorter clip or upload a file smaller than 4 MB.`);
-      return;
-    }
-    if (storyType === 'video' && videoBlob?.size > MAX_MEDIA_UPLOAD_BYTES) {
-      setMessage(`This video recording is ${formatFileSize(videoBlob.size)}. Please record a shorter clip or upload a file smaller than 4 MB.`);
-      return;
-    }
+    setStep((current) => Math.min(current + 1, steps.length - 1));
+  }
 
-    formData.set('storyType', storyType);
-    if (storyType === 'voice' && audioBlob) formData.set('audioFile', new File([audioBlob], 'voice-story.webm', { type: 'audio/webm' }));
-    if (storyType === 'video' && videoBlob) formData.set('videoFile', new File([videoBlob], 'video-story.webm', { type: 'video/webm' }));
-    if (storyType === 'voice' && !audioBlob && audioUploadFile) formData.set('audioFile', audioUploadFile);
-    if (storyType === 'video' && !videoBlob && videoUploadFile) formData.set('videoFile', videoUploadFile);
-
+  async function submitStory() {
+    if (![0, 1, 2, 3].every((index) => validateStep(index))) return;
     setSubmitting(true);
-    let response;
+    setMessage('');
     try {
-      response = await fetch('/api/testimonies', { method: 'POST', body: formData });
-    } catch {
+      const media = await uploadMediaIfNeeded();
+      const data = form.getValues();
+      const response = await fetch('/api/testimonies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...data,
+          contactEmail: data.wantsContact === 'yes' ? data.contactEmail : '',
+          mediaObjectKey: media?.objectKey,
+          mediaUrl: media?.url,
+          mediaMimeType: media?.mimeType,
+          mediaDurationSeconds: media?.durationSeconds,
+          followupConsent: Boolean(data.followupConsent),
+          publicPosting: Boolean(data.publicPosting),
+          isAnonymous: Boolean(data.isAnonymous),
+          uncertainSystem: Boolean(data.uncertainSystem),
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(payload?.error || 'The story could not be submitted.');
+      window.localStorage.removeItem(DRAFT_KEY);
+      window.location.href = payload.redirectTo || '/stories';
+    } catch (error) {
+      setMessage(error.message);
       setSubmitting(false);
-      setMessage('The upload did not reach the server. Please use a media file smaller than 4 MB or try again on a stronger connection.');
-      return;
     }
-    if (response.ok || response.redirected) {
-      window.location.href = '/stories';
-      return;
-    }
-    setSubmitting(false);
-    if (response.status === 413) {
-      setMessage('This media file is too large for the current deployment. Please upload a file smaller than 4 MB.');
-      return;
-    }
-    const payload = await response.json().catch(() => null);
-    setMessage(payload?.error || 'The story could not be submitted. Please check the form and try again.');
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="space-y-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-xl sm:p-8">
-      <section className="space-y-4">
-        <h2 className="border-b border-gray-200 pb-2 text-xl font-semibold text-gray-900">What Happened?</h2>
-        <label className="block text-sm font-medium text-gray-700">
-          Select an algorithm related to your experience
-          <select name="algorithmId" defaultValue={selectedAlgorithmId || ''} className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2">
-            <option value="">Select an algorithm from the list</option>
-            {algorithms.map((algorithm) => (
-              <option key={algorithm.id} value={algorithm.id}>{algorithm.name}</option>
-            ))}
-          </select>
-        </label>
-        <label className="block text-sm font-medium text-gray-700">
-          Short title
-          <input name="title" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" required />
-        </label>
-      </section>
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xl sm:p-8">
+      <div className="mb-8">
+        <div className="mb-3 flex items-center justify-between gap-4 text-sm text-gray-500">
+          <span>{t('submit.progress', { current: step + 1, total: steps.length })}</span>
+          <span>{t('submit.draftSaved')}</span>
+        </div>
+        <div className="h-2 rounded-full bg-gray-100">
+          <div className="h-2 rounded-full bg-yellow-500 transition-all" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
+        </div>
+      </div>
 
-      <section className="space-y-4">
-        <h2 className="border-b border-gray-200 pb-2 text-xl font-semibold text-gray-900">Tell us your story</h2>
-        <div>
-          <p className="text-sm font-medium text-gray-700">Share your experience</p>
-          <div className="mt-2 flex gap-2 border-b border-gray-200">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setStoryType(tab.id)}
-                className={`-mb-px flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
-                  storyType === tab.id ? 'border-amber-600 text-amber-700' : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <tab.icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            ))}
+      <form onSubmit={(event) => event.preventDefault()} className="space-y-8">
+        <h2 className="text-2xl font-bold text-gray-900">{t(steps[step])}</h2>
+        {step === 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {methods.map((method) => {
+              const Icon = method.icon;
+              const active = storyType === method.id;
+              return (
+                <button
+                  key={method.id}
+                  type="button"
+                  onClick={() => {
+                    form.setValue('storyType', method.id);
+                    clearMedia();
+                  }}
+                  className={`rounded-xl border p-5 text-left transition ${active ? 'border-yellow-400 bg-yellow-50 shadow-md' : 'border-gray-200 bg-white hover:border-yellow-300'}`}
+                >
+                  <Icon className="mb-4 h-7 w-7 text-yellow-700" />
+                  <span className="font-semibold text-gray-900">{t(method.label)}</span>
+                </button>
+              );
+            })}
           </div>
-
-          {storyType === 'text' ? (
-            <textarea
-              name="narrativeText"
-              rows={8}
-              placeholder="Please share the details of your experience..."
-              className="mt-4 w-full resize-none rounded-md border border-gray-200 px-3 py-2"
-            />
-          ) : null}
-
-          {storyType === 'voice' ? (
-            <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-6">
-              {!audioUrl && recording.audio !== 'recording' ? (
-                <div className="flex flex-col items-center gap-4 py-6">
-                  <button type="button" onClick={startAudioRecording} className="inline-flex items-center rounded-md bg-red-600 px-5 py-3 font-semibold text-white hover:bg-red-700">
-                    <Mic className="mr-2 h-5 w-5" />
-                    Start recording
-                  </button>
-                  <label className="inline-flex cursor-pointer items-center rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload audio file
-                    <input ref={audioFileInputRef} name="audioFile" type="file" accept="audio/*" className="sr-only" onChange={handleAudioUpload} />
-                  </label>
-                </div>
-              ) : null}
-              {recording.audio === 'recording' ? (
-                <div className="flex flex-col items-center gap-4 py-6">
-                  <div className="flex items-center gap-3">
-                    <span className="h-3 w-3 rounded-full bg-red-500" />
-                    <span className="font-mono text-2xl font-bold">{formatTime(recordingTime)}</span>
-                  </div>
-                  <button type="button" onClick={() => stopRecording('audio')} className="rounded-md bg-slate-900 px-4 py-2 text-white">Stop recording</button>
-                </div>
-              ) : null}
-              {audioUrl ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 rounded-lg border bg-white p-4">
-                    <audio ref={audioRef} src={audioUrl} controls className="flex-1" />
-                    <button type="button" onClick={() => audioRef.current?.play()} className="rounded-md border px-3 py-2"><Play className="h-4 w-4" /></button>
-                    <button type="button" onClick={() => audioRef.current?.pause()} className="rounded-md border px-3 py-2"><Pause className="h-4 w-4" /></button>
-                  </div>
-                  <button type="button" onClick={clearAudio} className="inline-flex items-center rounded-md border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete and record/upload again
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
-          {storyType === 'video' ? (
-            <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-6">
-              {!videoUrl && recording.video !== 'recording' ? (
-                <div className="flex flex-col items-center gap-4 py-6">
-                  <button type="button" onClick={startVideoRecording} className="inline-flex items-center rounded-md bg-red-600 px-5 py-3 font-semibold text-white hover:bg-red-700">
-                    <Video className="mr-2 h-5 w-5" />
-                    Start recording
-                  </button>
-                  <label className="inline-flex cursor-pointer items-center rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload video file
-                    <input ref={videoFileInputRef} name="videoFile" type="file" accept="video/*" className="sr-only" onChange={handleVideoUpload} />
-                  </label>
-                </div>
-              ) : null}
-              {recording.video === 'recording' ? (
-                <div className="flex flex-col items-center gap-4 py-4">
-                  <video ref={videoRef} autoPlay muted className="max-h-72 w-full rounded-lg border bg-black object-contain" />
-                  <div className="font-mono text-xl font-bold">{formatTime(recordingTime)}</div>
-                  <button type="button" onClick={() => stopRecording('video')} className="rounded-md bg-slate-900 px-4 py-2 text-white">Stop recording</button>
-                </div>
-              ) : null}
-              {videoUrl ? (
-                <div className="space-y-4">
-                  <video src={videoUrl} controls className="max-h-80 w-full rounded-lg border bg-black object-contain" />
-                  <button type="button" onClick={clearVideo} className="inline-flex items-center rounded-md border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete and record/upload again
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="border-b border-gray-200 pb-2 text-xl font-semibold text-gray-900">About You</h2>
-        <label className="block text-sm font-medium text-gray-700">
-          Name <span className="font-normal">(Optional)</span>
-          <input name="name" placeholder="Your name" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
-        </label>
-        <label className="block text-sm font-medium text-gray-700">
-          City <span className="font-normal text-red-600">(Required)</span>
-          <input name="city" placeholder="e.g. Pittsburgh, Philadelphia" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" required />
-        </label>
-        <label className="block text-sm font-medium text-gray-700">
-          Zip Code <span className="font-normal">(Optional)</span>
-          <input name="zipCode" placeholder="15201" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
-        </label>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="border-b border-gray-200 pb-2 text-xl font-semibold text-gray-900">How did you hear about us?</h2>
-        <label className="block text-sm font-medium text-gray-700">
-          Organization or referral source
-          <input name="referralSource" placeholder="Organization name or how you found us" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
-        </label>
-      </section>
-
-      <section className="space-y-4">
-        <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
-          <Shield className="h-5 w-5 text-amber-700" />
-          <h2 className="text-xl font-semibold text-gray-900">Consent & Privacy</h2>
-        </div>
-        <label className="flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-gray-700">
-          <span>
-            <span className="block font-semibold text-gray-900">Can this story be shared publicly?</span>
-            <span>Identifying details will be removed before posting.</span>
-          </span>
-          <input name="publicPosting" type="checkbox" className="h-5 w-5" />
-        </label>
-        <label className="flex items-start gap-3 text-sm text-gray-800">
-          <input name="followupConsent" type="checkbox" className="mt-1 h-4 w-4" required />
-          <span>I understand and agree that a community reviewer may follow up with me regarding this story *</span>
-        </label>
-        {currentUserEmail ? (
-          <p className="rounded-md bg-slate-50 p-3 text-sm text-slate-600">Submitting as {currentUserEmail}.</p>
         ) : null}
-      </section>
 
-      {message ? <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">{message}</p> : null}
-      <button disabled={submitting} className="flex min-h-12 w-full items-center justify-center rounded-md bg-yellow-500 px-5 py-3 font-semibold text-gray-900 hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-yellow-200">
-        <Send className="mr-2 h-4 w-4" />
-        {submitting ? 'Submitting...' : 'Share Your Story'}
-      </button>
-    </form>
+        {step === 1 ? (
+          <section className="space-y-5">
+            <label className="block text-sm font-medium text-gray-700">
+              {t('submit.algorithmSearch')}
+              <input value={algorithmSearch} onChange={(event) => setAlgorithmSearch(event.target.value)} className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
+            </label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t('submit.algorithmLabel')}
+              <select {...form.register('algorithmId')} disabled={values.uncertainSystem} className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2 disabled:bg-gray-100">
+                <option value="">{t('submit.algorithmPlaceholder')}</option>
+                {filteredAlgorithms.map((algorithm) => <option key={algorithm.id} value={algorithm.id}>{algorithm.name}</option>)}
+              </select>
+            </label>
+            <label className="flex items-center gap-3 rounded-lg border border-gray-200 p-4 text-sm text-gray-700">
+              <input type="checkbox" {...form.register('uncertainSystem')} className="h-4 w-4" />
+              {t('submit.notSure')}
+            </label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t('submit.domain')}
+              <select {...form.register('affectedDomain')} className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2">
+                <option value="">{t('submit.domainPlaceholder')}</option>
+                {domains.map((domain) => <option key={domain} value={domain}>{domain}</option>)}
+              </select>
+            </label>
+          </section>
+        ) : null}
+
+        {step === 2 ? (
+          <section className="space-y-5">
+            <label className="block text-sm font-medium text-gray-700">
+              {t('submit.shortTitle')}
+              <input {...form.register('title')} className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
+            </label>
+            {storyType === 'text' ? (
+              <label className="block text-sm font-medium text-gray-700">
+                {t('submit.stepStory')}
+                <span className="mt-1 block text-sm font-normal text-gray-500">{t('submit.storyGuidance')}</span>
+                <textarea {...form.register('narrativeText')} rows={9} placeholder={t('submit.storyPrompt')} className="mt-3 w-full resize-y rounded-md border border-gray-200 px-3 py-2" />
+              </label>
+            ) : null}
+            {storyType === 'facilitated' ? (
+              <>
+                <label className="block text-sm font-medium text-gray-700">
+                  {t('submit.facilitatorCode')}
+                  <input {...form.register('facilitatorCode')} className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
+                </label>
+                <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-900">{t('submit.facilitatorHelp')}</p>
+              </>
+            ) : null}
+            {['voice', 'video'].includes(storyType) ? (
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <p className="mb-4 text-sm text-gray-600">{t('submit.maxRecording')}</p>
+                {!mediaPreviewUrl && recordingState !== 'recording' && recordingState !== 'paused' ? (
+                  <div className="flex flex-wrap gap-3">
+                    <button type="button" onClick={startRecording} className="inline-flex min-h-11 items-center rounded-md bg-red-600 px-4 font-semibold text-white hover:bg-red-700">
+                      <Mic className="mr-2 h-4 w-4" />
+                      {t('submit.startRecording')}
+                    </button>
+                    <label className="inline-flex min-h-11 cursor-pointer items-center rounded-md border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                      <Upload className="mr-2 h-4 w-4" />
+                      {storyType === 'video' ? t('submit.uploadVideo') : t('submit.uploadAudio')}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept={storyType === 'video' ? 'video/*' : 'audio/*'}
+                        className="sr-only"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) setMedia(file);
+                        }}
+                      />
+                    </label>
+                  </div>
+                ) : null}
+                {recordingState === 'recording' || recordingState === 'paused' ? (
+                  <div className="space-y-4">
+                    {storyType === 'video' ? <video ref={videoRef} autoPlay muted className="max-h-72 w-full rounded-lg bg-black object-contain" /> : null}
+                    <div className="flex items-center gap-3">
+                      <span className="h-3 w-3 rounded-full bg-red-500" />
+                      <span className="font-mono text-2xl font-bold">{formatTime(recordingTime)}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {recordingState === 'recording' ? (
+                        <button type="button" onClick={pauseRecording} className="inline-flex min-h-10 items-center rounded-md border px-3">
+                          <Pause className="mr-2 h-4 w-4" />
+                          {t('submit.pause')}
+                        </button>
+                      ) : (
+                        <button type="button" onClick={resumeRecording} className="inline-flex min-h-10 items-center rounded-md border px-3">
+                          <Play className="mr-2 h-4 w-4" />
+                          {t('submit.resume')}
+                        </button>
+                      )}
+                      <button type="button" onClick={stopRecording} className="min-h-10 rounded-md bg-slate-900 px-3 text-white">{t('submit.stop')}</button>
+                    </div>
+                  </div>
+                ) : null}
+                {mediaPreviewUrl ? (
+                  <div className="space-y-4">
+                    {storyType === 'video' ? (
+                      <video src={mediaPreviewUrl} controls className="max-h-80 w-full rounded-lg border bg-black object-contain" />
+                    ) : (
+                      <audio src={mediaPreviewUrl} controls className="w-full" />
+                    )}
+                    <button type="button" onClick={clearMedia} className="inline-flex items-center rounded-md border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t('submit.replaceMedia')}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        {step === 3 ? (
+          <section className="space-y-5">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-gray-700">
+                {t('submit.name')} <span className="font-normal">({t('submit.optional')})</span>
+                <input {...form.register('name')} disabled={values.isAnonymous} placeholder="Your name" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2 disabled:bg-gray-100" />
+              </label>
+              <label className="block text-sm font-medium text-gray-700">
+                {t('submit.city')} <span className="font-normal text-red-600">({t('submit.required')})</span>
+                <input {...form.register('city')} placeholder="e.g. Pittsburgh, Philadelphia" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
+              </label>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-gray-700">
+                {t('submit.zipCode')} <span className="font-normal">({t('submit.optional')})</span>
+                <input {...form.register('zipCode')} placeholder="15201" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
+              </label>
+              <label className="block text-sm font-medium text-gray-700">
+                {t('submit.happened')}
+                <input {...form.register('occurredAtText')} placeholder="Within the last month" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
+              </label>
+            </div>
+            <label className="block text-sm font-medium text-gray-700">
+              {t('submit.referral')}
+              <input {...form.register('referralSource')} placeholder="Organization name or how you found us" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
+            </label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t('submit.impact')}
+              <select {...form.register('selfReportedImpact')} className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2">
+                {impacts.map(([value, label]) => <option key={value} value={value}>{t(label)}</option>)}
+              </select>
+            </label>
+            <fieldset className="space-y-3 rounded-xl border border-gray-200 p-4">
+              <legend className="px-1 text-sm font-medium text-gray-700">{t('submit.contact')}</legend>
+              <label className="flex items-center gap-3 text-sm text-gray-700">
+                <input type="radio" value="yes" {...form.register('wantsContact')} />
+                {t('submit.contactYes')}
+              </label>
+              <label className="flex items-center gap-3 text-sm text-gray-700">
+                <input type="radio" value="no" {...form.register('wantsContact')} />
+                {t('submit.contactNo')}
+              </label>
+              {values.wantsContact === 'yes' ? (
+                <input {...form.register('contactEmail')} placeholder={t('submit.contactEmail')} className="min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
+              ) : null}
+            </fieldset>
+            <label className="flex items-center gap-3 rounded-lg border border-gray-200 p-4 text-sm text-gray-700">
+              <input type="checkbox" {...form.register('isAnonymous')} className="h-4 w-4" />
+              {t('submit.anonymous')}
+            </label>
+          </section>
+        ) : null}
+
+        {step === 4 ? (
+          <section className="space-y-5">
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+              <h3 className="mb-4 text-lg font-bold text-gray-900">{t('submit.preview')}</h3>
+              <dl className="grid gap-4 text-sm sm:grid-cols-2">
+                <PreviewItem label={t('submit.shortTitle')} value={values.title} />
+                <PreviewItem label={t('submit.stepShare')} value={t(methods.find((item) => item.id === storyType)?.label || 'submit.writeStory')} />
+                <PreviewItem label={t('submit.domain')} value={values.affectedDomain || 'N/A'} />
+                <PreviewItem label={t('submit.city')} value={values.city || 'N/A'} />
+                <PreviewItem label={t('submit.impact')} value={t(impacts.find(([value]) => value === values.selfReportedImpact)?.[1] || 'submit.notSureImpact')} />
+                <PreviewItem label={t('submit.happened')} value={values.occurredAtText || 'N/A'} />
+              </dl>
+              {storyType === 'text' ? <p className="mt-4 rounded-md bg-white p-4 text-sm leading-6 text-gray-700">{values.narrativeText}</p> : null}
+              {uploadedMedia ? <p className="mt-4 rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">{t('submit.mediaPending')}</p> : null}
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
+                <Shield className="h-5 w-5 text-amber-700" />
+                <h3 className="text-lg font-semibold text-gray-900">{t('submit.consentTitle')}</h3>
+              </div>
+              <p className="rounded-md bg-amber-50 p-4 text-sm leading-6 text-gray-700">{t('submit.consent')}</p>
+              <label className="flex items-center gap-3 text-sm text-gray-800">
+                <input type="checkbox" {...form.register('publicPosting')} className="h-4 w-4" />
+                {t('submit.publicPosting')}
+              </label>
+              <label className="flex items-start gap-3 text-sm text-gray-800">
+                <input type="checkbox" {...form.register('followupConsent')} className="mt-1 h-4 w-4" />
+                {t('submit.consentTitle')} *
+              </label>
+              {currentUserEmail ? <p className="rounded-md bg-slate-50 p-3 text-sm text-slate-600">Submitting as {currentUserEmail}.</p> : null}
+            </div>
+          </section>
+        ) : null}
+
+        {message ? <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">{message}</p> : null}
+
+        <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-between">
+          <button type="button" disabled={step === 0 || submitting} onClick={() => setStep((current) => Math.max(current - 1, 0))} className="inline-flex min-h-11 items-center justify-center rounded-md border border-gray-200 px-4 text-sm font-semibold text-gray-700 disabled:cursor-not-allowed disabled:opacity-40">
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            {t('submit.back')}
+          </button>
+          {step < steps.length - 1 ? (
+            <button type="button" onClick={nextStep} className="inline-flex min-h-11 items-center justify-center rounded-md bg-yellow-500 px-5 text-sm font-semibold text-gray-900 hover:bg-yellow-400">
+              {t('submit.next')}
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </button>
+          ) : (
+            <button type="button" disabled={submitting} onClick={submitStory} className="inline-flex min-h-11 items-center justify-center rounded-md bg-yellow-500 px-5 text-sm font-semibold text-gray-900 hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-yellow-200">
+              {submitting ? <Check className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
+              {submitting ? t('submit.submitting') : t('submit.submit')}
+            </button>
+          )}
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function PreviewItem({ label, value }) {
+  return (
+    <div>
+      <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</dt>
+      <dd className="mt-1 font-medium text-gray-900">{value}</dd>
+    </div>
   );
 }

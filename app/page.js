@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Database, Eye, ExternalLink, Quote, Users } from 'lucide-react';
+import { ArrowRight, Building2, Database, Eye, ExternalLink, MessageSquare, Quote, Users } from 'lucide-react';
 import { prisma } from '../lib/prisma';
 import { getJurisdictionId } from '../lib/jurisdiction';
 import { getCurrentUser } from '../lib/auth';
@@ -13,16 +13,22 @@ export const dynamic = 'force-dynamic';
 export default async function HomePage() {
   const jurisdictionId = getJurisdictionId();
   const user = await getCurrentUser();
-  const [algorithms, recentStories, upcomingEvents] = await Promise.all([
+  const [algorithms, recentStories, upcomingEvents, organizationCount] = await Promise.all([
     prisma.algorithm.findMany({
       where: { jurisdictionId },
       orderBy: [{ name: 'asc' }],
-      include: { _count: { select: { testimonyLinks: true } } },
+      include: {
+        _count: {
+          select: {
+            testimonyLinks: { where: { testimony: { moderationStatus: 'APPROVED' } } },
+          },
+        },
+      },
     }),
     prisma.testimony.findMany({
       where: { jurisdictionId, moderationStatus: 'APPROVED' },
       orderBy: { submittedAt: 'desc' },
-      take: 2,
+      take: 3,
       include: { _count: { select: { comments: true, reactions: true } } },
     }),
     prisma.communityEvent.findMany({
@@ -31,8 +37,9 @@ export default async function HomePage() {
       take: 3,
       include: { organizer: true },
     }),
+    prisma.organization.count({ where: { jurisdictionId, isActive: true } }),
   ]);
-  const featuredStory = recentStories[0];
+  const approvedStoryCount = await prisma.testimony.count({ where: { jurisdictionId, moderationStatus: 'APPROVED' } });
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 to-slate-100 text-gray-900">
@@ -62,7 +69,7 @@ export default async function HomePage() {
                 <Database className="mr-2 h-4 w-4" />
                 Browse Algorithms
               </Link>
-              <Link href="#about" className="inline-flex h-12 items-center justify-center rounded-md border border-white/70 bg-white/10 px-7 text-base font-semibold text-white hover:bg-white/20">
+              <Link href="/about" className="inline-flex h-12 items-center justify-center rounded-md border border-white/70 bg-white/10 px-7 text-base font-semibold text-white hover:bg-white/20">
                 Learn More
                 <ExternalLink className="ml-2 h-4 w-4" />
               </Link>
@@ -88,6 +95,14 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="border-b border-yellow-200 bg-white">
+        <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 sm:px-6 md:grid-cols-3">
+          <StatCard icon={Database} value={algorithms.length} label="Algorithms Documented" />
+          <StatCard icon={MessageSquare} value={approvedStoryCount} label="Testimonies Collected" />
+          <StatCard icon={Building2} value={organizationCount} label="Organizations Participating" />
+        </div>
+      </section>
+
       <AISystemsDiagram />
 
       <HomeUseCaseExplorer
@@ -104,6 +119,15 @@ export default async function HomePage() {
         }))}
       />
 
+      <section className="bg-slate-50 py-6">
+        <div className="mx-auto flex max-w-6xl justify-end px-4 sm:px-6">
+          <Link href="/algorithms" className="inline-flex min-h-11 items-center rounded-md border border-yellow-500 bg-white px-5 text-sm font-semibold text-yellow-800 hover:bg-yellow-50">
+            Browse More Algorithms
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </div>
+      </section>
+
       <section className="bg-white py-16">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mb-8">
@@ -115,26 +139,27 @@ export default async function HomePage() {
           </div>
           <div className="grid items-start gap-12 md:grid-cols-2">
             <div className="rounded-2xl border-l-4 border-yellow-500 bg-gradient-to-br from-yellow-50 to-yellow-100 p-5 sm:p-8">
-              <h3 className="mb-6 text-2xl font-bold text-gray-900">Community Voices from Pittsburgh</h3>
-              <Quote className="mb-6 h-12 w-12 text-yellow-400" />
-              {featuredStory ? (
-                <>
-                  <p className="mb-6 text-xl italic leading-8 text-gray-700">
-                    "{featuredStory.summary || featuredStory.narrativeText}"
-                  </p>
-                  <p className="mb-6 text-gray-500">- {featuredStory.submitterName || 'Anonymous Community Member'}</p>
-                </>
-              ) : (
-                <>
-                  <p className="mb-6 text-xl italic leading-8 text-gray-700">
-                    "I didn't realize an algorithm helped determine my application priority until I noticed the decision didn't match my caseworker's expectations."
-                  </p>
-                  <p className="mb-6 text-gray-500">- Anonymous Housing Applicant</p>
-                </>
-              )}
-              <Link href="/stories" className="inline-flex min-h-11 items-center rounded-md bg-gray-900 px-5 py-2 text-sm font-semibold text-white hover:bg-gray-800">
-                Read More Stories
-              </Link>
+              <h3 className="mb-6 text-2xl font-bold text-gray-900">Recent Community Voices</h3>
+              <div className="space-y-5">
+                {(recentStories.length ? recentStories : [{
+                  id: 'fallback',
+                  summary: "I didn't realize an algorithm helped determine my application priority until I noticed the decision didn't match my caseworker's expectations.",
+                }]).map((story) => (
+                  <blockquote key={story.id} className="rounded-lg bg-white/70 p-4">
+                    <Quote className="mb-3 h-7 w-7 text-yellow-400" />
+                    <p className="text-base italic leading-7 text-gray-700">"{story.summary || story.narrativeText}"</p>
+                    <p className="mt-3 text-sm text-gray-500">- Anonymous Community Member</p>
+                  </blockquote>
+                ))}
+              </div>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href="/submit-testimony" className="inline-flex min-h-11 items-center rounded-md bg-yellow-500 px-5 py-2 text-sm font-semibold text-gray-900 hover:bg-yellow-400">
+                  Share Your Story
+                </Link>
+                <Link href="/stories" className="inline-flex min-h-11 items-center rounded-md bg-gray-900 px-5 py-2 text-sm font-semibold text-white hover:bg-gray-800">
+                  Read More Stories
+                </Link>
+              </div>
             </div>
             <div className="rounded-2xl bg-gradient-to-br from-yellow-500 to-yellow-600 p-5 text-white sm:p-8">
               <h3 className="mb-6 text-2xl font-bold">What's Happening?</h3>
@@ -157,6 +182,35 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <section className="bg-white pb-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-6 sm:flex sm:items-center sm:justify-between sm:gap-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Are you a community organization?</h2>
+              <p className="mt-2 text-gray-600">Partner with us to help residents share experiences and understand public algorithms.</p>
+            </div>
+            <Link href="/about#partners" className="mt-5 inline-flex min-h-11 items-center rounded-md bg-gray-900 px-5 text-sm font-semibold text-white hover:bg-gray-800 sm:mt-0">
+              Partner with us
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
     </main>
+  );
+}
+
+function StatCard({ icon: Icon, value, label }) {
+  return (
+    <div className="flex items-center gap-4 rounded-lg border border-yellow-100 bg-yellow-50 p-4">
+      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-yellow-500 text-gray-900">
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <div className="text-2xl font-black text-gray-900">{value}</div>
+        <div className="text-sm font-medium text-gray-600">{label}</div>
+      </div>
+    </div>
   );
 }

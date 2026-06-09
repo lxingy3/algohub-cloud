@@ -149,9 +149,17 @@ export default async function AboutPage() {
 
       <section className="border-y border-gray-200 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-          <div className="mb-10">
-            <h2 className="text-3xl font-bold text-gray-900">Our Team</h2>
-            <p className="mt-2 max-w-2xl text-gray-600">The people supporting the research, design, and community work behind AlgoStories.</p>
+          <div className="mb-10 grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">Our Team</h2>
+              <p className="mt-2 max-w-2xl text-gray-600">The people supporting the research, design, and community work behind AlgoStories.</p>
+            </div>
+            <Link href="https://www.sci.pitt.edu/" target="_blank" rel="noreferrer" className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-3 shadow-sm hover:border-amber-300">
+              <img src="/team-orgs/pitt-sci-logo.jpg" alt="Pitt SCI logo" className="h-16 w-16 rounded object-cover" />
+              <span className="max-w-52 text-sm font-semibold leading-5 text-gray-900">
+                School of Computing and Information, University of Pittsburgh
+              </span>
+            </Link>
           </div>
           <div className="space-y-10">
             {teamSections.map((section) => (
@@ -172,7 +180,7 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <section id="partners" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-12 sm:px-6 sm:py-16">
         <div className="mb-10">
           <h2 className="text-3xl font-bold text-gray-900">Partner Organizations</h2>
           <p className="mt-2 max-w-2xl text-gray-600">Community, research, library, housing, and public-sector partners connected to the project.</p>

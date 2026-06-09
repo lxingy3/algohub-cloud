@@ -72,14 +72,17 @@
   </g>
 
   <g id="testimony" transform="translate(520 330)">
-    <rect class="box core" width="370" height="198" />
+    <rect class="box core" width="370" height="238" />
     <text x="20" y="32" class="label title">Testimony</text>
     <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
     <text x="20" y="78" class="field">title, summary, narrativeText, city, zipCode</text>
-    <text x="20" y="98" class="field">submitterName, referralSource, storyType</text>
-    <text x="20" y="118" class="field">publicPosting, followupConsent, media URLs</text>
-    <text x="20" y="138" class="field">userId, partnerOrgId, facilitatorId</text>
-    <text x="20" y="158" class="field">affectedDomain, moderationStatus, submittedAt</text>
+    <text x="20" y="98" class="field">submitterName, contactEmail, referralSource</text>
+    <text x="20" y="118" class="field">storyType, publicPosting, followupConsent</text>
+    <text x="20" y="138" class="field">audioFileUrl, videoFileUrl, mediaObjectKey</text>
+    <text x="20" y="158" class="field">transcriptionStatus, transcriptionText</text>
+    <text x="20" y="178" class="field">occurredAtText, affectedDomain, impact</text>
+    <text x="20" y="198" class="field">userId, partnerOrgId, facilitatorId</text>
+    <text x="20" y="218" class="field">moderationStatus, submittedAt</text>
   </g>
 
   <g id="link" transform="translate(520 610)">
@@ -88,6 +91,15 @@
     <text x="20" y="58" class="field">testimonyId PK/FK</text>
     <text x="20" y="78" class="field">algorithmId PK/FK</text>
     <text x="20" y="98" class="field">linkType, confidence</text>
+  </g>
+
+  <g id="transcription" transform="translate(950 610)">
+    <rect class="box engage" width="310" height="148" />
+    <text x="20" y="32" class="label title">TranscriptionJob</text>
+    <text x="20" y="58" class="field">id PK, testimonyId FK</text>
+    <text x="20" y="78" class="field">mediaKind, objectKey, mediaUrl</text>
+    <text x="20" y="98" class="field">status, provider, attempts</text>
+    <text x="20" y="118" class="field">transcript, error, processedAt</text>
   </g>
 
   <g id="brief" transform="translate(520 800)">
@@ -225,6 +237,7 @@
   <path class="line" d="M890 430 L920 430 L920 874 L890 874" />
   <path class="line" d="M890 450 L920 450 L920 1085 L890 1085" />
   <path class="line" d="M890 470 L930 470 L930 864 L950 864" />
+  <path class="line" d="M890 548 L930 548 L930 684 L950 684" />
   <path class="line" d="M890 674 L930 674 L930 1069 L950 1069" />
   <path class="line" d="M890 674 L1090 674 L1090 780 L1285 780 L1285 820" />
   <path class="line" d="M1450 409 L1620 409" />
@@ -240,6 +253,7 @@
   <text x="430" y="654" class="tagtext">linked by</text>
   <text x="714" y="585" class="tagtext">links</text>
   <text x="714" y="775" class="tagtext">summary</text>
+  <text x="958" y="664" class="tagtext">transcribes</text>
   <text x="714" y="987" class="tagtext">comments</text>
   <text x="1008" y="846" class="tagtext">reactions</text>
   <text x="958" y="1048" class="tagtext">likes</text>

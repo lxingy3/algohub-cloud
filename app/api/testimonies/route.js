@@ -1,7 +1,4 @@
 import { NextResponse } from 'next/server';
-import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
@@ -9,20 +6,28 @@ import { getCurrentUser } from '../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-const MAX_MEDIA_UPLOAD_BYTES = 4 * 1024 * 1024;
-
 const testimonySchema = z.object({
   title: z.string().trim().min(1),
   name: z.string().trim().optional(),
   city: z.string().trim().min(1),
   zipCode: z.string().trim().optional(),
+  occurredAtText: z.string().trim().optional(),
   referralSource: z.string().trim().optional(),
+  facilitatorCode: z.string().trim().optional(),
+  contactEmail: z.string().trim().email().optional().or(z.literal('')),
   narrativeText: z.string().trim().optional(),
   algorithmId: z.string().trim().optional(),
+  uncertainSystem: z.boolean().optional(),
+  affectedDomain: z.string().trim().optional(),
   selfReportedImpact: z.enum(['POSITIVE', 'NEGATIVE', 'MIXED', 'UNCLEAR']).optional(),
   publicPosting: z.boolean(),
   followupConsent: z.literal(true),
-  storyType: z.enum(['text', 'voice', 'video']),
+  isAnonymous: z.boolean().optional(),
+  storyType: z.enum(['text', 'voice', 'video', 'facilitated']),
+  mediaObjectKey: z.string().trim().optional(),
+  mediaUrl: z.string().trim().optional(),
+  mediaMimeType: z.string().trim().optional(),
+  mediaDurationSeconds: z.number().int().nonnegative().optional(),
 });
 
 function isChecked(value) {
@@ -32,42 +37,6 @@ function isChecked(value) {
 function formText(formData, key) {
   const value = formData.get(key);
   return typeof value === 'string' ? value : '';
-}
-
-function mediaExtension(file) {
-  const originalExtension = file?.name?.split('.').pop()?.toLowerCase();
-  if (originalExtension && /^[a-z0-9]{2,5}$/.test(originalExtension)) return originalExtension;
-  if (!file?.type) return 'webm';
-  if (file.type.includes('mp4')) return 'mp4';
-  if (file.type.includes('mpeg')) return 'mp3';
-  if (file.type.includes('quicktime')) return 'mov';
-  if (file.type.includes('x-m4a')) return 'm4a';
-  if (file.type.includes('ogg')) return 'ogg';
-  if (file.type.includes('wav')) return 'wav';
-  return 'webm';
-}
-
-async function saveMediaFile(file, folder) {
-  if (!file || typeof file.arrayBuffer !== 'function' || file.size === 0) return null;
-  if (file.size > MAX_MEDIA_UPLOAD_BYTES) {
-    throw new Error('MEDIA_FILE_TOO_LARGE');
-  }
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  if (process.env.VERCEL) {
-    return `data:${file.type || 'application/octet-stream'};base64,${buffer.toString('base64')}`;
-  }
-
-  const uploadRoot = join(process.cwd(), 'public', 'uploads', 'testimonies', folder);
-  const fileName = `${Date.now()}-${randomUUID()}.${mediaExtension(file)}`;
-  try {
-    await mkdir(uploadRoot, { recursive: true });
-    await writeFile(join(uploadRoot, fileName), buffer);
-    return `/uploads/testimonies/${folder}/${fileName}`;
-  } catch (error) {
-    console.error('Could not save local testimony media', error);
-    return null;
-  }
 }
 
 export async function GET(request) {
@@ -106,21 +75,28 @@ export async function GET(request) {
 
 export async function POST(request) {
   const user = await getCurrentUser();
-  const formData = await request.formData();
-  const jurisdictionId = getJurisdictionId();
-  const result = testimonySchema.safeParse({
+  const contentType = request.headers.get('content-type') || '';
+  const formData = contentType.includes('application/json') ? null : await request.formData();
+  const payload = formData ? {
     title: formText(formData, 'title'),
     name: formText(formData, 'name'),
     city: formText(formData, 'city'),
     zipCode: formText(formData, 'zipCode'),
+    occurredAtText: formText(formData, 'occurredAtText'),
     referralSource: formText(formData, 'referralSource'),
+    facilitatorCode: formText(formData, 'facilitatorCode'),
+    contactEmail: formText(formData, 'contactEmail'),
     narrativeText: formText(formData, 'narrativeText'),
     algorithmId: formText(formData, 'algorithmId'),
+    affectedDomain: formText(formData, 'affectedDomain'),
     selfReportedImpact: formText(formData, 'selfReportedImpact') || 'UNCLEAR',
     publicPosting: isChecked(formData.get('publicPosting')),
     followupConsent: isChecked(formData.get('followupConsent')),
+    isAnonymous: isChecked(formData.get('isAnonymous')),
     storyType: formText(formData, 'storyType') || 'text',
-  });
+  } : await request.json().catch(() => null);
+  const jurisdictionId = getJurisdictionId();
+  const result = testimonySchema.safeParse(payload);
 
   if (!result.success) {
     return NextResponse.json({ error: 'Invalid testimony submission' }, { status: 400 });
@@ -131,70 +107,100 @@ export async function POST(request) {
     name,
     city,
     zipCode,
+    occurredAtText,
     referralSource,
+    facilitatorCode,
+    contactEmail,
     narrativeText,
     algorithmId,
+    uncertainSystem,
+    affectedDomain,
     selfReportedImpact,
     publicPosting,
     followupConsent,
+    isAnonymous,
     storyType,
+    mediaObjectKey,
+    mediaUrl,
+    mediaMimeType,
+    mediaDurationSeconds,
   } = result.data;
-  const audioFile = formData.get('audioFile');
-  const videoFile = formData.get('videoFile');
-  let audioFileUrl = null;
-  let videoFileUrl = null;
-  try {
-    audioFileUrl = storyType === 'voice' ? await saveMediaFile(audioFile, 'audio') : null;
-    videoFileUrl = storyType === 'video' ? await saveMediaFile(videoFile, 'video') : null;
-  } catch (error) {
-    if (error.message === 'MEDIA_FILE_TOO_LARGE') {
-      return NextResponse.json({ error: 'Please upload a media file smaller than 4 MB.' }, { status: 413 });
-    }
-    console.error('Could not process testimony media', error);
-    return NextResponse.json({ error: 'The media file could not be saved.' }, { status: 500 });
+
+  if ((storyType === 'voice' || storyType === 'video') && (!mediaObjectKey || !mediaUrl)) {
+    return NextResponse.json({ error: 'Please record or upload media before submitting.' }, { status: 400 });
   }
+
   const fallbackNarrative =
     storyType === 'voice'
-      ? 'A voice story was submitted.'
+      ? 'A voice story was submitted and is waiting for transcription.'
       : storyType === 'video'
-        ? 'A video story was submitted.'
-        : '';
+        ? 'A video story was submitted and is waiting for transcription.'
+        : storyType === 'facilitated'
+          ? 'A facilitated story session was submitted.'
+          : '';
   const storedNarrative = narrativeText?.trim() || fallbackNarrative;
 
-  const testimony = await prisma.testimony.create({
-    data: {
+  const testimony = await prisma.$transaction(async (tx) => {
+    const created = await tx.testimony.create({
+      data: {
       jurisdictionId,
       title,
       city: city || '',
       zipCode: zipCode || null,
+      occurredAtText: occurredAtText || null,
       referralSource: referralSource || null,
+      facilitatorCode: facilitatorCode || null,
       publicPosting,
       followupConsent,
       storyType,
       narrativeText: storedNarrative,
       summary: storedNarrative.length > 160 ? `${storedNarrative.slice(0, 157)}...` : storedNarrative,
       userId: user?.id,
-      submitterName: name || user?.name,
-      submitterEmail: user?.email,
-      isAnonymous: !name && !user,
-      submissionMethod: storyType === 'voice' ? 'AUDIO_TRANSCRIPTION' : 'WEB_FORM',
-      audioFileUrl,
-      videoFileUrl,
+      submitterName: isAnonymous ? null : (name || user?.name),
+      submitterEmail: contactEmail || user?.email,
+      contactEmail: contactEmail || null,
+      isAnonymous: Boolean(isAnonymous),
+      submissionMethod: storyType === 'facilitated' ? 'FACILITATED_SESSION' : storyType === 'voice' || storyType === 'video' ? 'AUDIO_TRANSCRIPTION' : 'WEB_FORM',
+      audioFileUrl: storyType === 'voice' ? mediaUrl : null,
+      videoFileUrl: storyType === 'video' ? mediaUrl : null,
+      mediaObjectKey: mediaObjectKey || null,
+      mediaMimeType: mediaMimeType || null,
+      mediaDurationSeconds: mediaDurationSeconds || null,
+      transcriptionStatus: storyType === 'voice' || storyType === 'video' ? 'PENDING' : 'NOT_REQUIRED',
       selfReportedImpact,
+      affectedDomain: affectedDomain || null,
       moderationStatus: 'PENDING',
-    },
-  });
+      },
+    });
 
-  if (algorithmId) {
-    await prisma.testimonyAlgorithmLink.create({
-      data: {
-        testimonyId: testimony.id,
+    if (algorithmId && !uncertainSystem) {
+      await tx.testimonyAlgorithmLink.create({
+        data: {
+          testimonyId: created.id,
         algorithmId,
         linkType: 'SUBMITTER_IDENTIFIED',
         confidence: 1,
-      },
-    });
-  }
+        },
+      });
+    }
 
-  return NextResponse.redirect(new URL('/stories', request.url), { status: 303 });
+    if ((storyType === 'voice' || storyType === 'video') && mediaObjectKey && mediaUrl) {
+      await tx.transcriptionJob.create({
+        data: {
+          testimonyId: created.id,
+          jurisdictionId,
+          mediaKind: storyType === 'video' ? 'video' : 'audio',
+          objectKey: mediaObjectKey,
+          mediaUrl,
+          mimeType: mediaMimeType || null,
+        },
+      });
+    }
+
+    return created;
+  });
+
+  return contentType.includes('application/json')
+    ? NextResponse.json({ id: testimony.id, redirectTo: '/stories' }, { status: 201 })
+    : NextResponse.redirect(new URL('/stories', request.url), { status: 303 });
 }
