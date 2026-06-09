@@ -15,14 +15,14 @@ function summarize(text) {
 async function isAuthorized(request) {
   const configuredSecret = process.env.TRANSCRIPTION_PROCESS_SECRET;
   const requestSecret = request.headers.get('x-transcription-secret');
+  const cronSecret = process.env.CRON_SECRET;
+  const authHeader = request.headers.get('authorization');
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) return true;
   if (configuredSecret && requestSecret === configuredSecret) return true;
   return Boolean(await requireAdmin());
 }
 
-export async function POST(request) {
-  if (!await isAuthorized(request)) {
-    return NextResponse.json({ error: 'Admin access is required.' }, { status: 401 });
-  }
+async function processPendingJobs(limit) {
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json({ error: 'OPENAI_API_KEY is not configured.' }, { status: 503 });
   }
@@ -30,8 +30,6 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Cloudflare R2 is not configured.' }, { status: 503 });
   }
 
-  const body = await request.json().catch(() => ({}));
-  const limit = Math.min(Math.max(Number(body.limit || 1), 1), 5);
   const jurisdictionId = getJurisdictionId();
   const jobs = await prisma.transcriptionJob.findMany({
     where: {
@@ -101,4 +99,22 @@ export async function POST(request) {
   }
 
   return NextResponse.json({ processed });
+}
+
+export async function GET(request) {
+  if (!process.env.CRON_SECRET || request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Cron access is required.' }, { status: 401 });
+  }
+
+  return processPendingJobs(3);
+}
+
+export async function POST(request) {
+  if (!await isAuthorized(request)) {
+    return NextResponse.json({ error: 'Admin access is required.' }, { status: 401 });
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const limit = Math.min(Math.max(Number(body.limit || 1), 1), 5);
+  return processPendingJobs(limit);
 }
