@@ -21,13 +21,16 @@ function translateTextNode(node, staticText) {
   if (!parent || parent.closest('[data-no-i18n]')) return;
   if (['SCRIPT', 'STYLE', 'TEXTAREA', 'CODE', 'PRE'].includes(parent.tagName)) return;
 
+  const hasOriginal = originalText.has(node);
   const existing = originalText.get(node) || node.nodeValue;
   const key = existing.trim();
   if (!key || key.length < 2) return;
+  if (!hasOriginal && !Object.prototype.hasOwnProperty.call(staticText, key)) return;
 
   originalText.set(node, existing);
   const translated = staticText[key] || key;
-  node.nodeValue = preserveWhitespace(existing, translated);
+  const nextValue = preserveWhitespace(existing, translated);
+  if (node.nodeValue !== nextValue) node.nodeValue = nextValue;
 }
 
 function translateAttributes(element, staticText) {
@@ -36,9 +39,13 @@ function translateAttributes(element, staticText) {
     if (!value) continue;
 
     const originalAttribute = `data-i18n-original-${attribute}`;
-    const original = element.getAttribute(originalAttribute) || value;
+    const existingOriginal = element.getAttribute(originalAttribute);
+    const original = existingOriginal || value;
+    if (!existingOriginal && !Object.prototype.hasOwnProperty.call(staticText, original)) continue;
+
     element.setAttribute(originalAttribute, original);
-    element.setAttribute(attribute, staticText[original] || original);
+    const nextValue = staticText[original] || original;
+    if (value !== nextValue) element.setAttribute(attribute, nextValue);
   }
 }
 
@@ -70,14 +77,12 @@ export function StaticTextTranslator() {
       const latestStaticText = getStaticTextMap(i18n);
       for (const mutation of mutations) {
         mutation.addedNodes.forEach((node) => translateTree(node, latestStaticText));
-        if (mutation.type === 'characterData') translateTextNode(mutation.target, latestStaticText);
       }
     });
 
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-      characterData: true,
     });
 
     return () => observer.disconnect();
