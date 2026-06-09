@@ -14,17 +14,38 @@ export default async function StoryPage({ params }) {
   const user = await getCurrentUser();
   const testimony = await prisma.testimony.findFirst({
     where: { id, jurisdictionId: getJurisdictionId(), moderationStatus: 'APPROVED' },
-    include: {
-      brief: true,
-      algorithmLinks: { include: { algorithm: true } },
-      reactions: true,
+    select: {
+      id: true,
+      sourceId: true,
+      title: true,
+      summary: true,
+      affectedDomain: true,
+      submittedAt: true,
+      storyType: true,
+      narrativeText: true,
+      audioFileUrl: true,
+      videoFileUrl: true,
+      brief: { select: { summary: true, keyExcerpts: true } },
+      reactions: { select: { reactionType: true } },
       comments: {
         where: { moderationStatus: 'APPROVED', parentCommentId: null },
         orderBy: { createdAt: 'asc' },
-        include: {
+        select: {
+          id: true,
+          authorName: true,
+          content: true,
           user: true,
-          replies: { where: { moderationStatus: 'APPROVED' }, include: { user: true, likes: true } },
-          likes: true,
+          replies: {
+            where: { moderationStatus: 'APPROVED' },
+            select: {
+              id: true,
+              authorName: true,
+              content: true,
+              user: true,
+              likes: { select: { id: true } },
+            },
+          },
+          likes: { select: { id: true } },
         },
       },
     },

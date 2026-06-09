@@ -58,7 +58,14 @@ export async function POST(request, { params }) {
   const jurisdictionId = getJurisdictionId();
   const existing = await prisma.testimony.findFirst({
     where: { id, jurisdictionId, userId: user.id },
-    include: { algorithmLinks: true },
+    select: {
+      id: true,
+      storyType: true,
+      audioFileUrl: true,
+      videoFileUrl: true,
+      moderationStatus: true,
+      algorithmLinks: { select: { algorithmId: true } },
+    },
   });
 
   if (!existing) {

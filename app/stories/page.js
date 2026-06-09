@@ -36,7 +36,12 @@ export default async function StoriesPage({ searchParams }) {
     prisma.testimony.findMany({
       where,
       orderBy: { submittedAt: 'desc' },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        summary: true,
+        affectedDomain: true,
+        submittedAt: true,
         _count: { select: { comments: true, reactions: true } },
       },
     }),

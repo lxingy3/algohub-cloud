@@ -19,7 +19,25 @@ export default async function EditMyStoryPage({ params }) {
   const [testimony, algorithms] = await Promise.all([
     prisma.testimony.findFirst({
       where: { id, jurisdictionId: getJurisdictionId(), userId: user.id },
-      include: { algorithmLinks: true },
+      select: {
+        id: true,
+        title: true,
+        city: true,
+        zipCode: true,
+        referralSource: true,
+        submitterName: true,
+        publicPosting: true,
+        followupConsent: true,
+        storyType: true,
+        narrativeText: true,
+        audioFileUrl: true,
+        videoFileUrl: true,
+        selfReportedImpact: true,
+        moderationStatus: true,
+        moderationNotes: true,
+        submittedAt: true,
+        algorithmLinks: { select: { algorithmId: true } },
+      },
     }),
     prisma.algorithm.findMany({
       where: { jurisdictionId: getJurisdictionId() },

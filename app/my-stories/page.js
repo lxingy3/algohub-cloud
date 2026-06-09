@@ -20,8 +20,15 @@ export default async function MyStoriesPage({ searchParams }) {
       userId: user.id,
     },
     orderBy: { submittedAt: 'desc' },
-    include: {
-      algorithmLinks: { include: { algorithm: true } },
+    select: {
+      id: true,
+      title: true,
+      summary: true,
+      narrativeText: true,
+      moderationStatus: true,
+      moderationNotes: true,
+      submittedAt: true,
+      algorithmLinks: { select: { algorithmId: true, algorithm: { select: { name: true } } } },
       _count: { select: { comments: true, reactions: true } },
     },
   });

@@ -29,7 +29,12 @@ export default async function HomePage() {
       where: { jurisdictionId, moderationStatus: 'APPROVED' },
       orderBy: { submittedAt: 'desc' },
       take: 3,
-      include: { _count: { select: { comments: true, reactions: true } } },
+      select: {
+        id: true,
+        summary: true,
+        narrativeText: true,
+        _count: { select: { comments: true, reactions: true } },
+      },
     }),
     prisma.communityEvent.findMany({
       where: { jurisdictionId },
