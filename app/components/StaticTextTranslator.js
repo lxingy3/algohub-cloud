@@ -1,0 +1,87 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+
+const originalText = new WeakMap();
+const translatableAttributes = ['placeholder', 'aria-label', 'title'];
+
+function preserveWhitespace(currentValue, nextValue) {
+  const prefix = currentValue.match(/^\s*/)?.[0] || '';
+  const suffix = currentValue.match(/\s*$/)?.[0] || '';
+  return `${prefix}${nextValue}${suffix}`;
+}
+
+function getStaticTextMap(i18n) {
+  return i18n.getResourceBundle(i18n.resolvedLanguage || i18n.language || 'en', 'translation')?.staticText || {};
+}
+
+function translateTextNode(node, staticText) {
+  const parent = node.parentElement;
+  if (!parent || parent.closest('[data-no-i18n]')) return;
+  if (['SCRIPT', 'STYLE', 'TEXTAREA', 'CODE', 'PRE'].includes(parent.tagName)) return;
+
+  const existing = originalText.get(node) || node.nodeValue;
+  const key = existing.trim();
+  if (!key || key.length < 2) return;
+
+  originalText.set(node, existing);
+  const translated = staticText[key] || key;
+  node.nodeValue = preserveWhitespace(existing, translated);
+}
+
+function translateAttributes(element, staticText) {
+  for (const attribute of translatableAttributes) {
+    const value = element.getAttribute(attribute);
+    if (!value) continue;
+
+    const originalAttribute = `data-i18n-original-${attribute}`;
+    const original = element.getAttribute(originalAttribute) || value;
+    element.setAttribute(originalAttribute, original);
+    element.setAttribute(attribute, staticText[original] || original);
+  }
+}
+
+function translateTree(root, staticText) {
+  if (!root) return;
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode);
+  textNodes.forEach((node) => translateTextNode(node, staticText));
+
+  if (root.nodeType === Node.ELEMENT_NODE) {
+    translateAttributes(root, staticText);
+    root.querySelectorAll?.('input, textarea, select, button, a, [title], [aria-label]').forEach((element) => {
+      translateAttributes(element, staticText);
+    });
+  }
+}
+
+export function StaticTextTranslator() {
+  const { i18n } = useTranslation();
+  const language = i18n.resolvedLanguage || i18n.language || 'en';
+
+  useEffect(() => {
+    const staticText = getStaticTextMap(i18n);
+    translateTree(document.body, staticText);
+
+    const observer = new MutationObserver((mutations) => {
+      const latestStaticText = getStaticTextMap(i18n);
+      for (const mutation of mutations) {
+        mutation.addedNodes.forEach((node) => translateTree(node, latestStaticText));
+        if (mutation.type === 'characterData') translateTextNode(mutation.target, latestStaticText);
+      }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    return () => observer.disconnect();
+  }, [i18n, language]);
+
+  return null;
+}

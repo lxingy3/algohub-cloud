@@ -102,9 +102,9 @@ export default async function HomePage() {
 
       <section className="border-b border-yellow-200 bg-white">
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 sm:px-6 md:grid-cols-3">
-          <StatCard icon={Database} value={algorithms.length} label="Algorithms Documented" />
-          <StatCard icon={MessageSquare} value={approvedStoryCount} label="Testimonies Collected" />
-          <StatCard icon={Building2} value={organizationCount} label="Organizations Participating" />
+          <StatCard href="/algorithms" icon={Database} value={algorithms.length} label="Algorithms Documented" />
+          <StatCard href="/stories" icon={MessageSquare} value={approvedStoryCount} label="Testimonies Collected" />
+          <StatCard href="/about#partners" icon={Building2} value={organizationCount} label="Organizations Participating" />
         </div>
       </section>
 
@@ -124,9 +124,9 @@ export default async function HomePage() {
         }))}
       />
 
-      <section className="bg-slate-50 py-6">
+      <section className="py-6">
         <div className="mx-auto flex max-w-6xl justify-end px-4 sm:px-6">
-          <Link href="/algorithms" className="inline-flex min-h-11 items-center rounded-md border border-yellow-500 bg-white px-5 text-sm font-semibold text-yellow-800 hover:bg-yellow-50">
+          <Link href="/algorithms" className="inline-flex min-h-11 items-center rounded-md border border-yellow-500 bg-yellow-50 px-5 text-sm font-semibold text-yellow-900 shadow-sm hover:bg-yellow-100">
             Browse More Algorithms
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
@@ -206,16 +206,16 @@ export default async function HomePage() {
   );
 }
 
-function StatCard({ icon: Icon, value, label }) {
+function StatCard({ href, icon: Icon, value, label }) {
   return (
-    <div className="flex items-center gap-4 rounded-lg border border-yellow-100 bg-yellow-50 p-4">
+    <Link href={href} className="group flex items-center gap-4 rounded-lg border border-yellow-100 bg-yellow-50 p-4 transition-all hover:-translate-y-0.5 hover:border-yellow-300 hover:bg-yellow-100 hover:shadow-md">
       <div className="flex h-11 w-11 items-center justify-center rounded-full bg-yellow-500 text-gray-900">
         <Icon className="h-5 w-5" />
       </div>
       <div>
         <div className="text-2xl font-black text-gray-900">{value}</div>
-        <div className="text-sm font-medium text-gray-600">{label}</div>
+        <div className="text-sm font-medium text-gray-600 group-hover:text-gray-900">{label}</div>
       </div>
-    </div>
+    </Link>
   );
 }

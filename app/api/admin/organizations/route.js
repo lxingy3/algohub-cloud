@@ -22,6 +22,8 @@ export async function POST(request) {
       slug: slugify(name),
       contactEmail: String(formData.get('contactEmail') || ''),
       role: String(formData.get('role') || 'community_partner'),
+      websiteUrl: String(formData.get('websiteUrl') || '') || null,
+      description: String(formData.get('description') || '') || null,
     },
   });
 

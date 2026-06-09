@@ -13,11 +13,15 @@ export async function POST(request, { params }) {
   if (formData.get('action') === 'delete') {
     await prisma.organization.delete({ where: { id } });
   } else {
+    const approved = formData.get('action') === 'approve';
     await prisma.organization.update({
       where: { id },
       data: {
         name: String(formData.get('name') || ''),
         contactEmail: String(formData.get('contactEmail') || ''),
+        websiteUrl: String(formData.get('websiteUrl') || '') || null,
+        description: String(formData.get('description') || '') || null,
+        ...(approved ? { isActive: true, role: 'community_partner' } : {}),
       },
     });
   }

@@ -269,3 +269,96 @@ export const resources = {
   hi: { translation: fallbackResource('हिन्दी') },
   it: { translation: fallbackResource('Italiano') },
 };
+
+const navOverrides = {
+  en: en.nav,
+  zh: zh.nav,
+  es: es.nav,
+  ko: { home: '홈', algorithms: '알고리즘', stories: '이야기', events: '커뮤니티 행사', about: '소개', myStories: '내 이야기', login: '로그인', admin: '관리자', logout: '로그아웃', language: '언어' },
+  ja: { home: 'ホーム', algorithms: 'アルゴリズム', stories: 'ストーリー', events: 'コミュニティイベント', about: '概要', myStories: '自分のストーリー', login: 'ログイン', admin: '管理', logout: 'ログアウト', language: '言語' },
+  de: { home: 'Startseite', algorithms: 'Algorithmen', stories: 'Geschichten', events: 'Community-Veranstaltungen', about: 'Über uns', myStories: 'Meine Geschichten', login: 'Anmelden', admin: 'Admin', logout: 'Abmelden', language: 'Sprache' },
+  fr: { home: 'Accueil', algorithms: 'Algorithmes', stories: 'Récits', events: 'Événements communautaires', about: 'À propos', myStories: 'Mes récits', login: 'Connexion', admin: 'Admin', logout: 'Déconnexion', language: 'Langue' },
+  pt: { home: 'Início', algorithms: 'Algoritmos', stories: 'Histórias', events: 'Eventos comunitários', about: 'Sobre', myStories: 'Minhas histórias', login: 'Entrar', admin: 'Admin', logout: 'Sair', language: 'Idioma' },
+  ru: { home: 'Главная', algorithms: 'Алгоритмы', stories: 'Истории', events: 'События сообщества', about: 'О проекте', myStories: 'Мои истории', login: 'Войти', admin: 'Админ', logout: 'Выйти', language: 'Язык' },
+  ar: { home: 'الرئيسية', algorithms: 'الخوارزميات', stories: 'القصص', events: 'فعاليات المجتمع', about: 'حول المشروع', myStories: 'قصصي', login: 'تسجيل الدخول', admin: 'الإدارة', logout: 'تسجيل الخروج', language: 'اللغة' },
+  hi: { home: 'होम', algorithms: 'एल्गोरिदम', stories: 'कहानियां', events: 'सामुदायिक कार्यक्रम', about: 'परिचय', myStories: 'मेरी कहानियां', login: 'लॉग इन', admin: 'एडमिन', logout: 'लॉग आउट', language: 'भाषा' },
+  it: { home: 'Home', algorithms: 'Algoritmi', stories: 'Storie', events: 'Eventi comunitari', about: 'Informazioni', myStories: 'Le mie storie', login: 'Accedi', admin: 'Admin', logout: 'Esci', language: 'Lingua' },
+};
+
+const baseStaticText = {
+  'Browse Algorithms': { zh: '浏览算法', es: 'Explorar algoritmos', ko: '알고리즘 보기', ja: 'アルゴリズムを見る', de: 'Algorithmen ansehen', fr: 'Parcourir les algorithmes', pt: 'Ver algoritmos', ru: 'Просмотреть алгоритмы', ar: 'تصفح الخوارزميات', hi: 'एल्गोरिदम देखें', it: 'Sfoglia algoritmi' },
+  'Learn More': { zh: '了解更多', es: 'Más información', ko: '더 알아보기', ja: '詳しく見る', de: 'Mehr erfahren', fr: 'En savoir plus', pt: 'Saiba mais', ru: 'Подробнее', ar: 'اعرف المزيد', hi: 'और जानें', it: 'Scopri di più' },
+  'Algorithms Documented': { zh: '已记录的算法', es: 'Algoritmos documentados', ko: '기록된 알고리즘', ja: '記録済みアルゴリズム', de: 'Dokumentierte Algorithmen', fr: 'Algorithmes documentés', pt: 'Algoritmos documentados', ru: 'Задокументированные алгоритмы', ar: 'الخوارزميات الموثقة', hi: 'दर्ज एल्गोरिदम', it: 'Algoritmi documentati' },
+  'Testimonies Collected': { zh: '已收集的证言', es: 'Testimonios recopilados', ko: '수집된 증언', ja: '収集済み証言', de: 'Gesammelte Berichte', fr: 'Témoignages recueillis', pt: 'Depoimentos coletados', ru: 'Собранные свидетельства', ar: 'الشهادات المجموعة', hi: 'एकत्र गवाहियां', it: 'Testimonianze raccolte' },
+  'Organizations Participating': { zh: '参与组织', es: 'Organizaciones participantes', ko: '참여 조직', ja: '参加組織', de: 'Teilnehmende Organisationen', fr: 'Organisations participantes', pt: 'Organizações participantes', ru: 'Участвующие организации', ar: 'المنظمات المشاركة', hi: 'भाग लेने वाले संगठन', it: 'Organizzazioni partecipanti' },
+  'Browse More Algorithms': { zh: '浏览更多算法', es: 'Ver más algoritmos', ko: '더 많은 알고리즘 보기', ja: 'さらに見る', de: 'Weitere Algorithmen ansehen', fr: 'Voir plus d’algorithmes', pt: 'Ver mais algoritmos', ru: 'Больше алгоритмов', ar: 'تصفح المزيد من الخوارزميات', hi: 'और एल्गोरिदम देखें', it: 'Vedi altri algoritmi' },
+  'Share Your Story': { zh: '分享你的故事', es: 'Comparte tu historia', ko: '이야기 공유하기', ja: 'ストーリーを共有', de: 'Geschichte teilen', fr: 'Partager votre récit', pt: 'Compartilhe sua história', ru: 'Поделиться историей', ar: 'شارك قصتك', hi: 'अपनी कहानी साझा करें', it: 'Condividi la tua storia' },
+  'Read More Stories': { zh: '阅读更多故事', es: 'Leer más historias', ko: '더 많은 이야기 읽기', ja: 'もっと読む', de: 'Weitere Geschichten lesen', fr: 'Lire plus de récits', pt: 'Ler mais histórias', ru: 'Читать больше историй', ar: 'اقرأ المزيد من القصص', hi: 'और कहानियां पढ़ें', it: 'Leggi altre storie' },
+  'Partner with us': { zh: '与我们合作', es: 'Colabora con nosotros', ko: '협력하기', ja: '連携する', de: 'Mit uns zusammenarbeiten', fr: 'Devenir partenaire', pt: 'Faça parceria conosco', ru: 'Стать партнером', ar: 'شاركنا', hi: 'हमारे साथ साझेदारी करें', it: 'Collabora con noi' },
+  'Contact our team': { zh: '联系团队', es: 'Contactar al equipo', ko: '팀에 연락하기', ja: 'チームに連絡', de: 'Team kontaktieren', fr: 'Contacter l’équipe', pt: 'Fale com a equipe', ru: 'Связаться с командой', ar: 'تواصل مع الفريق', hi: 'टीम से संपर्क करें', it: 'Contatta il team' },
+  'Apply to partner': { zh: '申请合作', es: 'Solicitar colaboración', ko: '파트너 신청', ja: 'パートナー申請', de: 'Partnerschaft beantragen', fr: 'Demander un partenariat', pt: 'Solicitar parceria', ru: 'Подать заявку', ar: 'تقديم طلب شراكة', hi: 'साझेदारी के लिए आवेदन करें', it: 'Richiedi partnership' },
+  'Partner application': { zh: '合作申请', es: 'Solicitud de colaboración', ko: '파트너 신청서', ja: 'パートナー申請', de: 'Partnerantrag', fr: 'Demande de partenariat', pt: 'Solicitação de parceria', ru: 'Заявка партнера', ar: 'طلب شراكة', hi: 'साझेदारी आवेदन', it: 'Domanda di partnership' },
+  'Organization name': { zh: '组织名称', es: 'Nombre de la organización', ko: '조직 이름', ja: '組織名', de: 'Name der Organisation', fr: 'Nom de l’organisation', pt: 'Nome da organização', ru: 'Название организации', ar: 'اسم المنظمة', hi: 'संगठन का नाम', it: 'Nome organizzazione' },
+  'Contact email': { zh: '联系邮箱', es: 'Correo de contacto', ko: '연락 이메일', ja: '連絡先メール', de: 'Kontakt-E-Mail', fr: 'E-mail de contact', pt: 'E-mail de contato', ru: 'Контактная почта', ar: 'بريد التواصل', hi: 'संपर्क ईमेल', it: 'Email di contatto' },
+  'Submit application': { zh: '提交申请', es: 'Enviar solicitud', ko: '신청서 제출', ja: '申請を送信', de: 'Antrag senden', fr: 'Envoyer la demande', pt: 'Enviar solicitação', ru: 'Отправить заявку', ar: 'إرسال الطلب', hi: 'आवेदन जमा करें', it: 'Invia domanda' },
+  'Algorithm Registry': { zh: '算法目录', es: 'Registro de algoritmos', ko: '알고리즘 등록부', ja: 'アルゴリズム一覧', de: 'Algorithmus-Register', fr: 'Registre des algorithmes', pt: 'Registro de algoritmos', ru: 'Реестр алгоритмов', ar: 'سجل الخوارزميات', hi: 'एल्गोरिदम रजिस्ट्री', it: 'Registro algoritmi' },
+  'Search algorithms...': { zh: '搜索算法...', es: 'Buscar algoritmos...', ko: '알고리즘 검색...', ja: 'アルゴリズムを検索...', de: 'Algorithmen suchen...', fr: 'Rechercher des algorithmes...', pt: 'Pesquisar algoritmos...', ru: 'Искать алгоритмы...', ar: 'ابحث في الخوارزميات...', hi: 'एल्गोरिदम खोजें...', it: 'Cerca algoritmi...' },
+  'Filters': { zh: '筛选', es: 'Filtros', ko: '필터', ja: 'フィルター', de: 'Filter', fr: 'Filtres', pt: 'Filtros', ru: 'Фильтры', ar: 'مرشحات', hi: 'फिल्टर', it: 'Filtri' },
+  'Location': { zh: '地点', es: 'Ubicación', ko: '위치', ja: '場所', de: 'Standort', fr: 'Lieu', pt: 'Localização', ru: 'Местоположение', ar: 'الموقع', hi: 'स्थान', it: 'Località' },
+  'Use Case': { zh: '用途', es: 'Caso de uso', ko: '사용 사례', ja: '用途', de: 'Anwendungsfall', fr: 'Cas d’utilisation', pt: 'Caso de uso', ru: 'Сценарий использования', ar: 'حالة الاستخدام', hi: 'उपयोग मामला', it: 'Caso d’uso' },
+  'Apply filters': { zh: '应用筛选', es: 'Aplicar filtros', ko: '필터 적용', ja: 'フィルター適用', de: 'Filter anwenden', fr: 'Appliquer les filtres', pt: 'Aplicar filtros', ru: 'Применить фильтры', ar: 'تطبيق المرشحات', hi: 'फिल्टर लागू करें', it: 'Applica filtri' },
+  'Stories': { zh: '故事', es: 'Historias', ko: '이야기', ja: 'ストーリー', de: 'Geschichten', fr: 'Récits', pt: 'Histórias', ru: 'Истории', ar: 'القصص', hi: 'कहानियां', it: 'Storie' },
+  'Search stories...': { zh: '搜索故事...', es: 'Buscar historias...', ko: '이야기 검색...', ja: 'ストーリーを検索...', de: 'Geschichten suchen...', fr: 'Rechercher des récits...', pt: 'Pesquisar histórias...', ru: 'Искать истории...', ar: 'ابحث في القصص...', hi: 'कहानियां खोजें...', it: 'Cerca storie...' },
+  'Community Impact': { zh: '社区影响', es: 'Impacto comunitario', ko: '커뮤니티 영향', ja: 'コミュニティへの影響', de: 'Auswirkung auf die Community', fr: 'Impact communautaire', pt: 'Impacto comunitário', ru: 'Влияние на сообщество', ar: 'أثر المجتمع', hi: 'समुदाय पर प्रभाव', it: 'Impatto sulla comunità' },
+};
+
+const zhOnlyStaticText = {
+  'Stories of Automated Systems': '自动化系统的故事',
+  'Shaping Our Daily Lives': '正在塑造我们的日常生活',
+  'Explore how these systems function in our community through clear overviews and shared stories of their real-world impact.': '通过清晰概览和真实故事，了解这些系统如何在社区中运作并产生影响。',
+  'Algorithms Used in Public Services': '公共服务中使用的算法',
+  'Browse the algorithms powering public services in your city.': '浏览支撑城市公共服务的算法。',
+  'Community Voices & Updates': '社区声音与更新',
+  'Real stories and latest news': '真实故事和最新动态',
+  'Recent Community Voices': '最近的社区声音',
+  "What's Happening?": '最新活动',
+  'View community events': '查看社区活动',
+  'Are you a community organization?': '你是社区组织吗？',
+  'Partner with us to help residents share experiences and understand public algorithms.': '与我们合作，帮助居民分享经历并理解公共算法。',
+  'Understanding the tools behind': '理解背后的工具',
+  "Pittsburgh's public services.": '匹兹堡公共服务。',
+  'How AlgoStories Works': 'AlgoStories 如何运作',
+  "Building a shared understanding of Pittsburgh's public services.": '共同理解匹兹堡的公共服务。',
+  'Algorithm Profiles': '算法档案',
+  'Public Learning': '公共学习',
+  'Community Stories': '社区故事',
+  'Neutral Resource': '中立资源',
+  'Our Team': '我们的团队',
+  'Partner Organizations': '合作组织',
+};
+
+for (const [code, resource] of Object.entries(resources)) {
+  resource.translation.nav = navOverrides[code] || resource.translation.nav;
+  const staticText = {};
+  for (const [source, translations] of Object.entries(baseStaticText)) {
+    if (translations[code]) staticText[source] = translations[code];
+  }
+  if (code === 'zh') Object.assign(staticText, zhOnlyStaticText);
+  resource.translation.staticText = staticText;
+}
+
+const submitOverrides = {
+  ko: { title: '이야기 공유하기', subtitle: '공공 서비스에서 알고리즘이 사람들에게 어떤 영향을 주는지 이해하도록 도와주세요.', next: '다음', back: '뒤로', submit: '이야기 제출', submitting: '제출 중...', stepShare: '어떻게 공유하시겠습니까?', stepSystem: '어떤 시스템이 영향을 주었나요?', stepStory: '이야기를 들려주세요', stepDetails: '추가 정보', stepReview: '검토 후 제출', writeStory: '이야기 쓰기', recordStory: '이야기 녹음', videoStory: '비디오 이야기 공유', facilitator: '진행자와 함께 작성 중입니다', name: '이름', optional: '선택 사항', city: '도시', required: '필수', zipCode: '우편번호', contactEmail: '후속 연락 이메일', anonymous: '익명으로 제출', consentTitle: '동의 문구', preview: '제출 미리보기' },
+  ja: { title: 'ストーリーを共有', subtitle: '公共サービスでアルゴリズムが人々に与える影響を理解するためにご協力ください。', next: '次へ', back: '戻る', submit: '送信', submitting: '送信中...', stepShare: '共有方法を選択', stepSystem: '影響を受けたシステム', stepStory: 'ストーリーを入力', stepDetails: '追加情報', stepReview: '確認して送信', writeStory: 'ストーリーを書く', recordStory: '録音する', videoStory: '動画で共有', facilitator: '支援者と一緒に作成しています', name: '名前', optional: '任意', city: '市区町村', required: '必須', zipCode: '郵便番号', contactEmail: '連絡用メール', anonymous: '匿名で送信', consentTitle: '同意文', preview: '送信内容の確認' },
+  de: { title: 'Geschichte teilen', subtitle: 'Helfen Sie uns zu verstehen, wie Algorithmen Menschen in öffentlichen Diensten betreffen.', next: 'Weiter', back: 'Zurück', submit: 'Geschichte senden', submitting: 'Wird gesendet...', stepShare: 'Wie möchten Sie teilen?', stepSystem: 'Welches System hat Sie betroffen?', stepStory: 'Erzählen Sie Ihre Geschichte', stepDetails: 'Weitere Angaben', stepReview: 'Prüfen und senden', writeStory: 'Geschichte schreiben', recordStory: 'Geschichte aufnehmen', videoStory: 'Video teilen', facilitator: 'Ich arbeite mit einer unterstützenden Person', name: 'Name', optional: 'Optional', city: 'Stadt', required: 'Erforderlich', zipCode: 'Postleitzahl', contactEmail: 'E-Mail für Rückfragen', anonymous: 'Anonym senden', consentTitle: 'Einverständnis', preview: 'Vorschau' },
+  fr: { title: 'Partager votre récit', subtitle: 'Aidez-nous à comprendre comment les algorithmes affectent les personnes dans les services publics.', next: 'Suivant', back: 'Retour', submit: 'Envoyer le récit', submitting: 'Envoi...', stepShare: 'Comment souhaitez-vous partager ?', stepSystem: 'Quel système vous a concerné ?', stepStory: 'Racontez votre récit', stepDetails: 'Quelques détails', stepReview: 'Vérifier et envoyer', writeStory: 'Écrire votre récit', recordStory: 'Enregistrer votre récit', videoStory: 'Partager une vidéo', facilitator: 'Je travaille avec une personne facilitatrice', name: 'Nom', optional: 'Facultatif', city: 'Ville', required: 'Obligatoire', zipCode: 'Code postal', contactEmail: 'E-mail de suivi', anonymous: 'Envoyer anonymement', consentTitle: 'Consentement', preview: 'Aperçu' },
+  pt: { title: 'Compartilhe sua história', subtitle: 'Ajude-nos a entender como algoritmos afetam pessoas nos serviços públicos.', next: 'Próximo', back: 'Voltar', submit: 'Enviar história', submitting: 'Enviando...', stepShare: 'Como você quer compartilhar?', stepSystem: 'Qual sistema afetou você?', stepStory: 'Conte sua história', stepDetails: 'Mais detalhes', stepReview: 'Revisar e enviar', writeStory: 'Escrever história', recordStory: 'Gravar história', videoStory: 'Compartilhar vídeo', facilitator: 'Estou com um facilitador', name: 'Nome', optional: 'Opcional', city: 'Cidade', required: 'Obrigatório', zipCode: 'CEP', contactEmail: 'E-mail para acompanhamento', anonymous: 'Enviar anonimamente', consentTitle: 'Consentimento', preview: 'Prévia' },
+  ru: { title: 'Поделиться историей', subtitle: 'Помогите нам понять, как алгоритмы влияют на людей в государственных услугах.', next: 'Далее', back: 'Назад', submit: 'Отправить историю', submitting: 'Отправка...', stepShare: 'Как вы хотите поделиться?', stepSystem: 'Какая система повлияла на вас?', stepStory: 'Расскажите свою историю', stepDetails: 'Дополнительные сведения', stepReview: 'Проверить и отправить', writeStory: 'Написать историю', recordStory: 'Записать историю', videoStory: 'Поделиться видео', facilitator: 'Я работаю с помощником', name: 'Имя', optional: 'Необязательно', city: 'Город', required: 'Обязательно', zipCode: 'Индекс', contactEmail: 'Email для связи', anonymous: 'Отправить анонимно', consentTitle: 'Согласие', preview: 'Предпросмотр' },
+  ar: { title: 'شارك قصتك', subtitle: 'ساعدنا على فهم تأثير الخوارزميات في الخدمات العامة.', next: 'التالي', back: 'رجوع', submit: 'إرسال القصة', submitting: 'جار الإرسال...', stepShare: 'كيف تريد المشاركة؟', stepSystem: 'ما النظام الذي أثّر عليك؟', stepStory: 'احك قصتك', stepDetails: 'تفاصيل إضافية', stepReview: 'مراجعة وإرسال', writeStory: 'اكتب قصتك', recordStory: 'سجل قصتك', videoStory: 'شارك فيديو', facilitator: 'أعمل مع ميسر', name: 'الاسم', optional: 'اختياري', city: 'المدينة', required: 'مطلوب', zipCode: 'الرمز البريدي', contactEmail: 'بريد المتابعة', anonymous: 'إرسال مجهول', consentTitle: 'بيان الموافقة', preview: 'معاينة الإرسال' },
+  hi: { title: 'अपनी कहानी साझा करें', subtitle: 'समझने में मदद करें कि सार्वजनिक सेवाओं में एल्गोरिदम लोगों को कैसे प्रभावित करते हैं।', next: 'अगला', back: 'पीछे', submit: 'कहानी जमा करें', submitting: 'जमा हो रहा है...', stepShare: 'आप कैसे साझा करना चाहेंगे?', stepSystem: 'किस सिस्टम ने आपको प्रभावित किया?', stepStory: 'अपनी कहानी बताएं', stepDetails: 'कुछ और विवरण', stepReview: 'समीक्षा और जमा करें', writeStory: 'कहानी लिखें', recordStory: 'कहानी रिकॉर्ड करें', videoStory: 'वीडियो कहानी साझा करें', facilitator: 'मैं सहायक के साथ काम कर रहा/रही हूं', name: 'नाम', optional: 'वैकल्पिक', city: 'शहर', required: 'आवश्यक', zipCode: 'पिन कोड', contactEmail: 'फॉलो-अप ईमेल', anonymous: 'गुमनाम जमा करें', consentTitle: 'सहमति वक्तव्य', preview: 'जमा पूर्वावलोकन' },
+  it: { title: 'Condividi la tua storia', subtitle: 'Aiutaci a capire come gli algoritmi influenzano le persone nei servizi pubblici.', next: 'Avanti', back: 'Indietro', submit: 'Invia storia', submitting: 'Invio...', stepShare: 'Come vuoi condividere?', stepSystem: 'Quale sistema ti ha coinvolto?', stepStory: 'Racconta la tua storia', stepDetails: 'Altri dettagli', stepReview: 'Rivedi e invia', writeStory: 'Scrivi la storia', recordStory: 'Registra la storia', videoStory: 'Condividi un video', facilitator: 'Sto lavorando con un facilitatore', name: 'Nome', optional: 'Facoltativo', city: 'Città', required: 'Obbligatorio', zipCode: 'CAP', contactEmail: 'Email per follow-up', anonymous: 'Invia anonimamente', consentTitle: 'Consenso', preview: 'Anteprima' },
+};
+
+for (const [code, overrides] of Object.entries(submitOverrides)) {
+  Object.assign(resources[code].translation.submit, overrides);
+}

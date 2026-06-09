@@ -100,8 +100,10 @@ const partners = [
   },
 ];
 
-export default async function AboutPage() {
+export default async function AboutPage({ searchParams }) {
   const user = await getCurrentUser();
+  const params = await searchParams;
+  const partnerStatus = String(params?.partner || '');
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 to-slate-100 text-gray-900">
@@ -147,7 +149,7 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      <section className="border-y border-gray-200 bg-white">
+      <section id="team" className="scroll-mt-20 border-y border-gray-200 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
           <div className="mb-10 grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
             <div>
@@ -181,9 +183,40 @@ export default async function AboutPage() {
       </section>
 
       <section id="partners" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-12 sm:px-6 sm:py-16">
-        <div className="mb-10">
-          <h2 className="text-3xl font-bold text-gray-900">Partner Organizations</h2>
-          <p className="mt-2 max-w-2xl text-gray-600">Community, research, library, housing, and public-sector partners connected to the project.</p>
+        <div className="mb-10 grid gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">Partner Organizations</h2>
+            <p className="mt-2 max-w-2xl text-gray-600">Community, research, library, housing, and public-sector partners connected to the project.</p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link href="#team" className="inline-flex min-h-11 items-center rounded-md border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-900 hover:border-amber-300">
+                Contact our team
+              </Link>
+              <Link href="#partner-application" className="inline-flex min-h-11 items-center rounded-md bg-gray-900 px-5 text-sm font-semibold text-white hover:bg-gray-800">
+                Apply to partner
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+          <form id="partner-application" action="/api/partners/apply" method="post" className="scroll-mt-24 rounded-lg border border-amber-200 bg-white p-5 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-900">Partner application</h3>
+            <p className="mt-1 text-sm leading-6 text-gray-600">Tell us how your organization would like to support community story collection, outreach, or review.</p>
+            {partnerStatus === 'submitted' ? (
+              <p className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">Application submitted. The project team will review it.</p>
+            ) : null}
+            {partnerStatus === 'missing' ? (
+              <p className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">Please complete organization name, contact email, and message.</p>
+            ) : null}
+            <div className="mt-4 space-y-3">
+              <input name="organizationName" placeholder="Organization name" className="min-h-11 w-full rounded-md border border-gray-200 px-3 py-2 text-sm" required />
+              <input name="contactName" placeholder="Contact name" className="min-h-11 w-full rounded-md border border-gray-200 px-3 py-2 text-sm" />
+              <input name="contactEmail" type="email" placeholder="Contact email" className="min-h-11 w-full rounded-md border border-gray-200 px-3 py-2 text-sm" required />
+              <input name="websiteUrl" type="url" placeholder="Website" className="min-h-11 w-full rounded-md border border-gray-200 px-3 py-2 text-sm" />
+              <textarea name="message" rows={4} placeholder="How would you like to work with AlgoStories?" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm" required />
+              <button className="min-h-11 w-full rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-yellow-400">
+                Submit application
+              </button>
+            </div>
+          </form>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {partners.map((partner) => (

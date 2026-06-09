@@ -36,12 +36,52 @@ const eventsData = readStaticData('eventsData.jsx', 'eventsData');
 
 const extraOrganizations = [
   {
-    name: 'CAASI Community Research Collective',
-    slug: 'caasi-community-research-collective',
+    name: 'CAASI',
+    slug: 'caasi',
     role: 'research_partner',
-    contactEmail: 'partners@caasi.example',
-    websiteUrl: 'https://caasi.example',
-    description: 'Research and community engagement partner focused on algorithmic accountability.',
+    contactEmail: 'partners@caasi.pitt.edu',
+    websiteUrl: 'https://www.caasi.pitt.edu/',
+    description: 'Center for Analytical Approaches to Social Innovation, University of Pittsburgh.',
+  },
+  {
+    name: 'WestEnd Power',
+    slug: 'westend-power',
+    role: 'community_partner',
+    contactEmail: 'info@westendpowerpgh.org',
+    websiteUrl: 'https://www.westendpowerpgh.org/',
+    description: 'Community organization working to transform communities in the Greater Pittsburgh region.',
+  },
+  {
+    name: 'Neighborhood Allies',
+    slug: 'neighborhood-allies',
+    role: 'community_partner',
+    contactEmail: 'info@neighborhoodallies.org',
+    websiteUrl: 'https://neighborhoodallies.org/',
+    description: 'Pittsburgh-area partner expanding opportunity through community change work.',
+  },
+  {
+    name: 'Literacy Pittsburgh',
+    slug: 'literacy-pittsburgh',
+    role: 'community_partner',
+    contactEmail: 'info@literacypittsburgh.org',
+    websiteUrl: 'https://www.literacypittsburgh.org/',
+    description: 'Since 1982, Literacy Pittsburgh has supported learning across the greater Pittsburgh area.',
+  },
+  {
+    name: 'Community Empowerment Association',
+    slug: 'community-empowerment-association',
+    role: 'community_partner',
+    contactEmail: 'info@ceapittsburgh.org',
+    websiteUrl: 'https://www.ceapittsburgh.org/',
+    description: 'Founded in 1993 to support youth and families in distressed and marginalized communities.',
+  },
+  {
+    name: 'Allegheny County Library Association',
+    slug: 'allegheny-county-library-association',
+    role: 'community_partner',
+    contactEmail: 'info@aclalibraries.org',
+    websiteUrl: 'https://aclalibraries.org/',
+    description: 'A federated library system with independent public libraries across Allegheny County.',
   },
 ];
 
@@ -49,13 +89,13 @@ const extraUsers = [
   ['nora.admin@algostories.local', 'Nora Admin', 'ADMIN', 'algo-stories-team'],
   ['maria.facilitator@algostories.local', 'Maria Chen', 'FACILITATOR', 'algo-stories-team'],
   ['kevin.facilitator@algostories.local', 'Kevin Brown', 'FACILITATOR', 'algo-stories-team'],
-  ['leila.org@algostories.local', 'Leila Watkins', 'ORG_MEMBER', 'caasi-community-research-collective'],
+  ['leila.org@algostories.local', 'Leila Watkins', 'ORG_MEMBER', 'caasi'],
   ['sam.org@algostories.local', 'Sam Patel', 'ORG_MEMBER', 'algo-stories-team'],
-  ['aditya.research@algostories.local', 'Aditya Nayak', 'RESEARCHER', 'caasi-community-research-collective'],
+  ['aditya.research@algostories.local', 'Aditya Nayak', 'RESEARCHER', 'caasi'],
   ['jamal.community@algostories.local', 'Jamal Reed', 'COMMUNITY_MEMBER', 'algo-stories-team'],
   ['grace.community@algostories.local', 'Grace Miller', 'COMMUNITY_MEMBER', 'algo-stories-team'],
   ['toni.community@algostories.local', 'Toni Rivera', 'COMMUNITY_MEMBER', 'algo-stories-team'],
-  ['mei.community@algostories.local', 'Mei Lin', 'COMMUNITY_MEMBER', 'caasi-community-research-collective'],
+  ['mei.community@algostories.local', 'Mei Lin', 'COMMUNITY_MEMBER', 'caasi'],
 ];
 
 const extraAlgorithms = [
