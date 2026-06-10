@@ -172,11 +172,7 @@ function EventModal({ event, onClose }) {
               <ExternalLink className="h-4 w-4" />
               Register for this event
             </a>
-          ) : (
-            <button type="button" disabled className="mt-8 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500 sm:w-auto">
-              Registration closed
-            </button>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
