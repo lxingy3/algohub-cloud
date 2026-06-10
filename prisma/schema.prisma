@@ -226,6 +226,7 @@ model Testimony {
   submissionMethod       SubmissionMethod?        @map("submission_method")
   audioFileUrl           String?                  @map("audio_file_url")
   videoFileUrl           String?                  @map("video_file_url")
+  mediaStorageProvider   String?                  @map("media_storage_provider") @db.VarChar(50)
   mediaObjectKey         String?                  @map("media_object_key")
   mediaMimeType          String?                  @map("media_mime_type") @db.VarChar(100)
   mediaDurationSeconds   Int?                     @map("media_duration_seconds")
@@ -271,9 +272,10 @@ model TranscriptionJob {
   mediaKind      String    @map("media_kind") @db.VarChar(20)
   objectKey      String    @map("object_key")
   mediaUrl       String    @map("media_url")
+  storageProvider String   @default("firebase-gcs") @map("storage_provider") @db.VarChar(50)
   mimeType       String?   @map("mime_type") @db.VarChar(100)
   status         String    @default("PENDING") @db.VarChar(50)
-  provider       String    @default("openai-whisper-1") @db.VarChar(100)
+  provider       String    @default("open-source-pipeline-pending") @db.VarChar(100)
   transcript     String?
   error          String?
   attempts       Int       @default(0)

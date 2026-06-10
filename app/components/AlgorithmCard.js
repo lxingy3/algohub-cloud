@@ -12,7 +12,7 @@ export function AlgorithmCard({ algorithm }) {
         <h3 className="text-lg font-bold leading-tight text-gray-900 transition-colors group-hover:text-yellow-600">
           {algorithm.name}
         </h3>
-        {algorithm.status ? <StatusBadge status={algorithm.status} /> : null}
+        <StoryCountBadge count={algorithm.storyCount || 0} />
       </div>
 
       {algorithm.useCase ? (
@@ -36,16 +36,11 @@ export function AlgorithmCard({ algorithm }) {
   );
 }
 
-function StatusBadge({ status }) {
-  const label = formatStatus(status);
-  const tone = status === 'UNDER_REVIEW'
-    ? 'bg-orange-100 text-orange-700'
-    : status === 'PROPOSED'
-      ? 'bg-emerald-100 text-emerald-800'
-      : 'bg-emerald-100 text-emerald-800';
-
+function StoryCountBadge({ count }) {
+  const label = `${count} ${count === 1 ? 'Story' : 'Stories'}`;
+  const tone = count === 0 ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-800';
   return (
-    <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${tone}`}>
+    <span className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ${tone}`}>
       {label}
     </span>
   );

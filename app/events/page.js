@@ -1,10 +1,11 @@
 import Link from 'next/link';
-import { Calendar, Clock, MapPin, Video } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
 import { SiteNav } from '../components/SiteNav';
-import { formatDate, formatStatus } from '../components/Formatters';
+import { formatStatus } from '../components/Formatters';
+import { EventsClient } from './EventsClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,16 @@ export default async function EventsPage({ searchParams }) {
   });
   const upcomingEvents = filteredEvents.filter((event) => new Date(event.date) >= now);
   const pastEvents = filteredEvents.filter((event) => new Date(event.date) < now);
+  const serializeEvent = (event) => ({
+    ...event,
+    date: event.date.toISOString(),
+    endDate: event.endDate?.toISOString() || null,
+    createdAt: event.createdAt?.toISOString() || null,
+    organizer: event.organizer ? {
+      ...event.organizer,
+      createdAt: event.organizer.createdAt?.toISOString() || null,
+    } : null,
+  });
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 to-slate-100 text-gray-900">
@@ -81,8 +92,11 @@ export default async function EventsPage({ searchParams }) {
       </div>
 
       <section className="mx-auto max-w-4xl space-y-12 px-4 pb-16 sm:px-6">
-        {(activeFilter === 'all' || activeFilter === 'upcoming') ? <EventSection title="Upcoming Events" events={upcomingEvents} /> : null}
-        {(activeFilter === 'all' || activeFilter === 'past') ? <EventSection title="Past Events" events={pastEvents} muted /> : null}
+        <EventsClient
+          activeFilter={activeFilter}
+          upcomingEvents={upcomingEvents.map(serializeEvent)}
+          pastEvents={pastEvents.map(serializeEvent)}
+        />
       </section>
     </main>
   );
@@ -96,69 +110,5 @@ function FilterLink({ href, active, children }) {
     >
       {children}
     </Link>
-  );
-}
-
-function EventSection({ title, events, muted = false }) {
-  return (
-    <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-      <div className="border-b border-gray-200 bg-white/70 px-6 py-4">
-        <h2 className="flex items-center gap-2 text-xl font-semibold text-gray-900">
-          <Calendar className={`h-5 w-5 ${muted ? 'text-gray-400' : 'text-yellow-600'}`} />
-          {title}
-        </h2>
-        <p className="mt-0.5 text-sm text-gray-500">{events.length} {events.length === 1 ? 'event' : 'events'}</p>
-      </div>
-      <div className="divide-y divide-gray-100">
-        {events.length ? events.map((event) => <EventRow key={event.id} event={event} />) : (
-          <div className="py-12 text-center text-gray-500">No events in this section</div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function EventRow({ event }) {
-  const date = new Date(event.date);
-  return (
-    <article className="group flex cursor-default flex-col gap-4 rounded-lg px-4 py-5 transition-colors hover:bg-amber-50/35 sm:-mx-4 sm:flex-row sm:gap-6 sm:px-10 sm:py-6">
-      <div className="flex h-16 w-16 flex-shrink-0 flex-col items-center justify-center rounded-lg border-2 border-yellow-300 bg-amber-50">
-        <span className="text-xs font-semibold leading-tight text-yellow-700">{date.toLocaleString('en-US', { month: 'short' })}</span>
-        <span className="text-xl font-bold leading-tight text-gray-900">{date.getDate()}</span>
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
-          <div>
-            <div className="mb-1 flex flex-wrap items-center gap-2">
-              {event.isVirtual ? (
-                <span className="inline-flex items-center rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-700">
-                  <Video className="mr-1 h-3 w-3" />
-                  Virtual
-                </span>
-              ) : null}
-              <span className="rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-600">{formatStatus(event.eventType)}</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-amber-700">{event.title}</h3>
-            {event.description ? <p className="mt-1 line-clamp-2 text-sm text-gray-600">{event.description}</p> : null}
-            <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" />
-                {formatDate(event.date)}
-              </span>
-              <span className="flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5" />
-                <span className="max-w-[220px] truncate">{event.isVirtual ? 'Virtual' : event.location || 'Location TBD'}</span>
-              </span>
-              {event.organizer ? <span>{event.organizer.name}</span> : null}
-            </div>
-          </div>
-          {event.registrationUrl ? (
-            <a href={event.registrationUrl} className="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-md border border-gray-200 px-3 py-2 text-sm font-semibold hover:border-amber-300 sm:w-auto">
-              Register
-            </a>
-          ) : null}
-        </div>
-      </div>
-    </article>
   );
 }

@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from './LanguageSelector';
+import { LoginModal } from './LoginModal';
 
 const navItems = [
   ['/', 'nav.home'],
@@ -14,6 +16,7 @@ const navItems = [
 
 export function SiteNavClient({ isLoggedIn }) {
   const { t } = useTranslation();
+  const [loginOpen, setLoginOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-100 bg-white">
@@ -36,9 +39,9 @@ export function SiteNavClient({ isLoggedIn }) {
             </Link>
           ) : null}
           {!isLoggedIn ? (
-            <Link href="/login" className="inline-flex min-h-11 items-center rounded-md px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 md:min-h-0">
+            <button type="button" onClick={() => setLoginOpen(true)} className="inline-flex min-h-11 items-center rounded-md px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 md:min-h-0">
               {t('nav.login')}
-            </Link>
+            </button>
           ) : null}
           <Link href="/admin" className="inline-flex min-h-11 items-center rounded-md border border-gray-200 px-3 py-2 font-medium text-gray-800 hover:bg-gray-100 md:min-h-0">
             {t('nav.admin')}
@@ -64,6 +67,7 @@ export function SiteNavClient({ isLoggedIn }) {
           ) : null}
         </nav>
       </div>
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
     </header>
   );
 }

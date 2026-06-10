@@ -78,7 +78,7 @@
     <text x="20" y="78" class="field">title, summary, narrativeText, city, zipCode</text>
     <text x="20" y="98" class="field">submitterName, contactEmail, referralSource</text>
     <text x="20" y="118" class="field">storyType, publicPosting, followupConsent</text>
-    <text x="20" y="138" class="field">audioFileUrl, videoFileUrl, mediaObjectKey</text>
+    <text x="20" y="138" class="field">audio/video URL, provider, mediaObjectKey</text>
     <text x="20" y="158" class="field">transcriptionStatus, transcriptionText</text>
     <text x="20" y="178" class="field">occurredAtText, affectedDomain, impact</text>
     <text x="20" y="198" class="field">userId, partnerOrgId, facilitatorId</text>
@@ -97,7 +97,7 @@
     <rect class="box engage" width="310" height="148" />
     <text x="20" y="32" class="label title">TranscriptionJob</text>
     <text x="20" y="58" class="field">id PK, testimonyId FK</text>
-    <text x="20" y="78" class="field">mediaKind, objectKey, mediaUrl</text>
+    <text x="20" y="78" class="field">mediaKind, objectKey, mediaUrl, storageProvider</text>
     <text x="20" y="98" class="field">status, provider, attempts</text>
     <text x="20" y="118" class="field">transcript, error, processedAt</text>
   </g>

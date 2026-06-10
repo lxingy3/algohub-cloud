@@ -1,6 +1,3 @@
-import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
@@ -8,7 +5,6 @@ import { getCurrentUser } from '../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-const MAX_MEDIA_UPLOAD_BYTES = 4 * 1024 * 1024;
 const RETURNED_STATUSES = new Set(['FLAGGED', 'REJECTED']);
 const IMPACT_VALUES = new Set(['POSITIVE', 'NEGATIVE', 'MIXED', 'UNCLEAR']);
 
@@ -19,35 +15,6 @@ function formText(formData, key) {
 
 function isChecked(value) {
   return value === 'on' || value === 'true' || value === true;
-}
-
-function mediaExtension(file) {
-  const originalExtension = file?.name?.split('.').pop()?.toLowerCase();
-  if (originalExtension && /^[a-z0-9]{2,5}$/.test(originalExtension)) return originalExtension;
-  if (!file?.type) return 'webm';
-  if (file.type.includes('mp4')) return 'mp4';
-  if (file.type.includes('mpeg')) return 'mp3';
-  if (file.type.includes('quicktime')) return 'mov';
-  if (file.type.includes('x-m4a')) return 'm4a';
-  if (file.type.includes('ogg')) return 'ogg';
-  if (file.type.includes('wav')) return 'wav';
-  return 'webm';
-}
-
-async function saveMediaFile(file, folder) {
-  if (!file || typeof file.arrayBuffer !== 'function' || file.size === 0) return null;
-  if (file.size > MAX_MEDIA_UPLOAD_BYTES) throw new Error('MEDIA_FILE_TOO_LARGE');
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  if (process.env.VERCEL) {
-    return `data:${file.type || 'application/octet-stream'};base64,${buffer.toString('base64')}`;
-  }
-
-  const uploadRoot = join(process.cwd(), 'public', 'uploads', 'testimonies', folder);
-  const fileName = `${Date.now()}-${randomUUID()}.${mediaExtension(file)}`;
-  await mkdir(uploadRoot, { recursive: true });
-  await writeFile(join(uploadRoot, fileName), buffer);
-  return `/uploads/testimonies/${folder}/${fileName}`;
 }
 
 export async function POST(request, { params }) {
@@ -93,23 +60,12 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: 'Please write your story.' }, { status: 400 });
   }
 
-  const replacementAudio = formData.get('audioFile');
-  const replacementVideo = formData.get('videoFile');
   let audioFileUrl = existing.audioFileUrl;
   let videoFileUrl = existing.videoFileUrl;
-
-  try {
-    if (storyType === 'voice' && replacementAudio && replacementAudio.size > 0) {
-      audioFileUrl = await saveMediaFile(replacementAudio, 'audio');
-    }
-    if (storyType === 'video' && replacementVideo && replacementVideo.size > 0) {
-      videoFileUrl = await saveMediaFile(replacementVideo, 'video');
-    }
-  } catch (error) {
-    if (error.message === 'MEDIA_FILE_TOO_LARGE') {
-      return NextResponse.json({ error: 'Please upload a media file smaller than 4 MB.' }, { status: 413 });
-    }
-    return NextResponse.json({ error: 'The media file could not be saved.' }, { status: 500 });
+  const replacementAudio = formData.get('audioFile');
+  const replacementVideo = formData.get('videoFile');
+  if ((replacementAudio && replacementAudio.size > 0) || (replacementVideo && replacementVideo.size > 0)) {
+    return NextResponse.json({ error: 'Media replacement now uses the secure signed-upload submission flow. Please submit a new voice or video story to replace media.' }, { status: 400 });
   }
 
   if (storyType === 'voice' && !audioFileUrl) {

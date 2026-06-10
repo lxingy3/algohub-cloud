@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../lib/auth';
+import { mediaStorageProvider, mediaStorageUri } from '../../../lib/mediaStorage';
 
 export const dynamic = 'force-dynamic';
 
@@ -155,7 +156,7 @@ export async function POST(request) {
     mediaDurationSeconds,
   } = result.data;
 
-  if ((storyType === 'voice' || storyType === 'video') && (!mediaObjectKey || !mediaUrl)) {
+  if ((storyType === 'voice' || storyType === 'video') && !mediaObjectKey) {
     return NextResponse.json({ error: 'Please record or upload media before submitting.' }, { status: 400 });
   }
 
@@ -168,6 +169,7 @@ export async function POST(request) {
           ? 'A facilitated story session was submitted.'
           : '';
   const storedNarrative = narrativeText?.trim() || fallbackNarrative;
+  const storedMediaUri = mediaObjectKey ? (mediaUrl || mediaStorageUri(mediaObjectKey)) : null;
 
   const testimony = await prisma.$transaction(async (tx) => {
     const created = await tx.testimony.create({
@@ -190,8 +192,9 @@ export async function POST(request) {
       contactEmail: contactEmail || null,
       isAnonymous: Boolean(isAnonymous),
       submissionMethod: storyType === 'facilitated' ? 'FACILITATED_SESSION' : storyType === 'voice' || storyType === 'video' ? 'AUDIO_TRANSCRIPTION' : 'WEB_FORM',
-      audioFileUrl: storyType === 'voice' ? mediaUrl : null,
-      videoFileUrl: storyType === 'video' ? mediaUrl : null,
+      audioFileUrl: storyType === 'voice' ? storedMediaUri : null,
+      videoFileUrl: storyType === 'video' ? storedMediaUri : null,
+      mediaStorageProvider: mediaObjectKey ? mediaStorageProvider : null,
       mediaObjectKey: mediaObjectKey || null,
       mediaMimeType: mediaMimeType || null,
       mediaDurationSeconds: mediaDurationSeconds || null,
@@ -213,15 +216,17 @@ export async function POST(request) {
       });
     }
 
-    if ((storyType === 'voice' || storyType === 'video') && mediaObjectKey && mediaUrl) {
+    if ((storyType === 'voice' || storyType === 'video') && mediaObjectKey) {
       await tx.transcriptionJob.create({
         data: {
           testimonyId: created.id,
           jurisdictionId,
           mediaKind: storyType === 'video' ? 'video' : 'audio',
           objectKey: mediaObjectKey,
-          mediaUrl,
+          mediaUrl: storedMediaUri,
+          storageProvider: mediaStorageProvider,
           mimeType: mediaMimeType || null,
+          provider: 'open-source-pipeline-pending',
         },
       });
     }

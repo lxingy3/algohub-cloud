@@ -291,7 +291,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
       }),
     });
     const upload = await presign.json().catch(() => null);
-    if (!presign.ok) throw new Error(upload?.error || t('submit.r2Missing'));
+    if (!presign.ok) throw new Error(upload?.error || t('submit.storageMissing', { defaultValue: t('submit.r2Missing') }));
 
     const put = await fetch(upload.uploadUrl, {
       method: 'PUT',
@@ -302,7 +302,8 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
 
     const nextMedia = {
       objectKey: upload.objectKey,
-      url: upload.publicUrl,
+      url: upload.storageUri,
+      provider: upload.provider,
       mimeType: upload.contentType,
       durationSeconds: recordingTime || undefined,
     };

@@ -1,5 +1,11 @@
 import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
+import {
+  allowedModerationActions,
+  isModerationStatus,
+  moderationStatusOrder,
+  moderationStatuses,
+} from '../../../lib/moderation';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,53 +24,60 @@ function fieldValue(value) {
   return value || 'Not provided';
 }
 
-const statusOrder = { PENDING: 0, FLAGGED: 1, REJECTED: 2, APPROVED: 3 };
-const allowedStatuses = new Set(['PENDING', 'FLAGGED', 'REJECTED', 'APPROVED']);
-
 export default async function AdminTestimoniesPage({ searchParams }) {
   const params = await searchParams;
   const statusFilter = String(params?.status || '').toUpperCase();
+  const jurisdictionId = getJurisdictionId();
   const where = {
-    jurisdictionId: getJurisdictionId(),
-    ...(allowedStatuses.has(statusFilter) ? { moderationStatus: statusFilter } : {}),
+    jurisdictionId,
+    ...(isModerationStatus(statusFilter) ? { moderationStatus: statusFilter } : {}),
   };
-  const testimonies = await prisma.testimony.findMany({
-    where,
-    orderBy: { submittedAt: 'desc' },
-    take: 100,
-    select: {
-      id: true,
-      title: true,
-      submitterName: true,
-      submitterEmail: true,
-      storyType: true,
-      audioFileUrl: true,
-      videoFileUrl: true,
-      moderationStatus: true,
-      city: true,
-      zipCode: true,
-      referralSource: true,
-      narrativeText: true,
-      publicPosting: true,
-      followupConsent: true,
-      selfReportedImpact: true,
-      moderationNotes: true,
-      submittedAt: true,
-      user: { select: { name: true, email: true } },
-      partnerOrganization: { select: { name: true } },
-      algorithmLinks: { select: { algorithmId: true, algorithm: { select: { name: true } } } },
-    },
-  });
-  testimonies.sort((a, b) => (statusOrder[a.moderationStatus] ?? 9) - (statusOrder[b.moderationStatus] ?? 9) || b.submittedAt - a.submittedAt);
+  const [testimonies, statusCounts] = await Promise.all([
+    prisma.testimony.findMany({
+      where,
+      orderBy: { submittedAt: 'desc' },
+      take: 100,
+      select: {
+        id: true,
+        title: true,
+        submitterName: true,
+        submitterEmail: true,
+        storyType: true,
+        audioFileUrl: true,
+        videoFileUrl: true,
+        moderationStatus: true,
+        city: true,
+        zipCode: true,
+        referralSource: true,
+        narrativeText: true,
+        publicPosting: true,
+        followupConsent: true,
+        selfReportedImpact: true,
+        moderationNotes: true,
+        submittedAt: true,
+        user: { select: { name: true, email: true } },
+        partnerOrganization: { select: { name: true } },
+        algorithmLinks: { select: { algorithmId: true, algorithm: { select: { name: true } } } },
+      },
+    }),
+    prisma.testimony.groupBy({
+      by: ['moderationStatus'],
+      where: { jurisdictionId },
+      _count: { moderationStatus: true },
+    }),
+  ]);
+  const counts = Object.fromEntries(statusCounts.map((item) => [item.moderationStatus, item._count.moderationStatus]));
+  testimonies.sort((a, b) => (moderationStatusOrder[a.moderationStatus] ?? 9) - (moderationStatusOrder[b.moderationStatus] ?? 9) || b.submittedAt - a.submittedAt);
 
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold">{statusFilter === 'PENDING' ? 'Pending Testimony Queue' : 'Testimony Queue'}</h1>
-        {statusFilter ? (
+        {isModerationStatus(statusFilter) ? (
           <a href="/admin/testimonies" className="inline-flex min-h-11 items-center rounded-md border bg-white px-3 py-2 text-sm">Show all</a>
         ) : null}
       </div>
+      <StatusTabs baseHref="/admin/testimonies" activeStatus={statusFilter} counts={counts} />
       <div className="mt-6 space-y-3">
         {testimonies.map((testimony) => {
           const linkedAlgorithms = testimony.algorithmLinks.map((link) => link.algorithm?.name).filter(Boolean);
@@ -76,7 +89,7 @@ export default async function AdminTestimoniesPage({ searchParams }) {
 
           return (
             <form key={testimony.id} action={`/api/admin/testimonies/${testimony.id}/moderate`} method="post" className="rounded-lg border bg-white p-4">
-              {statusFilter ? <input type="hidden" name="returnTo" value={`/admin/testimonies?status=${statusFilter}`} /> : null}
+              {isModerationStatus(statusFilter) ? <input type="hidden" name="returnTo" value={`/admin/testimonies?status=${statusFilter}`} /> : null}
               <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:gap-4">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -147,9 +160,11 @@ export default async function AdminTestimoniesPage({ searchParams }) {
 
               <textarea name="notes" placeholder="Moderation notes" defaultValue={testimony.moderationNotes || ''} className="mt-3 w-full rounded-md border px-3 py-2" />
               <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                <button name="status" value="APPROVED" className="min-h-11 rounded-md border px-3 py-2 text-sm">Approve</button>
-                <button name="status" value="FLAGGED" className="min-h-11 rounded-md border px-3 py-2 text-sm">Flag</button>
-                <button name="status" value="REJECTED" className="min-h-11 rounded-md border px-3 py-2 text-sm text-red-700">Reject</button>
+                {allowedModerationActions(testimony.moderationStatus).map(([nextStatus, label]) => (
+                  <button key={nextStatus} name="status" value={nextStatus} className={`min-h-11 rounded-md border px-3 py-2 text-sm ${nextStatus === 'REJECTED' ? 'text-red-700' : ''}`}>
+                    {label}
+                  </button>
+                ))}
               </div>
             </form>
           );
@@ -160,4 +175,28 @@ export default async function AdminTestimoniesPage({ searchParams }) {
       </div>
     </div>
   );
+}
+
+function StatusTabs({ baseHref, activeStatus, counts }) {
+  return (
+    <nav className="mt-5 flex gap-2 overflow-x-auto rounded-lg border bg-white p-2" aria-label="Moderation status">
+      {moderationStatuses.map((status) => {
+        const active = activeStatus === status;
+        return (
+          <a
+            key={status}
+            href={`${baseHref}?status=${status}`}
+            className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${active ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+          >
+            {formatStatusLabel(status)}
+            <span className={`rounded-full px-2 py-0.5 text-xs ${active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>{counts[status] || 0}</span>
+          </a>
+        );
+      })}
+    </nav>
+  );
+}
+
+function formatStatusLabel(status) {
+  return status.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 }

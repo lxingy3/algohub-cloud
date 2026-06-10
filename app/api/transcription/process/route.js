@@ -1,16 +1,9 @@
-import OpenAI, { toFile } from 'openai';
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '../../../../lib/auth';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { prisma } from '../../../../lib/prisma';
-import { hasR2Config, readMediaObject } from '../../../../lib/r2';
 
 export const dynamic = 'force-dynamic';
-
-function summarize(text) {
-  const trimmed = text.replace(/\s+/g, ' ').trim();
-  return trimmed.length > 160 ? `${trimmed.slice(0, 157)}...` : trimmed;
-}
 
 async function isAuthorized(request) {
   const configuredSecret = process.env.TRANSCRIPTION_PROCESS_SECRET;
@@ -22,14 +15,7 @@ async function isAuthorized(request) {
   return Boolean(await requireAdmin());
 }
 
-async function processPendingJobs(limit) {
-  if (!process.env.OPENAI_API_KEY) {
-    return NextResponse.json({ error: 'OPENAI_API_KEY is not configured.' }, { status: 503 });
-  }
-  if (!hasR2Config()) {
-    return NextResponse.json({ error: 'Cloudflare R2 is not configured.' }, { status: 503 });
-  }
-
+async function pendingPipelineResponse(limit = 10) {
   const jurisdictionId = getJurisdictionId();
   const jobs = await prisma.transcriptionJob.findMany({
     where: {
@@ -39,66 +25,25 @@ async function processPendingJobs(limit) {
     },
     orderBy: { createdAt: 'asc' },
     take: limit,
+    select: {
+      id: true,
+      testimonyId: true,
+      mediaKind: true,
+      objectKey: true,
+      storageProvider: true,
+      mimeType: true,
+      status: true,
+      provider: true,
+      attempts: true,
+      createdAt: true,
+    },
   });
 
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const processed = [];
-
-  for (const job of jobs) {
-    await prisma.transcriptionJob.update({
-      where: { id: job.id },
-      data: { status: 'PROCESSING', attempts: { increment: 1 }, error: null },
-    });
-
-    try {
-      const media = await readMediaObject(job.objectKey);
-      const fileName = `${job.mediaKind}-${job.id}.${media.contentType.includes('mp4') ? 'mp4' : 'webm'}`;
-      const transcript = await client.audio.transcriptions.create({
-        model: 'whisper-1',
-        file: await toFile(media.buffer, fileName, { type: media.contentType }),
-      });
-      const text = String(transcript.text || '').trim();
-
-      await prisma.$transaction([
-        prisma.transcriptionJob.update({
-          where: { id: job.id },
-          data: {
-            status: 'COMPLETED',
-            transcript: text,
-            processedAt: new Date(),
-          },
-        }),
-        prisma.testimony.update({
-          where: { id: job.testimonyId },
-          data: {
-            transcriptionStatus: 'COMPLETED',
-            transcriptionText: text,
-            transcriptionError: null,
-            transcribedAt: new Date(),
-            narrativeText: text || undefined,
-            summary: text ? summarize(text) : undefined,
-          },
-        }),
-      ]);
-
-      processed.push({ id: job.id, status: 'COMPLETED' });
-    } catch (error) {
-      const message = error?.message || 'Transcription failed.';
-      await prisma.$transaction([
-        prisma.transcriptionJob.update({
-          where: { id: job.id },
-          data: { status: 'FAILED', error: message },
-        }),
-        prisma.testimony.update({
-          where: { id: job.testimonyId },
-          data: { transcriptionStatus: 'FAILED', transcriptionError: message },
-        }),
-      ]);
-      processed.push({ id: job.id, status: 'FAILED', error: message });
-    }
-  }
-
-  return NextResponse.json({ processed });
+  return NextResponse.json({
+    status: 'PIPELINE_NOT_CONFIGURED',
+    message: 'OpenAI Whisper is disabled. Pending jobs are preserved for the future open-source Whisper/Llama/topic-modelling pipeline.',
+    jobs,
+  }, { status: 202 });
 }
 
 export async function GET(request) {
@@ -106,7 +51,7 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Cron access is required.' }, { status: 401 });
   }
 
-  return processPendingJobs(3);
+  return pendingPipelineResponse(10);
 }
 
 export async function POST(request) {
@@ -115,6 +60,6 @@ export async function POST(request) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const limit = Math.min(Math.max(Number(body.limit || 1), 1), 5);
-  return processPendingJobs(limit);
+  const limit = Math.min(Math.max(Number(body.limit || 10), 1), 50);
+  return pendingPipelineResponse(limit);
 }

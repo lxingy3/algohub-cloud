@@ -1,7 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { assertMediaUpload, createPresignedMediaUpload, hasR2Config, mediaPublicUrl } from '../../../../lib/r2';
+import {
+  assertMediaUpload,
+  createSignedMediaUpload,
+  hasFirebaseStorageConfig,
+  mediaStorageProvider,
+  mediaStorageUri,
+} from '../../../../lib/mediaStorage';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,8 +29,8 @@ function cleanExtension(fileName, contentType) {
 }
 
 export async function POST(request) {
-  if (!hasR2Config()) {
-    return NextResponse.json({ error: 'Cloudflare R2 is not configured for this deployment.' }, { status: 503 });
+  if (!hasFirebaseStorageConfig()) {
+    return NextResponse.json({ error: 'Firebase media storage is not configured for this deployment.' }, { status: 503 });
   }
 
   const result = uploadSchema.safeParse(await request.json().catch(() => null));
@@ -45,12 +51,13 @@ export async function POST(request) {
 
   const extension = cleanExtension(fileName, contentType);
   const objectKey = `testimonies/${kind}/${new Date().toISOString().slice(0, 10)}/${randomUUID()}.${extension}`;
-  const uploadUrl = await createPresignedMediaUpload({ objectKey, contentType });
+  const uploadUrl = await createSignedMediaUpload({ objectKey, contentType });
 
   return NextResponse.json({
     uploadUrl,
     objectKey,
-    publicUrl: mediaPublicUrl(objectKey),
+    storageUri: mediaStorageUri(objectKey),
+    provider: mediaStorageProvider,
     contentType,
   });
 }

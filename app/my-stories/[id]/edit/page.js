@@ -109,20 +109,14 @@ export default async function EditMyStoryPage({ params }) {
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                 <p className="mb-2 text-sm font-medium text-gray-700">Current voice story</p>
                 <audio className="w-full" src={`/api/my-stories/${testimony.id}/media/audio`} controls preload="metadata" />
-                <label className="mt-4 block text-sm font-medium text-gray-700">
-                  Replace audio file
-                  <input name="audioFile" type="file" accept="audio/*" className="mt-2 block w-full rounded-md border border-gray-200 px-3 py-2 text-sm" />
-                </label>
+                <p className="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-800">Media replacement now uses secure signed upload. Submit a new voice story if the media itself needs to change.</p>
               </div>
             ) : null}
             {storyType === 'video' && testimony.videoFileUrl ? (
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                 <p className="mb-2 text-sm font-medium text-gray-700">Current video story</p>
                 <video className="max-h-80 w-full rounded-lg border bg-black object-contain" src={`/api/my-stories/${testimony.id}/media/video`} controls preload="metadata" />
-                <label className="mt-4 block text-sm font-medium text-gray-700">
-                  Replace video file
-                  <input name="videoFile" type="file" accept="video/*" className="mt-2 block w-full rounded-md border border-gray-200 px-3 py-2 text-sm" />
-                </label>
+                <p className="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-800">Media replacement now uses secure signed upload. Submit a new video story if the media itself needs to change.</p>
               </div>
             ) : null}
             <label className="block text-sm font-medium text-gray-700">
