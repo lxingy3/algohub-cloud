@@ -20,7 +20,10 @@ export function LanguageSelector() {
         value={language}
         aria-label={t('nav.language')}
         title={t('nav.language')}
-        onChange={(event) => i18n.changeLanguage(event.target.value)}
+        onChange={(event) => {
+          window.localStorage.setItem('algostories-language', event.target.value);
+          i18n.changeLanguage(event.target.value);
+        }}
         className="h-11 max-w-[132px] rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-600 hover:border-gray-300 focus:border-gray-400 focus:outline-none md:h-9 md:max-w-[112px]"
       >
         {languageOptions.map(([code, label]) => (
