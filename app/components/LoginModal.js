@@ -38,7 +38,8 @@ export function LoginModal({ open, onClose, forceOpen = false, error = false }) 
   }, [forceOpen, onClose, open]);
 
   useEffect(() => {
-    setCallbackUrl(`${window.location.pathname}${window.location.search}`);
+    const currentPath = `${window.location.pathname}${window.location.search}`;
+    setCallbackUrl(window.location.pathname === '/login' ? '/' : currentPath);
   }, []);
 
   async function startSso(providerId) {
