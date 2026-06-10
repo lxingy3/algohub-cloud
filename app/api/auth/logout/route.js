@@ -5,6 +5,7 @@ import { sessionCookieName } from '../../../../lib/auth';
 const knownCookieNames = [
   sessionCookieName,
   'algohub_sso_role',
+  'algohub_sso_name',
   'authjs.session-token',
   '__Secure-authjs.session-token',
   'next-auth.session-token',
