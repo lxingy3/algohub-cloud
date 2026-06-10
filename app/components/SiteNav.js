@@ -1,5 +1,6 @@
 import { SiteNavClient } from './SiteNavClient';
 
 export function SiteNav({ currentUser }) {
-  return <SiteNavClient isLoggedIn={Boolean(currentUser)} />;
+  const isAdmin = Boolean(currentUser?.userRoles?.some((userRole) => userRole.role.name === 'ADMIN'));
+  return <SiteNavClient isLoggedIn={Boolean(currentUser)} isAdmin={isAdmin} />;
 }

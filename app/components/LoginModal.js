@@ -26,7 +26,7 @@ function safeCallbackUrl(value) {
   return value.startsWith('/') && !value.startsWith('//') ? value : null;
 }
 
-export function LoginModal({ open, onClose, forceOpen = false, error = false, initialRole, initialCallbackUrl }) {
+export function LoginModal({ open, onClose, onSignup, forceOpen = false, error = false, initialRole, initialCallbackUrl }) {
   const { t } = useTranslation();
   const titleId = useId();
   const [selectedRole, setSelectedRole] = useState(() => safeRole(initialRole));
@@ -45,6 +45,10 @@ export function LoginModal({ open, onClose, forceOpen = false, error = false, in
       document.body.style.overflow = previousOverflow;
     };
   }, [forceOpen, onClose, open]);
+
+  useEffect(() => {
+    if (open) setSelectedRole(safeRole(initialRole));
+  }, [initialRole, open]);
 
   useEffect(() => {
     const explicitCallbackUrl = safeCallbackUrl(initialCallbackUrl);
@@ -159,9 +163,15 @@ export function LoginModal({ open, onClose, forceOpen = false, error = false, in
 
         <p className="mt-4 text-sm text-slate-600">
           {t('login.noAccount', { defaultValue: 'No account?' })}{' '}
-          <Link href="/signup" className="font-semibold text-blue-700">
-            {t('login.signUp', { defaultValue: 'Sign up' })}
-          </Link>
+          {onSignup ? (
+            <button type="button" onClick={onSignup} className="font-semibold text-blue-700">
+              {t('login.signUp', { defaultValue: 'Sign up' })}
+            </button>
+          ) : (
+            <Link href="/signup" className="font-semibold text-blue-700">
+              {t('login.signUp', { defaultValue: 'Sign up' })}
+            </Link>
+          )}
         </p>
       </div>
     </div>
