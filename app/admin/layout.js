@@ -7,8 +7,9 @@ export default async function AdminLayout({ children }) {
 
   if (!admin) {
     return (
-      <main className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6 sm:py-12">
-        <div className="mx-auto max-w-md rounded-lg border bg-white p-6">
+      <main className="min-h-screen bg-slate-100">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-4 py-8" role="dialog" aria-modal="true">
+        <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-2xl">
           <h1 className="text-2xl font-semibold">Admin login needed</h1>
           <p className="mt-2 text-sm text-slate-600">
             Log in with the admin account first: admin@algostories.local
@@ -16,6 +17,7 @@ export default async function AdminLayout({ children }) {
           <Link href="/login?switch=1&role=ADMIN&callbackUrl=/admin" className="mt-5 inline-flex min-h-11 items-center rounded-md bg-slate-900 px-4 py-2 text-white">
             Go to login
           </Link>
+        </div>
         </div>
       </main>
     );
