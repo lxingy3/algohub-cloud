@@ -93,7 +93,7 @@ function openAlgorithmModal({ pathname, router, searchParams, algorithmId }) {
   const params = new URLSearchParams(searchParams.toString());
   params.set('algorithmId', algorithmId);
   const query = params.toString();
-  router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  replaceWithoutScroll(router, query ? `${pathname}?${query}` : pathname);
 }
 
 function closeAlgorithmModal({ pathname, router, searchParams, setSelectedAlgorithm }) {
@@ -101,7 +101,17 @@ function closeAlgorithmModal({ pathname, router, searchParams, setSelectedAlgori
   const params = new URLSearchParams(searchParams.toString());
   params.delete('algorithmId');
   const query = params.toString();
-  router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  replaceWithoutScroll(router, query ? `${pathname}?${query}` : pathname);
+}
+
+function replaceWithoutScroll(router, href) {
+  const scrollY = typeof window === 'undefined' ? 0 : window.scrollY;
+  router.replace(href, { scroll: false });
+  if (typeof window === 'undefined') return;
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: scrollY, left: 0, behavior: 'instant' });
+    requestAnimationFrame(() => window.scrollTo({ top: scrollY, left: 0, behavior: 'instant' }));
+  });
 }
 
 export function AlgorithmModal({ algorithm, onClose }) {
