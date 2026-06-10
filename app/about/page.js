@@ -236,7 +236,7 @@ function PartnerCard({ partner }) {
   const logo = partner.image ? (
     <img src={partner.image} alt={`${partner.name} logo`} className="max-h-full max-w-full object-contain" />
   ) : (
-    <span className="text-center text-lg font-black text-amber-800">{partner.name}</span>
+    <span className="text-center text-lg font-bold text-amber-800">{partner.name}</span>
   );
 
   return (

@@ -132,7 +132,7 @@ export default async function StoriesPage({ searchParams }) {
               <div className="min-w-0 flex-1 py-0.5">
                 <h3 className="mb-1 line-clamp-2 text-base font-bold text-gray-900 transition-colors group-hover:text-yellow-600">{story.title}</h3>
                 <p className="mb-1.5 line-clamp-2 text-sm text-gray-600">
-                  <span className="mr-1.5 inline rounded bg-gray-100 px-1 py-0.5 align-middle text-[9px] font-medium uppercase tracking-wider text-gray-400">Summary</span>
+                  <span className="mr-1.5 inline rounded bg-gray-100 px-1 py-0.5 align-middle text-[9px] font-medium uppercase tracking-wider text-gray-400">AI summary</span>
                   {story.summary}
                 </p>
                 <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">

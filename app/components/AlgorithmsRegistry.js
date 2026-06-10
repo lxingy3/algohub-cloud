@@ -27,7 +27,7 @@ export function AlgorithmsRegistry({ algorithms }) {
             className="group flex h-full flex-col rounded-lg border border-gray-200 border-l-4 border-l-yellow-500 bg-white p-5 text-left shadow-sm transition-all hover:shadow-lg"
           >
             <div className="mb-4 flex items-start justify-between gap-3">
-              <h3 className="text-lg font-bold leading-tight text-gray-900 transition-colors group-hover:text-yellow-600">
+              <h3 className="text-lg font-semibold leading-tight text-gray-900 transition-colors group-hover:text-yellow-600">
                 {algorithm.name}
               </h3>
               <StoryCountBadge count={algorithm.storyCount || 0} />
@@ -63,12 +63,12 @@ export function AlgorithmsRegistry({ algorithms }) {
 
 function AlgorithmModal({ algorithm, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 px-4 py-8" role="dialog" aria-modal="true">
       <button type="button" className="fixed inset-0 cursor-default" aria-label="Close algorithm modal" onClick={onClose} />
       <div className="relative w-full max-w-4xl rounded-xl bg-white shadow-2xl">
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4">
           <div>
-            <h2 className="text-2xl font-black leading-tight text-slate-950">{algorithm.name}</h2>
+            <h2 className="text-2xl font-bold leading-tight text-slate-950">{algorithm.name}</h2>
             <p className="mt-1 text-sm text-slate-500">{algorithm.useCase} / {algorithm.location}</p>
           </div>
           <button type="button" onClick={onClose} className="rounded-md border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 hover:text-slate-950">

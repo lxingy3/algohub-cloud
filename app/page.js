@@ -213,7 +213,7 @@ function StatCard({ href, icon: Icon, value, label }) {
         <Icon className="h-5 w-5" />
       </div>
       <div>
-        <div className="text-2xl font-black text-gray-900">{value}</div>
+        <div className="text-2xl font-bold text-gray-900">{value}</div>
         <div className="text-sm font-medium text-gray-600 group-hover:text-gray-900">{label}</div>
       </div>
     </Link>

@@ -9,7 +9,7 @@ export function AlgorithmCard({ algorithm }) {
       className="group flex h-full flex-col rounded-lg border border-gray-200 border-l-4 border-l-yellow-500 bg-white p-5 shadow-sm transition-all hover:shadow-lg"
     >
       <div className="mb-4 flex items-start justify-between gap-3">
-        <h3 className="text-lg font-bold leading-tight text-gray-900 transition-colors group-hover:text-yellow-600">
+        <h3 className="text-lg font-semibold leading-tight text-gray-900 transition-colors group-hover:text-yellow-600">
           {algorithm.name}
         </h3>
         <StoryCountBadge count={algorithm.storyCount || 0} />

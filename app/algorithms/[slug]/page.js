@@ -50,7 +50,7 @@ export default async function AlgorithmDetailPage({ params }) {
                 <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">{formatStatus(algorithm.status)}</span>
                 {algorithm.impactLevel ? <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">{formatStatus(algorithm.impactLevel)} Impact</span> : null}
               </div>
-              <h1 className="mt-4 max-w-3xl text-4xl font-black leading-tight">{algorithm.name}</h1>
+              <h1 className="mt-4 max-w-3xl text-4xl font-bold leading-tight">{algorithm.name}</h1>
               <p className="mt-3 max-w-3xl leading-7 text-slate-600">{algorithm.description}</p>
             </div>
             <Link href={`/submit-testimony?algorithmId=${algorithm.id}`} className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
@@ -68,7 +68,7 @@ export default async function AlgorithmDetailPage({ params }) {
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_.9fr]">
           <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-black">System details</h2>
+            <h2 className="text-xl font-semibold">System details</h2>
             <dl className="mt-5 grid gap-4 md:grid-cols-2">
               <InfoItem label="Purpose" value={algorithm.purpose || 'Not listed'} />
               <InfoItem label="Data used" value={algorithm.dataUsed || 'Not listed'} />
@@ -80,7 +80,7 @@ export default async function AlgorithmDetailPage({ params }) {
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-black">Official claims</h2>
+            <h2 className="text-xl font-semibold">Official claims</h2>
             <div className="mt-4 space-y-3">
               {algorithm.claims.map((claim) => (
                 <div key={claim.id} className="rounded-md bg-amber-50 p-4">
@@ -94,7 +94,7 @@ export default async function AlgorithmDetailPage({ params }) {
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[.9fr_1.1fr]">
           <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="flex items-center gap-2 text-xl font-black">
+            <h2 className="flex items-center gap-2 text-xl font-semibold">
               <FileText className="h-5 w-5 text-amber-600" />
               Documents
             </h2>
@@ -109,7 +109,7 @@ export default async function AlgorithmDetailPage({ params }) {
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="flex items-center gap-2 text-xl font-black">
+            <h2 className="flex items-center gap-2 text-xl font-semibold">
               <MessageSquareQuote className="h-5 w-5 text-amber-600" />
               Linked community testimony
             </h2>

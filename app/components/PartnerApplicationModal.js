@@ -44,7 +44,7 @@ export function PartnerApplicationModal({ status }) {
       ) : null}
 
       {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="partner-application-title">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="partner-application-title">
           <button type="button" aria-label="Close partner application" className="fixed inset-0 cursor-default" onClick={() => setOpen(false)} />
           <form id="partner-application" action="/api/partners/apply" method="post" className="relative w-full max-w-lg rounded-lg border border-amber-200 bg-white p-5 shadow-2xl sm:p-6">
             <div className="flex items-start justify-between gap-4">

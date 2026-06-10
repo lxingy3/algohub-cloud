@@ -70,6 +70,13 @@ export default async function StoryPage({ params }) {
           <ArrowLeft className="h-4 w-4" />
           Back to Stories
         </Link>
+        <nav className="mt-2 flex items-center gap-2 text-sm text-gray-500" aria-label="Breadcrumb">
+          <Link href="/" className="hover:text-gray-900">Home</Link>
+          <span>/</span>
+          <Link href="/stories" className="hover:text-gray-900">Stories</Link>
+          <span>/</span>
+          <span className="max-w-[200px] truncate text-gray-900" title={testimony.title}>{testimony.title}</span>
+        </nav>
 
         <section className="mt-5 rounded-lg border border-gray-100 bg-white p-5 pb-4 sm:p-8">
           <div className="mb-2 flex flex-wrap items-center gap-3">
@@ -90,7 +97,7 @@ export default async function StoryPage({ params }) {
 
           <div className="mb-8 border-l-4 border-yellow-500 pl-4">
             <span className="mb-1 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-gray-400">
-              AI-GENERATED SUMMARY
+              AI-generated summary
             </span>
             <p className="text-lg leading-8 text-gray-600">{testimony.brief?.summary || testimony.summary}</p>
           </div>
@@ -117,7 +124,7 @@ export default async function StoryPage({ params }) {
         </section>
 
         <section className="mt-6 rounded-lg border border-gray-100 bg-white p-5 sm:p-8">
-          <h2 className="flex items-center gap-2 text-2xl font-black">
+          <h2 className="flex items-center gap-2 text-xl font-semibold text-gray-900">
             <MessageCircle className="h-6 w-6 text-amber-600" />
             Comments
           </h2>
