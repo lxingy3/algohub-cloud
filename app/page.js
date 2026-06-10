@@ -4,9 +4,9 @@ import { prisma } from '../lib/prisma';
 import { getJurisdictionId } from '../lib/jurisdiction';
 import { getCurrentUser } from '../lib/auth';
 import { SiteNav } from './components/SiteNav';
-import { formatDate } from './components/Formatters';
 import { AISystemsDiagram } from './components/AISystemsDiagram';
 import { HomeUseCaseExplorer } from './components/HomeUseCaseExplorer';
+import { HomeEventsPanel } from './components/HomeEventsPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -191,7 +191,7 @@ export default async function HomePage() {
                   <Link
                     key={story.id}
                     href={story.id === 'fallback' ? '/stories' : `/stories/${story.id}`}
-                    className="block rounded-lg border border-yellow-200/70 bg-yellow-100/55 p-4 transition-colors hover:bg-yellow-100"
+                    className="block rounded-lg border border-yellow-300/45 bg-transparent p-4 transition-colors hover:bg-yellow-200/30"
                   >
                     <Quote className="mb-3 h-7 w-7 text-yellow-400" />
                     <p className="text-base italic leading-7 text-gray-700">"{story.summary || story.narrativeText}"</p>
@@ -208,26 +208,7 @@ export default async function HomePage() {
                 </Link>
               </div>
             </div>
-            <div className="rounded-2xl bg-gradient-to-br from-yellow-500 to-yellow-600 p-5 text-white sm:p-8">
-              <h3 className="mb-6 text-2xl font-bold">What's Happening?</h3>
-              <ul className="space-y-6">
-                {upcomingEvents.map((event) => (
-                  <li key={event.id} className="border-l-2 border-yellow-200 pl-4">
-                    <Link href={`/events?eventId=${event.id}`} className="block rounded-md py-1 transition-colors hover:bg-yellow-500/25">
-                    <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-yellow-100">
-                      {formatDate(event.date)}
-                    </div>
-                    <div className="mb-1 font-semibold text-white">{event.title}</div>
-                    <p className="text-sm text-yellow-50">{event.organizer?.name || event.location || 'Community event'}</p>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              <Link href="/events" className="mt-8 inline-flex items-center text-sm font-semibold text-white">
-                View community events
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </div>
+            <HomeEventsPanel events={upcomingEvents.map(serializeHomeEvent)} />
           </div>
         </div>
       </section>
@@ -248,6 +229,20 @@ export default async function HomePage() {
       </section>
     </main>
   );
+}
+
+function serializeHomeEvent(event) {
+  return {
+    ...event,
+    date: event.date.toISOString(),
+    endDate: event.endDate?.toISOString() || null,
+    createdAt: event.createdAt?.toISOString() || null,
+    imageUrl: event.imageUrl?.startsWith('gcs://') ? `/api/events/${event.id}/image` : event.imageUrl,
+    organizer: event.organizer ? {
+      ...event.organizer,
+      createdAt: event.organizer.createdAt?.toISOString() || null,
+    } : null,
+  };
 }
 
 function StatCard({ href, icon: Icon, value, label }) {

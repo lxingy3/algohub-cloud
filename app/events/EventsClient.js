@@ -124,7 +124,7 @@ function EventRow({ event, onSelect }) {
   );
 }
 
-function EventModal({ event, onClose }) {
+export function EventModal({ event, onClose }) {
   useEffect(() => {
     if (!event) return undefined;
     const onKeyDown = (keyEvent) => {
