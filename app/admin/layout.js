@@ -34,12 +34,14 @@ export default async function AdminLayout({ children }) {
               <Link href="/" className="inline-flex min-h-10 items-center rounded-md px-2 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-900 md:min-h-9">
                 Back to AlgoStories
               </Link>
-              <form action="/api/auth/logout" method="post" className="md:mt-6">
-                <button className="min-h-10 rounded-md px-2 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-900 md:min-h-11">Logout</button>
-              </form>
             </div>
           </div>
           <AdminSidebarNav />
+          <form action="/api/auth/logout" method="post" className="mt-2 md:mt-4">
+            <button className="min-h-10 rounded-md px-3 py-2 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-900">
+              Logout
+            </button>
+          </form>
         </aside>
         <section className="min-w-0 overflow-x-auto p-4 sm:p-6">{children}</section>
       </div>
