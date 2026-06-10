@@ -14,7 +14,7 @@ const navItems = [
   ['/about', 'nav.about'],
 ];
 
-export function SiteNavClient({ isLoggedIn, enabledSsoProviders = [] }) {
+export function SiteNavClient({ isLoggedIn }) {
   const { t } = useTranslation();
   const [loginOpen, setLoginOpen] = useState(false);
 
@@ -67,7 +67,7 @@ export function SiteNavClient({ isLoggedIn, enabledSsoProviders = [] }) {
           ) : null}
         </nav>
       </div>
-      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} enabledSsoProviders={enabledSsoProviders} />
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
     </header>
   );
 }

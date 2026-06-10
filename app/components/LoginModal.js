@@ -16,13 +16,11 @@ function roleLabel(role) {
   return role.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-export function LoginModal({ open, onClose, forceOpen = false, error = false, enabledSsoProviders = [] }) {
+export function LoginModal({ open, onClose, forceOpen = false, error = false }) {
   const { t } = useTranslation();
   const titleId = useId();
   const [selectedRole, setSelectedRole] = useState('COMMUNITY_MEMBER');
   const [callbackUrl, setCallbackUrl] = useState('/');
-  const enabledProviderSet = new Set(enabledSsoProviders);
-  const visibleSsoProviders = ssoProviders.filter((provider) => enabledProviderSet.has(provider.id));
 
   useEffect(() => {
     if (!open) return undefined;
@@ -95,28 +93,24 @@ export function LoginModal({ open, onClose, forceOpen = false, error = false, en
           </select>
         </label>
 
-        {visibleSsoProviders.length ? (
-          <>
-            <div className="mt-4 grid gap-2">
-              {visibleSsoProviders.map((provider) => (
-                <Link
-                  key={provider.id}
-                  href={`/api/auth/sso/${provider.id}?role=${selectedRole}&callbackUrl=${encodeURIComponent(callbackUrl)}`}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
-                >
-                  {provider.id === 'github' ? <Github className="h-4 w-4" /> : <span className="font-bold">{provider.icon}</span>}
-                  {t('login.continueWith', { provider: provider.label, defaultValue: `Continue with ${provider.label}` })}
-                </Link>
-              ))}
-            </div>
+        <div className="mt-4 grid gap-2">
+          {ssoProviders.map((provider) => (
+            <Link
+              key={provider.id}
+              href={`/api/auth/sso/${provider.id}?role=${selectedRole}&callbackUrl=${encodeURIComponent(callbackUrl)}`}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+            >
+              {provider.id === 'github' ? <Github className="h-4 w-4" /> : <span className="font-bold">{provider.icon}</span>}
+              {t('login.continueWith', { provider: provider.label, defaultValue: `Continue with ${provider.label}` })}
+            </Link>
+          ))}
+        </div>
 
-            <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-slate-400">
-              <span className="h-px flex-1 bg-slate-200" />
-              {t('login.or', { defaultValue: 'or' })}
-              <span className="h-px flex-1 bg-slate-200" />
-            </div>
-          </>
-        ) : null}
+        <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-slate-400">
+          <span className="h-px flex-1 bg-slate-200" />
+          {t('login.or', { defaultValue: 'or' })}
+          <span className="h-px flex-1 bg-slate-200" />
+        </div>
 
         <form action="/api/auth/login" method="post" className="space-y-4">
           <input type="hidden" name="role" value={selectedRole} />
