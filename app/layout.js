@@ -5,6 +5,10 @@ import { SiteFooter } from './components/SiteFooter';
 export const metadata = {
   title: 'AlgoStories',
   description: 'Public algorithm registry and community stories',
+  icons: {
+    icon: '/favicon.png',
+    shortcut: '/favicon.png',
+  },
 };
 
 export default function RootLayout({ children }) {
