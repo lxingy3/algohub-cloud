@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { ArrowRight, Brain, FileText, Handshake, MessageSquare } from 'lucide-react';
 import { getCurrentUser } from '../../lib/auth';
+import { getJurisdictionId } from '../../lib/jurisdiction';
+import { prisma } from '../../lib/prisma';
 import { SiteNav } from '../components/SiteNav';
 import { PartnerApplicationModal } from '../components/PartnerApplicationModal';
 
@@ -102,9 +104,16 @@ const partners = [
 ];
 
 export default async function AboutPage({ searchParams }) {
-  const user = await getCurrentUser();
+  const [user, databaseOrganizations] = await Promise.all([
+    getCurrentUser(),
+    prisma.organization.findMany({
+      where: { jurisdictionId: getJurisdictionId(), isActive: true },
+      orderBy: { name: 'asc' },
+    }),
+  ]);
   const params = await searchParams;
   const partnerStatus = String(params?.partner || '');
+  const mergedPartners = mergePartnerOrganizations(partners, databaseOrganizations);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 to-slate-100 text-gray-900">
@@ -195,7 +204,7 @@ export default async function AboutPage({ searchParams }) {
           </div>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {partners.map((partner) => (
+          {mergedPartners.map((partner) => (
             <PartnerCard key={partner.name} partner={partner} />
           ))}
         </div>
@@ -216,6 +225,28 @@ export default async function AboutPage({ searchParams }) {
       </section>
     </main>
   );
+}
+
+function mergePartnerOrganizations(staticPartners, organizations) {
+  const databasePartners = organizations.map((organization) => ({
+    name: organization.name,
+    description: organization.description || 'Partner organization connected to the AlgoStories project.',
+    image: organization.logoUrl?.startsWith('gcs://') ? `/api/organizations/${organization.id}/logo` : organization.logoUrl,
+    href: organization.websiteUrl,
+  }));
+  const byName = new Map(databasePartners.map((partner) => [partner.name.toLowerCase(), partner]));
+  const merged = staticPartners.map((partner) => {
+    const databasePartner = byName.get(partner.name.toLowerCase());
+    if (!databasePartner) return partner;
+    byName.delete(partner.name.toLowerCase());
+    return {
+      ...partner,
+      description: databasePartner.description || partner.description,
+      image: databasePartner.image || partner.image,
+      href: databasePartner.href || partner.href,
+    };
+  });
+  return [...merged, ...byName.values()];
 }
 
 function PersonCard({ member }) {

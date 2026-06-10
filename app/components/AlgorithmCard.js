@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Info, MapPin } from 'lucide-react';
 import { formatStatus } from './Formatters';
+import { InfoTooltip } from './InfoTooltip';
 
 export function AlgorithmCard({ algorithm, onSelect }) {
   const className = 'group flex h-full flex-col rounded-lg border border-gray-200 border-l-4 border-l-yellow-500 bg-white p-5 text-left shadow-sm transition-all hover:shadow-lg';
@@ -69,7 +70,9 @@ function ImpactBadge({ impactLevel }) {
   return (
     <span className={`inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-1 text-sm font-bold ${tone}`}>
       {label}
-      <Info className="h-4 w-4 text-yellow-600" />
+      <InfoTooltip label="Impact measures the scale and severity of how this algorithm affects the community" className="text-yellow-600">
+        <Info className="h-4 w-4" />
+      </InfoTooltip>
     </span>
   );
 }

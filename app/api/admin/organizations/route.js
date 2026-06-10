@@ -23,6 +23,7 @@ export async function POST(request) {
       contactEmail: String(formData.get('contactEmail') || ''),
       role: String(formData.get('role') || 'community_partner'),
       websiteUrl: String(formData.get('websiteUrl') || '') || null,
+      logoUrl: String(formData.get('logoUrl') || '') || null,
       description: String(formData.get('description') || '') || null,
     },
   });

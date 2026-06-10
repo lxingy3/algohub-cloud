@@ -2,7 +2,7 @@ import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../lib/auth';
 import { formatStatus } from '../../components/Formatters';
-import { AddAlgorithmForm, AdminAlgorithmCard } from './AdminAlgorithmForms';
+import { AddAlgorithmPanel, AdminAlgorithmCard } from './AdminAlgorithmForms';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,14 +50,15 @@ export default async function AdminAlgorithmsPage({ searchParams }) {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold">Algorithm Manager</h1>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Algorithm Manager</h1>
+          <p className="mt-1 text-sm text-slate-500">Manage existing algorithm records first, then add new records when needed.</p>
+        </div>
+        <AddAlgorithmPanel currentRole={currentUser?.primaryRoleName || 'ADMIN'} />
+      </div>
 
       <section className="mt-5 rounded-lg border bg-white p-4">
-        <h2 className="text-lg font-semibold">Add Algorithm</h2>
-        <AddAlgorithmForm currentRole={currentUser?.primaryRoleName || 'ADMIN'} />
-      </section>
-
-      <section className="mt-6 rounded-lg border bg-white p-4">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold">Edit Existing Algorithms</h2>

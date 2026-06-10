@@ -8,18 +8,36 @@ const eventTypes = ['WORKSHOP', 'TESTIMONY_SESSION', 'TOWN_HALL', 'TRAINING', 'P
 
 export function AdminEventsManager({ events, organizations }) {
   const [editingId, setEditingId] = useState(null);
+  const [adding, setAdding] = useState(false);
 
   return (
     <div>
-      <div>
-        <h1 className="text-2xl font-semibold">Community Events Manager</h1>
-        <p className="mt-1 text-sm text-slate-500">Create and maintain the event details shown on the public events page.</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Community Events Manager</h1>
+          <p className="mt-1 text-sm text-slate-500">Create and maintain the event details shown on the public events page.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setAdding(true);
+            setEditingId(null);
+          }}
+          className="inline-flex min-h-10 items-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+        >
+          Add event
+        </button>
       </div>
 
-      <section className="mt-5 rounded-lg border bg-white p-4">
-        <h2 className="text-lg font-semibold">Add event</h2>
-        <EventForm action="/api/admin/events" organizations={organizations} submitLabel="Add event" />
-      </section>
+      {adding ? (
+        <section className="mt-5 rounded-lg border bg-white p-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">Add event</h2>
+            <button type="button" onClick={() => setAdding(false)} className="rounded-md border px-3 py-2 text-sm">Cancel</button>
+          </div>
+          <EventForm action="/api/admin/events" organizations={organizations} submitLabel="Add event" />
+        </section>
+      ) : null}
 
       <div className="mt-6 space-y-3">
         {events.map((event) => (
@@ -104,6 +122,7 @@ function EventForm({ action, event, organizations, submitLabel }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             kind: 'image',
+            scope: 'eventImage',
             fileName: imageFile.name,
             contentType: imageFile.type,
             size: imageFile.size,

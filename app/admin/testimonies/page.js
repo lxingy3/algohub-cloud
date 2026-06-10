@@ -178,14 +178,22 @@ export default async function AdminTestimoniesPage({ searchParams }) {
 }
 
 function StatusTabs({ baseHref, activeStatus, counts }) {
+  const allCount = moderationStatuses.reduce((sum, status) => sum + (counts[status] || 0), 0);
   return (
     <nav className="mt-5 flex gap-2 overflow-x-auto rounded-lg border bg-white p-2" aria-label="Moderation status">
+      <a
+        href={baseHref}
+        className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${!activeStatus ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+      >
+        Show all
+        <span className={`rounded-full px-2 py-0.5 text-xs ${!activeStatus ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>{allCount}</span>
+      </a>
       {moderationStatuses.map((status) => {
         const active = activeStatus === status;
         return (
           <a
             key={status}
-            href={`${baseHref}?status=${status}`}
+            href={active ? baseHref : `${baseHref}?status=${status}`}
             className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${active ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
           >
             {formatStatusLabel(status)}

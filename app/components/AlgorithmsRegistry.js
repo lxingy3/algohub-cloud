@@ -5,6 +5,9 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, BookOpen, Code2, Database, FileText, Image, Info, Landmark, MapPin, MessageSquareQuote, Settings, User, Users, X } from 'lucide-react';
 import { formatStatus } from './Formatters';
+import { InfoTooltip } from './InfoTooltip';
+
+const IMPACT_HELP = 'Impact measures the scale and severity of how this algorithm affects the community';
 
 export function AlgorithmsRegistry({ algorithms }) {
   const [selectedAlgorithm, setSelectedAlgorithm] = useState(null);
@@ -93,7 +96,7 @@ export function AlgorithmModal({ algorithm, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 px-4 py-8" role="dialog" aria-modal="true">
       <button type="button" className="fixed inset-0 cursor-default" aria-label="Close algorithm modal" onClick={onClose} />
-      <div className="relative w-full max-w-4xl rounded-xl bg-white shadow-2xl">
+      <div className="relative w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-2xl">
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4">
           <div>
             <h2 className="text-2xl font-bold leading-tight text-slate-950">{algorithm.name}</h2>
@@ -123,9 +126,9 @@ export function AlgorithmModal({ algorithm, onClose }) {
                     <span className={`rounded-full px-2 py-1 text-xs font-semibold ${impactClass(algorithm.impactLevel)}`}>
                       {formatStatus(algorithm.impactLevel)} Impact
                     </span>
-                    <span title="Impact measures the scale and severity of how this algorithm affects the community" className="inline-flex text-yellow-600">
+                    <InfoTooltip label={IMPACT_HELP}>
                       <Info className="h-3.5 w-3.5" />
-                    </span>
+                    </InfoTooltip>
                   </div>
                 ) : (
                   <dd className="font-semibold text-gray-900">N/A</dd>
@@ -267,7 +270,9 @@ function ImpactBadge({ impactLevel }) {
   return (
     <span className={`inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-1 text-sm font-bold ${tone}`}>
       {label}
-      <Info className="h-4 w-4 text-yellow-600" />
+      <InfoTooltip label={IMPACT_HELP} className="text-yellow-600">
+        <Info className="h-4 w-4" />
+      </InfoTooltip>
     </span>
   );
 }
@@ -299,12 +304,12 @@ function Storyboard({ algorithm }) {
               <div className="mb-6 rounded border border-slate-300 bg-white px-2 py-0.5 text-[9px] font-bold uppercase leading-tight text-slate-700 shadow-sm">
                 AI TOOL
               </div>
-              <div title={algorithm.purpose || 'Purpose not listed'} className="mt-2 flex flex-col items-center">
+              <InfoTooltip label={algorithm.purpose || 'Purpose not listed'} className="mt-2 flex-col items-center text-slate-900" block>
                 <User className="mb-2 h-8 w-8 text-slate-900" />
                 <div className="flex min-h-10 w-full min-w-32 items-center justify-center rounded border border-slate-300 bg-white px-2 py-1 text-[10px] font-bold uppercase leading-tight text-slate-800 shadow-sm">
                   AGENCY STAFF
                 </div>
-              </div>
+              </InfoTooltip>
             </div>
             <StoryNode icon={<Users className="h-12 w-12 text-slate-900" />} label="PEOPLE" />
           </div>
@@ -315,8 +320,8 @@ function Storyboard({ algorithm }) {
 }
 
 function StoryNode({ icon, label, subLabel, title }) {
-  return (
-    <div className="flex min-h-36 flex-col items-center justify-end" title={title}>
+  const content = (
+    <div className="flex min-h-36 flex-col items-center justify-end">
       <div className="mb-3 flex h-14 items-center justify-center">{icon}</div>
       {subLabel ? <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{subLabel}</div> : null}
       <div className="flex min-h-10 w-full items-center justify-center rounded border border-slate-300 bg-white px-2 py-1 text-[10px] font-bold uppercase leading-tight text-slate-800 shadow-sm">
@@ -324,6 +329,8 @@ function StoryNode({ icon, label, subLabel, title }) {
       </div>
     </div>
   );
+
+  return title ? <InfoTooltip label={title} className="text-slate-900" block>{content}</InfoTooltip> : content;
 }
 
 function InfoItem({ label, value }) {

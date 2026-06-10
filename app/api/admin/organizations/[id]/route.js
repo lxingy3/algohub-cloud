@@ -19,7 +19,9 @@ export async function POST(request, { params }) {
       data: {
         name: String(formData.get('name') || ''),
         contactEmail: String(formData.get('contactEmail') || ''),
+        role: String(formData.get('role') || '') || null,
         websiteUrl: String(formData.get('websiteUrl') || '') || null,
+        logoUrl: String(formData.get('logoUrl') || '') || null,
         description: String(formData.get('description') || '') || null,
         ...(approved ? { isActive: true, role: 'community_partner' } : {}),
       },

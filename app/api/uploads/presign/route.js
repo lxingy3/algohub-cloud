@@ -13,6 +13,7 @@ export const dynamic = 'force-dynamic';
 
 const uploadSchema = z.object({
   kind: z.enum(['audio', 'video', 'image']),
+  scope: z.enum(['eventImage', 'organizationLogo']).optional(),
   fileName: z.string().trim().min(1).max(255),
   contentType: z.string().trim().min(1),
   size: z.number().positive(),
@@ -44,7 +45,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Invalid upload request.' }, { status: 400 });
   }
 
-  const { kind, fileName, contentType, size } = result.data;
+  const { kind, scope, fileName, contentType, size } = result.data;
 
   if (kind === 'image') {
     if (!IMAGE_CONTENT_TYPES.has(contentType)) {
@@ -67,7 +68,7 @@ export async function POST(request) {
   const extension = cleanExtension(fileName, contentType);
   const datePrefix = new Date().toISOString().slice(0, 10);
   const objectKey = kind === 'image'
-    ? `events/images/${datePrefix}/${randomUUID()}.${extension}`
+    ? imageObjectKey({ scope, datePrefix, extension })
     : `testimonies/${kind}/${datePrefix}/${randomUUID()}.${extension}`;
   const uploadUrl = await createSignedMediaUpload({ objectKey, contentType });
 
@@ -78,4 +79,11 @@ export async function POST(request) {
     provider: mediaStorageProvider,
     contentType,
   });
+}
+
+function imageObjectKey({ scope, datePrefix, extension }) {
+  if (scope === 'organizationLogo') {
+    return `organizations/logos/${datePrefix}/${randomUUID()}.${extension}`;
+  }
+  return `events/images/${datePrefix}/${randomUUID()}.${extension}`;
 }

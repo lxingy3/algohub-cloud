@@ -140,7 +140,7 @@
     <text x="20" y="32" class="label title">Organization</text>
     <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
     <text x="20" y="78" class="field">name, slug, description</text>
-    <text x="20" y="98" class="field">contactEmail, websiteUrl</text>
+    <text x="20" y="98" class="field">contactEmail, websiteUrl, logoUrl</text>
     <text x="20" y="118" class="field">role, isActive</text>
   </g>
 

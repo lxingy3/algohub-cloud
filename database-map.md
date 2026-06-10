@@ -86,7 +86,7 @@ erDiagram
 | Admin dashboard | `Algorithm`, `Testimony`, `Comment`, `User` | Counts for algorithms, pending testimonies, pending comments, users |
 | Admin algorithm manager | `Algorithm`, `AlgorithmClaim` | Create/update/delete registry fields and official claims |
 | Admin event manager | `CommunityEvent`, `Organization` | Create/update/delete event fields and organizer link |
-| Admin organization manager | `Organization` | `name`, `slug`, `description`, `contactEmail`, `websiteUrl`, `role`, `isActive` |
+| Admin organization manager | `Organization` | `name`, `slug`, `description`, `contactEmail`, `websiteUrl`, `logoUrl`, `role`, `isActive` |
 | Admin testimony queue | `Testimony`, `User` | Pending/flagged/rejected/approved testimony review with moderation actions |
 | Admin comment queue | `Comment`, `Testimony`, `User` | Pending comment review with approve/reject/flag actions |
 | Admin user manager | `User`, `Role`, `UserRole` | `email`, `name`, `primaryRoleName`, assigned role; admin can update role assignment |
