@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Calendar, ChevronRight, Clock, ExternalLink, MapPin, Video, X } from 'lucide-react';
 import { formatStatus } from '../components/Formatters';
 
+const eventTimeZone = 'America/New_York';
+
 export function EventsClient({ activeFilter, upcomingEvents, pastEvents, initialEventId }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const allEvents = useMemo(() => [...upcomingEvents, ...pastEvents], [upcomingEvents, pastEvents]);
@@ -69,8 +71,8 @@ function EventRow({ event, onSelect }) {
         className="flex h-16 w-16 flex-shrink-0 flex-col items-center justify-center rounded-lg border-2 border-yellow-300 bg-amber-50 text-left"
         aria-label={`View details for ${event.title}`}
       >
-        <span className="text-xs font-semibold leading-tight text-yellow-700">{date.toLocaleString('en-US', { month: 'short' })}</span>
-        <span className="text-xl font-bold leading-tight text-gray-900">{date.getDate()}</span>
+        <span className="text-xs font-semibold leading-tight text-yellow-700">{date.toLocaleString('en-US', { month: 'short', timeZone: eventTimeZone })}</span>
+        <span className="text-xl font-bold leading-tight text-gray-900">{date.toLocaleString('en-US', { day: 'numeric', timeZone: eventTimeZone })}</span>
       </button>
       <div className="min-w-0 flex-1">
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
@@ -227,13 +229,14 @@ function formatFullDate(value) {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
+    timeZone: eventTimeZone,
   }).format(new Date(value));
 }
 
 function formatTimeRange(event) {
   const date = new Date(event.date);
-  const start = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const start = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: eventTimeZone });
   if (!event.endDate) return start;
-  const end = new Date(event.endDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const end = new Date(event.endDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: eventTimeZone });
   return `${start} - ${end}`;
 }
