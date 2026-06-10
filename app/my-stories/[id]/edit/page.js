@@ -9,7 +9,7 @@ import { formatDate, formatStatus } from '../../../components/Formatters';
 
 export const dynamic = 'force-dynamic';
 
-const returnedStatuses = new Set(['FLAGGED', 'REJECTED']);
+const editableStatuses = new Set(['PENDING', 'FLAGGED', 'REJECTED']);
 
 export default async function EditMyStoryPage({ params }) {
   const user = await getCurrentUser();
@@ -47,7 +47,7 @@ export default async function EditMyStoryPage({ params }) {
   ]);
 
   if (!testimony) notFound();
-  if (!returnedStatuses.has(testimony.moderationStatus)) redirect('/my-stories');
+  if (!editableStatuses.has(testimony.moderationStatus)) redirect('/my-stories');
 
   const selectedAlgorithmId = testimony.algorithmLinks[0]?.algorithmId || '';
   const storyType = testimony.storyType || 'text';

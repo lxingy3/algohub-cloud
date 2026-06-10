@@ -5,7 +5,7 @@ import { getCurrentUser } from '../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-const RETURNED_STATUSES = new Set(['FLAGGED', 'REJECTED']);
+const EDITABLE_STATUSES = new Set(['PENDING', 'FLAGGED', 'REJECTED']);
 const IMPACT_VALUES = new Set(['POSITIVE', 'NEGATIVE', 'MIXED', 'UNCLEAR']);
 
 function formText(formData, key) {
@@ -38,8 +38,8 @@ export async function POST(request, { params }) {
   if (!existing) {
     return NextResponse.json({ error: 'Story not found' }, { status: 404 });
   }
-  if (!RETURNED_STATUSES.has(existing.moderationStatus)) {
-    return NextResponse.json({ error: 'Only flagged or rejected stories can be edited and resubmitted.' }, { status: 400 });
+  if (!EDITABLE_STATUSES.has(existing.moderationStatus)) {
+    return NextResponse.json({ error: 'Only pending, flagged, or rejected stories can be edited and resubmitted.' }, { status: 400 });
   }
 
   const formData = await request.formData();

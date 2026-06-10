@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, ExternalLink, Image as ImageIcon, Pencil, Trash2, Upload } from 'lucide-react';
+import { Check, ExternalLink, Pencil, Trash2, Upload } from 'lucide-react';
 
 export function AdminOrganizationsManager({ organizations }) {
   const [adding, setAdding] = useState(false);
@@ -17,12 +17,12 @@ export function AdminOrganizationsManager({ organizations }) {
         <button
           type="button"
           onClick={() => {
-            setAdding(true);
+            setAdding((current) => !current);
             setEditingId(null);
           }}
           className="inline-flex min-h-10 items-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
         >
-          Add organization
+          {adding ? 'Cancel' : 'Add organization'}
         </button>
       </div>
 
@@ -64,7 +64,9 @@ function OrganizationSummary({ organization, onEdit }) {
         {organization.logoPreviewUrl ? (
           <img src={organization.logoPreviewUrl} alt={`${organization.name} logo`} className="max-h-full max-w-full object-contain" />
         ) : (
-          <ImageIcon className="h-8 w-8 text-slate-300" />
+          <div className="flex h-full w-full items-center justify-center rounded bg-gradient-to-br from-amber-100 via-yellow-50 to-slate-100 px-3 text-center">
+            <span className="text-sm font-extrabold leading-tight text-slate-900">{organization.name}</span>
+          </div>
         )}
       </div>
       <div className="min-w-0">

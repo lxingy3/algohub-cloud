@@ -40,6 +40,11 @@ export function AlgorithmsRegistry({ algorithms }) {
           <a
             key={algorithm.id}
             href={algorithmHref({ pathname, searchParams, algorithmId: algorithm.id })}
+            onClick={(event) => {
+              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+              event.preventDefault();
+              openAlgorithmModal({ pathname, router, searchParams, algorithmId: algorithm.id });
+            }}
             className="group flex h-full flex-col rounded-lg border border-gray-200 border-l-4 border-l-yellow-500 bg-white p-5 text-left shadow-sm transition-all hover:shadow-lg"
           >
             <div className="mb-4 flex items-start justify-between gap-3">
@@ -82,6 +87,13 @@ function algorithmHref({ pathname, searchParams, algorithmId }) {
   params.set('algorithmId', algorithmId);
   const query = params.toString();
   return query ? `${pathname}?${query}` : pathname;
+}
+
+function openAlgorithmModal({ pathname, router, searchParams, algorithmId }) {
+  const params = new URLSearchParams(searchParams.toString());
+  params.set('algorithmId', algorithmId);
+  const query = params.toString();
+  router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
 }
 
 function closeAlgorithmModal({ pathname, router, searchParams, setSelectedAlgorithm }) {

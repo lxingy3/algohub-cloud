@@ -74,7 +74,7 @@ export default async function MyStoriesPage({ searchParams }) {
                       View public page
                     </Link>
                   ) : null}
-                  {testimony.moderationStatus === 'FLAGGED' || testimony.moderationStatus === 'REJECTED' ? (
+                  {testimony.moderationStatus === 'PENDING' || testimony.moderationStatus === 'FLAGGED' || testimony.moderationStatus === 'REJECTED' ? (
                     <Link href={`/my-stories/${testimony.id}/edit`} className="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-md border border-gray-200 px-3 py-2 text-sm font-semibold hover:border-amber-300 sm:w-auto">
                       Edit and resubmit
                     </Link>

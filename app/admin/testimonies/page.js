@@ -185,7 +185,7 @@ function StatusTabs({ baseHref, activeStatus, counts }) {
         href={baseHref}
         className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${!activeStatus ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
       >
-        Show all
+        All
         <span className={`rounded-full px-2 py-0.5 text-xs ${!activeStatus ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>{allCount}</span>
       </a>
       {moderationStatuses.map((status) => {

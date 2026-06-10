@@ -20,12 +20,12 @@ export function AdminEventsManager({ events, organizations }) {
         <button
           type="button"
           onClick={() => {
-            setAdding(true);
+            setAdding((current) => !current);
             setEditingId(null);
           }}
           className="inline-flex min-h-10 items-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
         >
-          Add event
+          {adding ? 'Cancel' : 'Add event'}
         </button>
       </div>
 

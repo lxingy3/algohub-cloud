@@ -4,6 +4,7 @@ import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { requireAdmin } from '../../../lib/auth';
 import { TransientNotice } from '../../components/TransientNotice';
 import { DeleteUserButton } from './DeleteUserButton';
+import { RoleSettingsModal } from './RoleSettingsModal';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,30 +76,8 @@ export default async function AdminUsersPage({ searchParams }) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">User & Role Manager</h1>
-          <p className="mt-1 text-sm text-slate-500">Review accounts by role first, then update access when needed.</p>
         </div>
-        <details className="group w-full rounded-lg border bg-white p-4 md:w-auto md:min-w-[460px]">
-          <summary className="ml-auto flex w-fit cursor-pointer list-none items-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
-            Role settings
-          </summary>
-          <div className="mt-4 border-t pt-4">
-            <form action="/api/admin/roles" method="post" className="grid gap-2 md:grid-cols-[180px_1fr_auto]">
-              <input name="name" placeholder="Role name" className="rounded-md border px-3 py-2" required />
-              <input name="description" placeholder="Description" className="rounded-md border px-3 py-2" />
-              <button className="rounded-md border px-3 py-2 text-sm font-semibold">Add role</button>
-            </form>
-            <div className="mt-4 grid gap-3">
-              {roles.map((role) => (
-                <form key={role.id} action={`/api/admin/roles/${role.id}`} method="post" className="grid gap-2 rounded-md bg-slate-50 p-3 md:grid-cols-[180px_1fr_auto_auto]">
-                  <input name="name" defaultValue={role.name} className="rounded-md border bg-white px-3 py-2" required />
-                  <input name="description" defaultValue={role.description || ''} className="rounded-md border bg-white px-3 py-2" />
-                  <button name="action" value="update" className="rounded-md border bg-white px-3 py-2 text-sm font-semibold">Save</button>
-                  <button name="action" value="delete" className="rounded-md border bg-white px-3 py-2 text-sm font-semibold">Delete</button>
-                </form>
-              ))}
-            </div>
-          </div>
-        </details>
+        <RoleSettingsModal roles={roles.map(serializeRole)} />
       </div>
       <TransientNotice message={notice?.message} tone={notice?.tone} />
 
@@ -156,6 +135,14 @@ export default async function AdminUsersPage({ searchParams }) {
       </section>
     </div>
   );
+}
+
+function serializeRole(role) {
+  return {
+    ...role,
+    createdAt: role.createdAt?.toISOString?.() || null,
+    updatedAt: role.updatedAt?.toISOString?.() || null,
+  };
 }
 
 function formatRole(value) {
