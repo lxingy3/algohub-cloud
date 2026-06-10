@@ -20,7 +20,7 @@ export function AdminOrganizationsManager({ organizations }) {
             setAdding((current) => !current);
             setEditingId(null);
           }}
-          className="inline-flex min-h-10 items-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 sm:w-auto"
         >
           {adding ? 'Cancel' : 'Add organization'}
         </button>
@@ -30,7 +30,7 @@ export function AdminOrganizationsManager({ organizations }) {
         <section className="mt-5 rounded-lg border bg-white p-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-semibold">Add organization</h2>
-            <button type="button" onClick={() => setAdding(false)} className="rounded-md border px-3 py-2 text-sm">Cancel</button>
+            <button type="button" onClick={() => setAdding(false)} className="min-h-10 rounded-md border px-3 py-2 text-sm">Cancel</button>
           </div>
           <OrganizationForm action="/api/admin/organizations" submitLabel="Add organization" />
         </section>
@@ -43,7 +43,7 @@ export function AdminOrganizationsManager({ organizations }) {
               <div>
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold">Edit organization</h2>
-                  <button type="button" onClick={() => setEditingId(null)} className="rounded-md border px-3 py-2 text-sm">Cancel</button>
+                  <button type="button" onClick={() => setEditingId(null)} className="min-h-10 rounded-md border px-3 py-2 text-sm">Cancel</button>
                 </div>
                 <OrganizationForm action={`/api/admin/organizations/${org.id}`} organization={org} submitLabel="Save organization" />
               </div>
@@ -83,33 +83,33 @@ function OrganizationSummary({ organization, onEdit }) {
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-500">
           {organization.contactEmail ? <span>{organization.contactEmail}</span> : null}
           {organization.websiteUrl ? (
-            <a href={organization.websiteUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-slate-900">
+            <a href={organization.websiteUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-1 rounded-md px-1 hover:bg-slate-50 hover:text-slate-900">
               Website <ExternalLink className="h-3.5 w-3.5" />
             </a>
           ) : null}
         </div>
       </div>
-      <div className="flex flex-row gap-2 md:flex-col">
-        <button type="button" onClick={onEdit} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold">
+      <div className="flex flex-wrap gap-2 md:flex-col md:flex-nowrap">
+        <button type="button" onClick={onEdit} className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold md:flex-none">
           <Pencil className="h-4 w-4" />
           Edit
         </button>
         {!organization.isActive ? (
-          <form action={`/api/admin/organizations/${organization.id}`} method="post">
+          <form action={`/api/admin/organizations/${organization.id}`} method="post" className="flex-1 md:flex-none">
             <input type="hidden" name="name" value={organization.name} />
             <input type="hidden" name="contactEmail" value={organization.contactEmail || ''} />
             <input type="hidden" name="role" value={organization.role || 'community_partner'} />
             <input type="hidden" name="websiteUrl" value={organization.websiteUrl || ''} />
             <input type="hidden" name="logoUrl" value={organization.logoUrl || ''} />
             <input type="hidden" name="description" value={organization.description || ''} />
-            <button name="action" value="approve" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-emerald-700">
+            <button name="action" value="approve" className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-emerald-700">
               <Check className="h-4 w-4" />
               Approve
             </button>
           </form>
         ) : null}
-        <form action={`/api/admin/organizations/${organization.id}`} method="post">
-          <button name="action" value="delete" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-red-700">
+        <form action={`/api/admin/organizations/${organization.id}`} method="post" className="flex-1 md:flex-none">
+          <button name="action" value="delete" className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-red-700">
             <Trash2 className="h-4 w-4" />
             Delete
           </button>

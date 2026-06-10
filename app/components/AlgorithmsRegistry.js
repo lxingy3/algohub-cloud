@@ -116,21 +116,21 @@ function replaceWithoutScroll(router, href) {
 
 export function AlgorithmModal({ algorithm, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 px-4 py-8" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 px-3 py-3 sm:px-4 sm:py-8" role="dialog" aria-modal="true">
       <button type="button" className="fixed inset-0 cursor-default" aria-label="Close algorithm modal" onClick={onClose} />
-      <div className="relative w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-2xl">
-        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4">
+      <div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl overflow-y-auto rounded-lg bg-white shadow-2xl sm:max-h-none">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-4 py-4 sm:px-5">
           <div>
-            <h2 className="text-2xl font-bold leading-tight text-slate-950">{algorithm.name}</h2>
+            <h2 className="text-xl font-bold leading-tight text-slate-950 sm:text-2xl">{algorithm.name}</h2>
             <p className="mt-1 text-sm text-slate-500">{algorithm.useCase} / {algorithm.location}</p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-md border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 hover:text-slate-950">
+          <button type="button" onClick={onClose} className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 hover:text-slate-950" aria-label="Close algorithm details">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="space-y-6 p-5">
-          <section className="rounded-lg border border-yellow-200 bg-gradient-to-r from-yellow-50 to-amber-50 p-6">
+        <div className="space-y-5 p-4 sm:space-y-6 sm:p-5">
+          <section className="rounded-lg border border-yellow-200 bg-gradient-to-r from-yellow-50 to-amber-50 p-4 sm:p-6">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
               <Database className="h-5 w-5 text-yellow-600" />
               Overview
@@ -159,7 +159,7 @@ export function AlgorithmModal({ algorithm, onClose }) {
             </dl>
           </section>
 
-          <section className="rounded-lg border border-gray-200 bg-white p-6">
+          <section className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
               <Database className="h-5 w-5 text-yellow-600" />
               Details
@@ -178,7 +178,7 @@ export function AlgorithmModal({ algorithm, onClose }) {
             </div>
           </section>
 
-          <section className="rounded-lg border border-yellow-200 bg-gradient-to-r from-yellow-50 to-amber-50 p-6">
+          <section className="rounded-lg border border-yellow-200 bg-gradient-to-r from-yellow-50 to-amber-50 p-4 sm:p-6">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
               <Image className="h-5 w-5 text-yellow-600" />
               StoryBoard
@@ -188,7 +188,7 @@ export function AlgorithmModal({ algorithm, onClose }) {
           </section>
 
           <section className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-lg border border-gray-200 bg-white p-6">
+            <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
               <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
                 <FileText className="h-5 w-5 text-yellow-600" />
                 Official Documents
@@ -221,7 +221,7 @@ export function AlgorithmModal({ algorithm, onClose }) {
               )}
             </div>
 
-            <div className="rounded-lg border border-gray-200 bg-white p-6">
+            <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
               <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
                 <MessageSquareQuote className="h-5 w-5 text-yellow-600" />
                 Official Claims
@@ -241,7 +241,7 @@ export function AlgorithmModal({ algorithm, onClose }) {
             </div>
           </section>
 
-          <section className="rounded-lg border border-gray-200 bg-white p-6">
+          <section className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
               <BookOpen className="h-5 w-5 text-yellow-600" />
               Related Stories

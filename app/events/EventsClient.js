@@ -80,7 +80,7 @@ function EventRow({ event, onSelect }) {
             <div className="mb-1 flex flex-wrap items-center gap-2">
               {tags.map((tag) => <EventTag key={tag} tag={tag} />)}
             </div>
-            <button type="button" onClick={() => onSelect(event)} className="text-left text-lg font-semibold text-gray-900 transition-colors group-hover:text-amber-700">
+            <button type="button" onClick={() => onSelect(event)} className="block min-h-11 w-full py-1 text-left text-lg font-semibold leading-tight text-gray-900 transition-colors group-hover:text-amber-700">
               {event.title}
             </button>
             {event.description ? <p className="mt-1 line-clamp-2 text-sm text-gray-600">{event.description}</p> : null}
@@ -146,7 +146,7 @@ export function EventModal({ event, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-4 py-8"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-3 py-3 sm:px-4 sm:py-8"
       role="dialog"
       aria-modal="true"
       aria-labelledby="event-modal-title"
@@ -154,11 +154,11 @@ export function EventModal({ event, onClose }) {
         if (eventMouse.target === eventMouse.currentTarget) onClose();
       }}
     >
-      <div className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-2xl">
+      <div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-2xl sm:max-h-[90vh]">
         <button type="button" onClick={onClose} className="absolute right-5 top-5 inline-flex min-h-9 min-w-9 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100" aria-label="Close event details">
             <X className="h-5 w-5" />
         </button>
-        <div className="p-6 pr-14 sm:p-8 sm:pr-16">
+        <div className="p-4 pr-12 sm:p-8 sm:pr-16">
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => <EventTag key={tag} tag={tag} />)}
           </div>

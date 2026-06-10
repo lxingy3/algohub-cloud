@@ -55,6 +55,14 @@
     box-shadow: none !important;
   }
 
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
   @media (max-width: 767px) {
     input,
     select,

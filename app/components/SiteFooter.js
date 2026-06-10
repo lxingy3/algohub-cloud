@@ -26,16 +26,16 @@ export function SiteFooter() {
               Transparency in automated decision-making
             </p>
           </div>
-          <nav className="flex flex-wrap justify-center gap-6">
+          <nav className="flex flex-wrap justify-center gap-2 sm:gap-4 md:gap-6">
             {footerLinks.map(([href, label]) => (
-              <Link key={href} href={href} className="text-sm text-yellow-100/75 transition-colors hover:text-yellow-200">
+              <Link key={href} href={href} className="inline-flex min-h-10 items-center rounded-md px-2 text-sm text-yellow-100/75 transition-colors hover:bg-white/5 hover:text-yellow-200">
                 {label}
               </Link>
             ))}
           </nav>
         </div>
         <div className="relative mt-6 border-t border-yellow-400/20 pt-6 text-center text-sm text-yellow-100/55">
-          © {year} AlgoStories. All rights reserved.
+          &copy; {year} AlgoStories. All rights reserved.
         </div>
       </div>
     </footer>

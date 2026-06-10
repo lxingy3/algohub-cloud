@@ -38,7 +38,7 @@ export default async function SubmitTestimonyPage({ searchParams }) {
           currentUserEmail={user?.email || ''}
         />
         <div className="mt-6 text-center text-sm text-gray-500">
-          <Link href="/stories" className="font-semibold text-amber-800 hover:text-amber-950">Read public stories</Link>
+          <Link href="/stories" className="inline-flex min-h-10 items-center rounded-md px-2 font-semibold text-amber-800 hover:bg-amber-100 hover:text-amber-950">Read public stories</Link>
         </div>
       </div>
     </main>

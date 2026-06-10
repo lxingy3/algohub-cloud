@@ -18,7 +18,7 @@ export function HomeEventsPanel({ events }) {
             <button
               type="button"
               onClick={() => setSelectedEvent(event)}
-              className="block w-full rounded-md py-1 text-left transition-colors hover:bg-yellow-500/25"
+              className="block min-h-16 w-full rounded-md py-2 text-left transition-colors hover:bg-yellow-500/25"
             >
               <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-yellow-100">
                 {formatDate(event.date)}
@@ -29,7 +29,7 @@ export function HomeEventsPanel({ events }) {
           </li>
         ))}
       </ul>
-      <Link href="/events" className="mt-8 inline-flex items-center text-sm font-semibold text-white">
+      <Link href="/events" className="mt-8 inline-flex min-h-11 items-center rounded-md px-1 text-sm font-semibold text-white hover:bg-yellow-500/25">
         View community events
         <ArrowRight className="ml-2 h-4 w-4" />
       </Link>

@@ -23,19 +23,25 @@ export default async function AdminLayout({ children }) {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <div className="grid min-h-screen md:grid-cols-[220px_1fr]">
-        <aside className="border-r bg-white p-4 sm:p-5">
-          <Link href="/" className="text-lg font-bold">AlgoHub Admin</Link>
-          <p className="mt-1 text-xs text-slate-500">{admin.email}</p>
-          <Link href="/" className="mt-4 inline-flex min-h-9 items-center rounded-md px-2 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-900">
-            Back to AlgoStories
-          </Link>
+      <div className="grid min-h-screen min-w-0 md:grid-cols-[220px_1fr]">
+        <aside className="min-w-0 overflow-hidden border-b bg-white p-3 sm:p-4 md:border-b-0 md:border-r md:p-5">
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 md:block">
+            <div>
+              <Link href="/" className="inline-flex min-h-10 items-center text-lg font-bold">AlgoHub Admin</Link>
+              <p className="mt-0.5 max-w-[220px] truncate text-xs text-slate-500 md:mt-1">{admin.email}</p>
+            </div>
+            <div className="flex min-w-0 items-center gap-2 md:mt-4 md:block">
+              <Link href="/" className="inline-flex min-h-10 items-center rounded-md px-2 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-900 md:min-h-9">
+                Back to AlgoStories
+              </Link>
+              <form action="/api/auth/logout" method="post" className="md:mt-6">
+                <button className="min-h-10 rounded-md px-2 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-900 md:min-h-11">Logout</button>
+              </form>
+            </div>
+          </div>
           <AdminSidebarNav />
-          <form action="/api/auth/logout" method="post" className="mt-6">
-            <button className="min-h-11 text-sm text-slate-500">Logout</button>
-          </form>
         </aside>
-        <section className="overflow-x-auto p-4 sm:p-6">{children}</section>
+        <section className="min-w-0 overflow-x-auto p-4 sm:p-6">{children}</section>
       </div>
     </main>
   );

@@ -23,7 +23,7 @@ export function AdminEventsManager({ events, organizations }) {
             setAdding((current) => !current);
             setEditingId(null);
           }}
-          className="inline-flex min-h-10 items-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 sm:w-auto"
         >
           {adding ? 'Cancel' : 'Add event'}
         </button>
@@ -33,7 +33,7 @@ export function AdminEventsManager({ events, organizations }) {
         <section className="mt-5 rounded-lg border bg-white p-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-semibold">Add event</h2>
-            <button type="button" onClick={() => setAdding(false)} className="rounded-md border px-3 py-2 text-sm">Cancel</button>
+            <button type="button" onClick={() => setAdding(false)} className="min-h-10 rounded-md border px-3 py-2 text-sm">Cancel</button>
           </div>
           <EventForm action="/api/admin/events" organizations={organizations} submitLabel="Add event" />
         </section>
@@ -46,7 +46,7 @@ export function AdminEventsManager({ events, organizations }) {
               <div>
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold">Edit event</h2>
-                  <button type="button" onClick={() => setEditingId(null)} className="rounded-md border px-3 py-2 text-sm">Cancel</button>
+                  <button type="button" onClick={() => setEditingId(null)} className="min-h-10 rounded-md border px-3 py-2 text-sm">Cancel</button>
                 </div>
                 <EventForm action={`/api/admin/events/${event.id}`} event={event} organizations={organizations} submitLabel="Save event" />
               </div>
@@ -88,12 +88,12 @@ function EventSummary({ event, onEdit }) {
         </div>
       </div>
       <div className="flex flex-row gap-2 md:flex-col">
-        <button type="button" onClick={onEdit} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold">
+        <button type="button" onClick={onEdit} className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold md:flex-none">
           <Pencil className="h-4 w-4" />
           Edit
         </button>
-        <form action={`/api/admin/events/${event.id}`} method="post">
-          <button name="action" value="delete" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-red-700">
+        <form action={`/api/admin/events/${event.id}`} method="post" className="flex-1 md:flex-none">
+          <button name="action" value="delete" className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-red-700">
             <Trash2 className="h-4 w-4" />
             Delete
           </button>
