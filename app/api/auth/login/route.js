@@ -11,6 +11,7 @@ export async function POST(request) {
   const formData = await request.formData();
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const primaryRoleName = normalizeRole(formData.get('role'));
+  const callbackUrl = safeCallbackUrl(formData.get('callbackUrl')) || '/';
   const user = await prisma.user.findFirst({
     where: { email, jurisdictionId: getJurisdictionId(), primaryRoleName },
   });
@@ -27,7 +28,7 @@ export async function POST(request) {
     },
   });
 
-  const response = NextResponse.redirect(new URL('/', request.url), { status: 303 });
+  const response = NextResponse.redirect(new URL(callbackUrl, request.url), { status: 303 });
   response.cookies.set(sessionCookieName, session.sessionToken, {
     httpOnly: true,
     sameSite: 'lax',
@@ -36,4 +37,10 @@ export async function POST(request) {
     secure: process.env.NODE_ENV === 'production',
   });
   return response;
+}
+
+function safeCallbackUrl(value) {
+  const callbackUrl = String(value || '');
+  if (!callbackUrl.startsWith('/') || callbackUrl.startsWith('//')) return null;
+  return callbackUrl;
 }

@@ -17,11 +17,20 @@ function roleLabel(role) {
   return role.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-export function LoginModal({ open, onClose, forceOpen = false, error = false }) {
+function safeRole(value) {
+  return roles.includes(value) ? value : 'COMMUNITY_MEMBER';
+}
+
+function safeCallbackUrl(value) {
+  if (typeof value !== 'string') return null;
+  return value.startsWith('/') && !value.startsWith('//') ? value : null;
+}
+
+export function LoginModal({ open, onClose, forceOpen = false, error = false, initialRole, initialCallbackUrl }) {
   const { t } = useTranslation();
   const titleId = useId();
-  const [selectedRole, setSelectedRole] = useState('COMMUNITY_MEMBER');
-  const [callbackUrl, setCallbackUrl] = useState('/');
+  const [selectedRole, setSelectedRole] = useState(() => safeRole(initialRole));
+  const [callbackUrl, setCallbackUrl] = useState(() => safeCallbackUrl(initialCallbackUrl) || '/');
 
   useEffect(() => {
     if (!open) return undefined;
@@ -38,9 +47,14 @@ export function LoginModal({ open, onClose, forceOpen = false, error = false }) 
   }, [forceOpen, onClose, open]);
 
   useEffect(() => {
+    const explicitCallbackUrl = safeCallbackUrl(initialCallbackUrl);
+    if (explicitCallbackUrl) {
+      setCallbackUrl(explicitCallbackUrl);
+      return;
+    }
     const currentPath = `${window.location.pathname}${window.location.search}`;
     setCallbackUrl(window.location.pathname === '/login' ? '/' : currentPath);
-  }, []);
+  }, [initialCallbackUrl]);
 
   async function startSso(providerId) {
     await fetch('/api/auth/sso-role', {
@@ -126,6 +140,7 @@ export function LoginModal({ open, onClose, forceOpen = false, error = false }) 
 
         <form action="/api/auth/login" method="post" className="space-y-4">
           <input type="hidden" name="role" value={selectedRole} />
+          <input type="hidden" name="callbackUrl" value={callbackUrl} />
           <label className="block text-sm font-medium text-slate-700">
             {t('login.email', { defaultValue: 'Email' })}
             <input

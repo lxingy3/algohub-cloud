@@ -13,7 +13,7 @@ export default async function AdminLayout({ children }) {
           <p className="mt-2 text-sm text-slate-600">
             Log in with the admin account first: admin@algostories.local
           </p>
-          <Link href="/login" className="mt-5 inline-flex min-h-11 items-center rounded-md bg-slate-900 px-4 py-2 text-white">
+          <Link href="/login?switch=1&role=ADMIN&callbackUrl=/admin" className="mt-5 inline-flex min-h-11 items-center rounded-md bg-slate-900 px-4 py-2 text-white">
             Go to login
           </Link>
         </div>
