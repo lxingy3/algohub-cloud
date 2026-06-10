@@ -170,9 +170,9 @@ export function AISystemsDiagram() {
           <div className="relative min-w-[760px] pt-4 sm:min-w-[900px]">
             <div ref={diagramRef} className="relative mb-4 h-44 w-full">
               <div className="absolute left-[16.66%] top-[25%] h-0 w-[66.66%] border-t-2 border-dashed border-gray-400" />
-              <div className={`absolute left-[16.66%] top-[25%] -mt-1 h-2 w-2 -translate-x-1/2 rounded-full ${step >= 1 ? 'bg-blue-600' : 'bg-gray-300'}`} />
-              <div className={`absolute left-[50%] top-[25%] -mt-1 h-2 w-2 -translate-x-1/2 rounded-full ${step >= 2 ? 'bg-indigo-600' : 'bg-gray-300'}`} />
-              <div className={`absolute left-[83.33%] top-[25%] -mt-1 h-2 w-2 -translate-x-1/2 rounded-full ${step >= 4 && step !== 5 ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+              <div className={`absolute left-[16.66%] top-[25%] -mt-1 h-2 w-2 -translate-x-1/2 rounded-full transition-colors duration-500 ${step >= 1 ? 'bg-blue-600' : 'bg-gray-300'}`} />
+              <div className={`absolute left-[50%] top-[25%] -mt-1 h-2 w-2 -translate-x-1/2 rounded-full transition-colors duration-500 ${step >= 2 ? 'bg-indigo-600' : 'bg-gray-300'}`} />
+              <div className={`absolute left-[83.33%] top-[25%] -mt-1 h-2 w-2 -translate-x-1/2 rounded-full transition-colors duration-500 ${step === 5 ? 'bg-gray-300' : step >= 4 ? 'bg-emerald-500' : 'bg-gray-300'}`} />
 
               <div
                 className={`absolute top-[25%] z-20 flex -translate-x-1/2 -translate-y-1/2 touch-none flex-col items-center ${dragging === 'tool' ? 'cursor-grabbing' : 'cursor-grab'} ${dragging ? '' : 'transition-all duration-700 ease-in-out'} ${toolPosition(step)}`}
@@ -185,10 +185,10 @@ export function AISystemsDiagram() {
                 tabIndex={0}
                 aria-label="Drag AI Tool"
               >
-                <div className={`mb-2 border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${step === 5 ? 'border-gray-300 bg-gray-50 text-gray-400' : 'border-gray-800 bg-white shadow-sm text-gray-900'}`}>
+                <div className={`mb-2 border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors duration-500 ${step === 5 ? 'border-gray-300 bg-gray-50 text-gray-400 shadow-none' : 'border-gray-800 bg-white text-gray-900 shadow-sm'}`}>
                   AI TOOL
                 </div>
-                <div className={`relative rounded-md border-2 p-2 ${step === 5 ? 'border-gray-300 bg-gray-50' : step === 4 ? 'border-yellow-500 bg-white shadow-md shadow-yellow-200/50' : 'border-amber-500 bg-white shadow-md'}`}>
+                <div className={`relative rounded-md border-2 p-2 transition-colors duration-500 ${step === 5 ? 'border-gray-300 bg-gray-50 shadow-none' : step === 4 ? 'border-yellow-500 bg-white shadow-md shadow-yellow-200/50' : 'border-amber-500 bg-white shadow-md'}`}>
                   {step >= 4 ? (
                     <Bot className={`h-6 w-6 ${step === 5 ? 'text-gray-400' : 'text-yellow-600'}`} />
                   ) : (
@@ -199,8 +199,8 @@ export function AISystemsDiagram() {
               </div>
 
               <div className="absolute left-[16.66%] top-[75%] h-0 w-[66.66%] border-t-2 border-dashed border-gray-300" />
-              <div className={`absolute left-[50%] top-[75%] -mt-1 h-2 w-2 -translate-x-1/2 rounded-full ${step >= 3 ? 'bg-indigo-500' : 'bg-gray-200'}`} />
-              <div className={`absolute left-[83.33%] top-[75%] -mt-1 h-2 w-2 -translate-x-1/2 rounded-full ${step >= 4 && step !== 5 ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+              <div className={`absolute left-[50%] top-[75%] -mt-1 h-2 w-2 -translate-x-1/2 rounded-full transition-colors duration-500 ${step >= 3 ? 'bg-indigo-500' : 'bg-gray-200'}`} />
+              <div className={`absolute left-[83.33%] top-[75%] -mt-1 h-2 w-2 -translate-x-1/2 rounded-full transition-colors duration-500 ${step === 5 ? 'bg-gray-300' : step >= 4 ? 'bg-emerald-500' : 'bg-gray-200'}`} />
 
               <div
                 className={`absolute top-[75%] z-20 flex -translate-x-1/2 -translate-y-1/2 touch-none flex-col items-center ${dragging === 'staff' ? 'cursor-grabbing' : 'cursor-grab'} ${dragging ? '' : 'transition-all duration-700 ease-in-out'} ${staffPosition(step)}`}
@@ -213,8 +213,8 @@ export function AISystemsDiagram() {
                 tabIndex={0}
                 aria-label="Drag Agency Staff"
               >
-                <User className={`mb-2 h-10 w-10 ${step <= 2 || step === 5 ? 'text-gray-300' : 'text-gray-800'}`} />
-                <div className={`whitespace-nowrap border-2 px-3 py-1 text-xs font-bold tracking-wider ${step <= 2 || step === 5 ? 'border-gray-300 bg-gray-50 text-gray-400' : 'border-gray-800 bg-white text-gray-800 shadow-md'}`}>
+                <User className={`mb-2 h-10 w-10 transition-colors duration-500 ${step <= 2 || step === 5 ? 'text-gray-300' : 'text-gray-800'}`} />
+                <div className={`whitespace-nowrap border-2 px-3 py-1 text-xs font-bold tracking-wider transition-colors duration-500 ${step <= 2 || step === 5 ? 'border-gray-300 bg-gray-50 text-gray-400 shadow-none' : 'border-gray-800 bg-white text-gray-800 shadow-md'}`}>
                   AGENCY STAFF
                 </div>
               </div>
@@ -226,7 +226,7 @@ export function AISystemsDiagram() {
                   <Users className="h-20 w-20 text-blue-700" />
                   <TerminalSquare className="absolute -bottom-3 -right-5 h-11 w-11 rounded-full border-2 border-blue-600 bg-white p-1.5 text-blue-700" />
                 </div>
-                <div className={`mt-6 border-2 px-3 py-1.5 text-xs font-bold tracking-wider ${step === 1 ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-md' : 'border-blue-300 bg-blue-50/50 text-blue-600'}`}>
+                <div className={`mt-6 border-2 px-3 py-1.5 text-xs font-bold tracking-wider transition-colors duration-500 ${step === 1 ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-md' : 'border-blue-300 bg-blue-50/50 text-blue-600'}`}>
                   DEVELOPMENT TEAM
                 </div>
               </div>
@@ -234,7 +234,7 @@ export function AISystemsDiagram() {
                 <div className={`flex h-20 items-center justify-center transition-all duration-500 ${step === 2 || step === 3 ? 'scale-110 drop-shadow-md' : 'opacity-70'}`}>
                   <Landmark className="h-20 w-20 text-indigo-700" />
                 </div>
-                <div className={`mt-6 border-2 px-3 py-1.5 text-xs font-bold tracking-wider ${step === 2 || step === 3 ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md' : 'border-indigo-300 bg-indigo-50/50 text-indigo-600'}`}>
+                <div className={`mt-6 border-2 px-3 py-1.5 text-xs font-bold tracking-wider transition-colors duration-500 ${step === 2 || step === 3 ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md' : 'border-indigo-300 bg-indigo-50/50 text-indigo-600'}`}>
                   PUBLIC AGENCY
                 </div>
               </div>
@@ -248,7 +248,7 @@ export function AISystemsDiagram() {
                     <span className="text-sm font-bold tracking-wide">AlgoStories</span>
                   </div>
                 </div>
-                <div className={`z-20 mt-6 border-2 px-6 py-1.5 text-xs font-bold tracking-wider ${step >= 4 ? 'border-emerald-600 bg-emerald-50 text-emerald-700 shadow-md' : 'border-emerald-300 bg-emerald-50/50 text-emerald-600'}`}>
+                <div className={`z-20 mt-6 border-2 px-6 py-1.5 text-xs font-bold tracking-wider transition-colors duration-500 ${step === 5 || step === 4 ? 'border-emerald-600 bg-emerald-50 text-emerald-700 shadow-md' : 'border-emerald-300 bg-emerald-50/50 text-emerald-600'}`}>
                   COMMUNITY
                 </div>
               </div>
@@ -259,6 +259,13 @@ export function AISystemsDiagram() {
                 const stepNum = index + 1;
                 const active = step === stepNum;
                 const missingPiece = stepNum === 5;
+                let activeBg = 'border-gray-200 bg-white text-gray-600 hover:border-gray-300';
+                if (active && stepNum === 1) activeBg = 'border-blue-400 bg-blue-50 text-blue-900 shadow-lg shadow-blue-100 ring-blue-200';
+                if (active && (stepNum === 2 || stepNum === 3)) activeBg = 'border-indigo-400 bg-indigo-50 text-indigo-900 shadow-lg shadow-indigo-100 ring-indigo-200';
+                if (active && stepNum === 4) activeBg = 'border-emerald-400 bg-emerald-50 text-emerald-900 shadow-lg shadow-emerald-100 ring-emerald-200';
+                if (active && stepNum === 5) activeBg = 'border-amber-400 bg-gray-900 text-amber-100 shadow-lg shadow-amber-100 ring-amber-200';
+                if (!active && missingPiece) activeBg = 'border-gray-700 bg-gray-800 text-gray-300 hover:border-amber-400/60';
+
                 return (
                   <button
                     key={content.title}
@@ -266,12 +273,8 @@ export function AISystemsDiagram() {
                     onClick={() => chooseStep(stepNum)}
                     className={[
                       'relative min-h-[132px] rounded-xl border-2 p-3 text-left transition-all duration-300 sm:p-4',
-                      active ? '-translate-y-2 scale-105 shadow-lg ring-2 ring-offset-2' : 'opacity-75 hover:opacity-100',
-                      missingPiece ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-amber-400/60' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
-                      active && stepNum === 1 ? 'border-blue-400 bg-blue-50 text-blue-900 ring-blue-200' : '',
-                      active && (stepNum === 2 || stepNum === 3) ? 'border-indigo-400 bg-indigo-50 text-indigo-900 ring-indigo-200' : '',
-                      active && stepNum === 4 ? 'border-emerald-400 bg-emerald-50 text-emerald-900 ring-emerald-200' : '',
-                      active && stepNum === 5 ? 'border-amber-400 bg-gray-900 text-amber-100 ring-amber-200' : '',
+                      active ? '-translate-y-2 scale-105 ring-2 ring-offset-2' : 'translate-y-0 opacity-75 hover:opacity-100',
+                      activeBg,
                     ].join(' ')}
                   >
                     {missingPiece ? (

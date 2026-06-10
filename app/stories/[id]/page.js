@@ -6,6 +6,7 @@ import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../lib/auth';
 import { SiteNav } from '../../components/SiteNav';
 import { formatDate } from '../../components/Formatters';
+import { StoryShareMenu } from './StoryShareMenu';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,7 +82,7 @@ export default async function StoryPage({ params }) {
         <section className="mt-5 rounded-lg border border-gray-100 bg-white p-5 pb-4 sm:p-8">
           <div className="mb-2 flex flex-wrap items-center gap-3">
             {testimony.affectedDomain ? (
-              <span className="rounded border border-indigo-300 px-2 py-1 text-xs font-medium text-indigo-700">
+              <span className="rounded border border-indigo-300 px-2 py-1 text-xs font-semibold text-indigo-700">
                 {testimony.affectedDomain}
               </span>
             ) : null}
@@ -91,7 +92,7 @@ export default async function StoryPage({ params }) {
             </span>
           </div>
 
-          <EngagementBar testimonyId={testimony.id} eyeOpening={eyeOpening} support={support} commentCount={testimony.comments.length} />
+          <EngagementBar testimonyId={testimony.id} title={testimony.title} eyeOpening={eyeOpening} support={support} commentCount={testimony.comments.length} />
 
           <h1 className="mb-4 text-3xl font-bold leading-tight text-gray-900">{testimony.title}</h1>
 
@@ -147,7 +148,7 @@ export default async function StoryPage({ params }) {
   );
 }
 
-function EngagementBar({ testimonyId, eyeOpening, support, commentCount }) {
+function EngagementBar({ testimonyId, title, eyeOpening, support, commentCount }) {
   return (
     <div className="mb-6 flex flex-wrap items-center gap-2">
       <form action={`/api/stories/${testimonyId}/reactions`} method="post">
@@ -164,6 +165,7 @@ function EngagementBar({ testimonyId, eyeOpening, support, commentCount }) {
           Support {support}
         </button>
       </form>
+      <StoryShareMenu title={title} />
       <span className="inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
         <MessageCircle className="h-4 w-4 text-amber-600" />
         Comment {commentCount}

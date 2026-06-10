@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Briefcase, Bus, GraduationCap, Heart, Home as HomeIcon, Shield, Zap } from 'lucide-react';
-import { AlgorithmCard } from './AlgorithmCard';
+import { AlgorithmsRegistry } from './AlgorithmsRegistry';
 
 const useCases = [
   { id: 'fraud', label: 'Fraud Detection', icon: Shield, useCase: 'Fraud Detection' },
@@ -15,7 +15,8 @@ const useCases = [
 ];
 
 export function HomeUseCaseExplorer({ algorithms }) {
-  const [activeService, setActiveService] = useState('student');
+  const initialService = useCases.find((item) => algorithms.some((algorithm) => algorithm.useCase === item.useCase))?.id || 'student';
+  const [activeService, setActiveService] = useState(initialService);
 
   const services = useMemo(() => useCases.map((item) => {
     const related = algorithms.filter((algorithm) => algorithm.useCase === item.useCase);
@@ -72,11 +73,7 @@ export function HomeUseCaseExplorer({ algorithms }) {
         })}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {activeAlgorithms.map((algorithm) => (
-          <AlgorithmCard key={algorithm.id} algorithm={algorithm} />
-        ))}
-      </div>
+      <AlgorithmsRegistry algorithms={activeAlgorithms} />
     </section>
   );
 }

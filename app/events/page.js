@@ -15,6 +15,7 @@ export default async function EventsPage({ searchParams }) {
   const params = await searchParams;
   const activeFilter = String(params?.filter || 'all');
   const eventType = String(params?.eventType || 'all');
+  const initialEventId = String(params?.eventId || '');
   const [user, events] = await Promise.all([
     getCurrentUser(),
     prisma.communityEvent.findMany({
@@ -38,6 +39,7 @@ export default async function EventsPage({ searchParams }) {
   const pastEvents = filteredEvents.filter((event) => new Date(event.date) < now);
   const serializeEvent = (event) => ({
     ...event,
+    imageUrl: resolveEventImageUrl(event),
     date: event.date.toISOString(),
     endDate: event.endDate?.toISOString() || null,
     createdAt: event.createdAt?.toISOString() || null,
@@ -96,6 +98,7 @@ export default async function EventsPage({ searchParams }) {
           activeFilter={activeFilter}
           upcomingEvents={upcomingEvents.map(serializeEvent)}
           pastEvents={pastEvents.map(serializeEvent)}
+          initialEventId={initialEventId}
         />
       </section>
     </main>
@@ -111,4 +114,10 @@ function FilterLink({ href, active, children }) {
       {children}
     </Link>
   );
+}
+
+function resolveEventImageUrl(event) {
+  if (!event.imageUrl) return null;
+  if (event.imageUrl.startsWith('gcs://')) return `/api/events/${event.id}/image`;
+  return event.imageUrl;
 }

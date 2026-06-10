@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { requireAdmin } from '../../lib/auth';
 
 const links = [
-  ['/', 'Back to AlgoStories'],
   ['/admin', 'Dashboard'],
   ['/admin/algorithms', 'Algorithms'],
   ['/admin/events', 'Events'],
@@ -37,9 +36,12 @@ export default async function AdminLayout({ children }) {
         <aside className="border-r bg-white p-4 sm:p-5">
           <Link href="/" className="text-lg font-bold">AlgoHub Admin</Link>
           <p className="mt-1 text-xs text-slate-500">{admin.email}</p>
+          <Link href="/" className="mt-4 inline-flex min-h-9 items-center rounded-md px-2 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-900">
+            Back to AlgoStories
+          </Link>
           <nav className="mt-6 grid gap-2 text-sm">
-            {links.map(([href, label]) => (
-              <Link key={href} href={href} className="rounded-md px-3 py-2 hover:bg-slate-100">
+            {links.map(([href, label], index) => (
+              <Link key={href} href={href} className={`rounded-md px-3 py-2 hover:bg-slate-100 ${index === 0 ? 'bg-slate-900 font-semibold text-white hover:bg-slate-800' : ''}`}>
                 {label}
               </Link>
             ))}

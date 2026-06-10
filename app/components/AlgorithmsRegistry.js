@@ -2,28 +2,41 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, BookOpen, Code2, Database, FileText, Image, Info, Landmark, MapPin, MessageSquareQuote, Settings, User, Users, X } from 'lucide-react';
 import { formatStatus } from './Formatters';
 
 export function AlgorithmsRegistry({ algorithms }) {
   const [selectedAlgorithm, setSelectedAlgorithm] = useState(null);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedAlgorithmId = searchParams.get('algorithmId');
 
   useEffect(() => {
     function onKeyDown(event) {
-      if (event.key === 'Escape') setSelectedAlgorithm(null);
+      if (event.key === 'Escape') closeAlgorithmModal({ pathname, router, searchParams, setSelectedAlgorithm });
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [pathname, router, searchParams]);
+
+  useEffect(() => {
+    if (!selectedAlgorithmId) {
+      setSelectedAlgorithm(null);
+      return;
+    }
+    const algorithm = algorithms.find((item) => item.id === selectedAlgorithmId);
+    if (algorithm) setSelectedAlgorithm(algorithm);
+  }, [algorithms, selectedAlgorithmId]);
 
   return (
     <>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {algorithms.map((algorithm) => (
-          <button
+          <a
             key={algorithm.id}
-            type="button"
-            onClick={() => setSelectedAlgorithm(algorithm)}
+            href={algorithmHref({ pathname, searchParams, algorithmId: algorithm.id })}
             className="group flex h-full flex-col rounded-lg border border-gray-200 border-l-4 border-l-yellow-500 bg-white p-5 text-left shadow-sm transition-all hover:shadow-lg"
           >
             <div className="mb-4 flex items-start justify-between gap-3">
@@ -34,7 +47,7 @@ export function AlgorithmsRegistry({ algorithms }) {
             </div>
 
             {algorithm.useCase ? (
-              <span className="mb-4 w-fit rounded-full border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700">
+              <span className="mb-4 w-fit rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700">
                 {algorithm.useCase}
               </span>
             ) : null}
@@ -50,18 +63,33 @@ export function AlgorithmsRegistry({ algorithms }) {
               </span>
               {algorithm.impactLevel ? <ImpactBadge impactLevel={algorithm.impactLevel} /> : null}
             </div>
-          </button>
+          </a>
         ))}
       </div>
 
       {selectedAlgorithm ? (
-        <AlgorithmModal algorithm={selectedAlgorithm} onClose={() => setSelectedAlgorithm(null)} />
+        <AlgorithmModal algorithm={selectedAlgorithm} onClose={() => closeAlgorithmModal({ pathname, router, searchParams, setSelectedAlgorithm })} />
       ) : null}
     </>
   );
 }
 
-function AlgorithmModal({ algorithm, onClose }) {
+function algorithmHref({ pathname, searchParams, algorithmId }) {
+  const params = new URLSearchParams(searchParams.toString());
+  params.set('algorithmId', algorithmId);
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
+
+function closeAlgorithmModal({ pathname, router, searchParams, setSelectedAlgorithm }) {
+  setSelectedAlgorithm(null);
+  const params = new URLSearchParams(searchParams.toString());
+  params.delete('algorithmId');
+  const query = params.toString();
+  router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+}
+
+export function AlgorithmModal({ algorithm, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 px-4 py-8" role="dialog" aria-modal="true">
       <button type="button" className="fixed inset-0 cursor-default" aria-label="Close algorithm modal" onClick={onClose} />

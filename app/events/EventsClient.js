@@ -1,11 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Calendar, ChevronRight, Clock, ExternalLink, MapPin, Video, X } from 'lucide-react';
 import { formatStatus } from '../components/Formatters';
 
-export function EventsClient({ activeFilter, upcomingEvents, pastEvents }) {
+export function EventsClient({ activeFilter, upcomingEvents, pastEvents, initialEventId }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const allEvents = useMemo(() => [...upcomingEvents, ...pastEvents], [upcomingEvents, pastEvents]);
+
+  useEffect(() => {
+    if (!initialEventId) return;
+    const event = allEvents.find((item) => item.id === initialEventId);
+    if (event) setSelectedEvent(event);
+  }, [allEvents, initialEventId]);
 
   return (
     <>

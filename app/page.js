@@ -23,6 +23,22 @@ export default async function HomePage() {
             testimonyLinks: { where: { testimony: { moderationStatus: 'APPROVED' } } },
           },
         },
+        claims: { orderBy: { createdAt: 'asc' } },
+        documents: { orderBy: { uploadedAt: 'desc' } },
+        testimonyLinks: {
+          where: { testimony: { moderationStatus: 'APPROVED' } },
+          include: {
+            testimony: {
+              select: {
+                id: true,
+                title: true,
+                summary: true,
+                narrativeText: true,
+              },
+            },
+          },
+          take: 5,
+        },
       },
     }),
     prisma.testimony.findMany({
@@ -115,12 +131,34 @@ export default async function HomePage() {
           id: algorithm.id,
           slug: algorithm.slug,
           name: algorithm.name,
-          description: algorithm.description,
+          description: algorithm.description || '',
+          purpose: algorithm.purpose || '',
+          agencyName: algorithm.agencyName || '',
+          agencyType: algorithm.agencyType || '',
           location: algorithm.location,
           status: algorithm.status,
           useCase: algorithm.useCase,
+          dataUsed: algorithm.dataUsed || '',
+          decisionType: algorithm.decisionType || '',
+          yearIntroduced: algorithm.yearIntroduced,
+          yearDeployed: algorithm.yearDeployed,
+          currentVersion: algorithm.currentVersion || '',
           impactLevel: algorithm.impactLevel,
+          officialDocumentationUrl: algorithm.officialDocumentationUrl || '',
+          storyboardSvg: algorithm.storyboardSvg || '',
           storyCount: algorithm._count.testimonyLinks,
+          relatedStories: algorithm.testimonyLinks.map((link) => link.testimony),
+          claims: algorithm.claims.map((claim) => ({
+            id: claim.id,
+            claimText: claim.claimText,
+            claimSource: claim.claimSource || '',
+          })),
+          documents: algorithm.documents.map((document) => ({
+            id: document.id,
+            title: document.title,
+            sourceType: document.sourceType,
+            sourceUrl: document.sourceUrl || '',
+          })),
         }))}
       />
 
@@ -150,11 +188,15 @@ export default async function HomePage() {
                   id: 'fallback',
                   summary: "I didn't realize an algorithm helped determine my application priority until I noticed the decision didn't match my caseworker's expectations.",
                 }]).map((story) => (
-                  <blockquote key={story.id} className="rounded-lg bg-white/70 p-4">
+                  <Link
+                    key={story.id}
+                    href={story.id === 'fallback' ? '/stories' : `/stories/${story.id}`}
+                    className="block rounded-lg border border-yellow-200/70 bg-yellow-100/55 p-4 transition-colors hover:bg-yellow-100"
+                  >
                     <Quote className="mb-3 h-7 w-7 text-yellow-400" />
                     <p className="text-base italic leading-7 text-gray-700">"{story.summary || story.narrativeText}"</p>
                     <p className="mt-3 text-sm text-gray-500">- Anonymous Community Member</p>
-                  </blockquote>
+                  </Link>
                 ))}
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
@@ -171,11 +213,13 @@ export default async function HomePage() {
               <ul className="space-y-6">
                 {upcomingEvents.map((event) => (
                   <li key={event.id} className="border-l-2 border-yellow-200 pl-4">
+                    <Link href={`/events?eventId=${event.id}`} className="block rounded-md py-1 transition-colors hover:bg-yellow-500/25">
                     <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-yellow-100">
                       {formatDate(event.date)}
                     </div>
                     <div className="mb-1 font-semibold text-white">{event.title}</div>
                     <p className="text-sm text-yellow-50">{event.organizer?.name || event.location || 'Community event'}</p>
+                    </Link>
                   </li>
                 ))}
               </ul>
