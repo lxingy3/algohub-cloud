@@ -32,11 +32,23 @@ function guessKind(method) {
   return method === 'video' ? 'video' : 'audio';
 }
 
+function sanitizeDraft(draft) {
+  if (!draft || typeof draft !== 'object') return {};
+  const safeDraft = { ...draft };
+  delete safeDraft.mediaObjectKey;
+  delete safeDraft.mediaUrl;
+  delete safeDraft.mediaMimeType;
+  delete safeDraft.mediaDurationSeconds;
+  return safeDraft;
+}
+
 export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUserEmail }) {
   const { t } = useTranslation();
   const [step, setStep] = useState(0);
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftStatus, setDraftStatus] = useState(t('submit.loadingDraft'));
   const [algorithmSearch, setAlgorithmSearch] = useState('');
   const [recordingState, setRecordingState] = useState('idle');
   const [recordingTime, setRecordingTime] = useState(0);
@@ -50,6 +62,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
   const timerRef = useRef(null);
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
+  const draftSaveRef = useRef(null);
 
   const form = useForm({
     defaultValues: {
@@ -75,6 +88,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
   });
   const values = form.watch();
   const storyType = values.storyType;
+  const usesDatabaseDraft = Boolean(currentUserEmail);
 
   const filteredAlgorithms = useMemo(() => {
     const query = algorithmSearch.trim().toLowerCase();
@@ -83,26 +97,76 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
   }, [algorithms, algorithmSearch]);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(DRAFT_KEY);
-    if (stored) {
-      try {
-        form.reset({ ...form.getValues(), ...JSON.parse(stored), algorithmId: selectedAlgorithmId || JSON.parse(stored).algorithmId || '' });
-      } catch {
-        window.localStorage.removeItem(DRAFT_KEY);
+    let active = true;
+
+    async function loadDraft() {
+      if (usesDatabaseDraft) {
+        try {
+          const response = await fetch('/api/submission-draft', { cache: 'no-store' });
+          const payload = await response.json().catch(() => null);
+          if (active && response.ok && payload?.payload) {
+            form.reset({ ...form.getValues(), ...sanitizeDraft(payload.payload), algorithmId: selectedAlgorithmId || payload.payload.algorithmId || '' });
+          }
+        } catch {
+          if (active) setDraftStatus(t('submit.draftSaveFailed'));
+        } finally {
+          if (active) {
+            setDraftReady(true);
+            setDraftStatus(t('submit.draftSavedDb'));
+          }
+        }
+        return;
+      }
+
+      const stored = window.localStorage.getItem(DRAFT_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          form.reset({ ...form.getValues(), ...sanitizeDraft(parsed), algorithmId: selectedAlgorithmId || parsed.algorithmId || '' });
+        } catch {
+          window.localStorage.removeItem(DRAFT_KEY);
+        }
+      }
+      if (active) {
+        setDraftReady(true);
+        setDraftStatus(t('submit.draftSaved'));
       }
     }
-  }, []);
+
+    loadDraft();
+    return () => {
+      active = false;
+      if (draftSaveRef.current) clearTimeout(draftSaveRef.current);
+    };
+  }, [form, selectedAlgorithmId, t, usesDatabaseDraft]);
 
   useEffect(() => {
     const subscription = form.watch((draft) => {
-      window.localStorage.setItem(DRAFT_KEY, JSON.stringify({
-        ...draft,
-        mediaObjectKey: undefined,
-        mediaUrl: undefined,
-      }));
+      if (!draftReady) return;
+      const safeDraft = sanitizeDraft(draft);
+
+      if (!usesDatabaseDraft) {
+        window.localStorage.setItem(DRAFT_KEY, JSON.stringify(safeDraft));
+        setDraftStatus(t('submit.draftSaved'));
+        return;
+      }
+
+      if (draftSaveRef.current) clearTimeout(draftSaveRef.current);
+      draftSaveRef.current = setTimeout(async () => {
+        try {
+          const response = await fetch('/api/submission-draft', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ payload: safeDraft }),
+          });
+          setDraftStatus(response.ok ? t('submit.draftSavedDb') : t('submit.draftSaveFailed'));
+        } catch {
+          setDraftStatus(t('submit.draftSaveFailed'));
+        }
+      }, 600);
     });
     return () => subscription.unsubscribe();
-  }, [form]);
+  }, [draftReady, form, t, usesDatabaseDraft]);
 
   useEffect(() => {
     return () => {
@@ -173,7 +237,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
       setRecordingState('recording');
       startTimer();
     } catch {
-      setMessage(storyType === 'video' ? 'Camera access was not available.' : 'Microphone access was not available.');
+      setMessage(storyType === 'video' ? t('submit.cameraUnavailable') : t('submit.microphoneUnavailable'));
     }
   }
 
@@ -250,34 +314,34 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
     const data = form.getValues();
     if (targetStep === 0 && !data.storyType) return false;
     if (targetStep === 1 && !data.uncertainSystem && !data.algorithmId && !data.affectedDomain) {
-      setMessage('Please select an algorithm, choose a domain, or mark that you are not sure.');
+      setMessage(t('submit.validationSystem'));
       return false;
     }
     if (targetStep === 2) {
       if (!data.title.trim()) {
-        setMessage('Please add a short title.');
+        setMessage(t('submit.validationTitle'));
         return false;
       }
       if (data.storyType === 'text' && !data.narrativeText.trim()) {
-        setMessage('Please write your story.');
+        setMessage(t('submit.validationStory'));
         return false;
       }
       if (['voice', 'video'].includes(data.storyType) && !mediaFile && !uploadedMedia) {
-        setMessage(data.storyType === 'video' ? 'Please record or upload a video story.' : 'Please record or upload a voice story.');
+        setMessage(data.storyType === 'video' ? t('submit.validationVideo') : t('submit.validationVoice'));
         return false;
       }
       if (data.storyType === 'facilitated' && !data.facilitatorCode.trim()) {
-        setMessage('Please enter the facilitator code.');
+        setMessage(t('submit.validationFacilitator'));
         return false;
       }
     }
     if (targetStep === 3) {
       if (!data.city.trim()) {
-        setMessage('Please enter your city.');
+        setMessage(t('submit.validationCity'));
         return false;
       }
       if (data.wantsContact === 'yes' && !data.contactEmail.trim()) {
-        setMessage('Please enter an email for follow-up.');
+        setMessage(t('submit.validationEmail'));
         return false;
       }
     }
@@ -323,8 +387,12 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
         }),
       });
       const payload = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(payload?.error || 'The story could not be submitted.');
-      window.localStorage.removeItem(DRAFT_KEY);
+      if (!response.ok) throw new Error(payload?.error || t('submit.validationSubmit'));
+      if (usesDatabaseDraft) {
+        await fetch('/api/submission-draft', { method: 'DELETE' }).catch(() => null);
+      } else {
+        window.localStorage.removeItem(DRAFT_KEY);
+      }
       window.location.href = payload.redirectTo || '/stories';
     } catch (error) {
       setMessage(error.message);
@@ -337,11 +405,23 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
       <div className="mb-8">
         <div className="mb-3 flex items-center justify-between gap-4 text-sm text-gray-500">
           <span>{t('submit.progress', { current: step + 1, total: steps.length })}</span>
-          <span>{t('submit.draftSaved')}</span>
+          <span aria-live="polite">{draftStatus}</span>
         </div>
-        <div className="h-2 rounded-full bg-gray-100">
+        <div
+          className="h-2 rounded-full bg-gray-100"
+          role="progressbar"
+          aria-valuemin={1}
+          aria-valuemax={steps.length}
+          aria-valuenow={step + 1}
+          aria-label={t('submit.progress', { current: step + 1, total: steps.length })}
+        >
           <div className="h-2 rounded-full bg-yellow-500 transition-all" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
         </div>
+        <ol className="sr-only">
+          {steps.map((item, index) => (
+            <li key={item} aria-current={index === step ? 'step' : undefined}>{t(item)}</li>
+          ))}
+        </ol>
       </div>
 
       <form onSubmit={(event) => event.preventDefault()} className="space-y-8">
@@ -355,6 +435,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
                 <button
                   key={method.id}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => {
                     form.setValue('storyType', method.id);
                     clearMedia();
@@ -489,11 +570,11 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm font-medium text-gray-700">
                 {t('submit.name')} <span className="font-normal">({t('submit.optional')})</span>
-                <input {...form.register('name')} disabled={values.isAnonymous} placeholder="Your name" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2 disabled:bg-gray-100" />
+                <input {...form.register('name')} disabled={values.isAnonymous} placeholder={t('submit.namePlaceholder')} className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2 disabled:bg-gray-100" />
               </label>
               <label className="block text-sm font-medium text-gray-700">
                 {t('submit.city')} <span className="font-normal text-red-600">({t('submit.required')})</span>
-                <input {...form.register('city')} placeholder="e.g. Pittsburgh, Philadelphia" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
+                <input {...form.register('city')} placeholder={t('submit.cityPlaceholder')} className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
               </label>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -503,12 +584,12 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
               </label>
               <label className="block text-sm font-medium text-gray-700">
                 {t('submit.happened')}
-                <input {...form.register('occurredAtText')} placeholder="Within the last month" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
+                <input {...form.register('occurredAtText')} placeholder={t('submit.happenedPlaceholder')} className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
               </label>
             </div>
             <label className="block text-sm font-medium text-gray-700">
               {t('submit.referral')}
-              <input {...form.register('referralSource')} placeholder="Organization name or how you found us" className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
+              <input {...form.register('referralSource')} placeholder={t('submit.referralPlaceholder')} className="mt-2 min-h-11 w-full rounded-md border border-gray-200 px-3 py-2" />
             </label>
             <label className="block text-sm font-medium text-gray-700">
               {t('submit.impact')}
@@ -566,7 +647,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
                 <input type="checkbox" {...form.register('followupConsent')} className="mt-1 h-4 w-4" />
                 {t('submit.consentTitle')} *
               </label>
-              {currentUserEmail ? <p className="rounded-md bg-slate-50 p-3 text-sm text-slate-600">Submitting as {currentUserEmail}.</p> : null}
+              {currentUserEmail ? <p className="rounded-md bg-slate-50 p-3 text-sm text-slate-600">{t('submit.submittingAs', { email: currentUserEmail })}</p> : null}
             </div>
           </section>
         ) : null}

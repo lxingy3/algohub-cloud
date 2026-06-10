@@ -16,6 +16,10 @@ function getStaticTextMap(i18n) {
   return i18n.getResourceBundle(i18n.resolvedLanguage || i18n.language || 'en', 'translation')?.staticText || {};
 }
 
+function markTouched() {
+  document.body.dataset.i18nTouched = 'true';
+}
+
 function translateTextNode(node, staticText) {
   const parent = node.parentElement;
   if (!parent || parent.closest('[data-no-i18n]')) return;
@@ -30,7 +34,10 @@ function translateTextNode(node, staticText) {
   originalText.set(node, existing);
   const translated = staticText[key] || key;
   const nextValue = preserveWhitespace(existing, translated);
-  if (node.nodeValue !== nextValue) node.nodeValue = nextValue;
+  if (node.nodeValue !== nextValue) {
+    node.nodeValue = nextValue;
+    markTouched();
+  }
 }
 
 function translateAttributes(element, staticText) {
@@ -45,7 +52,10 @@ function translateAttributes(element, staticText) {
 
     element.setAttribute(originalAttribute, original);
     const nextValue = staticText[original] || original;
-    if (value !== nextValue) element.setAttribute(attribute, nextValue);
+    if (value !== nextValue) {
+      element.setAttribute(attribute, nextValue);
+      markTouched();
+    }
   }
 }
 
@@ -71,6 +81,7 @@ export function StaticTextTranslator() {
 
   useEffect(() => {
     const staticText = getStaticTextMap(i18n);
+    if (!Object.keys(staticText).length && !document.body.dataset.i18nTouched) return undefined;
     translateTree(document.body, staticText);
 
     const observer = new MutationObserver((mutations) => {

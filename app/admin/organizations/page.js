@@ -6,12 +6,17 @@ export const dynamic = 'force-dynamic';
 export default async function AdminOrganizationsPage() {
   const organizations = await prisma.organization.findMany({
     where: { jurisdictionId: getJurisdictionId() },
-    orderBy: { name: 'asc' },
+    orderBy: [
+      { isActive: 'asc' },
+      { createdAt: 'desc' },
+      { name: 'asc' },
+    ],
   });
 
   return (
     <div>
       <h1 className="text-2xl font-semibold">Organization Manager</h1>
+      <p className="mt-2 text-sm text-slate-600">Pending partner applications appear first for review.</p>
       <form action="/api/admin/organizations" method="post" className="mt-5 grid gap-3 rounded-lg border bg-white p-4 md:grid-cols-3">
         <input name="name" placeholder="Name" className="rounded-md border px-3 py-2" required />
         <input name="contactEmail" placeholder="Contact email" className="rounded-md border px-3 py-2" />

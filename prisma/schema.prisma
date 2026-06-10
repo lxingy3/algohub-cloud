@@ -108,6 +108,7 @@ model Jurisdiction {
   comments         Comment[]
   reactions        TestimonyReaction[]
   sharedTaxonomies SharedTaxonomy[]
+  submissionDrafts SubmissionDraft[]
 
   @@map("jurisdictions")
 }
@@ -393,10 +394,26 @@ model User {
   comments                 Comment[]
   commentLikes             CommentLike[]
   testimonyReactions       TestimonyReaction[]
+  submissionDrafts         SubmissionDraft[]
 
   @@unique([jurisdictionId, email, primaryRoleName])
   @@index([jurisdictionId])
   @@map("users")
+}
+
+model SubmissionDraft {
+  id             String       @id @default(uuid()) @db.Uuid
+  jurisdictionId String       @map("jurisdiction_id") @db.VarChar(50)
+  userId         String       @map("user_id") @db.Uuid
+  payload        Json
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  jurisdiction   Jurisdiction @relation(fields: [jurisdictionId], references: [id])
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jurisdictionId, userId])
+  @@index([userId])
+  @@map("submission_drafts")
 }
 
 model Role {

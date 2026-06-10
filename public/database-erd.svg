@@ -36,7 +36,7 @@
     <rect class="box scope" width="2060" height="120" />
     <text x="24" y="34" class="label title">Jurisdiction Scope</text>
     <text x="24" y="62" class="field">Jurisdiction.id is the deployment scope. The current deployment uses JURISDICTION_ID=pittsburgh.</text>
-    <text x="24" y="86" class="field">Tables with jurisdictionId: Algorithm, AlgorithmClaim, AlgorithmDocument, Testimony, TestimonyBrief, Comment, TestimonyReaction, User, Organization, CommunityEvent, Briefing, NewsUpdate, SharedTaxonomy.</text>
+    <text x="24" y="86" class="field">Tables with jurisdictionId: Algorithm, AlgorithmClaim, AlgorithmDocument, Testimony, TestimonyBrief, Comment, TestimonyReaction, User, Organization, CommunityEvent, Briefing, NewsUpdate, SharedTaxonomy, SubmissionDraft.</text>
   </g>
 
   <text x="70" y="295" class="section">REGISTRY</text>
@@ -222,10 +222,18 @@
     <text x="20" y="78" class="field">expires</text>
   </g>
 
+  <g id="submissiondraft" transform="translate(1620 1060)">
+    <rect class="box auth" width="300" height="128" />
+    <text x="20" y="32" class="label title">SubmissionDraft</text>
+    <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
+    <text x="20" y="78" class="field">userId FK, payload JSON</text>
+    <text x="20" y="98" class="field">unique jurisdictionId + userId</text>
+  </g>
+
   <g id="legend" transform="translate(70 1240)">
     <rect class="legend" width="820" height="118" />
     <text x="20" y="32" class="label title">Relationship notes</text>
-    <text x="20" y="58" class="field">User also links to submitted testimonies, facilitated testimonies, moderated testimonies, comments, comment likes, and reactions.</text>
+    <text x="20" y="58" class="field">User also links to submission drafts, submitted testimonies, facilitated testimonies, moderated testimonies, comments, comment likes, and reactions.</text>
     <text x="20" y="80" class="field">Organization links to users, partner testimonies, and community events. NewsUpdate can reference either an Algorithm or a CommunityEvent.</text>
     <text x="20" y="102" class="field">VerificationToken is standalone for token-based auth and is intentionally not connected by a foreign key.</text>
   </g>
@@ -247,6 +255,7 @@
   <path class="line" d="M1920 619 L1940 619 L1940 799 L1960 799" />
   <path class="line2" d="M1770 488 L1770 560" />
   <path class="line2" d="M1620 430 L1600 430 L1600 799 L1620 799" />
+  <path class="line2" d="M1620 448 L1585 448 L1585 1124 L1620 1124" />
 
   <text x="242" y="535" class="tagtext">has claims</text>
   <text x="430" y="397" class="tagtext">has documents</text>
@@ -261,4 +270,5 @@
   <text x="1294" y="800" class="tagtext">feeds</text>
   <text x="1460" y="392" class="tagtext">members</text>
   <text x="1890" y="602" class="tagtext">roles</text>
+  <text x="1592" y="1040" class="tagtext">drafts</text>
 </svg>

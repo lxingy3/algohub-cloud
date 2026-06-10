@@ -21,7 +21,7 @@ export function LanguageSelector() {
         aria-label={t('nav.language')}
         title={t('nav.language')}
         onChange={(event) => i18n.changeLanguage(event.target.value)}
-        className="h-9 max-w-[112px] rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-500 hover:border-gray-300 focus:border-gray-400 focus:outline-none"
+        className="h-11 max-w-[132px] rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-600 hover:border-gray-300 focus:border-gray-400 focus:outline-none md:h-9 md:max-w-[112px]"
       >
         {languageOptions.map(([code, label]) => (
           <option key={code} value={code}>
