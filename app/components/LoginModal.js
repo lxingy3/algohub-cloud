@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useId, useState } from 'react';
+import { signIn } from 'next-auth/react';
 import { useTranslation } from 'react-i18next';
 import { Github, Mail, X } from 'lucide-react';
 
@@ -39,6 +40,15 @@ export function LoginModal({ open, onClose, forceOpen = false, error = false }) 
   useEffect(() => {
     setCallbackUrl(`${window.location.pathname}${window.location.search}`);
   }, []);
+
+  async function startSso(providerId) {
+    await fetch('/api/auth/sso-role', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: selectedRole }),
+    });
+    await signIn(providerId, { callbackUrl });
+  }
 
   if (!open) return null;
 
@@ -95,14 +105,15 @@ export function LoginModal({ open, onClose, forceOpen = false, error = false }) 
 
         <div className="mt-4 grid gap-2">
           {ssoProviders.map((provider) => (
-            <Link
+            <button
               key={provider.id}
-              href={`/api/auth/sso/${provider.id}?role=${selectedRole}&callbackUrl=${encodeURIComponent(callbackUrl)}`}
+              type="button"
+              onClick={() => startSso(provider.id)}
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
             >
               {provider.id === 'github' ? <Github className="h-4 w-4" /> : <span className="font-bold">{provider.icon}</span>}
               {t('login.continueWith', { provider: provider.label, defaultValue: `Continue with ${provider.label}` })}
-            </Link>
+            </button>
           ))}
         </div>
 
