@@ -6,6 +6,7 @@ const knownCookieNames = [
   sessionCookieName,
   'algohub_sso_role',
   'algohub_sso_name',
+  'algohub_auth_return_to',
   'authjs.session-token',
   '__Secure-authjs.session-token',
   'next-auth.session-token',

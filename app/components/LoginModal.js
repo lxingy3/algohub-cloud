@@ -26,7 +26,7 @@ function safeCallbackUrl(value) {
   return value.startsWith('/') && !value.startsWith('//') ? value : null;
 }
 
-export function LoginModal({ open, onClose, onSignup, forceOpen = false, error = false, initialRole, initialCallbackUrl }) {
+export function LoginModal({ open, onClose, onSignup, forceOpen = false, error = false, errorMessage, initialRole, initialCallbackUrl }) {
   const { t } = useTranslation();
   const titleId = useId();
   const [selectedRole, setSelectedRole] = useState(() => safeRole(initialRole));
@@ -64,7 +64,7 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
     await fetch('/api/auth/sso-role', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: selectedRole }),
+      body: JSON.stringify({ role: selectedRole, returnTo: callbackUrl }),
     });
     await signIn(providerId, { callbackUrl });
   }
@@ -105,7 +105,7 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
 
         {error ? (
           <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
-            {t('login.error', { defaultValue: 'No account was found for that email and role.' })}
+            {errorMessage || t('login.error', { defaultValue: 'No account was found for that email and role.' })}
           </p>
         ) : null}
 

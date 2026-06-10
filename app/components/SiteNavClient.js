@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from './LanguageSelector';
 import { LoginModal } from './LoginModal';
@@ -19,15 +19,33 @@ export function SiteNavClient({ isLoggedIn, isAdmin }) {
   const { t } = useTranslation();
   const [authModal, setAuthModal] = useState(null);
   const [loginConfig, setLoginConfig] = useState({ role: undefined, callbackUrl: undefined });
+  const [loginErrorMessage, setLoginErrorMessage] = useState('');
 
   function openLogin(config = {}) {
     setLoginConfig(config);
+    setLoginErrorMessage(config.errorMessage || '');
     setAuthModal('login');
   }
 
   function openAdminPrompt() {
     setAuthModal('admin-needed');
   }
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const shouldOpenLogin = url.searchParams.get('authModal') === 'login' || url.searchParams.has('authError');
+    if (!shouldOpenLogin) return;
+
+    const error = url.searchParams.get('authError');
+    url.searchParams.delete('authModal');
+    url.searchParams.delete('authError');
+    const cleanReturnTo = `${url.pathname}${url.search}${url.hash}`;
+    openLogin({
+      callbackUrl: cleanReturnTo,
+      errorMessage: error ? 'Try signing in with a different account.' : '',
+    });
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-100 bg-white">
@@ -94,6 +112,8 @@ export function SiteNavClient({ isLoggedIn, isAdmin }) {
         open={authModal === 'login'}
         onClose={() => setAuthModal(null)}
         onSignup={() => setAuthModal('signup')}
+        error={Boolean(loginErrorMessage)}
+        errorMessage={loginErrorMessage}
         initialRole={loginConfig.role}
         initialCallbackUrl={loginConfig.callbackUrl}
       />

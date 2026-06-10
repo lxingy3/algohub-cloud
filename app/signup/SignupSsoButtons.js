@@ -17,7 +17,11 @@ export function SignupSsoButtons() {
     await fetch('/api/auth/sso-role', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: 'COMMUNITY_MEMBER', displayName }),
+      body: JSON.stringify({
+        role: 'COMMUNITY_MEMBER',
+        displayName,
+        returnTo: `${window.location.pathname}${window.location.search}`,
+      }),
     });
     await signIn(providerId, { callbackUrl: '/' });
   }
