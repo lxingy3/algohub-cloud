@@ -3,6 +3,7 @@ import { Database, Search } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
+import { rankAlgorithmsForSearch } from '../../lib/searchRanking';
 import { SiteNav } from '../components/SiteNav';
 import { AlgorithmsRegistry } from '../components/AlgorithmsRegistry';
 
@@ -18,15 +19,6 @@ export default async function AlgorithmsPage({ searchParams }) {
 
   const where = {
     jurisdictionId,
-    ...(search
-      ? {
-          OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { description: { contains: search, mode: 'insensitive' } },
-            { agencyName: { contains: search, mode: 'insensitive' } },
-          ],
-        }
-      : {}),
     ...(useCase !== 'all' ? { useCase } : {}),
     ...(location !== 'all' ? { location } : {}),
   };
@@ -66,9 +58,10 @@ export default async function AlgorithmsPage({ searchParams }) {
     }),
   ]);
 
+  const rankedAlgorithms = search ? rankAlgorithmsForSearch(algorithms, search) : algorithms;
   const useCases = [...new Set(allAlgorithms.map((item) => item.useCase).filter(Boolean))];
   const locations = [...new Set(allAlgorithms.map((item) => item.location).filter(Boolean))];
-  const registryItems = algorithms.map((algorithm) => ({
+  const registryItems = rankedAlgorithms.map((algorithm) => ({
     id: algorithm.id,
     slug: algorithm.slug,
     name: algorithm.name,
@@ -170,7 +163,7 @@ export default async function AlgorithmsPage({ searchParams }) {
         <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-xl font-semibold text-gray-900">Algorithm Profiles</h2>
           <p className="text-sm text-gray-600">
-            Showing <span className="font-semibold text-gray-900">{algorithms.length}</span> of {allAlgorithms.length}
+            Showing <span className="font-semibold text-gray-900">{rankedAlgorithms.length}</span> of {allAlgorithms.length}
           </p>
         </div>
         <AlgorithmsRegistry algorithms={registryItems} />

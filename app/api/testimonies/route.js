@@ -4,6 +4,7 @@ import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../lib/auth';
 import { mediaStorageProvider, mediaStorageUri } from '../../../lib/mediaStorage';
+import { rankStoriesForSearch } from '../../../lib/searchRanking';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,11 +41,52 @@ function formText(formData, key) {
   return typeof value === 'string' ? value : '';
 }
 
+const testimonyListSelect = {
+  id: true,
+  sourceId: true,
+  title: true,
+  summary: true,
+  city: true,
+  zipCode: true,
+  imageUrl: true,
+  submitterName: true,
+  referralSource: true,
+  publicPosting: true,
+  followupConsent: true,
+  storyType: true,
+  isAnonymous: true,
+  narrativeText: true,
+  submissionMethod: true,
+  audioFileUrl: true,
+  videoFileUrl: true,
+  originalLanguage: true,
+  affectedDomain: true,
+  selfReportedImpact: true,
+  aiImpactClassification: true,
+  aiThemes: true,
+  aiLinkedAlgorithmIds: true,
+  aiConfidenceScore: true,
+  aiExtractedExperiences: true,
+  aiProcessedAt: true,
+  moderationStatus: true,
+  submittedAt: true,
+  updatedAt: true,
+  algorithmLinks: { select: { linkType: true, confidence: true, algorithm: true } },
+  _count: { select: { comments: true, reactions: true } },
+};
+
+const testimonySearchSelect = {
+  ...testimonyListSelect,
+  transcriptionText: true,
+  brief: { select: { summary: true } },
+};
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const page = Math.max(Number(searchParams.get('page') || 1), 1);
   const limit = Math.min(Math.max(Number(searchParams.get('limit') || 20), 1), 50);
   const jurisdictionId = getJurisdictionId();
+  const search = searchParams.get('search') || '';
   const domain = searchParams.get('domain') || '';
   const impact = searchParams.get('impact') || '';
   const algorithmId = searchParams.get('algorithm') || '';
@@ -57,45 +99,30 @@ export async function GET(request) {
     ...(algorithmId ? { algorithmLinks: { some: { algorithmId } } } : {}),
   };
 
+  if (search) {
+    const candidates = await prisma.testimony.findMany({
+      where,
+      orderBy: { submittedAt: 'desc' },
+      select: testimonySearchSelect,
+    });
+    const ranked = rankStoriesForSearch(candidates, search);
+    const items = ranked.slice((page - 1) * limit, page * limit).map((story) => {
+      const item = { ...story };
+      delete item.brief;
+      delete item.transcriptionText;
+      return item;
+    });
+
+    return NextResponse.json({ items, page, limit, total: ranked.length });
+  }
+
   const [items, total] = await Promise.all([
     prisma.testimony.findMany({
       where,
       orderBy: { submittedAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
-      select: {
-        id: true,
-        sourceId: true,
-        title: true,
-        summary: true,
-        city: true,
-        zipCode: true,
-        imageUrl: true,
-        submitterName: true,
-        referralSource: true,
-        publicPosting: true,
-        followupConsent: true,
-        storyType: true,
-        isAnonymous: true,
-        narrativeText: true,
-        submissionMethod: true,
-        audioFileUrl: true,
-        videoFileUrl: true,
-        originalLanguage: true,
-        affectedDomain: true,
-        selfReportedImpact: true,
-        aiImpactClassification: true,
-        aiThemes: true,
-        aiLinkedAlgorithmIds: true,
-        aiConfidenceScore: true,
-        aiExtractedExperiences: true,
-        aiProcessedAt: true,
-        moderationStatus: true,
-        submittedAt: true,
-        updatedAt: true,
-        algorithmLinks: { select: { linkType: true, confidence: true, algorithm: true } },
-        _count: { select: { comments: true, reactions: true } },
-      },
+      select: testimonyListSelect,
     }),
     prisma.testimony.count({ where }),
   ]);

@@ -3,6 +3,7 @@ import { BarChart3, BookOpen, Calendar, FileText, Mic, PenLine, Search, Video } 
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
+import { rankStoriesForSearch } from '../../lib/searchRanking';
 import { SiteNav } from '../components/SiteNav';
 import { formatDate } from '../components/Formatters';
 
@@ -19,15 +20,6 @@ export default async function StoriesPage({ searchParams }) {
   const where = {
     jurisdictionId,
     moderationStatus: 'APPROVED',
-    ...(search
-      ? {
-          OR: [
-            { title: { contains: search, mode: 'insensitive' } },
-            { summary: { contains: search, mode: 'insensitive' } },
-            { narrativeText: { contains: search, mode: 'insensitive' } },
-          ],
-        }
-      : {}),
     ...(useCase !== 'all' ? { affectedDomain: useCase } : {}),
     ...(city !== 'all' ? { city } : {}),
   };
@@ -40,8 +32,14 @@ export default async function StoriesPage({ searchParams }) {
         id: true,
         title: true,
         summary: true,
+        narrativeText: true,
+        city: true,
         affectedDomain: true,
+        selfReportedImpact: true,
+        aiImpactClassification: true,
+        transcriptionText: true,
         submittedAt: true,
+        brief: { select: { summary: true } },
         _count: { select: { comments: true, reactions: true } },
       },
     }),
@@ -51,6 +49,7 @@ export default async function StoriesPage({ searchParams }) {
     }),
   ]);
 
+  const rankedTestimonies = search ? rankStoriesForSearch(testimonies, search) : testimonies;
   const useCases = [...new Set(allStories.map((item) => item.affectedDomain).filter(Boolean))];
   const cities = [...new Set(allStories.map((item) => item.city).filter(Boolean))];
   const storiesByUseCase = allStories.reduce((acc, story) => {
@@ -124,7 +123,7 @@ export default async function StoriesPage({ searchParams }) {
 
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          {testimonies.map((story, index) => (
+          {rankedTestimonies.map((story, index) => (
             <Link key={story.id} href={`/stories/${story.id}`} className="group flex w-full items-start px-3 py-4 text-left transition-colors hover:bg-gray-50/80 sm:px-4 sm:py-3">
               <div className={`mr-3 mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border sm:h-8 sm:w-8 ${index % 3 === 0 ? 'border-rose-200 bg-rose-50 text-rose-600' : index % 3 === 1 ? 'border-purple-200 bg-purple-50 text-purple-600' : 'border-blue-200 bg-blue-50 text-blue-600'}`}>
                 {index % 3 === 0 ? <Video className="h-4 w-4" /> : index % 3 === 1 ? <Mic className="h-4 w-4" /> : <FileText className="h-4 w-4" />}

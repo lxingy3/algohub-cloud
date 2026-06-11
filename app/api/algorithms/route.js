@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
+import { rankAlgorithmsForSearch } from '../../../lib/searchRanking';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,16 +23,28 @@ export async function GET(request) {
     jurisdictionId,
     ...(useCase ? { useCase } : {}),
     ...(location ? { location } : {}),
-    ...(search
-      ? {
-          OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { description: { contains: search, mode: 'insensitive' } },
-            { agencyName: { contains: search, mode: 'insensitive' } },
-          ],
-        }
-      : {}),
   };
+
+  if (search) {
+    const candidates = await prisma.algorithm.findMany({
+      where,
+      orderBy: { name: 'asc' },
+      include: {
+        _count: { select: { testimonyLinks: true } },
+        claims: true,
+        documents: true,
+      },
+    });
+    const ranked = rankAlgorithmsForSearch(candidates, search);
+    const items = ranked.slice(skip, skip + limit).map((algorithm) => {
+      const item = { ...algorithm };
+      delete item.claims;
+      delete item.documents;
+      return item;
+    });
+
+    return NextResponse.json({ items, page, limit, total: ranked.length });
+  }
 
   const [items, total] = await Promise.all([
     prisma.algorithm.findMany({
