@@ -79,7 +79,7 @@ erDiagram
 | Stories list rows | `Testimony`, `Comment`, `TestimonyReaction` | `id`, `title`, `summary`, `city`, `affectedDomain`, `submittedAt`, reaction count, comment count |
 | Story detail | `Testimony`, `TestimonyBrief`, `TestimonyAlgorithmLink` | `title`, `summary`, `narrativeText`, `city`, `zipCode`, `affectedDomain`, `submittedAt`, `audioFileUrl`, `videoFileUrl`, `brief.summary`, linked algorithm names |
 | Story reaction buttons | `TestimonyReaction` | `reactionType`, `testimonyId`, `userId`; supports `EYE_OPENING` and `SUPPORT` |
-| Threaded comments | `Comment`, `CommentLike`, `User` | `content`, `authorName`, `parentCommentId`, `moderationStatus`, `user.name`, like count |
+| Threaded comments | `Comment`, `CommentLike`, `User` | `content`, `authorName`, `parentCommentId`, `moderationStatus`, `createdAt`, `user.name`, like count |
 | Submit testimony form | `Testimony`, `TestimonyAlgorithmLink`, `User` | Creates `title`, `submitterName`, `city`, `zipCode`, `referralSource`, `narrativeText`, `storyType`, `audioFileUrl`, `videoFileUrl`, `publicPosting`, `followupConsent`, `summary`, `selfReportedImpact`, `userId`, optional `algorithmId` link, `moderationStatus=PENDING` |
 | Community events page | `CommunityEvent`, `Organization` | `title`, `description`, `eventType`, `date`, `location`, `isVirtual`, `registrationUrl`, `organizer.name` |
 | Login and signup | `User`, `Role`, `UserRole`, `Session` | `email`, `name`, `primaryRoleName`, selected role, `sessionToken`, `expires`; account identity is `(jurisdictionId, email, primaryRoleName)` |
@@ -88,7 +88,7 @@ erDiagram
 | Admin event manager | `CommunityEvent`, `Organization` | Create/update/delete event fields and organizer link |
 | Admin organization manager | `Organization` | `name`, `slug`, `description`, `contactEmail`, `websiteUrl`, `logoUrl`, `role`, `isActive` |
 | Admin testimony queue | `Testimony`, `User` | Pending/flagged/rejected/approved testimony review with moderation actions |
-| Admin comment queue | `Comment`, `Testimony`, `User` | Pending comment review with approve/reject/flag actions |
+| Admin comment queue | `Comment`, `Testimony`, `User` | Pending comment review with approve/reject/flag actions and comment `createdAt` |
 | Admin user manager | `User`, `Role`, `UserRole` | `email`, `name`, `primaryRoleName`, assigned role; admin can update role assignment |
 | API scoping | Every jurisdiction-scoped table | `jurisdictionId` from `JURISDICTION_ID` environment variable |
 | Shared taxonomy | `SharedTaxonomy` | `category`, `label`, `description`, `parentId`, optional `jurisdictionId` |

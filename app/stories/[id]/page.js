@@ -35,6 +35,7 @@ export default async function StoryPage({ params }) {
           id: true,
           authorName: true,
           content: true,
+          createdAt: true,
           user: true,
           replies: {
             where: { moderationStatus: 'APPROVED' },
@@ -42,6 +43,7 @@ export default async function StoryPage({ params }) {
               id: true,
               authorName: true,
               content: true,
+              createdAt: true,
               user: true,
               likes: { select: { id: true } },
             },
@@ -299,7 +301,11 @@ function StoryText({ text }) {
 function CommentBlock({ comment, testimonyId, user }) {
   return (
     <div className="rounded-md bg-slate-50 p-4">
-      <p className="text-sm font-semibold text-slate-500">{comment.user?.name || comment.authorName || 'Community member'}</p>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+        <span className="font-semibold">{comment.user?.name || comment.authorName || 'Community member'}</span>
+        <span aria-hidden="true">/</span>
+        <time dateTime={comment.createdAt?.toISOString?.()}>{formatDate(comment.createdAt)}</time>
+      </div>
       <p className="mt-1 leading-6">{comment.content}</p>
       <form action={`/api/stories/${testimonyId}/comments/${comment.id}/like`} method="post" className="mt-3">
         <button className="min-h-9 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs">{comment.likes.length} likes</button>
@@ -313,7 +319,11 @@ function CommentBlock({ comment, testimonyId, user }) {
       ) : null}
       {comment.replies.map((reply) => (
         <div key={reply.id} className="ml-5 mt-3 border-l-2 border-amber-200 pl-4">
-          <p className="text-sm font-semibold text-slate-500">{reply.user?.name || reply.authorName || 'Community member'}</p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+            <span className="font-semibold">{reply.user?.name || reply.authorName || 'Community member'}</span>
+            <span aria-hidden="true">/</span>
+            <time dateTime={reply.createdAt?.toISOString?.()}>{formatDate(reply.createdAt)}</time>
+          </div>
           <p className="mt-1 leading-6">{reply.content}</p>
           <form action={`/api/stories/${testimonyId}/comments/${reply.id}/like`} method="post" className="mt-2">
             <button className="min-h-9 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs">{reply.likes.length} likes</button>

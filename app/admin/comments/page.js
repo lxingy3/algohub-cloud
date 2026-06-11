@@ -49,6 +49,9 @@ export default async function AdminCommentsPage({ searchParams }) {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm text-slate-500">{comment.user?.email || comment.authorName || 'Anonymous'} on {comment.testimony.title}</p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Posted <time dateTime={comment.createdAt.toISOString()}>{formatDate(comment.createdAt)}</time>
+                </p>
                 <p className="mt-1">{comment.content}</p>
               </div>
               <span className="rounded-full bg-slate-100 px-2 py-1 text-xs">{comment.moderationStatus}</span>
@@ -100,4 +103,15 @@ function StatusTabs({ baseHref, activeStatus, counts }) {
 
 function formatStatusLabel(status) {
   return status.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatDate(value) {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
 }
