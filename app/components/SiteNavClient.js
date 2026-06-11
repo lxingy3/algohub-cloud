@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from './LanguageSelector';
+import { IdleLogoutManager } from './IdleLogoutManager';
 import { LoginModal } from './LoginModal';
 import { SignupModal } from './SignupModal';
 
@@ -122,6 +123,7 @@ export function SiteNavClient({ isLoggedIn, isAdmin }) {
         onClose={() => setAuthModal(null)}
         onLogin={() => openLogin()}
       />
+      <IdleLogoutManager isLoggedIn={isLoggedIn} />
     </header>
   );
 }
