@@ -33,6 +33,18 @@ export async function GET(request) {
         _count: { select: { testimonyLinks: true } },
         claims: true,
         documents: true,
+        testimonyLinks: {
+          where: { testimony: { moderationStatus: 'APPROVED' } },
+          include: {
+            testimony: {
+              select: {
+                title: true,
+                summary: true,
+                narrativeText: true,
+              },
+            },
+          },
+        },
       },
     });
     const ranked = rankAlgorithmsForSearch(candidates, search);
@@ -40,6 +52,7 @@ export async function GET(request) {
       const item = { ...algorithm };
       delete item.claims;
       delete item.documents;
+      delete item.testimonyLinks;
       return item;
     });
 
