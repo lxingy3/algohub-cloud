@@ -155,9 +155,19 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
               required
             />
           </label>
+          <label className="block text-sm font-medium text-slate-700">
+            {t('login.password', { defaultValue: 'Password' })}
+            <input
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              placeholder={t('login.passwordPlaceholder', { defaultValue: 'Leave blank only for old test accounts' })}
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+            />
+          </label>
           <button className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800">
             <Mail className="h-4 w-4" />
-            {t('login.legacySubmit', { defaultValue: 'Login with email role' })}
+            {t('login.legacySubmit', { defaultValue: 'Login with email' })}
           </button>
         </form>
 

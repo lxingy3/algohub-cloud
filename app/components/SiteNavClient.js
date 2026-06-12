@@ -7,6 +7,7 @@ import { LanguageSelector } from './LanguageSelector';
 import { IdleLogoutManager } from './IdleLogoutManager';
 import { LoginModal } from './LoginModal';
 import { SignupModal } from './SignupModal';
+import { SetPasswordModal } from './SetPasswordModal';
 
 const navItems = [
   ['/', 'nav.home'],
@@ -16,11 +17,28 @@ const navItems = [
   ['/about', 'nav.about'],
 ];
 
-export function SiteNavClient({ isLoggedIn, isAdmin }) {
+const passwordReminderPrefix = 'algohub_password_setup_later:';
+
+const loginErrors = {
+  'not-found': 'No account was found for that email and role.',
+  'invalid-password': 'The password is incorrect.',
+  'password-not-set': 'This account does not have a password yet. For this test phase, leave the password blank or use social login, then set a password after login.',
+};
+
+const signupErrors = {
+  'account-exists': 'This email already has an account with that role. Please log in or choose another role.',
+  'name-conflict': 'This email and role already belong to another user name. Use the existing account or choose a different role.',
+  'password-too-short': 'Password must be at least 8 characters.',
+  'password-mismatch': 'Passwords do not match.',
+};
+
+export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPasswordSetup = false }) {
   const { t } = useTranslation();
   const [authModal, setAuthModal] = useState(null);
   const [loginConfig, setLoginConfig] = useState({ role: undefined, callbackUrl: undefined });
   const [loginErrorMessage, setLoginErrorMessage] = useState('');
+  const [signupErrorMessage, setSignupErrorMessage] = useState('');
+  const [passwordReminderOpen, setPasswordReminderOpen] = useState(false);
 
   function openLogin(config = {}) {
     setLoginConfig(config);
@@ -34,19 +52,52 @@ export function SiteNavClient({ isLoggedIn, isAdmin }) {
 
   useEffect(() => {
     const url = new URL(window.location.href);
-    const shouldOpenLogin = url.searchParams.get('authModal') === 'login' || url.searchParams.has('authError');
-    if (!shouldOpenLogin) return;
+    const requestedModal = url.searchParams.get('authModal');
+    const shouldOpenLogin = requestedModal === 'login' || url.searchParams.has('authError');
+    const shouldOpenSignup = requestedModal === 'signup' || url.searchParams.has('signupError');
+    if (!shouldOpenLogin && !shouldOpenSignup) return;
 
     const error = url.searchParams.get('authError');
+    const signupError = url.searchParams.get('signupError');
+    const role = url.searchParams.get('role');
     url.searchParams.delete('authModal');
     url.searchParams.delete('authError');
+    url.searchParams.delete('signupError');
+    url.searchParams.delete('role');
     const cleanReturnTo = `${url.pathname}${url.search}${url.hash}`;
-    openLogin({
-      callbackUrl: cleanReturnTo,
-      errorMessage: error ? 'Try signing in with a different account.' : '',
-    });
+    if (shouldOpenSignup) {
+      setSignupErrorMessage(signupErrors[signupError] || '');
+      setAuthModal('signup');
+    } else {
+      openLogin({
+        role,
+        callbackUrl: cleanReturnTo,
+        errorMessage: loginErrors[error] || (error ? 'Try signing in with a different account.' : ''),
+      });
+    }
     window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
   }, []);
+
+  useEffect(() => {
+    if (!needsPasswordSetup || !currentUserId) {
+      setPasswordReminderOpen(false);
+      return;
+    }
+    const dismissed = window.sessionStorage.getItem(`${passwordReminderPrefix}${currentUserId}`);
+    if (!dismissed) setPasswordReminderOpen(true);
+  }, [currentUserId, needsPasswordSetup]);
+
+  function dismissPasswordReminder() {
+    if (currentUserId) window.sessionStorage.setItem(`${passwordReminderPrefix}${currentUserId}`, '1');
+    setPasswordReminderOpen(false);
+  }
+
+  function clearPasswordReminderDismissals() {
+    for (let index = window.sessionStorage.length - 1; index >= 0; index -= 1) {
+      const key = window.sessionStorage.key(index);
+      if (key?.startsWith(passwordReminderPrefix)) window.sessionStorage.removeItem(key);
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-100 bg-white">
@@ -84,7 +135,7 @@ export function SiteNavClient({ isLoggedIn, isAdmin }) {
           )}
           {isLoggedIn ? (
             <form action="/api/auth/logout" method="post">
-              <button className="min-h-11 rounded-md px-3 py-2 font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 md:min-h-0">
+              <button onClick={clearPasswordReminderDismissals} className="min-h-11 rounded-md px-3 py-2 font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 md:min-h-0">
                 {t('nav.logout')}
               </button>
             </form>
@@ -112,7 +163,10 @@ export function SiteNavClient({ isLoggedIn, isAdmin }) {
         key={`${loginConfig.role || 'default'}-${loginConfig.callbackUrl || 'current'}`}
         open={authModal === 'login'}
         onClose={() => setAuthModal(null)}
-        onSignup={() => setAuthModal('signup')}
+        onSignup={() => {
+          setSignupErrorMessage('');
+          setAuthModal('signup');
+        }}
         error={Boolean(loginErrorMessage)}
         errorMessage={loginErrorMessage}
         initialRole={loginConfig.role}
@@ -121,10 +175,61 @@ export function SiteNavClient({ isLoggedIn, isAdmin }) {
       <SignupModal
         open={authModal === 'signup'}
         onClose={() => setAuthModal(null)}
-        onLogin={() => openLogin()}
+        onLogin={() => {
+          setSignupErrorMessage('');
+          openLogin();
+        }}
+        errorMessage={signupErrorMessage}
+      />
+      <PasswordSetupReminderModal
+        open={passwordReminderOpen && authModal === null}
+        onLater={dismissPasswordReminder}
+        onSetPassword={() => {
+          setPasswordReminderOpen(false);
+          setAuthModal('set-password');
+        }}
+      />
+      <SetPasswordModal
+        open={authModal === 'set-password'}
+        onClose={() => setAuthModal(null)}
+        onSaved={() => {
+          setAuthModal(null);
+          window.location.reload();
+        }}
       />
       <IdleLogoutManager isLoggedIn={isLoggedIn} />
     </header>
+  );
+}
+
+function PasswordSetupReminderModal({ open, onLater, onSetPassword }) {
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-4 py-8"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="password-reminder-title"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onLater?.();
+      }}
+    >
+      <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-2xl">
+        <h1 id="password-reminder-title" className="text-2xl font-semibold text-slate-950">Your account does not have a password yet</h1>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          This account is still using the temporary no-password test login. Set a password to make it safer before production use.
+        </p>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+          <button type="button" onClick={onSetPassword} className="inline-flex min-h-11 items-center justify-center rounded-md bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800">
+            Set password
+          </button>
+          <button type="button" onClick={onLater} className="inline-flex min-h-11 items-center justify-center rounded-md border border-slate-300 px-4 py-2 font-semibold text-slate-800 hover:bg-slate-50">
+            Later
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -178,13 +178,14 @@
   </g>
 
   <g id="user" transform="translate(1810 330)">
-    <rect class="box auth" width="310" height="158" />
+    <rect class="box auth" width="310" height="178" />
     <text x="20" y="32" class="label title">User</text>
     <text x="20" y="58" class="field">id PK, jurisdictionId FK</text>
     <text x="20" y="78" class="field">email, primaryRoleName, name, image</text>
-    <text x="20" y="98" class="field">organizationId FK</text>
-    <text x="20" y="118" class="field">unique jurisdictionId + email + role</text>
-    <text x="20" y="138" class="field">emailVerified, createdAt</text>
+    <text x="20" y="98" class="field">passwordHash, passwordSetAt</text>
+    <text x="20" y="118" class="field">organizationId FK</text>
+    <text x="20" y="138" class="field">unique jurisdictionId + email + role</text>
+    <text x="20" y="158" class="field">emailVerified, createdAt</text>
   </g>
 
   <g id="account" transform="translate(1810 560)">
