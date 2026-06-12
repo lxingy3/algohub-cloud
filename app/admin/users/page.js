@@ -44,6 +44,7 @@ export default async function AdminUsersPage({ searchParams }) {
   const admin = await requireAdmin();
   const notice = notices[params?.error] || notices[params?.success];
   const jurisdictionId = getJurisdictionId();
+  const now = new Date();
   const [users, roles] = await Promise.all([
     prisma.user.findMany({
       where: { jurisdictionId },
@@ -51,6 +52,11 @@ export default async function AdminUsersPage({ searchParams }) {
       include: {
         organization: true,
         userRoles: { include: { role: true } },
+        passwordResetTokens: {
+          where: { expiresAt: { gt: now } },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
       },
     }),
     prisma.role.findMany({ orderBy: { name: 'asc' } }),
@@ -106,6 +112,7 @@ export default async function AdminUsersPage({ searchParams }) {
           {visibleUsers.length ? visibleUsers.map((user) => {
             const isCurrentAdmin = user.id === admin.id;
             const currentRoleId = user.userRoles.find((userRole) => userRole.role.name === user.primaryRoleName)?.roleId || user.userRoles[0]?.roleId || '';
+            const resetRequested = user.passwordResetTokens.length > 0;
             return (
               <div key={user.id} className="grid gap-4 px-4 py-4 lg:grid-cols-[1.4fr_1fr_0.9fr_auto] lg:items-center">
                 <div className="min-w-0">
@@ -116,6 +123,9 @@ export default async function AdminUsersPage({ searchParams }) {
                     ) : (
                       <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">No password</span>
                     )}
+                    {resetRequested ? (
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">Reset requested</span>
+                    ) : null}
                   </div>
                   <div className="truncate text-sm text-slate-500">{user.email}</div>
                 </div>
@@ -132,7 +142,7 @@ export default async function AdminUsersPage({ searchParams }) {
                   <button className="min-h-10 rounded-md border px-3 py-2 text-sm font-semibold">Save</button>
                 </form>
                 <div className="flex flex-col gap-2 lg:justify-self-end">
-                  {user.passwordHash ? <PasswordResetButton userId={user.id} disabled={isCurrentAdmin} /> : null}
+                  <PasswordResetButton userId={user.id} disabled={isCurrentAdmin} requested={resetRequested} />
                   <form action={`/api/admin/users/${user.id}/delete`} method="post">
                     <DeleteUserButton disabled={isCurrentAdmin} />
                   </form>

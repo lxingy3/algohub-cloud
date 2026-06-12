@@ -12,7 +12,11 @@ export async function POST(request) {
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const role = normalizeRole(formData.get('role'));
   const emailConfigured = isPasswordResetEmailConfigured();
-  const genericEmailMessage = 'If an account exists for that email and role, a password reset email will be sent.';
+  const emailSendingEnabled = process.env.PASSWORD_RESET_EMAIL_ENABLED === 'true';
+  const manualResetMessage = 'If an account exists for that email and role, an admin will generate a reset link and send it to your email.';
+  const genericEmailMessage = emailSendingEnabled
+    ? 'If an account exists for that email and role, a password reset email will be sent.'
+    : manualResetMessage;
 
   let user = null;
   if (email) {
@@ -23,14 +27,6 @@ export async function POST(request) {
         jurisdictionId: getJurisdictionId(),
       },
       select: { id: true },
-    });
-  }
-
-  if (!emailConfigured) {
-    return NextResponse.json({
-      ok: true,
-      emailConfigured: false,
-      message: 'Email password reset is not configured yet. Please contact an admin to generate a reset link.',
     });
   }
 
@@ -49,6 +45,24 @@ export async function POST(request) {
       }),
     ]);
 
+    if (!emailSendingEnabled) {
+      return NextResponse.json({
+        ok: true,
+        emailConfigured,
+        emailSendingEnabled: false,
+        message: manualResetMessage,
+      });
+    }
+
+    if (!emailConfigured) {
+      return NextResponse.json({
+        ok: true,
+        emailConfigured: false,
+        emailSendingEnabled: true,
+        message: manualResetMessage,
+      });
+    }
+
     const resetUrl = new URL('/', request.url);
     resetUrl.searchParams.set('authModal', 'reset-password');
     resetUrl.searchParams.set('resetToken', token);
@@ -62,6 +76,7 @@ export async function POST(request) {
       return NextResponse.json({
         ok: true,
         emailConfigured: true,
+        emailSendingEnabled: true,
         message: 'The reset email could not be sent right now. Please contact an admin to generate a reset link.',
       });
     }
@@ -69,7 +84,8 @@ export async function POST(request) {
 
   return NextResponse.json({
     ok: true,
-    emailConfigured: true,
+    emailConfigured,
+    emailSendingEnabled,
     message: genericEmailMessage,
   });
 }

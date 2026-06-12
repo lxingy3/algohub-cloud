@@ -15,10 +15,6 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: 'User not found.' }, { status: 404 });
   }
 
-  if (!user.passwordHash) {
-    return NextResponse.json({ error: 'This user has not set a password yet.' }, { status: 400 });
-  }
-
   const token = createPasswordResetToken();
   const tokenHash = hashPasswordResetToken(token);
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export function PasswordResetButton({ userId, disabled = false }) {
+export function PasswordResetButton({ userId, disabled = false, requested = false }) {
   const [resetUrl, setResetUrl] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [error, setError] = useState('');
@@ -38,7 +38,7 @@ export function PasswordResetButton({ userId, disabled = false }) {
         disabled={disabled || loading}
         className="min-h-10 rounded-md border px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {loading ? 'Creating...' : 'Reset'}
+        {loading ? 'Creating...' : requested ? 'Get requested link' : 'Get reset link'}
       </button>
       {error ? <p className="max-w-xs text-xs leading-5 text-red-600">{error}</p> : null}
       {resetUrl ? (

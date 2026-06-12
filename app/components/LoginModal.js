@@ -204,7 +204,7 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
           <summary className="cursor-pointer font-semibold text-slate-800">Forgot password?</summary>
           <form onSubmit={requestPasswordReset} className="mt-3 space-y-3">
             <p className="text-sm leading-6 text-slate-600">
-              Enter your email and role. If email recovery is configured for this deployment, we will send a reset link.
+              Enter your email and role. An admin will review the request and send a reset link to your email.
             </p>
             <label className="block text-sm font-medium text-slate-700">
               Email
