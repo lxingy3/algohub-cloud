@@ -231,11 +231,19 @@
     <text x="20" y="78" class="field">expires</text>
   </g>
 
+  <g id="passwordresettoken" transform="translate(70 1200)">
+    <rect class="box auth" width="330" height="138" />
+    <text x="20" y="32" class="label title">PasswordResetToken</text>
+    <text x="20" y="58" class="field">id PK, userId FK</text>
+    <text x="20" y="78" class="field">tokenHash unique</text>
+    <text x="20" y="98" class="field">expiresAt, createdAt</text>
+  </g>
+
   <g id="legend" transform="translate(70 1410)">
     <rect class="legend" width="1180" height="104" />
     <text x="20" y="32" class="label title">Relationship notes</text>
-    <text x="20" y="58" class="field">User links to accounts, sessions, roles, submission drafts, submitted/facilitated/moderated testimonies, comments, likes, and reactions.</text>
-    <text x="20" y="80" class="field">Organization links to users, partner testimonies, and community events. VerificationToken is standalone for token-based auth.</text>
+    <text x="20" y="58" class="field">User links to accounts, sessions, roles, password reset tokens, drafts, testimonies, comments, likes, and reactions.</text>
+    <text x="20" y="80" class="field">Organization links to users, partner testimonies, and community events. VerificationToken remains standalone for token-based auth.</text>
   </g>
 
   <!-- Registry relationships -->

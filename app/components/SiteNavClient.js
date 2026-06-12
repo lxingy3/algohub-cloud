@@ -39,6 +39,7 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
   const [loginErrorMessage, setLoginErrorMessage] = useState('');
   const [signupErrorMessage, setSignupErrorMessage] = useState('');
   const [passwordReminderOpen, setPasswordReminderOpen] = useState(false);
+  const [resetToken, setResetToken] = useState('');
 
   function openLogin(config = {}) {
     setLoginConfig(config);
@@ -55,17 +56,23 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
     const requestedModal = url.searchParams.get('authModal');
     const shouldOpenLogin = requestedModal === 'login' || url.searchParams.has('authError');
     const shouldOpenSignup = requestedModal === 'signup' || url.searchParams.has('signupError');
-    if (!shouldOpenLogin && !shouldOpenSignup) return;
+    const shouldOpenResetPassword = requestedModal === 'reset-password';
+    if (!shouldOpenLogin && !shouldOpenSignup && !shouldOpenResetPassword) return;
 
     const error = url.searchParams.get('authError');
     const signupError = url.searchParams.get('signupError');
     const role = url.searchParams.get('role');
+    const reset = url.searchParams.get('resetToken') || '';
     url.searchParams.delete('authModal');
     url.searchParams.delete('authError');
     url.searchParams.delete('signupError');
     url.searchParams.delete('role');
+    url.searchParams.delete('resetToken');
     const cleanReturnTo = `${url.pathname}${url.search}${url.hash}`;
-    if (shouldOpenSignup) {
+    if (shouldOpenResetPassword) {
+      setResetToken(reset);
+      setAuthModal('reset-password');
+    } else if (shouldOpenSignup) {
       setSignupErrorMessage(signupErrors[signupError] || '');
       setAuthModal('signup');
     } else {
@@ -190,12 +197,14 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
         }}
       />
       <SetPasswordModal
-        open={authModal === 'set-password'}
+        open={authModal === 'set-password' || authModal === 'reset-password'}
         onClose={() => setAuthModal(null)}
         onSaved={() => {
+          setResetToken('');
           setAuthModal(null);
           window.location.reload();
         }}
+        resetToken={authModal === 'reset-password' ? resetToken : ''}
       />
       <IdleLogoutManager isLoggedIn={isLoggedIn} />
     </header>

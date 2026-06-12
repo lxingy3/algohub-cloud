@@ -5,6 +5,7 @@ import { requireAdmin } from '../../../lib/auth';
 import { TransientNotice } from '../../components/TransientNotice';
 import { DeleteUserButton } from './DeleteUserButton';
 import { RoleSettingsModal } from './RoleSettingsModal';
+import { PasswordResetButton } from './PasswordResetButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -108,7 +109,14 @@ export default async function AdminUsersPage({ searchParams }) {
             return (
               <div key={user.id} className="grid gap-4 px-4 py-4 lg:grid-cols-[1.4fr_1fr_0.9fr_auto] lg:items-center">
                 <div className="min-w-0">
-                  <div className="font-semibold text-slate-950">{user.name}</div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="font-semibold text-slate-950">{user.name}</div>
+                    {user.passwordHash ? (
+                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">Password set</span>
+                    ) : (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">No password</span>
+                    )}
+                  </div>
                   <div className="truncate text-sm text-slate-500">{user.email}</div>
                 </div>
                 <div className="text-sm">
@@ -123,9 +131,12 @@ export default async function AdminUsersPage({ searchParams }) {
                   </select>
                   <button className="min-h-10 rounded-md border px-3 py-2 text-sm font-semibold">Save</button>
                 </form>
-                <form action={`/api/admin/users/${user.id}/delete`} method="post" className="lg:justify-self-end">
-                  <DeleteUserButton disabled={isCurrentAdmin} />
-                </form>
+                <div className="flex flex-col gap-2 lg:justify-self-end">
+                  {user.passwordHash ? <PasswordResetButton userId={user.id} disabled={isCurrentAdmin} /> : null}
+                  <form action={`/api/admin/users/${user.id}/delete`} method="post">
+                    <DeleteUserButton disabled={isCurrentAdmin} />
+                  </form>
+                </div>
               </div>
             );
           }) : (

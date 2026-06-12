@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Lock, X } from 'lucide-react';
 
-export function SetPasswordModal({ open, onClose, onSaved }) {
+export function SetPasswordModal({ open, onClose, onSaved, resetToken = '' }) {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -20,7 +20,7 @@ export function SetPasswordModal({ open, onClose, onSaved }) {
     const response = await fetch('/api/auth/set-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, confirmPassword }),
+      body: JSON.stringify({ password, confirmPassword, resetToken }),
     });
     const payload = await response.json().catch(() => ({}));
     setSaving(false);
@@ -46,9 +46,9 @@ export function SetPasswordModal({ open, onClose, onSaved }) {
       <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 id="set-password-title" className="text-2xl font-semibold text-slate-950">Set password</h1>
+            <h1 id="set-password-title" className="text-2xl font-semibold text-slate-950">{resetToken ? 'Reset password' : 'Set password'}</h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Add a password so this account no longer relies on the temporary test login.
+              {resetToken ? 'Enter a new password for this account.' : 'Add a password so this account no longer relies on the temporary test login.'}
             </p>
           </div>
           <button

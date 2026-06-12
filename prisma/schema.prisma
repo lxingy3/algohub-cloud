@@ -389,6 +389,7 @@ model User {
   organization             Organization?       @relation(fields: [organizationId], references: [id])
   accounts                 Account[]
   sessions                 Session[]
+  passwordResetTokens      PasswordResetToken[]
   userRoles                UserRole[]
   submittedTestimonies     Testimony[]         @relation("SubmittedTestimonies")
   facilitatedTestimonies   Testimony[]         @relation("FacilitatedTestimonies")
@@ -403,6 +404,19 @@ model User {
   @@unique([jurisdictionId, email, primaryRoleName])
   @@index([jurisdictionId])
   @@map("users")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
 
 model SubmissionDraft {

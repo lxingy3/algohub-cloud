@@ -31,6 +31,8 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
   const titleId = useId();
   const [selectedRole, setSelectedRole] = useState(() => safeRole(initialRole));
   const [callbackUrl, setCallbackUrl] = useState(() => safeCallbackUrl(initialCallbackUrl) || '/');
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -67,6 +69,21 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
       body: JSON.stringify({ role: selectedRole, returnTo: callbackUrl }),
     });
     await signIn(providerId, { callbackUrl });
+  }
+
+  async function requestPasswordReset(event) {
+    event.preventDefault();
+    setResetMessage('');
+    setResetLoading(true);
+    const formData = new FormData(event.currentTarget);
+    formData.set('role', selectedRole);
+    const response = await fetch('/api/auth/request-password-reset', {
+      method: 'POST',
+      body: formData,
+    });
+    const payload = await response.json().catch(() => ({}));
+    setResetLoading(false);
+    setResetMessage(payload.message || (response.ok ? 'Check your reset instructions.' : 'Password reset could not be requested.'));
   }
 
   if (!open) return null;
@@ -183,6 +200,22 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
             </Link>
           )}
         </p>
+        <details className="mt-4 rounded-md border border-slate-200 p-3 text-sm">
+          <summary className="cursor-pointer font-semibold text-slate-800">Forgot password?</summary>
+          <form onSubmit={requestPasswordReset} className="mt-3 space-y-3">
+            <p className="text-sm leading-6 text-slate-600">
+              Email reset is not configured yet. Submit your email and role to see the current recovery instruction.
+            </p>
+            <label className="block text-sm font-medium text-slate-700">
+              Email
+              <input name="email" type="email" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" required />
+            </label>
+            <button disabled={resetLoading} className="inline-flex min-h-10 items-center rounded-md border border-slate-300 px-3 py-2 font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70">
+              {resetLoading ? 'Checking...' : 'Request reset'}
+            </button>
+            {resetMessage ? <p className="rounded-md bg-amber-50 p-3 text-sm leading-6 text-amber-800">{resetMessage}</p> : null}
+          </form>
+        </details>
       </div>
     </div>
   );
