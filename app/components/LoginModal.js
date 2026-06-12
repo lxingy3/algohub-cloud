@@ -31,6 +31,10 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
   const titleId = useId();
   const [selectedRole, setSelectedRole] = useState(() => safeRole(initialRole));
   const [callbackUrl, setCallbackUrl] = useState(() => safeCallbackUrl(initialCallbackUrl) || '/');
+  const [mode, setMode] = useState('login');
+  const [loginEmail, setLoginEmail] = useState('admin@algostories.local');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetRole, setResetRole] = useState(() => safeRole(initialRole));
   const [resetMessage, setResetMessage] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
 
@@ -49,7 +53,12 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
   }, [forceOpen, onClose, open]);
 
   useEffect(() => {
-    if (open) setSelectedRole(safeRole(initialRole));
+    if (!open) return;
+    const role = safeRole(initialRole);
+    setSelectedRole(role);
+    setResetRole(role);
+    setMode('login');
+    setResetMessage('');
   }, [initialRole, open]);
 
   useEffect(() => {
@@ -76,7 +85,7 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
     setResetMessage('');
     setResetLoading(true);
     const formData = new FormData(event.currentTarget);
-    formData.set('role', selectedRole);
+    formData.set('role', resetRole);
     const response = await fetch('/api/auth/request-password-reset', {
       method: 'POST',
       body: formData,
@@ -84,6 +93,13 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
     const payload = await response.json().catch(() => ({}));
     setResetLoading(false);
     setResetMessage(payload.message || (response.ok ? 'Check your reset instructions.' : 'Password reset could not be requested.'));
+  }
+
+  function openResetMode() {
+    setResetEmail(loginEmail);
+    setResetRole(selectedRole);
+    setResetMessage('');
+    setMode('reset');
   }
 
   if (!open) return null;
@@ -102,10 +118,12 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 id={titleId} className="text-2xl font-semibold text-slate-950">
-              {t('login.title', { defaultValue: 'Login' })}
+              {mode === 'reset' ? 'Reset password' : t('login.title', { defaultValue: 'Login' })}
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              {t('login.subtitle', { defaultValue: 'Choose the role for this account. The same email can have separate role accounts.' })}
+              {mode === 'reset'
+                ? 'Enter the email and role for the account. An admin will generate a reset link and send it to your email.'
+                : t('login.subtitle', { defaultValue: 'Choose the role for this account. The same email can have separate role accounts.' })}
             </p>
           </div>
           {forceOpen ? null : (
@@ -120,6 +138,41 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
           )}
         </div>
 
+        {mode === 'reset' ? (
+          <form onSubmit={requestPasswordReset} className="mt-5 space-y-4">
+            <label className="block text-sm font-medium text-slate-700">
+              Email
+              <input
+                name="email"
+                type="email"
+                value={resetEmail}
+                onChange={(event) => setResetEmail(event.target.value)}
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+                required
+              />
+            </label>
+            <label className="block text-sm font-medium text-slate-700">
+              Role
+              <select
+                value={resetRole}
+                onChange={(event) => setResetRole(event.target.value)}
+                className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+              >
+                {roles.map((role) => (
+                  <option key={role} value={role}>{roleLabel(role)}</option>
+                ))}
+              </select>
+            </label>
+            <button disabled={resetLoading} className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70">
+              {resetLoading ? 'Submitting...' : 'Request reset link'}
+            </button>
+            {resetMessage ? <p className="rounded-md bg-amber-50 p-3 text-sm leading-6 text-amber-800">{resetMessage}</p> : null}
+            <button type="button" onClick={() => setMode('login')} className="text-sm font-semibold text-blue-700">
+              Back to login
+            </button>
+          </form>
+        ) : (
+          <>
         {error ? (
           <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
             {errorMessage || t('login.error', { defaultValue: 'No account was found for that email and role.' })}
@@ -167,7 +220,8 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
             <input
               name="email"
               type="email"
-              defaultValue="admin@algostories.local"
+              value={loginEmail}
+              onChange={(event) => setLoginEmail(event.target.value)}
               className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
               required
             />
@@ -200,22 +254,11 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
             </Link>
           )}
         </p>
-        <details className="mt-4 rounded-md border border-slate-200 p-3 text-sm">
-          <summary className="cursor-pointer font-semibold text-slate-800">Forgot password?</summary>
-          <form onSubmit={requestPasswordReset} className="mt-3 space-y-3">
-            <p className="text-sm leading-6 text-slate-600">
-              Enter your email and role. An admin will review the request and send a reset link to your email.
-            </p>
-            <label className="block text-sm font-medium text-slate-700">
-              Email
-              <input name="email" type="email" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" required />
-            </label>
-            <button disabled={resetLoading} className="inline-flex min-h-10 items-center rounded-md border border-slate-300 px-3 py-2 font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70">
-              {resetLoading ? 'Checking...' : 'Request reset'}
-            </button>
-            {resetMessage ? <p className="rounded-md bg-amber-50 p-3 text-sm leading-6 text-amber-800">{resetMessage}</p> : null}
-          </form>
-        </details>
+        <button type="button" onClick={openResetMode} className="mt-4 text-sm font-semibold text-blue-700">
+          Forgot password?
+        </button>
+          </>
+        )}
       </div>
     </div>
   );
