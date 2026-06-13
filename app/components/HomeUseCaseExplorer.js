@@ -1,12 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlgorithmsRegistry } from './AlgorithmsRegistry';
 import { useCases } from './useCaseIcons';
 
 export function HomeUseCaseExplorer({ algorithms }) {
+  const { i18n } = useTranslation();
   const initialService = useCases.find((item) => algorithms.some((algorithm) => algorithm.useCase === item.useCase))?.id || 'student';
   const [activeService, setActiveService] = useState(initialService);
+  const staticText = i18n.getResourceBundle(i18n.resolvedLanguage || i18n.language || 'en', 'translation')?.staticText || {};
 
   const services = useMemo(() => useCases.map((item) => {
     const related = algorithms.filter((algorithm) => algorithm.useCase === item.useCase);
@@ -35,6 +38,8 @@ export function HomeUseCaseExplorer({ algorithms }) {
         {services.map((service) => {
           const Icon = service.icon;
           const isActive = activeService === service.id;
+          const translatedLabel = staticText[service.label] || service.label;
+          const labelParts = translatedLabel.includes(' ') ? translatedLabel.split(' ') : [translatedLabel];
           return (
             <button
               key={service.id}
@@ -50,10 +55,10 @@ export function HomeUseCaseExplorer({ algorithms }) {
                 />
               </div>
               <span className={`min-h-10 max-w-[120px] text-center text-xs font-medium uppercase leading-snug tracking-wide transition-all duration-300 md:h-12 md:text-sm ${isActive ? 'font-bold text-gray-900' : 'text-gray-500 group-hover:text-gray-700'}`}>
-                {service.label.split(' ').map((word, index) => (
-                  <span key={word}>
+                {labelParts.map((word, index) => (
+                  <span key={`${service.id}-${word}-${index}`}>
                     {word}
-                    {index !== service.label.split(' ').length - 1 ? <br /> : null}
+                    {index !== labelParts.length - 1 ? <br /> : null}
                   </span>
                 ))}
               </span>
