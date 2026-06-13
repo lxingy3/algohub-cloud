@@ -11,3 +11,5 @@ yarn-error.log*
 pnpm-debug.log*
 
 .vercel
+.task1-whisper-env/
+__pycache__/

@@ -25,7 +25,7 @@ const testimonySchema = z.object({
   publicPosting: z.boolean(),
   followupConsent: z.literal(true),
   isAnonymous: z.boolean().optional(),
-  storyType: z.enum(['text', 'voice', 'video', 'facilitated']),
+  storyType: z.enum(['text', 'voice', 'facilitated']),
   mediaObjectKey: z.string().trim().optional(),
   mediaUrl: z.string().trim().optional(),
   mediaMimeType: z.string().trim().optional(),
@@ -58,7 +58,6 @@ const testimonyListSelect = {
   narrativeText: true,
   submissionMethod: true,
   audioFileUrl: true,
-  videoFileUrl: true,
   originalLanguage: true,
   affectedDomain: true,
   selfReportedImpact: true,
@@ -183,16 +182,14 @@ export async function POST(request) {
     mediaDurationSeconds,
   } = result.data;
 
-  if ((storyType === 'voice' || storyType === 'video') && !mediaObjectKey) {
+  if (storyType === 'voice' && !mediaObjectKey) {
     return NextResponse.json({ error: 'Please record or upload media before submitting.' }, { status: 400 });
   }
 
   const fallbackNarrative =
     storyType === 'voice'
       ? 'A voice story was submitted and is waiting for transcription.'
-      : storyType === 'video'
-        ? 'A video story was submitted and is waiting for transcription.'
-        : storyType === 'facilitated'
+      : storyType === 'facilitated'
           ? 'A facilitated story session was submitted.'
           : '';
   const storedNarrative = narrativeText?.trim() || fallbackNarrative;
@@ -218,14 +215,14 @@ export async function POST(request) {
       submitterEmail: contactEmail || user?.email,
       contactEmail: contactEmail || null,
       isAnonymous: Boolean(isAnonymous),
-      submissionMethod: storyType === 'facilitated' ? 'FACILITATED_SESSION' : storyType === 'voice' || storyType === 'video' ? 'AUDIO_TRANSCRIPTION' : 'WEB_FORM',
+      submissionMethod: storyType === 'facilitated' ? 'FACILITATED_SESSION' : storyType === 'voice' ? 'AUDIO_TRANSCRIPTION' : 'WEB_FORM',
       audioFileUrl: storyType === 'voice' ? storedMediaUri : null,
-      videoFileUrl: storyType === 'video' ? storedMediaUri : null,
+      videoFileUrl: null,
       mediaStorageProvider: mediaObjectKey ? mediaStorageProvider : null,
       mediaObjectKey: mediaObjectKey || null,
       mediaMimeType: mediaMimeType || null,
       mediaDurationSeconds: mediaDurationSeconds || null,
-      transcriptionStatus: storyType === 'voice' || storyType === 'video' ? 'PENDING' : 'NOT_REQUIRED',
+      transcriptionStatus: storyType === 'voice' ? 'PENDING' : 'NOT_REQUIRED',
       selfReportedImpact,
       affectedDomain: affectedDomain || null,
       moderationStatus: 'PENDING',
@@ -243,12 +240,12 @@ export async function POST(request) {
       });
     }
 
-    if ((storyType === 'voice' || storyType === 'video') && mediaObjectKey) {
+    if (storyType === 'voice' && mediaObjectKey) {
       await tx.transcriptionJob.create({
         data: {
           testimonyId: created.id,
           jurisdictionId,
-          mediaKind: storyType === 'video' ? 'video' : 'audio',
+          mediaKind: 'audio',
           objectKey: mediaObjectKey,
           mediaUrl: storedMediaUri,
           storageProvider: mediaStorageProvider,

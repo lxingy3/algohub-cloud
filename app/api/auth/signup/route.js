@@ -7,7 +7,7 @@ import { hashPassword, validatePassword } from '../../../../lib/password';
 
 export const dynamic = 'force-dynamic';
 
-const allowedRoles = new Set(['ADMIN', 'COMMUNITY_MEMBER', 'FACILITATOR', 'ORG_MEMBER', 'RESEARCHER']);
+const DEFAULT_ROLE = 'COMMUNITY_MEMBER';
 
 export async function POST(request) {
   const formData = await request.formData();
@@ -15,8 +15,6 @@ export async function POST(request) {
   const name = String(formData.get('name') || '').trim() || email;
   const password = String(formData.get('password') || '');
   const confirmPassword = String(formData.get('confirmPassword') || '');
-  const requestedRole = String(formData.get('role') || 'COMMUNITY_MEMBER').trim().toUpperCase();
-  const primaryRoleName = allowedRoles.has(requestedRole) ? requestedRole : 'COMMUNITY_MEMBER';
   const callbackUrl = safeCallbackUrl(formData.get('callbackUrl')) || '/';
   const jurisdictionId = getJurisdictionId();
 
@@ -31,10 +29,9 @@ export async function POST(request) {
 
   const existingUser = await prisma.user.findUnique({
     where: {
-      jurisdictionId_email_primaryRoleName: {
+      jurisdictionId_email: {
         jurisdictionId,
         email,
-        primaryRoleName,
       },
     },
   });
@@ -47,11 +44,11 @@ export async function POST(request) {
   }
 
   const role = await prisma.role.upsert({
-    where: { name: primaryRoleName },
+    where: { name: DEFAULT_ROLE },
     update: {},
     create: {
-      name: primaryRoleName,
-      description: `${primaryRoleName.replaceAll('_', ' ').toLowerCase()} account.`,
+      name: DEFAULT_ROLE,
+      description: 'community member account.',
     },
   });
 
@@ -62,7 +59,7 @@ export async function POST(request) {
         email,
         name,
         jurisdictionId,
-        primaryRoleName,
+        primaryRoleName: DEFAULT_ROLE,
         passwordHash: await hashPassword(password),
         passwordSetAt: new Date(),
       },

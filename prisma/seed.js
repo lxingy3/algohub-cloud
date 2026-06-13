@@ -663,10 +663,9 @@ async function main() {
     const organizationId = organizationsBySlug.get(orgSlug)?.id || organization.id;
     const user = await prisma.user.upsert({
       where: {
-        jurisdictionId_email_primaryRoleName: {
+        jurisdictionId_email: {
           jurisdictionId: jurisdiction.id,
           email,
-          primaryRoleName: roleName,
         },
       },
       update: { name, organizationId, primaryRoleName: roleName },

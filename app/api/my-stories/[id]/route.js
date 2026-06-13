@@ -65,21 +65,17 @@ export async function POST(request, { params }) {
   const replacementAudio = formData.get('audioFile');
   const replacementVideo = formData.get('videoFile');
   if ((replacementAudio && replacementAudio.size > 0) || (replacementVideo && replacementVideo.size > 0)) {
-    return NextResponse.json({ error: 'Media replacement now uses the secure signed-upload submission flow. Please submit a new voice or video story to replace media.' }, { status: 400 });
+    return NextResponse.json({ error: 'Media replacement now uses the secure signed-upload submission flow. Please submit a new voice story to replace audio media.' }, { status: 400 });
   }
 
   if (storyType === 'voice' && !audioFileUrl) {
     return NextResponse.json({ error: 'Please upload a voice story.' }, { status: 400 });
   }
-  if (storyType === 'video' && !videoFileUrl) {
-    return NextResponse.json({ error: 'Please upload a video story.' }, { status: 400 });
-  }
-
   const fallbackNarrative =
     storyType === 'voice'
       ? 'A voice story was submitted.'
       : storyType === 'video'
-        ? 'A video story was submitted.'
+        ? 'A legacy video story was submitted and should be displayed as a text transcript.'
         : '';
   const storedNarrative = narrativeText || fallbackNarrative;
 

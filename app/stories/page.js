@@ -1,11 +1,12 @@
 import Link from 'next/link';
-import { BarChart3, BookOpen, Calendar, FileText, Mic, PenLine, Search, Video } from 'lucide-react';
+import { BarChart3, BookOpen, Calendar, PenLine, Search } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
 import { rankStoriesForSearch } from '../../lib/searchRanking';
 import { SiteNav } from '../components/SiteNav';
 import { formatDate } from '../components/Formatters';
+import { getUseCaseIcon, getUseCaseIconTone } from '../components/useCaseIcons';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,10 +124,12 @@ export default async function StoriesPage({ searchParams }) {
 
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          {rankedTestimonies.map((story, index) => (
+          {rankedTestimonies.map((story) => {
+            const StoryIcon = getUseCaseIcon(story.affectedDomain);
+            return (
             <Link key={story.id} href={`/stories/${story.id}`} className="group flex w-full items-start px-3 py-4 text-left transition-colors hover:bg-gray-50/80 sm:px-4 sm:py-3">
-              <div className={`mr-3 mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border sm:h-8 sm:w-8 ${index % 3 === 0 ? 'border-rose-200 bg-rose-50 text-rose-600' : index % 3 === 1 ? 'border-purple-200 bg-purple-50 text-purple-600' : 'border-blue-200 bg-blue-50 text-blue-600'}`}>
-                {index % 3 === 0 ? <Video className="h-4 w-4" /> : index % 3 === 1 ? <Mic className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+              <div className={`mr-3 mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border sm:h-8 sm:w-8 ${getUseCaseIconTone(story.affectedDomain)}`} aria-hidden="true">
+                <StoryIcon className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1 py-0.5">
                 <h3 className="mb-1 line-clamp-2 text-base font-bold text-gray-900 transition-colors group-hover:text-yellow-600">{story.title}</h3>
@@ -145,7 +148,8 @@ export default async function StoriesPage({ searchParams }) {
                 </div>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </section>
 

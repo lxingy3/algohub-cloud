@@ -20,14 +20,14 @@ const navItems = [
 const passwordReminderPrefix = 'algohub_password_setup_later:';
 
 const loginErrors = {
-  'not-found': 'No account was found for that email and role.',
+  'not-found': 'No account was found for that email.',
   'invalid-password': 'The password is incorrect.',
   'password-not-set': 'This account does not have a password yet. For this test phase, leave the password blank or use social login, then set a password after login.',
 };
 
 const signupErrors = {
-  'account-exists': 'This email already has an account with that role. Please log in or choose another role.',
-  'name-conflict': 'This email and role already belong to another user name. Use the existing account or choose a different role.',
+  'account-exists': 'This email already has an account. Please log in with the existing account.',
+  'name-conflict': 'This email already belongs to another user name. Use the existing account.',
   'password-too-short': 'Password must be at least 8 characters.',
   'password-mismatch': 'Passwords do not match.',
 };

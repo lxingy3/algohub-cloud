@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Calendar, Eye, FileText, Heart, MessageCircle, Mic, Play, Quote, Video } from 'lucide-react';
+import { ArrowLeft, Calendar, Eye, FileText, Heart, MessageCircle, Quote } from 'lucide-react';
 import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../lib/auth';
@@ -24,6 +24,7 @@ export default async function StoryPage({ params }) {
       submittedAt: true,
       storyType: true,
       narrativeText: true,
+      transcriptionText: true,
       audioFileUrl: true,
       videoFileUrl: true,
       brief: { select: { summary: true, keyExcerpts: true } },
@@ -57,9 +58,7 @@ export default async function StoryPage({ params }) {
   if (!testimony) notFound();
 
   const excerpts = Array.isArray(testimony.brief?.keyExcerpts) ? testimony.brief.keyExcerpts : [];
-  const mediaType = getMediaType(testimony, excerpts);
-  const hasRealVideo = Boolean(testimony.videoFileUrl);
-  const hasRealAudio = Boolean(testimony.audioFileUrl);
+  const storyText = testimony.transcriptionText || testimony.narrativeText;
   const citation = getCitation(testimony);
   const eyeOpening = testimony.reactions.filter((reaction) => reaction.reactionType === 'EYE_OPENING').length;
   const support = testimony.reactions.filter((reaction) => reaction.reactionType === 'SUPPORT').length;
@@ -105,16 +104,14 @@ export default async function StoryPage({ params }) {
             <p className="text-lg leading-8 text-gray-600">{testimony.brief?.summary || testimony.summary}</p>
           </div>
 
-          {mediaType === 'video' ? <VideoPanel storyId={testimony.id} hasMedia={hasRealVideo} /> : null}
-          {mediaType === 'voice' ? <VoicePanel storyId={testimony.id} hasMedia={hasRealAudio} /> : null}
           {excerpts.length ? <KeyExcerpts excerpts={excerpts} citation={citation} /> : null}
 
           <div className="prose prose-slate max-w-none">
             <div className="mb-3 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-gray-400">
               Story Details
             </div>
-            {testimony.narrativeText ? (
-              <StoryText text={testimony.narrativeText} />
+            {storyText ? (
+              <StoryText text={storyText} />
             ) : (
               <p className="mb-5 leading-8 text-gray-700">No written story details were submitted.</p>
             )}
@@ -172,87 +169,6 @@ function EngagementBar({ testimonyId, title, eyeOpening, support, commentCount }
         <MessageCircle className="h-4 w-4 text-amber-600" />
         Comment {commentCount}
       </span>
-    </div>
-  );
-}
-
-function VideoPanel({ storyId, hasMedia }) {
-  if (hasMedia) {
-    return (
-      <div className="mb-8 rounded-xl border border-gray-200 bg-gray-50 p-4">
-        <div className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
-          <Video className="h-4 w-4 text-amber-600" />
-          <span>Video Story</span>
-        </div>
-        <video className="max-h-[32rem] w-full rounded-lg border bg-black object-contain" src={`/api/stories/${storyId}/media/video`} controls preload="metadata">
-          Your browser does not support video playback.
-        </video>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative mb-8 flex aspect-video items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-900">
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-950" />
-      <div className="relative flex flex-col items-center gap-4">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-white/30 bg-white/10 backdrop-blur-sm">
-          <Play className="ml-1 h-8 w-8 text-white" />
-        </div>
-        <div className="flex items-center gap-2 text-sm text-white/60">
-          <Video className="h-4 w-4" />
-          <span>Video Story</span>
-        </div>
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 flex h-10 items-end bg-gradient-to-t from-black/60 to-transparent px-4 pb-2">
-        <div className="flex w-full items-center gap-3">
-          <div className="h-1 flex-1 rounded-full bg-white/20">
-            <div className="h-1 w-0 rounded-full bg-amber-400" />
-          </div>
-          <span className="font-mono text-xs text-white/50">0:00</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function VoicePanel({ storyId, hasMedia }) {
-  if (hasMedia) {
-    return (
-      <div className="mb-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
-        <div className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
-          <Mic className="h-4 w-4 text-amber-600" />
-          <span>Voice Story</span>
-        </div>
-        <audio className="w-full" src={`/api/stories/${storyId}/media/audio`} controls preload="metadata">
-          Your browser does not support audio playback.
-        </audio>
-      </div>
-    );
-  }
-
-  const bars = [14, 18, 26, 16, 34, 22, 12, 28, 38, 20, 24, 32, 18, 30, 40, 24, 16, 26, 36, 18, 22, 34, 28, 14, 30, 42, 24, 16, 34, 20, 28, 38, 18, 26, 32, 16, 22, 40, 24, 14];
-  return (
-    <div className="mb-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
-      <div className="flex items-center gap-4">
-        <button type="button" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-amber-500 shadow-md">
-          <Play className="ml-0.5 h-6 w-6 text-white" />
-        </button>
-        <div className="min-w-0 flex-1">
-          <div className="mb-2 flex items-center gap-2">
-            <Mic className="h-4 w-4 text-amber-600" />
-            <span className="text-sm font-medium text-gray-700">Voice Story</span>
-          </div>
-          <div className="flex h-10 items-center gap-[2px]">
-            {bars.map((height, index) => (
-              <span key={`${height}-${index}`} className="w-1 rounded-full bg-amber-300" style={{ height }} />
-            ))}
-          </div>
-          <div className="mt-1 flex justify-between">
-            <span className="font-mono text-xs text-gray-400">0:00</span>
-            <span className="font-mono text-xs text-gray-400">3:24</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -332,15 +248,6 @@ function CommentBlock({ comment, testimonyId, user }) {
       ))}
     </div>
   );
-}
-
-function getMediaType(testimony, excerpts) {
-  if (testimony.videoFileUrl || testimony.storyType === 'video') return 'video';
-  if (testimony.audioFileUrl || testimony.storyType === 'voice') return 'voice';
-  if (testimony.sourceId === 'story-housing-2') return 'voice';
-  if (testimony.sourceId === 'story-housing-1') return 'video';
-  if (excerpts.length) return 'video';
-  return 'text';
 }
 
 function getCitation(testimony) {

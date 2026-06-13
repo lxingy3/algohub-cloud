@@ -3,13 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Check, ChevronLeft, ChevronRight, Mic, Pause, Play, Send, Shield, Trash2, Type, Upload, Users, Video } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Mic, Pause, Play, Send, Shield, Trash2, Type, Upload, Users } from 'lucide-react';
 
 const steps = ['submit.stepShare', 'submit.stepSystem', 'submit.stepStory', 'submit.stepDetails', 'submit.stepReview'];
 const methods = [
   { id: 'text', icon: Type, label: 'submit.writeStory' },
   { id: 'voice', icon: Mic, label: 'submit.recordStory' },
-  { id: 'video', icon: Video, label: 'submit.videoStory' },
   { id: 'facilitated', icon: Users, label: 'submit.facilitator' },
 ];
 const domains = ['Housing', 'Child Welfare', 'Benefits', 'Employment', 'Education', 'Public Safety', 'Other'];
@@ -26,10 +25,6 @@ function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
   const rest = seconds % 60;
   return `${minutes}:${String(rest).padStart(2, '0')}`;
-}
-
-function guessKind(method) {
-  return method === 'video' ? 'video' : 'audio';
 }
 
 function sanitizeDraft(draft) {
@@ -61,7 +56,6 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
   const fileInputRef = useRef(null);
-  const videoRef = useRef(null);
   const draftSaveRef = useRef(null);
 
   const form = useForm({
@@ -176,12 +170,6 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
     };
   }, [mediaPreviewUrl]);
 
-  useEffect(() => {
-    if (recordingState === 'recording' && storyType === 'video' && streamRef.current && videoRef.current) {
-      videoRef.current.srcObject = streamRef.current;
-    }
-  }, [recordingState, storyType]);
-
   function stopTimer() {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = null;
@@ -206,7 +194,6 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
-    if (videoRef.current) videoRef.current.srcObject = null;
   }
 
   function setMedia(file) {
@@ -219,7 +206,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
   async function startRecording() {
     setMessage('');
     try {
-      const stream = await navigator.mediaDevices.getUserMedia(storyType === 'video' ? { video: true, audio: true } : { audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       chunksRef.current = [];
       const recorder = new MediaRecorder(stream);
@@ -228,8 +215,8 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
         if (event.data.size > 0) chunksRef.current.push(event.data);
       };
       recorder.onstop = () => {
-        const type = storyType === 'video' ? 'video/webm' : 'audio/webm';
-        const fileName = storyType === 'video' ? 'video-story.webm' : 'voice-story.webm';
+        const type = 'audio/webm';
+        const fileName = 'voice-story.webm';
         setMedia(new File([new Blob(chunksRef.current, { type })], fileName, { type }));
         stopStream();
       };
@@ -237,7 +224,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
       setRecordingState('recording');
       startTimer();
     } catch {
-      setMessage(storyType === 'video' ? t('submit.cameraUnavailable') : t('submit.microphoneUnavailable'));
+      setMessage(t('submit.microphoneUnavailable'));
     }
   }
 
@@ -276,7 +263,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
   }
 
   async function uploadMediaIfNeeded() {
-    if (!['voice', 'video'].includes(storyType)) return null;
+    if (storyType !== 'voice') return null;
     if (uploadedMedia) return uploadedMedia;
     if (!mediaFile) throw new Error(t('submit.uploadFailed'));
 
@@ -284,9 +271,9 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        kind: guessKind(storyType),
+        kind: 'audio',
         fileName: mediaFile.name,
-        contentType: mediaFile.type || `${guessKind(storyType)}/webm`,
+        contentType: mediaFile.type || 'audio/webm',
         size: mediaFile.size,
       }),
     });
@@ -327,8 +314,8 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
         setMessage(t('submit.validationStory'));
         return false;
       }
-      if (['voice', 'video'].includes(data.storyType) && !mediaFile && !uploadedMedia) {
-        setMessage(data.storyType === 'video' ? t('submit.validationVideo') : t('submit.validationVoice'));
+      if (data.storyType === 'voice' && !mediaFile && !uploadedMedia) {
+        setMessage(t('submit.validationVoice'));
         return false;
       }
       if (data.storyType === 'facilitated' && !data.facilitatorCode.trim()) {
@@ -352,7 +339,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
 
   async function nextStep() {
     if (!validateStep()) return;
-    if (step === 2 && ['voice', 'video'].includes(storyType) && !uploadedMedia) {
+    if (step === 2 && storyType === 'voice' && !uploadedMedia) {
       try {
         await uploadMediaIfNeeded();
         setMessage(t('submit.mediaPending'));
@@ -500,7 +487,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
                 <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-900">{t('submit.facilitatorHelp')}</p>
               </>
             ) : null}
-            {['voice', 'video'].includes(storyType) ? (
+            {storyType === 'voice' ? (
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
                 <p className="mb-4 text-sm text-gray-600">{t('submit.maxRecording')}</p>
                 {!mediaPreviewUrl && recordingState !== 'recording' && recordingState !== 'paused' ? (
@@ -511,11 +498,11 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
                     </button>
                     <label className="inline-flex min-h-11 cursor-pointer items-center rounded-md border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50">
                       <Upload className="mr-2 h-4 w-4" />
-                      {storyType === 'video' ? t('submit.uploadVideo') : t('submit.uploadAudio')}
+                      {t('submit.uploadAudio')}
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept={storyType === 'video' ? 'video/*' : 'audio/*'}
+                        accept="audio/*"
                         className="sr-only"
                         onChange={(event) => {
                           const file = event.target.files?.[0];
@@ -527,7 +514,6 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
                 ) : null}
                 {recordingState === 'recording' || recordingState === 'paused' ? (
                   <div className="space-y-4">
-                    {storyType === 'video' ? <video ref={videoRef} autoPlay muted className="max-h-72 w-full rounded-lg bg-black object-contain" /> : null}
                     <div className="flex items-center gap-3">
                       <span className="h-3 w-3 rounded-full bg-red-500" />
                       <span className="font-mono text-2xl font-bold">{formatTime(recordingTime)}</span>
@@ -550,11 +536,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
                 ) : null}
                 {mediaPreviewUrl ? (
                   <div className="space-y-4">
-                    {storyType === 'video' ? (
-                      <video src={mediaPreviewUrl} controls className="max-h-80 w-full rounded-lg border bg-black object-contain" />
-                    ) : (
-                      <audio src={mediaPreviewUrl} controls className="w-full" />
-                    )}
+                    <audio src={mediaPreviewUrl} controls className="w-full" />
                     <button type="button" onClick={clearMedia} className="inline-flex items-center rounded-md border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50">
                       <Trash2 className="mr-2 h-4 w-4" />
                       {t('submit.replaceMedia')}

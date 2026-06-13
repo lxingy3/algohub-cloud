@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import { prisma } from '../../../../lib/prisma';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { sessionCookieName } from '../../../../lib/auth';
-import { normalizeRole } from '../../../../lib/roles';
 import { allowLegacyEmptyPasswordLogin, verifyPassword } from '../../../../lib/password';
 
 export const dynamic = 'force-dynamic';
@@ -12,10 +11,9 @@ export async function POST(request) {
   const formData = await request.formData();
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const password = String(formData.get('password') || '');
-  const primaryRoleName = normalizeRole(formData.get('role'));
   const callbackUrl = safeCallbackUrl(formData.get('callbackUrl')) || '/';
   const user = await prisma.user.findFirst({
-    where: { email, jurisdictionId: getJurisdictionId(), primaryRoleName },
+    where: { email, jurisdictionId: getJurisdictionId() },
   });
 
   if (!user) {

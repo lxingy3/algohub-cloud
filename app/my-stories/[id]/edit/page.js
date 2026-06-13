@@ -116,7 +116,7 @@ export default async function EditMyStoryPage({ params }) {
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                 <p className="mb-2 text-sm font-medium text-gray-700">Current video story</p>
                 <video className="max-h-80 w-full rounded-lg border bg-black object-contain" src={`/api/my-stories/${testimony.id}/media/video`} controls preload="metadata" />
-                <p className="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-800">Media replacement now uses secure signed upload. Submit a new video story if the media itself needs to change.</p>
+                <p className="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-800">Video stories are legacy records. Public stories are now displayed as text transcripts only.</p>
               </div>
             ) : null}
             <label className="block text-sm font-medium text-gray-700">

@@ -401,7 +401,7 @@ model User {
   testimonyReactions       TestimonyReaction[]
   submissionDrafts         SubmissionDraft[]
 
-  @@unique([jurisdictionId, email, primaryRoleName])
+  @@unique([jurisdictionId, email])
   @@index([jurisdictionId])
   @@map("users")
 }
@@ -470,6 +470,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@unique([userId, provider])
   @@map("accounts")
 }
 

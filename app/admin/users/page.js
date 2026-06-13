@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 const notices = {
   'duplicate-role': {
     tone: 'error',
-    message: 'One email cannot have two accounts with the same role. Choose another role or delete one of the duplicate accounts.',
+    message: 'One email can only have one user account and one current role.',
   },
   'self-delete': {
     tone: 'error',

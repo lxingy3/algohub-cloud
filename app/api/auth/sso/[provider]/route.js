@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { normalizeRole } from '../../../../../lib/roles';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,11 +11,10 @@ export async function GET(request, { params }) {
   }
 
   const { searchParams } = new URL(request.url);
-  const role = normalizeRole(searchParams.get('role'));
   const callbackUrl = searchParams.get('callbackUrl') || '/';
   const response = NextResponse.redirect(new URL(`/api/auth/signin/${provider}?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url));
 
-  response.cookies.set('algohub_sso_role', role, {
+  response.cookies.set('algohub_sso_role', 'COMMUNITY_MEMBER', {
     httpOnly: true,
     sameSite: 'lax',
     path: '/',

@@ -1,18 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Briefcase, Bus, GraduationCap, Heart, Home as HomeIcon, Shield, Zap } from 'lucide-react';
 import { AlgorithmsRegistry } from './AlgorithmsRegistry';
-
-const useCases = [
-  { id: 'fraud', label: 'Fraud Detection', icon: Shield, useCase: 'Fraud Detection' },
-  { id: 'traffic', label: 'Traffic Management', icon: Bus, useCase: 'Traffic Management' },
-  { id: 'student', label: 'Student Support', icon: GraduationCap, useCase: 'Student Support' },
-  { id: 'job', label: 'Job Matching', icon: Briefcase, useCase: 'Job Matching' },
-  { id: 'energy', label: 'Energy Forecasting', icon: Zap, useCase: 'Energy Forecasting' },
-  { id: 'childwelfare', label: 'Child Welfare', icon: Heart, useCase: 'Child Welfare' },
-  { id: 'housing', label: 'Housing Prioritization', icon: HomeIcon, useCase: 'Housing Prioritization' },
-];
+import { useCases } from './useCaseIcons';
 
 export function HomeUseCaseExplorer({ algorithms }) {
   const initialService = useCases.find((item) => algorithms.some((algorithm) => algorithm.useCase === item.useCase))?.id || 'student';

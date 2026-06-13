@@ -12,7 +12,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 const uploadSchema = z.object({
-  kind: z.enum(['audio', 'video', 'image']),
+  kind: z.enum(['audio', 'image']),
   scope: z.enum(['eventImage', 'organizationLogo']).optional(),
   fileName: z.string().trim().min(1).max(255),
   contentType: z.string().trim().min(1),
@@ -60,7 +60,7 @@ export async function POST(request) {
     } catch (error) {
       const message = error.message === 'MEDIA_FILE_TOO_LARGE'
         ? 'Please upload a media file smaller than 200 MB.'
-        : 'Please upload an audio or video file.';
+        : 'Please upload an audio file.';
       return NextResponse.json({ error: message }, { status: 400 });
     }
   }

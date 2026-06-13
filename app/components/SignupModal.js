@@ -5,8 +5,6 @@ import { useEffect, useId, useState } from 'react';
 import { X } from 'lucide-react';
 import { SignupSsoButtons } from '../signup/SignupSsoButtons';
 
-const roles = ['COMMUNITY_MEMBER', 'FACILITATOR', 'ORG_MEMBER', 'RESEARCHER', 'ADMIN'];
-
 export function SignupModal({ open, onClose, onLogin, forceOpen = false, errorMessage }) {
   const titleId = useId();
   const [callbackUrl, setCallbackUrl] = useState('/');
@@ -48,7 +46,7 @@ export function SignupModal({ open, onClose, onLogin, forceOpen = false, errorMe
           <div>
             <h1 id={titleId} className="text-2xl font-semibold text-slate-950">Signup</h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Create the account for one role. The same email can be used again for another role.
+              Create a community member account. Admins can upgrade roles later when needed.
             </p>
           </div>
           {forceOpen ? null : (
@@ -79,14 +77,6 @@ export function SignupModal({ open, onClose, onLogin, forceOpen = false, errorMe
           <label className="block text-sm font-medium text-slate-700">
             Email
             <input name="email" type="email" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" required />
-          </label>
-          <label className="block text-sm font-medium text-slate-700">
-            Role
-            <select name="role" defaultValue="COMMUNITY_MEMBER" className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2">
-              {roles.map((role) => (
-                <option key={role} value={role}>{role}</option>
-              ))}
-            </select>
           </label>
           <label className="block text-sm font-medium text-slate-700">
             Password

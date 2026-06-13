@@ -1,0 +1,31 @@
+{
+  "task": "Task 1: audio transcription",
+  "inputKind": "audio",
+  "inputFile": "C:\\Users\\33672\\Desktop\\Capstone\\voice test.mp3",
+  "provider": "local-faster-whisper",
+  "model": "tiny",
+  "status": "COMPLETED",
+  "language": "en",
+  "languageProbability": 0.8894,
+  "durationSeconds": 15.0,
+  "transcript": "Remember when I saw you for the first time You were laughin' sparkin' like a new time You'll be mine",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 3.0,
+      "text": "Remember when I saw you for the first time"
+    },
+    {
+      "start": 3.0,
+      "end": 6.0,
+      "text": "You were laughin' sparkin' like a new time"
+    },
+    {
+      "start": 6.0,
+      "end": 11.71,
+      "text": "You'll be mine"
+    }
+  ],
+  "generatedAt": "2026-06-13T07:27:22.920915+00:00",
+  "reviewNote": "Real Task 1 sample result generated from the local audio file. This can be used to show that the transcription file is ready for review."
+}

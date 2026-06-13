@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { normalizeRole } from '../../../../lib/roles';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
   const body = await request.json().catch(() => ({}));
-  const role = normalizeRole(body.role);
+  const role = 'COMMUNITY_MEMBER';
   const displayName = String(body.displayName || '').trim().slice(0, 120);
   const returnTo = safeReturnTo(body.returnTo) || '/';
   const response = NextResponse.json({ ok: true, role });

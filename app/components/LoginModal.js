@@ -6,35 +6,24 @@ import { signIn } from 'next-auth/react';
 import { useTranslation } from 'react-i18next';
 import { Github, Mail, X } from 'lucide-react';
 
-const roles = ['ADMIN', 'COMMUNITY_MEMBER', 'FACILITATOR', 'ORG_MEMBER', 'RESEARCHER'];
 const ssoProviders = [
   { id: 'google', label: 'Google', icon: 'G' },
   { id: 'microsoft-entra-id', label: 'Microsoft', icon: 'M' },
   { id: 'github', label: 'GitHub', icon: null },
 ];
 
-function roleLabel(role) {
-  return role.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function safeRole(value) {
-  return roles.includes(value) ? value : 'COMMUNITY_MEMBER';
-}
-
 function safeCallbackUrl(value) {
   if (typeof value !== 'string') return null;
   return value.startsWith('/') && !value.startsWith('//') ? value : null;
 }
 
-export function LoginModal({ open, onClose, onSignup, forceOpen = false, error = false, errorMessage, initialRole, initialCallbackUrl }) {
+export function LoginModal({ open, onClose, onSignup, forceOpen = false, error = false, errorMessage, initialCallbackUrl }) {
   const { t } = useTranslation();
   const titleId = useId();
-  const [selectedRole, setSelectedRole] = useState(() => safeRole(initialRole));
   const [callbackUrl, setCallbackUrl] = useState(() => safeCallbackUrl(initialCallbackUrl) || '/');
   const [mode, setMode] = useState('login');
   const [loginEmail, setLoginEmail] = useState('admin@algostories.local');
   const [resetEmail, setResetEmail] = useState('');
-  const [resetRole, setResetRole] = useState(() => safeRole(initialRole));
   const [resetMessage, setResetMessage] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
 
@@ -54,12 +43,9 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
 
   useEffect(() => {
     if (!open) return;
-    const role = safeRole(initialRole);
-    setSelectedRole(role);
-    setResetRole(role);
     setMode('login');
     setResetMessage('');
-  }, [initialRole, open]);
+  }, [open]);
 
   useEffect(() => {
     const explicitCallbackUrl = safeCallbackUrl(initialCallbackUrl);
@@ -75,7 +61,7 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
     await fetch('/api/auth/sso-role', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: selectedRole, returnTo: callbackUrl }),
+      body: JSON.stringify({ returnTo: callbackUrl }),
     });
     await signIn(providerId, { callbackUrl });
   }
@@ -85,7 +71,6 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
     setResetMessage('');
     setResetLoading(true);
     const formData = new FormData(event.currentTarget);
-    formData.set('role', resetRole);
     const response = await fetch('/api/auth/request-password-reset', {
       method: 'POST',
       body: formData,
@@ -97,7 +82,6 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
 
   function openResetMode() {
     setResetEmail(loginEmail);
-    setResetRole(selectedRole);
     setResetMessage('');
     setMode('reset');
   }
@@ -122,8 +106,8 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               {mode === 'reset'
-                ? 'Enter the email and role for the account. An admin will generate a reset link and send it to your email.'
-                : t('login.subtitle', { defaultValue: 'Choose the role for this account. The same email can have separate role accounts.' })}
+                ? 'Enter the email for the account. An admin will generate a reset link and send it to your email.'
+                : t('login.subtitle', { defaultValue: 'Log in to your account. One email maps to one account and one role.' })}
             </p>
           </div>
           {forceOpen ? null : (
@@ -151,18 +135,6 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
                 required
               />
             </label>
-            <label className="block text-sm font-medium text-slate-700">
-              Role
-              <select
-                value={resetRole}
-                onChange={(event) => setResetRole(event.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
-              >
-                {roles.map((role) => (
-                  <option key={role} value={role}>{roleLabel(role)}</option>
-                ))}
-              </select>
-            </label>
             <button disabled={resetLoading} className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70">
               {resetLoading ? 'Submitting...' : 'Request reset link'}
             </button>
@@ -175,22 +147,9 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
           <>
         {error ? (
           <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
-            {errorMessage || t('login.error', { defaultValue: 'No account was found for that email and role.' })}
+            {errorMessage || t('login.error', { defaultValue: 'No account was found for that email.' })}
           </p>
         ) : null}
-
-        <label className="mt-5 block text-sm font-medium text-slate-700">
-          {t('login.role', { defaultValue: 'Role' })}
-          <select
-            value={selectedRole}
-            onChange={(event) => setSelectedRole(event.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
-          >
-            {roles.map((role) => (
-              <option key={role} value={role}>{roleLabel(role)}</option>
-            ))}
-          </select>
-        </label>
 
         <div className="mt-4 grid gap-2">
           {ssoProviders.map((provider) => (
@@ -213,7 +172,6 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
         </div>
 
         <form action="/api/auth/login" method="post" className="space-y-4">
-          <input type="hidden" name="role" value={selectedRole} />
           <input type="hidden" name="callbackUrl" value={callbackUrl} />
           <label className="block text-sm font-medium text-slate-700">
             {t('login.email', { defaultValue: 'Email' })}

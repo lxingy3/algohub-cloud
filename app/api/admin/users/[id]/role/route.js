@@ -25,20 +25,6 @@ export async function POST(request, { params }) {
     return NextResponse.redirect(new URL('/admin/users?error=role-missing', request.url), { status: 303 });
   }
 
-  const duplicate = await prisma.user.findFirst({
-    where: {
-      jurisdictionId: user.jurisdictionId,
-      email: user.email,
-      primaryRoleName: role.name,
-      id: { not: user.id },
-    },
-    select: { id: true },
-  });
-
-  if (duplicate) {
-    return NextResponse.redirect(new URL('/admin/users?error=duplicate-role', request.url), { status: 303 });
-  }
-
   await prisma.$transaction([
     prisma.userRole.deleteMany({ where: { userId: id } }),
     prisma.userRole.create({ data: { userId: id, roleId } }),
