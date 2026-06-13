@@ -14,7 +14,7 @@ export function LanguageSelector() {
   }, [language]);
 
   return (
-    <label className="flex items-center gap-1 text-xs text-gray-400">
+    <label className="flex items-center gap-1 text-xs text-gray-400" data-no-i18n>
       <span className="sr-only">{t('nav.language')}</span>
       <select
         value={language}

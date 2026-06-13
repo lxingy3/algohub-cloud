@@ -259,6 +259,7 @@ function translateTextNode(node, staticText, language) {
 }
 
 function translateAttributes(element, staticText, language) {
+  if (element.closest?.('[data-no-i18n]')) return;
   for (const attribute of translatableAttributes) {
     const value = element.getAttribute(attribute);
     if (!value) continue;
