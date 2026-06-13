@@ -47,10 +47,6 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
     setAuthModal('login');
   }
 
-  function openAdminPrompt() {
-    setAuthModal('admin-needed');
-  }
-
   useEffect(() => {
     const url = new URL(window.location.href);
     const requestedModal = url.searchParams.get('authModal');
@@ -135,11 +131,7 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
             <Link href="/admin" className="inline-flex min-h-11 items-center rounded-md border border-gray-200 px-2 py-2 font-medium text-gray-800 hover:bg-gray-100 sm:px-3 md:min-h-0">
               {t('nav.admin')}
             </Link>
-          ) : (
-            <button type="button" onClick={openAdminPrompt} className="inline-flex min-h-11 items-center rounded-md border border-gray-200 px-2 py-2 font-medium text-gray-800 hover:bg-gray-100 sm:px-3 md:min-h-0">
-              {t('nav.admin')}
-            </button>
-          )}
+          ) : null}
           {isLoggedIn ? (
             <form action="/api/auth/logout" method="post">
               <button onClick={clearPasswordReminderDismissals} className="min-h-11 rounded-md px-3 py-2 font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 md:min-h-0">
@@ -161,11 +153,6 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
           ) : null}
         </nav>
       </div>
-      <AdminLoginNeededModal
-        open={authModal === 'admin-needed'}
-        onClose={() => setAuthModal(null)}
-        onLogin={() => openLogin({ role: 'ADMIN', callbackUrl: '/admin' })}
-      />
       <LoginModal
         key={`${loginConfig.role || 'default'}-${loginConfig.callbackUrl || 'current'}`}
         open={authModal === 'login'}
@@ -237,32 +224,6 @@ function PasswordSetupReminderModal({ open, onLater, onSetPassword }) {
             Later
           </button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function AdminLoginNeededModal({ open, onClose, onLogin }) {
-  if (!open) return null;
-
-  return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-4 py-8"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="admin-login-needed-title"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose?.();
-      }}
-    >
-      <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-2xl">
-        <h1 id="admin-login-needed-title" className="text-2xl font-semibold text-slate-950">Admin login needed</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          Log in with the admin account first: admin@algostories.local
-        </p>
-        <button type="button" onClick={onLogin} className="mt-5 inline-flex min-h-11 items-center rounded-md bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800">
-          Go to login
-        </button>
       </div>
     </div>
   );
