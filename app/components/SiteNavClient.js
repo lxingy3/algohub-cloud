@@ -103,7 +103,7 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-100 bg-white">
+    <header className="sticky top-0 z-50 border-b border-gray-100 bg-white" data-no-i18n>
       <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-4 md:h-16 md:flex-nowrap md:gap-4 md:px-6 md:py-0">
         <Link href="/" className="flex min-h-11 items-center gap-2">
           <img src="/newlogo.png" alt="AlgoStories Logo" className="h-7 w-auto sm:h-8" />
