@@ -110,7 +110,7 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
         </Link>
         <nav className="hidden items-center gap-1 text-sm md:flex">
           {navItems.map(([href, label]) => (
-            <Link key={href} href={href} className="rounded-md px-4 py-2 font-medium text-gray-800 hover:bg-gray-100">
+            <Link key={href} href={href} data-no-i18n className="rounded-md px-4 py-2 font-medium text-gray-800 hover:bg-gray-100">
               {t(label)}
             </Link>
           ))}
@@ -118,23 +118,23 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
         <div className="flex items-center gap-1 text-sm md:gap-2">
           <LanguageSelector />
           {isLoggedIn ? (
-            <Link href="/my-stories" className="hidden rounded-md px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 md:inline-flex">
+            <Link href="/my-stories" data-no-i18n className="hidden rounded-md px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 md:inline-flex">
               {t('nav.myStories')}
             </Link>
           ) : null}
           {!isLoggedIn ? (
-            <button type="button" onClick={() => openLogin()} className="inline-flex min-h-11 items-center rounded-md px-2 py-2 font-medium text-gray-700 hover:bg-gray-100 sm:px-3 md:min-h-0">
+            <button type="button" onClick={() => openLogin()} data-no-i18n className="inline-flex min-h-11 items-center rounded-md px-2 py-2 font-medium text-gray-700 hover:bg-gray-100 sm:px-3 md:min-h-0">
               {t('nav.login')}
             </button>
           ) : null}
           {isAdmin ? (
-            <Link href="/admin" className="inline-flex min-h-11 items-center rounded-md border border-gray-200 px-2 py-2 font-medium text-gray-800 hover:bg-gray-100 sm:px-3 md:min-h-0">
+            <Link href="/admin" data-no-i18n className="inline-flex min-h-11 items-center rounded-md border border-gray-200 px-2 py-2 font-medium text-gray-800 hover:bg-gray-100 sm:px-3 md:min-h-0">
               {t('nav.admin')}
             </Link>
           ) : null}
           {isLoggedIn ? (
             <form action="/api/auth/logout" method="post">
-              <button onClick={clearPasswordReminderDismissals} className="min-h-11 rounded-md px-3 py-2 font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 md:min-h-0">
+              <button onClick={clearPasswordReminderDismissals} data-no-i18n className="min-h-11 rounded-md px-3 py-2 font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 md:min-h-0">
                 {t('nav.logout')}
               </button>
             </form>
@@ -142,12 +142,12 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
         </div>
         <nav className="scrollbar-none order-3 -mx-1 flex w-full gap-1 overflow-x-auto pb-1 text-sm [-webkit-overflow-scrolling:touch] md:hidden">
           {navItems.map(([href, label]) => (
-            <Link key={href} href={href} className="inline-flex min-h-11 shrink-0 items-center rounded-md px-3 py-2 font-medium text-gray-800 hover:bg-gray-100">
+            <Link key={href} href={href} data-no-i18n className="inline-flex min-h-11 shrink-0 items-center rounded-md px-3 py-2 font-medium text-gray-800 hover:bg-gray-100">
               {t(label)}
             </Link>
           ))}
           {isLoggedIn ? (
-            <Link href="/my-stories" className="inline-flex min-h-11 shrink-0 items-center rounded-md px-3 py-2 font-medium text-gray-800 hover:bg-gray-100">
+            <Link href="/my-stories" data-no-i18n className="inline-flex min-h-11 shrink-0 items-center rounded-md px-3 py-2 font-medium text-gray-800 hover:bg-gray-100">
               {t('nav.myStories')}
             </Link>
           ) : null}
