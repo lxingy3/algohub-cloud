@@ -5,7 +5,14 @@ export const dynamic = 'force-dynamic';
 const MAX_TEXTS = 50;
 const MAX_TEXT_LENGTH = 1500;
 const FALLBACK_TIMEOUT_MS = 3500;
+const TRANSLATION_CONCURRENCY = 8;
+const MAX_SERVER_CACHE_ENTRIES = 5000;
 const SUPPORTED_FALLBACK_LANGUAGES = new Set(['zh', 'es', 'ko', 'ja', 'de', 'fr', 'pt', 'ru', 'ar', 'hi', 'it']);
+
+const translationCache = globalThis.__algostoriesTranslationCache || new Map();
+const inFlightTranslations = globalThis.__algostoriesInFlightTranslations || new Map();
+globalThis.__algostoriesTranslationCache = translationCache;
+globalThis.__algostoriesInFlightTranslations = inFlightTranslations;
 
 export async function POST(request) {
   const body = await request.json().catch(() => ({}));
@@ -20,8 +27,7 @@ export async function POST(request) {
   }
 
   const clippedTexts = texts.map((text) => text.slice(0, MAX_TEXT_LENGTH));
-  const configuredTranslations = await translateWithConfiguredProvider(clippedTexts, sourceLanguage, targetLanguage);
-  const translations = await fillMissingTranslations(clippedTexts, configuredTranslations, sourceLanguage, targetLanguage);
+  const translations = await translateTexts(clippedTexts, sourceLanguage, targetLanguage);
   return NextResponse.json({
     translations,
     configured: Boolean(process.env.TRANSLATION_API_URL),
@@ -34,27 +40,76 @@ function normalizeLanguage(value) {
   return /^[a-z]{2}$/.test(language) ? language : '';
 }
 
-async function translateWithConfiguredProvider(texts, sourceLanguage, targetLanguage) {
-  const apiUrl = process.env.TRANSLATION_API_URL;
-  if (!apiUrl) return texts;
-
-  const apiKey = process.env.TRANSLATION_API_KEY;
-  const translations = [];
-  for (const text of texts) {
-    translations.push(await translateOne(apiUrl, apiKey, text, sourceLanguage, targetLanguage));
-  }
-  return translations;
+async function translateTexts(texts, sourceLanguage, targetLanguage) {
+  const uniqueTexts = [...new Set(texts)];
+  const translatedPairs = await mapWithConcurrency(uniqueTexts, TRANSLATION_CONCURRENCY, async (text) => {
+    const translated = await translateCachedText(text, sourceLanguage, targetLanguage);
+    return [text, translated];
+  });
+  const translationMap = new Map(translatedPairs);
+  return texts.map((text) => translationMap.get(text) || text);
 }
 
-async function fillMissingTranslations(originalTexts, configuredTranslations, sourceLanguage, targetLanguage) {
-  if (!SUPPORTED_FALLBACK_LANGUAGES.has(targetLanguage)) return configuredTranslations;
+async function translateCachedText(text, sourceLanguage, targetLanguage) {
+  const key = cacheKey(sourceLanguage, targetLanguage, text);
+  const cached = translationCache.get(key);
+  if (cached) return cached;
 
-  const translations = [...configuredTranslations];
-  for (const [index, text] of originalTexts.entries()) {
-    if (translations[index] && translations[index] !== text) continue;
-    translations[index] = await translateWithPublicFallback(text, sourceLanguage, targetLanguage);
+  const inFlight = inFlightTranslations.get(key);
+  if (inFlight) return inFlight;
+
+  const promise = translateTextUncached(text, sourceLanguage, targetLanguage)
+    .then((translated) => {
+      setCachedTranslation(key, translated);
+      return translated;
+    })
+    .finally(() => {
+      inFlightTranslations.delete(key);
+    });
+  inFlightTranslations.set(key, promise);
+  return promise;
+}
+
+async function translateTextUncached(text, sourceLanguage, targetLanguage) {
+  let translated = await translateWithConfiguredProvider(text, sourceLanguage, targetLanguage);
+  if (translated && translated !== text) return translated;
+  if (!SUPPORTED_FALLBACK_LANGUAGES.has(targetLanguage)) return text;
+  translated = await translateWithPublicFallback(text, sourceLanguage, targetLanguage);
+  return translated || text;
+}
+
+function cacheKey(sourceLanguage, targetLanguage, text) {
+  return `${sourceLanguage}\u0000${targetLanguage}\u0000${text}`;
+}
+
+function setCachedTranslation(key, value) {
+  if (!value) return;
+  if (translationCache.size >= MAX_SERVER_CACHE_ENTRIES) {
+    translationCache.delete(translationCache.keys().next().value);
   }
-  return translations;
+  translationCache.set(key, value);
+}
+
+async function mapWithConcurrency(items, concurrency, mapper) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  const workerCount = Math.min(concurrency, items.length);
+  await Promise.all(Array.from({ length: workerCount }, async () => {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+    }
+  }));
+  return results;
+}
+
+async function translateWithConfiguredProvider(text, sourceLanguage, targetLanguage) {
+  const apiUrl = process.env.TRANSLATION_API_URL;
+  if (!apiUrl) return text;
+
+  const apiKey = process.env.TRANSLATION_API_KEY;
+  return translateOne(apiUrl, apiKey, text, sourceLanguage, targetLanguage);
 }
 
 async function translateOne(apiUrl, apiKey, text, sourceLanguage, targetLanguage) {

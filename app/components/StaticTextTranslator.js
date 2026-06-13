@@ -7,6 +7,10 @@ const originalText = new WeakMap();
 const dynamicTranslationCache = new Map();
 const pendingDynamic = new Map();
 let pendingTimer = null;
+let browserCacheLoaded = false;
+let browserCacheSaveTimer = null;
+const browserCacheStorageKey = 'algostories-dynamic-translations-v1';
+const maxBrowserCacheEntries = 2000;
 const translatableAttributes = ['placeholder', 'aria-label', 'title', 'alt'];
 const brandText = new Set(['AlgoStories']);
 
@@ -34,6 +38,43 @@ function shouldTranslateUnknownText(text) {
 
 function cacheKey(language, text) {
   return `${language}\u0000${text}`;
+}
+
+function ensureBrowserCacheLoaded() {
+  if (browserCacheLoaded || typeof window === 'undefined') return;
+  browserCacheLoaded = true;
+  try {
+    const entries = JSON.parse(window.localStorage.getItem(browserCacheStorageKey) || '[]');
+    if (!Array.isArray(entries)) return;
+    for (const [key, value] of entries) {
+      if (typeof key === 'string' && typeof value === 'string' && value) {
+        dynamicTranslationCache.set(key, value);
+      }
+    }
+  } catch {
+    window.localStorage.removeItem(browserCacheStorageKey);
+  }
+}
+
+function scheduleBrowserCacheSave() {
+  if (typeof window === 'undefined') return;
+  if (browserCacheSaveTimer) clearTimeout(browserCacheSaveTimer);
+  browserCacheSaveTimer = setTimeout(() => {
+    try {
+      const entries = [...dynamicTranslationCache.entries()]
+        .filter(([, value]) => value)
+        .slice(-maxBrowserCacheEntries);
+      window.localStorage.setItem(browserCacheStorageKey, JSON.stringify(entries));
+    } catch {
+      // Storage can be unavailable or full; translation still works through memory/API.
+    }
+  }, 400);
+}
+
+function cacheDynamicTranslation(language, text, translated) {
+  if (!translated || translated === text) return;
+  dynamicTranslationCache.set(cacheKey(language, text), translated);
+  scheduleBrowserCacheSave();
 }
 
 function automaticTranslation(text, language) {
@@ -140,6 +181,7 @@ function applyTranslatedText(entry, translated) {
 function queueDynamicTranslation(entry, language) {
   if (language === 'en') return;
   if (!shouldTranslateUnknownText(entry.original)) return;
+  ensureBrowserCacheLoaded();
   const key = cacheKey(language, entry.original.trim());
   const cached = dynamicTranslationCache.get(key);
   if (cached) {
@@ -181,11 +223,11 @@ async function flushDynamicTranslations() {
         const translations = Array.isArray(payload.translations) ? payload.translations : chunk.map((item) => item.text);
         chunk.forEach((item, itemIndex) => {
           const translated = translations[itemIndex] || item.text;
-          dynamicTranslationCache.set(cacheKey(language, item.text), translated);
+          cacheDynamicTranslation(language, item.text, translated);
           item.entries.forEach((entry) => applyTranslatedText(entry, translated));
         });
       } catch {
-        chunk.forEach((item) => dynamicTranslationCache.set(cacheKey(language, item.text), item.text));
+        // Leave failed translations uncached so a later request can retry.
       }
     }
   }
@@ -266,6 +308,7 @@ export function StaticTextTranslator() {
   const language = i18n.resolvedLanguage || i18n.language || 'en';
 
   useEffect(() => {
+    ensureBrowserCacheLoaded();
     const staticText = getStaticTextMap(i18n);
     const shouldScanPage = language !== 'en' || Object.keys(staticText).length || document.body.dataset.i18nTouched;
     if (!shouldScanPage) return undefined;
