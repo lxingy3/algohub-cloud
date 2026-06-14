@@ -52,7 +52,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run local faster-whisper transcription for ML Task 1.")
     parser.add_argument("--input", default="../voice test.mp3", help="Audio file to transcribe.")
     parser.add_argument("--output", default="task1-results/task1-sample-transcription-result.json", help="JSON output path.")
-    parser.add_argument("--model", default="tiny", help="Whisper model name. Use tiny/base for quick CPU tests.")
+    parser.add_argument("--model", default="small", help="Whisper model name. PPT Task 1 uses small; use tiny/base only for quick CPU smoke tests.")
     parser.add_argument("--language", default=None, help="Optional language hint, for example en or zh.")
     args = parser.parse_args()
 
