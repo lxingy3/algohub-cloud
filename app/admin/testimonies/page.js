@@ -45,6 +45,8 @@ export default async function AdminTestimoniesPage({ searchParams }) {
         storyType: true,
         audioFileUrl: true,
         videoFileUrl: true,
+        transcriptionStatus: true,
+        transcriptionText: true,
         moderationStatus: true,
         city: true,
         zipCode: true,
@@ -126,6 +128,20 @@ export default async function AdminTestimoniesPage({ searchParams }) {
                 <p className="text-xs font-semibold uppercase text-slate-500">Story details</p>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-800">{testimony.narrativeText}</p>
               </div>
+
+              {testimony.transcriptionText ? (
+                <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-xs font-semibold uppercase text-emerald-700">Task 1 transcription result</p>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-emerald-800">{testimony.transcriptionStatus}</span>
+                  </div>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-emerald-950">{testimony.transcriptionText}</p>
+                </div>
+              ) : storyType === 'voice' ? (
+                <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                  <span className="font-semibold">Task 1 transcription:</span> {testimony.transcriptionStatus}
+                </div>
+              ) : null}
 
               {hasAudio || hasVideo ? (
                 <div className="mt-4 rounded-md border border-slate-200 bg-white p-3">

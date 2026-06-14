@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BarChart3, BookOpen, Calendar, PenLine, Search } from 'lucide-react';
+import { BarChart3, BookOpen, Calendar, CheckCircle2, Mic2, PenLine, Search } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
@@ -123,6 +123,7 @@ export default async function StoriesPage({ searchParams }) {
       </div>
 
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
+        <Task1TranscriptionDemo />
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           {rankedTestimonies.map((story) => {
             const StoryIcon = getUseCaseIcon(story.affectedDomain);
@@ -155,6 +156,66 @@ export default async function StoriesPage({ searchParams }) {
 
       <CommunityImpact metrics={metrics} />
     </main>
+  );
+}
+
+function Task1TranscriptionDemo() {
+  const segments = [
+    { start: 0.0, end: 3.3, text: 'I remember when I saw you for the first time' },
+    { start: 3.3, end: 6.6, text: 'You were laughing sparkly like a new dime' },
+    { start: 6.6, end: 11.51, text: "You'd be mine" },
+  ];
+
+  return (
+    <div className="mb-6 rounded-xl border border-emerald-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+            <Mic2 className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-base font-bold text-slate-950">Task 1 transcription result</h2>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Completed
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-slate-600">
+              Whisper small converted the sample audio into raw story text. This is transcript output, not the AI-generated summary.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center text-xs sm:w-64">
+          <div className="rounded-md bg-slate-50 px-2 py-2">
+            <span className="block font-semibold text-slate-950">small</span>
+            <span className="text-slate-500">model</span>
+          </div>
+          <div className="rounded-md bg-slate-50 px-2 py-2">
+            <span className="block font-semibold text-slate-950">en</span>
+            <span className="text-slate-500">language</span>
+          </div>
+          <div className="rounded-md bg-slate-50 px-2 py-2">
+            <span className="block font-semibold text-slate-950">15.0s</span>
+            <span className="text-slate-500">audio</span>
+          </div>
+        </div>
+      </div>
+      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Transcript</p>
+        <p className="mt-2 text-sm leading-6 text-slate-800">
+          I remember when I saw you for the first time You were laughing sparkly like a new dime You&apos;d be mine
+        </p>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        {segments.map((segment) => (
+          <div key={`${segment.start}-${segment.end}`} className="rounded-md border border-slate-200 bg-white px-3 py-2">
+            <p className="text-[11px] font-semibold text-slate-500">{segment.start.toFixed(1)}s - {segment.end.toFixed(2)}s</p>
+            <p className="mt-1 text-sm leading-5 text-slate-700">{segment.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

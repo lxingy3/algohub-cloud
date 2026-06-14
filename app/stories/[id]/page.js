@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Calendar, Eye, FileText, Heart, MessageCircle, Quote } from 'lucide-react';
+import { ArrowLeft, Calendar, CheckCircle2, Eye, FileText, Heart, MessageCircle, Quote } from 'lucide-react';
 import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../lib/auth';
@@ -59,6 +59,7 @@ export default async function StoryPage({ params }) {
 
   const excerpts = Array.isArray(testimony.brief?.keyExcerpts) ? testimony.brief.keyExcerpts : [];
   const storyText = testimony.transcriptionText || testimony.narrativeText;
+  const hasTask1Transcript = Boolean(testimony.transcriptionText);
   const citation = getCitation(testimony);
   const eyeOpening = testimony.reactions.filter((reaction) => reaction.reactionType === 'EYE_OPENING').length;
   const support = testimony.reactions.filter((reaction) => reaction.reactionType === 'SUPPORT').length;
@@ -107,6 +108,13 @@ export default async function StoryPage({ params }) {
           {excerpts.length ? <KeyExcerpts excerpts={excerpts} citation={citation} /> : null}
 
           <div className="prose prose-slate max-w-none">
+            {hasTask1Transcript ? (
+              <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                <CheckCircle2 className="h-4 w-4 text-emerald-700" />
+                <span className="font-semibold">Task 1 transcription result</span>
+                <span className="text-emerald-800">Raw transcript saved as story details. Summary remains separate.</span>
+              </div>
+            ) : null}
             <div className="mb-3 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-gray-400">
               Story Details
             </div>
