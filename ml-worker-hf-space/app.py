@@ -7,9 +7,13 @@ import spacy
 from fastapi import FastAPI, Header, HTTPException
 from keybert import KeyBERT
 from pydantic import BaseModel
+from transformers import pipeline
 
 
 app = FastAPI(title="AlgoStories ML Worker")
+
+TASK2_MODEL = "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33"
+TASK3_MODEL = "facebook/bart-large-mnli"
 
 AGENCY_PATTERNS = [
     "CPS",
@@ -57,6 +61,13 @@ class TextRequest(BaseModel):
     use_mmr: bool | None = True
 
 
+class ZeroShotRequest(BaseModel):
+    text: str
+    candidate_labels: list[str]
+    hypothesis_template: str | None = "This text is about {}."
+    multi_label: bool | None = True
+
+
 def require_token(authorization: str | None) -> None:
     expected = os.environ.get("ML_WORKER_TOKEN")
     if not expected:
@@ -75,9 +86,31 @@ def get_keybert():
     return KeyBERT("sentence-transformers/all-MiniLM-L6-v2")
 
 
+@lru_cache(maxsize=1)
+def get_deberta_classifier():
+    return pipeline("zero-shot-classification", model=TASK2_MODEL, device=-1)
+
+
+@lru_cache(maxsize=1)
+def get_bart_classifier():
+    return pipeline("zero-shot-classification", model=TASK3_MODEL, device=-1)
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.post("/deberta-impact")
+def deberta_impact(payload: ZeroShotRequest, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    require_token(authorization)
+    return run_zero_shot(get_deberta_classifier(), payload)
+
+
+@app.post("/bart-themes")
+def bart_themes(payload: ZeroShotRequest, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    require_token(authorization)
+    return run_zero_shot(get_bart_classifier(), payload)
 
 
 @app.post("/spacy-entities")
@@ -136,6 +169,25 @@ def keybert_keywords(payload: TextRequest, authorization: str | None = Header(de
 
 def clean_text(value: str) -> str:
     return re.sub(r"\s+", " ", str(value or "")).strip()
+
+
+def run_zero_shot(classifier: Any, payload: ZeroShotRequest) -> dict[str, Any]:
+    text = clean_text(payload.text)
+    labels = [clean_text(label) for label in payload.candidate_labels if clean_text(label)]
+    if not text or not labels:
+        raise HTTPException(status_code=400, detail="text and candidate_labels are required")
+
+    output = classifier(
+        text,
+        candidate_labels=labels,
+        hypothesis_template=payload.hypothesis_template or "This text is about {}.",
+        multi_label=bool(payload.multi_label),
+    )
+    return {
+        "sequence": output.get("sequence", text),
+        "labels": output.get("labels", []),
+        "scores": [round(float(score), 6) for score in output.get("scores", [])],
+    }
 
 
 def empty_entities() -> dict[str, list[str]]:

@@ -3,6 +3,7 @@ import { requireAdmin } from '../../../../lib/auth';
 import { analyzeNarrativeTextWithModels } from '../../../../lib/mlFullAnalysis';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 300;
 
 export async function POST(request) {
   if (!await requireAdmin()) {
