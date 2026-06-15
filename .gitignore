@@ -14,3 +14,4 @@ pnpm-debug.log*
 .task1-whisper-env/
 .task2-deberta-env/
 __pycache__/
+.vercel_ml_worker_token.tmp
