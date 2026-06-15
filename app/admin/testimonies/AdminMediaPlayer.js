@@ -18,8 +18,15 @@ function MediaItem({ source }) {
   const mediaRef = useRef(null);
   const [objectUrl, setObjectUrl] = useState('');
   const [error, setError] = useState('');
+  const mediaUrl = source.inlineUrl || objectUrl;
 
   useEffect(() => {
+    if (source.inlineUrl) {
+      setError('');
+      setObjectUrl('');
+      return undefined;
+    }
+
     const controller = new AbortController();
     let nextObjectUrl = '';
 
@@ -46,7 +53,7 @@ function MediaItem({ source }) {
       controller.abort();
       if (nextObjectUrl) URL.revokeObjectURL(nextObjectUrl);
     };
-  }, [source.url]);
+  }, [source.inlineUrl, source.url]);
 
   function pauseOtherMedia() {
     document.querySelectorAll('audio, video').forEach((element) => {
@@ -58,7 +65,7 @@ function MediaItem({ source }) {
     return <p className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>;
   }
 
-  if (!objectUrl) {
+  if (!mediaUrl) {
     return <p className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">Loading media...</p>;
   }
 
@@ -67,7 +74,7 @@ function MediaItem({ source }) {
       <video
         ref={mediaRef}
         className="mt-3 max-h-96 w-full rounded-md border bg-black object-contain"
-        src={objectUrl}
+        src={mediaUrl}
         controls
         preload="metadata"
         onPlay={pauseOtherMedia}
@@ -78,7 +85,7 @@ function MediaItem({ source }) {
   }
 
   return (
-    <audio ref={mediaRef} className="mt-3 w-full" src={objectUrl} controls preload="metadata" onPlay={pauseOtherMedia}>
+    <audio ref={mediaRef} className="mt-3 w-full" src={mediaUrl} controls preload="metadata" onPlay={pauseOtherMedia}>
       Your browser does not support audio playback.
     </audio>
   );

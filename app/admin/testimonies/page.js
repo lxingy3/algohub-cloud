@@ -26,6 +26,10 @@ function fieldValue(value) {
   return value || 'Not provided';
 }
 
+function getInlineMediaUrl(mediaUrl) {
+  return mediaUrl?.startsWith('data:') ? mediaUrl : '';
+}
+
 export default async function AdminTestimoniesPage({ searchParams }) {
   const params = await searchParams;
   const statusFilter = String(params?.status || '').toUpperCase();
@@ -96,8 +100,16 @@ export default async function AdminTestimoniesPage({ searchParams }) {
           const isVoiceInput = storyType === 'voice' || hasAudio;
           const task2Impact = getTask2Impact(testimony);
           const mediaSources = [
-            hasAudio ? { kind: audioFieldMediaKind, url: `/api/admin/testimonies/${testimony.id}/media/audio` } : null,
-            hasVideo ? { kind: 'video', url: `/api/admin/testimonies/${testimony.id}/media/video` } : null,
+            hasAudio ? {
+              kind: audioFieldMediaKind,
+              url: `/api/admin/testimonies/${testimony.id}/media/audio`,
+              inlineUrl: getInlineMediaUrl(testimony.audioFileUrl),
+            } : null,
+            hasVideo ? {
+              kind: 'video',
+              url: `/api/admin/testimonies/${testimony.id}/media/video`,
+              inlineUrl: getInlineMediaUrl(testimony.videoFileUrl),
+            } : null,
           ].filter(Boolean);
 
           return (
