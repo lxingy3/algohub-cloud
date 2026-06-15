@@ -8,6 +8,7 @@ import {
   HandCoins,
   HeartHandshake,
   House,
+  KeyRound,
   Languages,
   School,
   ShieldCheck,
@@ -40,6 +41,21 @@ export const useCases = [
   { id: 'other', label: 'Other', icon: CircleHelp, useCase: 'Other' },
 ];
 
+export const homepageUseCases = [
+  { id: 'fraud', label: 'Fraud Detection', icon: BadgeAlert, useCases: ['Fraud Detection'] },
+  { id: 'traffic', label: 'Traffic Management', icon: TrafficCone, useCases: ['Traffic Management'] },
+  { id: 'students', label: 'Student Services', icon: GraduationCap, useCases: ['Student Support', 'Student Award', 'Education'] },
+  { id: 'employment', label: 'Jobs & Employment', icon: Briefcase, useCases: ['Job Matching', 'Employment'] },
+  { id: 'energy', label: 'Energy Forecasting', icon: Zap, useCases: ['Energy Forecasting'] },
+  { id: 'child-welfare', label: 'Child Welfare', icon: HeartHandshake, useCases: ['Child Welfare'] },
+  { id: 'housing', label: 'Housing Services', icon: House, useCases: ['Housing Prioritization', 'Housing Inspections', 'Housing'] },
+  { id: 'benefits', label: 'Benefits Access', icon: HandCoins, useCases: ['Benefits Administration', 'Benefits'] },
+  { id: 'community', label: 'Community Services', icon: UsersRound, useCases: ['Community Services'] },
+  { id: 'emergency', label: 'Emergency Services', icon: Siren, useCases: ['Emergency Services', 'Public Safety'] },
+  { id: 'language-access', label: 'Language Access', icon: Languages, useCases: ['Language Access'] },
+  { id: 'transit', label: 'Transit Safety', icon: BusFront, useCases: ['Transit Safety'] },
+];
+
 const iconRules = [
   { terms: ['fraud'], icon: BadgeAlert, tone: 'border-red-200 bg-red-50 text-red-700' },
   { terms: ['traffic'], icon: TrafficCone, tone: 'border-cyan-200 bg-cyan-50 text-cyan-700' },
@@ -52,7 +68,8 @@ const iconRules = [
   { terms: ['child welfare', 'child'], icon: HeartHandshake, tone: 'border-rose-200 bg-rose-50 text-rose-700' },
   { terms: ['housing inspection', 'inspection'], icon: ClipboardCheck, tone: 'border-orange-200 bg-orange-50 text-orange-700' },
   { terms: ['housing priority', 'housing prioritization', 'housing', 'homeless'], icon: House, tone: 'border-amber-200 bg-amber-50 text-amber-700' },
-  { terms: ['benefits', 'rental aid', 'assistance'], icon: HandCoins, tone: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
+  { terms: ['benefits administration'], icon: ClipboardCheck, tone: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
+  { terms: ['benefits', 'rental aid', 'assistance'], icon: KeyRound, tone: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
   { terms: ['language', 'interpreter'], icon: Languages, tone: 'border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700' },
   { terms: ['emergency', 'dispatch'], icon: Siren, tone: 'border-red-200 bg-red-50 text-red-700' },
   { terms: ['community services', 'community'], icon: UsersRound, tone: 'border-teal-200 bg-teal-50 text-teal-700' },

@@ -3,25 +3,25 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlgorithmsRegistry } from './AlgorithmsRegistry';
-import { useCases } from './useCaseIcons';
+import { homepageUseCases } from './useCaseIcons';
 
 export function HomeUseCaseExplorer({ algorithms }) {
   const { i18n } = useTranslation();
-  const initialService = useCases.find((item) => algorithms.some((algorithm) => algorithm.useCase === item.useCase))?.id || 'student';
+  const initialService = homepageUseCases.find((item) => algorithms.some((algorithm) => item.useCases.includes(algorithm.useCase)))?.id || 'students';
   const [activeService, setActiveService] = useState(initialService);
   const staticText = i18n.getResourceBundle(i18n.resolvedLanguage || i18n.language || 'en', 'translation')?.staticText || {};
 
-  const services = useMemo(() => useCases.map((item) => {
-    const related = algorithms.filter((algorithm) => algorithm.useCase === item.useCase);
+  const services = useMemo(() => homepageUseCases.map((item) => {
+    const related = algorithms.filter((algorithm) => item.useCases.includes(algorithm.useCase));
     return {
       ...item,
       algorithmCount: related.length,
       storyCount: related.reduce((sum, algorithm) => sum + algorithm.storyCount, 0),
     };
-  }), [algorithms]);
+  }).filter((item) => item.algorithmCount > 0), [algorithms]);
 
   const activeData = services.find((item) => item.id === activeService);
-  const activeAlgorithms = algorithms.filter((algorithm) => algorithm.useCase === activeData?.useCase);
+  const activeAlgorithms = algorithms.filter((algorithm) => activeData?.useCases.includes(algorithm.useCase));
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
