@@ -65,14 +65,6 @@ function QuickTestResult({ result }) {
   const task5 = result.task5 || {};
   const entities = task4.entities || {};
 
-  if (result.status === 'OUT_OF_SCOPE') {
-    return (
-      <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-        {result.reason || 'This text is outside the public-service algorithm scope, so ML tasks were not run.'}
-      </div>
-    );
-  }
-
   return (
     <div className="mt-4 space-y-3">
       {result.status === 'PARTIAL' ? (

@@ -130,8 +130,6 @@ def spacy_entities(payload: TextRequest, authorization: str | None = Header(defa
             entities["locations"].append(ent.text)
         elif ent.label_ in {"DATE", "TIME"}:
             entities["dates"].append(ent.text)
-        elif ent.label_ in {"PERSON"}:
-            entities["people_roles"].append(ent.text)
 
     lower = text.lower()
     entities["agencies"].extend(find_phrases(text, lower, AGENCY_PATTERNS))
@@ -149,13 +147,15 @@ def keybert_keywords(payload: TextRequest, authorization: str | None = Header(de
         return {"keywords": []}
 
     top_n = max(1, min(int(payload.top_n or 10), 20))
+    candidates = keyword_candidates(text)
     keywords = get_keybert().extract_keywords(
         text,
+        candidates=candidates or None,
         keyphrase_ngram_range=(1, 3),
         stop_words="english",
         top_n=top_n,
         use_mmr=bool(payload.use_mmr),
-        diversity=0.7,
+        diversity=0.55,
     )
 
     return {
@@ -165,6 +165,31 @@ def keybert_keywords(payload: TextRequest, authorization: str | None = Header(de
             if phrase
         ]
     }
+
+
+def keyword_candidates(text: str) -> list[str]:
+    doc = get_nlp()(text)
+    candidates: list[str] = []
+    for chunk in doc.noun_chunks:
+        phrase = clean_keyword(chunk.text)
+        if phrase:
+            candidates.append(phrase)
+    for ent in doc.ents:
+        if ent.label_ in {"ORG", "GPE", "LOC", "FAC", "PRODUCT", "EVENT", "WORK_OF_ART"}:
+            phrase = clean_keyword(ent.text)
+            if phrase:
+                candidates.append(phrase)
+    return unique(candidates)
+
+
+def clean_keyword(value: str) -> str:
+    phrase = re.sub(r"[^A-Za-z0-9\s'-]", "", str(value or "")).strip().lower()
+    words = [word for word in phrase.split() if word not in {"a", "an", "the", "this", "that", "my", "your", "his", "her", "their", "our"}]
+    if not words or len(words) > 4:
+        return ""
+    if all(len(word) <= 2 for word in words):
+        return ""
+    return " ".join(words)
 
 
 def clean_text(value: str) -> str:
