@@ -1,31 +1,30 @@
-{
-  "task": "Task 1: audio transcription",
-  "inputKind": "audio",
-  "inputFile": "C:\\Users\\33672\\Desktop\\Capstone\\voice test.mp3",
-  "provider": "local-faster-whisper",
-  "model": "small",
-  "status": "COMPLETED",
-  "language": "en",
-  "languageProbability": 0.6702,
-  "durationSeconds": 15.0,
-  "transcript": "I remember when I saw you for the first time You were laughing sparkly like a new dime You'd be mine",
-  "segments": [
-    {
-      "start": 0.0,
-      "end": 3.3,
-      "text": "I remember when I saw you for the first time"
-    },
-    {
-      "start": 3.3,
-      "end": 6.6,
-      "text": "You were laughing sparkly like a new dime"
-    },
-    {
-      "start": 6.6,
-      "end": 11.51,
-      "text": "You'd be mine"
-    }
-  ],
-  "generatedAt": "2026-06-14T02:26:20.466709+00:00",
-  "reviewNote": "Real Task 1 sample result generated from the local audio file. This can be used to show that the transcription file is ready for review."
+﻿{
+    "task":  "Task 1: audio transcription",
+    "inputKind":  "audio",
+    "inputFile":  "C:\\Users\\33672\\Desktop\\Capstone\\voice test.mp3",
+    "provider":  "local-faster-whisper",
+    "model":  "small",
+    "status":  "COMPLETED",
+    "language":  "en",
+    "languageProbability":  0.6702,
+    "durationSeconds":  15.0,
+    "transcript":  "I remember when I saw you for the first time You were laughing sparkly like a new dime You\u0027d be mine",
+    "segments":  [
+                     {
+                         "start":  0.0,
+                         "end":  3.3,
+                         "text":  "I remember when I saw you for the first time"
+                     },
+                     {
+                         "start":  3.3,
+                         "end":  6.6,
+                         "text":  "You were laughing sparkly like a new dime"
+                     },
+                     {
+                         "start":  6.6,
+                         "end":  11.51,
+                         "text":  "You\u0027d be mine"
+                     }
+                 ],
+    "generatedAt":  "2026-06-14T02:26:20.466709+00:00"
 }

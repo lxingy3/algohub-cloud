@@ -44,7 +44,6 @@ def transcribe_audio(input_file: Path, model_name: str, language: str | None) ->
         "transcript": transcript,
         "segments": segment_results,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
-        "reviewNote": "Real Task 1 sample result generated from the local audio file. This can be used to show that the transcription file is ready for review.",
     }
 
 

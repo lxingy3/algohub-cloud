@@ -1,46 +1,45 @@
-{
-  "task": "Task 1: audio transcription",
-  "inputKind": "audio",
-  "inputFile": "C:\\Users\\33672\\Desktop\\Capstone\\_deploy_algohub_cloud\\task1-results\\audio-samples\\voa-owl-creek-clip.wav",
-  "provider": "local-faster-whisper",
-  "model": "small",
-  "status": "COMPLETED",
-  "language": "en",
-  "languageProbability": 1,
-  "durationSeconds": 35.0,
-  "transcript": "It takes place during the Civil War of the 1860s between the American States of the North and the States of the South. A group of soldiers is hanging a southern farm owner for trying to stop northern military movements across the Owl Creek Bridge. In the last moments of his life the southern prisoner dreams he has escaped and everything that happens",
-  "segments": [
-    {
-      "start": 0.0,
-      "end": 8.72,
-      "text": "It takes place during the Civil War of the 1860s between the American States of the North"
-    },
-    {
-      "start": 8.72,
-      "end": 12.08,
-      "text": "and the States of the South."
-    },
-    {
-      "start": 12.08,
-      "end": 20.48,
-      "text": "A group of soldiers is hanging a southern farm owner for trying to stop northern military"
-    },
-    {
-      "start": 20.48,
-      "end": 25.82,
-      "text": "movements across the Owl Creek Bridge."
-    },
-    {
-      "start": 25.82,
-      "end": 34.1,
-      "text": "In the last moments of his life the southern prisoner dreams he has escaped and everything"
-    },
-    {
-      "start": 34.1,
-      "end": 34.98,
-      "text": "that happens"
-    }
-  ],
-  "generatedAt": "2026-06-15T01:12:57.450351+00:00",
-  "reviewNote": "Real Task 1 sample result generated from the local audio file. This can be used to show that the transcription file is ready for review."
+﻿{
+    "task":  "Task 1: audio transcription",
+    "inputKind":  "audio",
+    "inputFile":  "C:\\Users\\33672\\Desktop\\Capstone\\_deploy_algohub_cloud\\task1-results\\audio-samples\\voa-owl-creek-clip.wav",
+    "provider":  "local-faster-whisper",
+    "model":  "small",
+    "status":  "COMPLETED",
+    "language":  "en",
+    "languageProbability":  1,
+    "durationSeconds":  35.0,
+    "transcript":  "It takes place during the Civil War of the 1860s between the American States of the North and the States of the South. A group of soldiers is hanging a southern farm owner for trying to stop northern military movements across the Owl Creek Bridge. In the last moments of his life the southern prisoner dreams he has escaped and everything that happens",
+    "segments":  [
+                     {
+                         "start":  0.0,
+                         "end":  8.72,
+                         "text":  "It takes place during the Civil War of the 1860s between the American States of the North"
+                     },
+                     {
+                         "start":  8.72,
+                         "end":  12.08,
+                         "text":  "and the States of the South."
+                     },
+                     {
+                         "start":  12.08,
+                         "end":  20.48,
+                         "text":  "A group of soldiers is hanging a southern farm owner for trying to stop northern military"
+                     },
+                     {
+                         "start":  20.48,
+                         "end":  25.82,
+                         "text":  "movements across the Owl Creek Bridge."
+                     },
+                     {
+                         "start":  25.82,
+                         "end":  34.1,
+                         "text":  "In the last moments of his life the southern prisoner dreams he has escaped and everything"
+                     },
+                     {
+                         "start":  34.1,
+                         "end":  34.98,
+                         "text":  "that happens"
+                     }
+                 ],
+    "generatedAt":  "2026-06-15T01:12:57.450351+00:00"
 }

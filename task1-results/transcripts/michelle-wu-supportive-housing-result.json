@@ -1,96 +1,95 @@
-{
-  "task": "Task 1: audio transcription",
-  "inputKind": "audio",
-  "inputFile": "C:\\Users\\33672\\Desktop\\Capstone\\_deploy_algohub_cloud\\task1-results\\audio-samples\\michelle-wu-supportive-housing-clip.wav",
-  "provider": "local-faster-whisper",
-  "model": "small",
-  "status": "COMPLETED",
-  "language": "en",
-  "languageProbability": 1,
-  "durationSeconds": 37.01,
-  "transcript": "So thank you to the Governor, Lieutenant Gav, the Undersecretary and everyone who's been involved in partnering. We are so grateful and excited for what's to come. There are multiple projects here that the City of Boston will benefit from, more than 100 units in total, but I am really excited that we get to celebrate here with this organization. Taranda and I go back a little bit. I had first met JPNDC when I was an intern for Mayor Menino and working on small business technical assistance, and then in my first sort of exploration of whether jumping to maybe serve in elected office would be something that I should think about.",
-  "segments": [
-    {
-      "start": 0.0,
-      "end": 2.76,
-      "text": "So thank you to the Governor, Lieutenant Gav,"
-    },
-    {
-      "start": 2.76,
-      "end": 4.84,
-      "text": "the Undersecretary and everyone who's been involved"
-    },
-    {
-      "start": 4.84,
-      "end": 5.96,
-      "text": "in partnering."
-    },
-    {
-      "start": 5.96,
-      "end": 10.08,
-      "text": "We are so grateful and excited for what's to come."
-    },
-    {
-      "start": 10.08,
-      "end": 11.72,
-      "text": "There are multiple projects here"
-    },
-    {
-      "start": 11.72,
-      "end": 13.24,
-      "text": "that the City of Boston will benefit from,"
-    },
-    {
-      "start": 13.24,
-      "end": 14.92,
-      "text": "more than 100 units in total,"
-    },
-    {
-      "start": 14.92,
-      "end": 17.28,
-      "text": "but I am really excited that we get to celebrate here"
-    },
-    {
-      "start": 17.28,
-      "end": 18.76,
-      "text": "with this organization."
-    },
-    {
-      "start": 18.76,
-      "end": 20.72,
-      "text": "Taranda and I go back a little bit."
-    },
-    {
-      "start": 22.08,
-      "end": 24.24,
-      "text": "I had first met JPNDC when I was an intern"
-    },
-    {
-      "start": 24.24,
-      "end": 25.6,
-      "text": "for Mayor Menino and working"
-    },
-    {
-      "start": 25.6,
-      "end": 28.28,
-      "text": "on small business technical assistance,"
-    },
-    {
-      "start": 28.6,
-      "end": 31.44,
-      "text": "and then in my first sort of exploration"
-    },
-    {
-      "start": 31.44,
-      "end": 34.76,
-      "text": "of whether jumping to maybe serve in elected office"
-    },
-    {
-      "start": 34.76,
-      "end": 37.04,
-      "text": "would be something that I should think about."
-    }
-  ],
-  "generatedAt": "2026-06-15T01:12:43.071770+00:00",
-  "reviewNote": "Real Task 1 sample result generated from the local audio file. This can be used to show that the transcription file is ready for review."
+﻿{
+    "task":  "Task 1: audio transcription",
+    "inputKind":  "audio",
+    "inputFile":  "C:\\Users\\33672\\Desktop\\Capstone\\_deploy_algohub_cloud\\task1-results\\audio-samples\\michelle-wu-supportive-housing-clip.wav",
+    "provider":  "local-faster-whisper",
+    "model":  "small",
+    "status":  "COMPLETED",
+    "language":  "en",
+    "languageProbability":  1,
+    "durationSeconds":  37.01,
+    "transcript":  "So thank you to the Governor, Lieutenant Gav, the Undersecretary and everyone who\u0027s been involved in partnering. We are so grateful and excited for what\u0027s to come. There are multiple projects here that the City of Boston will benefit from, more than 100 units in total, but I am really excited that we get to celebrate here with this organization. Taranda and I go back a little bit. I had first met JPNDC when I was an intern for Mayor Menino and working on small business technical assistance, and then in my first sort of exploration of whether jumping to maybe serve in elected office would be something that I should think about.",
+    "segments":  [
+                     {
+                         "start":  0.0,
+                         "end":  2.76,
+                         "text":  "So thank you to the Governor, Lieutenant Gav,"
+                     },
+                     {
+                         "start":  2.76,
+                         "end":  4.84,
+                         "text":  "the Undersecretary and everyone who\u0027s been involved"
+                     },
+                     {
+                         "start":  4.84,
+                         "end":  5.96,
+                         "text":  "in partnering."
+                     },
+                     {
+                         "start":  5.96,
+                         "end":  10.08,
+                         "text":  "We are so grateful and excited for what\u0027s to come."
+                     },
+                     {
+                         "start":  10.08,
+                         "end":  11.72,
+                         "text":  "There are multiple projects here"
+                     },
+                     {
+                         "start":  11.72,
+                         "end":  13.24,
+                         "text":  "that the City of Boston will benefit from,"
+                     },
+                     {
+                         "start":  13.24,
+                         "end":  14.92,
+                         "text":  "more than 100 units in total,"
+                     },
+                     {
+                         "start":  14.92,
+                         "end":  17.28,
+                         "text":  "but I am really excited that we get to celebrate here"
+                     },
+                     {
+                         "start":  17.28,
+                         "end":  18.76,
+                         "text":  "with this organization."
+                     },
+                     {
+                         "start":  18.76,
+                         "end":  20.72,
+                         "text":  "Taranda and I go back a little bit."
+                     },
+                     {
+                         "start":  22.08,
+                         "end":  24.24,
+                         "text":  "I had first met JPNDC when I was an intern"
+                     },
+                     {
+                         "start":  24.24,
+                         "end":  25.6,
+                         "text":  "for Mayor Menino and working"
+                     },
+                     {
+                         "start":  25.6,
+                         "end":  28.28,
+                         "text":  "on small business technical assistance,"
+                     },
+                     {
+                         "start":  28.6,
+                         "end":  31.44,
+                         "text":  "and then in my first sort of exploration"
+                     },
+                     {
+                         "start":  31.44,
+                         "end":  34.76,
+                         "text":  "of whether jumping to maybe serve in elected office"
+                     },
+                     {
+                         "start":  34.76,
+                         "end":  37.04,
+                         "text":  "would be something that I should think about."
+                     }
+                 ],
+    "generatedAt":  "2026-06-15T01:12:43.071770+00:00"
 }

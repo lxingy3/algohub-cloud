@@ -17,7 +17,6 @@ const result = {
   status: hasWorkerTranscript ? 'COMPLETED' : 'TEMPLATE',
   transcript,
   generatedAt: new Date().toISOString(),
-  reviewNote: 'Use this file as the review artifact after running the Task 1 transcription worker on a sample audio file.',
 };
 
 await mkdir(outputDir, { recursive: true });
