@@ -1,0 +1,216 @@
+{
+  "task": "Task 3-5: theme, entity, and keyword extraction",
+  "inputField": "narrativeText",
+  "outputFields": [
+    "aiThemes",
+    "aiExtractedExperiences.entities",
+    "aiExtractedExperiences.keywords"
+  ],
+  "tools": {
+    "task3": "BART theme classifier target schema",
+    "task4": "spaCy entity extraction target schema",
+    "task5": "KeyBERT keyword extraction target schema"
+  },
+  "status": "COMPLETED",
+  "generatedAt": "2026-06-15T04:12:51.217981+00:00",
+  "results": [
+    {
+      "id": "negative-housing-priority",
+      "title": "Housing priority stayed low after repeated complaints",
+      "inputField": "narrativeText",
+      "aiThemes": [
+        {
+          "theme": "opacity",
+          "confidence": 0.94,
+          "evidence": [
+            "explain",
+            "explained",
+            "how",
+            "calculated"
+          ],
+          "description": "Person did not understand how or why a decision was made."
+        },
+        {
+          "theme": "delayed_outcome",
+          "confidence": 0.76,
+          "evidence": [
+            "delay",
+            "months"
+          ],
+          "description": "Process took unreasonably long."
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [],
+          "locations": [],
+          "systems": [
+            "priority score",
+            "inspection system"
+          ],
+          "dates": [],
+          "people_roles": []
+        },
+        "keywords": [
+          "kept",
+          "inspection",
+          "unsafe",
+          "housing",
+          "priority",
+          "kept submitting inspection",
+          "inspection complaints unsafe",
+          "unsafe conditions apartment",
+          "apartment building housing",
+          "kept marking case"
+        ]
+      },
+      "narrativeText": "I kept submitting inspection complaints about unsafe conditions in my apartment building, but the automated housing inspection system kept marking my case as low priority. No one explained how the priority score was calculated, and the delay made my family stay in unsafe housing for months."
+    },
+    {
+      "id": "positive-language-routing",
+      "title": "The interpreter routing finally got me to the right person",
+      "inputField": "narrativeText",
+      "aiThemes": [
+        {
+          "theme": "positive_experience",
+          "confidence": 0.76,
+          "evidence": [
+            "faster",
+            "connected"
+          ],
+          "description": "System worked well or led to a good outcome."
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [],
+          "locations": [],
+          "systems": [
+            "routing system"
+          ],
+          "dates": [],
+          "people_roles": [
+            "interpreter"
+          ]
+        },
+        "keywords": [
+          "requested help spanish",
+          "spanish language access",
+          "access routing connected",
+          "connected interpreter then",
+          "then right benefits",
+          "benefits office process",
+          "process faster complete",
+          "complete application having",
+          "having restart call"
+        ]
+      },
+      "narrativeText": "When I requested help in Spanish, the language access routing system connected me to an interpreter and then to the right benefits office. The process was faster than before and I was able to complete my application without having to restart the call."
+    },
+    {
+      "id": "mixed-student-support",
+      "title": "The school risk flag helped but stayed on too long",
+      "inputField": "narrativeText",
+      "aiThemes": [
+        {
+          "theme": "positive_experience",
+          "confidence": 0.67,
+          "evidence": [
+            "helped"
+          ],
+          "description": "System worked well or led to a good outcome."
+        },
+        {
+          "theme": "lack_of_notification",
+          "confidence": 0.67,
+          "evidence": [
+            "notice"
+          ],
+          "description": "Person was not told that an algorithm was involved."
+        },
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.67,
+          "evidence": [
+            "record"
+          ],
+          "description": "System used incorrect or outdated information."
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [],
+          "locations": [],
+          "systems": [
+            "student support system"
+          ],
+          "dates": [],
+          "people_roles": [
+            "counselor",
+            "teacher",
+            "student"
+          ]
+        },
+        "keywords": [
+          "experience student support",
+          "support mixed helped",
+          "helped noticed missed",
+          "missed assignments prompted",
+          "prompted counselor check",
+          "check grades improved",
+          "improved high-risk label",
+          "label stayed record",
+          "record teachers treat",
+          "treat still failing"
+        ]
+      },
+      "narrativeText": "My experience with the student support system was mixed. It helped at first because it noticed that I had missed assignments and prompted my counselor to check in. But after my grades improved, the high-risk label stayed on my record and made teachers treat me like I was still failing."
+    },
+    {
+      "id": "unclear-traffic-notice",
+      "title": "I received a traffic system notice",
+      "inputField": "narrativeText",
+      "aiThemes": [
+        {
+          "theme": "process_confusion",
+          "confidence": 0.67,
+          "evidence": [
+            "do not know"
+          ],
+          "description": "Person was confused about the overall process."
+        },
+        {
+          "theme": "lack_of_notification",
+          "confidence": 0.67,
+          "evidence": [
+            "notice"
+          ],
+          "description": "Person was not told that an algorithm was involved."
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [],
+          "locations": [],
+          "systems": [
+            "traffic management system"
+          ],
+          "dates": [],
+          "people_roles": []
+        },
+        "keywords": [
+          "received notice saying",
+          "saying traffic management",
+          "management changed signal",
+          "signal timing near",
+          "near street know",
+          "know whether affected",
+          "affected personally noticed",
+          "noticed clear change",
+          "change commute yet"
+        ]
+      },
+      "narrativeText": "I received a notice saying that a traffic management system changed signal timing near my street. I do not know whether it affected me personally because I have not noticed a clear change in my commute yet."
+    }
+  ]
+}
