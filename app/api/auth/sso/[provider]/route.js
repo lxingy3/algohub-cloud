@@ -11,8 +11,9 @@ export async function GET(request, { params }) {
   }
 
   const { searchParams } = new URL(request.url);
-  const callbackUrl = searchParams.get('callbackUrl') || '/';
-  const response = NextResponse.redirect(new URL(`/api/auth/signin/${provider}?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url));
+  const callbackUrl = safeReturnTo(searchParams.get('callbackUrl')) || '/';
+  const setupCallbackUrl = `/auth/complete-profile?returnTo=${encodeURIComponent(callbackUrl)}`;
+  const response = NextResponse.redirect(new URL(`/api/auth/signin/${provider}?callbackUrl=${encodeURIComponent(setupCallbackUrl)}`, request.url));
 
   response.cookies.set('algohub_sso_role', 'COMMUNITY_MEMBER', {
     httpOnly: true,
@@ -23,4 +24,10 @@ export async function GET(request, { params }) {
   });
 
   return response;
+}
+
+function safeReturnTo(value) {
+  const returnTo = String(value || '');
+  if (!returnTo.startsWith('/') || returnTo.startsWith('//')) return null;
+  return returnTo;
 }

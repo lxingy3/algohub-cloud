@@ -3,6 +3,7 @@
 import { forwardRef, useRef, useState } from 'react';
 import { Eye, Pencil, X } from 'lucide-react';
 import { formatStatus } from '../../components/Formatters';
+import { getUseCaseIconMeta } from '../../components/useCaseIcons';
 
 const statuses = ['ACTIVE', 'UNDER_REVIEW', 'DEPRECATED', 'PROPOSED'];
 const impacts = ['', 'LOW', 'MEDIUM', 'HIGH'];
@@ -77,6 +78,7 @@ export function AddAlgorithmPanel({ currentRole = 'ADMIN' }) {
 export function AdminAlgorithmCard({ algorithm }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
+  const { icon: UseCaseIcon, tone: useCaseTone } = getUseCaseIconMeta(algorithm.useCase);
 
   return (
     <article className="rounded-lg border bg-white p-4">
@@ -85,8 +87,14 @@ export function AdminAlgorithmCard({ algorithm }) {
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-semibold">{algorithm.name}</h3>
             <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">{formatStatus(algorithm.status)}</span>
+            {algorithm.useCase ? (
+              <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-semibold ${useCaseTone}`}>
+                <UseCaseIcon className="h-3.5 w-3.5" />
+                {algorithm.useCase}
+              </span>
+            ) : null}
           </div>
-          <p className="mt-1 text-sm text-slate-500">{algorithm.agencyName || 'No agency'} / {algorithm.useCase} / {algorithm.location}</p>
+          <p className="mt-1 text-sm text-slate-500">{algorithm.agencyName || 'No agency'} / {algorithm.location}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button

@@ -58,12 +58,13 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
   }, [initialCallbackUrl]);
 
   async function startSso(providerId) {
+    const setupCallbackUrl = `/auth/complete-profile?returnTo=${encodeURIComponent(callbackUrl)}`;
     await fetch('/api/auth/sso-role', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ returnTo: callbackUrl }),
     });
-    await signIn(providerId, { callbackUrl });
+    await signIn(providerId, { callbackUrl: setupCallbackUrl });
   }
 
   async function requestPasswordReset(event) {

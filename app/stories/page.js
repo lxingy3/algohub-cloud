@@ -184,13 +184,7 @@ function CommunityImpact({ metrics }) {
             </div>
             <ul className="w-full max-w-[190px] space-y-1">
               {entries.slice(0, 6).map(([name, value], index) => (
-                <li key={name} className="flex items-center justify-between gap-2 text-xs text-gray-600">
-                  <span className="flex min-w-0 items-center gap-1.5">
-                    <span className={`h-2 w-2 shrink-0 rounded-full ${colors[index % colors.length]}`} />
-                    <span className="truncate">{name}</span>
-                  </span>
-                  <span className="font-medium text-gray-900">{value}</span>
-                </li>
+                <CommunityImpactLegendItem key={name} name={name} value={value} colorClass={colors[index % colors.length]} />
               ))}
             </ul>
           </div>
@@ -199,6 +193,21 @@ function CommunityImpact({ metrics }) {
         </div>
       </div>
     </section>
+  );
+}
+
+function CommunityImpactLegendItem({ name, value, colorClass }) {
+  const Icon = getUseCaseIcon(name);
+  return (
+    <li className="flex items-center justify-between gap-2 text-xs text-gray-600">
+                  <span className="flex min-w-0 items-center gap-1.5">
+        <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${colorClass}`}>
+          <Icon className="h-2.5 w-2.5 text-white" />
+        </span>
+                    <span className="truncate">{name}</span>
+                  </span>
+                  <span className="font-medium text-gray-900">{value}</span>
+    </li>
   );
 }
 

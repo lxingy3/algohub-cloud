@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, BookOpen, Code2, Database, FileText, Image, Info, Landmark, MapPin, MessageSquareQuote, Settings, User, Users, X } from 'lucide-react';
 import { formatStatus } from './Formatters';
 import { InfoTooltip } from './InfoTooltip';
+import { getUseCaseIconMeta } from './useCaseIcons';
 
 const IMPACT_HELP = 'Impact measures the scale and severity of how this algorithm affects the community';
 
@@ -36,7 +37,9 @@ export function AlgorithmsRegistry({ algorithms }) {
   return (
     <>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {algorithms.map((algorithm) => (
+        {algorithms.map((algorithm) => {
+          const { icon: UseCaseIcon, tone: useCaseTone } = getUseCaseIconMeta(algorithm.useCase);
+          return (
           <a
             key={algorithm.id}
             href={algorithmHref({ pathname, searchParams, algorithmId: algorithm.id })}
@@ -55,7 +58,8 @@ export function AlgorithmsRegistry({ algorithms }) {
             </div>
 
             {algorithm.useCase ? (
-              <span className="mb-4 w-fit rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700">
+              <span className={`mb-4 inline-flex w-fit items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-semibold ${useCaseTone}`}>
+                <UseCaseIcon className="h-3.5 w-3.5" />
                 {algorithm.useCase}
               </span>
             ) : null}
@@ -72,7 +76,8 @@ export function AlgorithmsRegistry({ algorithms }) {
               {algorithm.impactLevel ? <ImpactBadge impactLevel={algorithm.impactLevel} /> : null}
             </div>
           </a>
-        ))}
+          );
+        })}
       </div>
 
       {selectedAlgorithm ? (
@@ -115,6 +120,7 @@ function replaceWithoutScroll(router, href) {
 }
 
 export function AlgorithmModal({ algorithm, onClose }) {
+  const { icon: UseCaseIcon, tone: useCaseTone } = getUseCaseIconMeta(algorithm.useCase);
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 px-3 py-3 sm:px-4 sm:py-8" role="dialog" aria-modal="true">
       <button type="button" className="fixed inset-0 cursor-default" aria-label="Close algorithm modal" onClick={onClose} />
@@ -122,7 +128,15 @@ export function AlgorithmModal({ algorithm, onClose }) {
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-4 py-4 sm:px-5">
           <div>
             <h2 className="text-xl font-bold leading-tight text-slate-950 sm:text-2xl">{algorithm.name}</h2>
-            <p className="mt-1 text-sm text-slate-500">{algorithm.useCase} / {algorithm.location}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+              {algorithm.useCase ? (
+                <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-semibold ${useCaseTone}`}>
+                  <UseCaseIcon className="h-3.5 w-3.5" />
+                  {algorithm.useCase}
+                </span>
+              ) : null}
+              <span>{algorithm.location}</span>
+            </div>
           </div>
           <button type="button" onClick={onClose} className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 hover:text-slate-950" aria-label="Close algorithm details">
             <X className="h-5 w-5" />
@@ -139,7 +153,15 @@ export function AlgorithmModal({ algorithm, onClose }) {
               <InfoItem label="Algorithm Name" value={algorithm.name} />
               <InfoItem label="Used By" value={algorithm.agencyName || 'N/A'} />
               <InfoItem label="Year Introduced/Updated" value={algorithm.yearIntroduced || algorithm.yearDeployed || 'N/A'} />
-              <InfoItem label="Use Case" value={algorithm.useCase || 'N/A'} />
+              <InfoItem
+                label="Use Case"
+                value={algorithm.useCase ? (
+                  <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-semibold ${useCaseTone}`}>
+                    <UseCaseIcon className="h-3.5 w-3.5" />
+                    {algorithm.useCase}
+                  </span>
+                ) : 'N/A'}
+              />
               <InfoItem label="Location" value={algorithm.location || 'N/A'} />
               <div>
                 <dt className="mb-1 text-sm text-gray-600">Impact Level</dt>

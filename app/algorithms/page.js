@@ -6,6 +6,7 @@ import { getCurrentUser } from '../../lib/auth';
 import { rankAlgorithmsForSearch } from '../../lib/searchRanking';
 import { SiteNav } from '../components/SiteNav';
 import { AlgorithmsRegistry } from '../components/AlgorithmsRegistry';
+import { getUseCaseIconMeta } from '../components/useCaseIcons';
 
 export const dynamic = 'force-dynamic';
 
@@ -144,7 +145,7 @@ export default async function AlgorithmsPage({ searchParams }) {
                   <FilterPill href="/algorithms" active={useCase === 'all'}>All Use Cases</FilterPill>
                   {useCases.map((item) => (
                     <FilterPill key={item} href={`/algorithms?useCase=${encodeURIComponent(item)}${location !== 'all' ? `&location=${encodeURIComponent(location)}` : ''}`} active={useCase === item}>
-                      {item}
+                      <UseCaseFilterLabel useCase={item} />
                     </FilterPill>
                   ))}
                 </div>
@@ -172,13 +173,23 @@ export default async function AlgorithmsPage({ searchParams }) {
   );
 }
 
+function UseCaseFilterLabel({ useCase }) {
+  const { icon: Icon } = getUseCaseIconMeta(useCase);
+  return (
+    <>
+      <Icon className="h-3.5 w-3.5" />
+      {useCase}
+    </>
+  );
+}
+
 function FilterPill({ href, active, children }) {
   return (
     <Link
       href={href}
       className={active
-        ? 'inline-flex min-h-10 items-center rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md'
-        : 'inline-flex min-h-10 items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50'}
+        ? 'inline-flex min-h-10 items-center gap-1.5 rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md'
+        : 'inline-flex min-h-10 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50'}
     >
       {children}
     </Link>

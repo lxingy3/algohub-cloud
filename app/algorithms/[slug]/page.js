@@ -6,6 +6,7 @@ import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../lib/auth';
 import { SiteNav } from '../../components/SiteNav';
 import { formatDate, formatStatus } from '../../components/Formatters';
+import { getUseCaseIconMeta } from '../../components/useCaseIcons';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,7 @@ export default async function AlgorithmDetailPage({ params }) {
   if (!algorithm) notFound();
 
   const approvedLinks = algorithm.testimonyLinks.filter((link) => link.testimony.moderationStatus === 'APPROVED');
+  const { icon: UseCaseIcon, tone: useCaseTone } = getUseCaseIconMeta(algorithm.useCase);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-slate-100 text-slate-950">
@@ -48,6 +50,10 @@ export default async function AlgorithmDetailPage({ params }) {
             <div>
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">{formatStatus(algorithm.status)}</span>
+                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-semibold ${useCaseTone}`}>
+                  <UseCaseIcon className="h-3.5 w-3.5" />
+                  {algorithm.useCase}
+                </span>
                 {algorithm.impactLevel ? <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">{formatStatus(algorithm.impactLevel)} Impact</span> : null}
               </div>
               <h1 className="mt-4 max-w-3xl text-4xl font-bold leading-tight">{algorithm.name}</h1>
@@ -60,7 +66,15 @@ export default async function AlgorithmDetailPage({ params }) {
 
           <dl className="mt-8 grid gap-4 md:grid-cols-4">
             <InfoItem label="Used by" value={algorithm.agencyName || 'Not listed'} />
-            <InfoItem label="Use case" value={algorithm.useCase} />
+            <InfoItem
+              label="Use case"
+              value={(
+                <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-semibold ${useCaseTone}`}>
+                  <UseCaseIcon className="h-3.5 w-3.5" />
+                  {algorithm.useCase}
+                </span>
+              )}
+            />
             <InfoItem label="Location" value={algorithm.location} />
             <InfoItem label="Updated" value={formatDate(algorithm.updatedAt)} />
           </dl>
