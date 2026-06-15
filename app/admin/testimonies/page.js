@@ -8,6 +8,7 @@ import {
 } from '../../../lib/moderation';
 import { inferStoredMediaKind } from '../../../lib/mediaStorage';
 import AdminMediaPlayer from './AdminMediaPlayer';
+import MLQuickTest from './MLQuickTest';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,6 +93,7 @@ export default async function AdminTestimoniesPage({ searchParams }) {
         ) : null}
       </div>
       <StatusTabs baseHref="/admin/testimonies" activeStatus={statusFilter} counts={counts} />
+      <MLQuickTest />
       <div className="mt-6 space-y-3">
         {testimonies.map((testimony) => {
           const linkedAlgorithms = testimony.algorithmLinks.map((link) => link.algorithm?.name).filter(Boolean);
