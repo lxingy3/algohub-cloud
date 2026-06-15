@@ -7,6 +7,7 @@ import {
   moderationStatuses,
 } from '../../../lib/moderation';
 import { inferStoredMediaKind } from '../../../lib/mediaStorage';
+import AdminMediaPlayer from './AdminMediaPlayer';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,9 +93,12 @@ export default async function AdminTestimoniesPage({ searchParams }) {
           const hasAudio = Boolean(testimony.audioFileUrl);
           const hasVideo = Boolean(testimony.videoFileUrl);
           const audioFieldMediaKind = hasAudio ? inferStoredMediaKind(testimony.audioFileUrl, 'audio') : 'audio';
-          const audioFieldContainsVideo = audioFieldMediaKind === 'video';
           const isVoiceInput = storyType === 'voice' || hasAudio;
           const task2Impact = getTask2Impact(testimony);
+          const mediaSources = [
+            hasAudio ? { kind: audioFieldMediaKind, url: `/api/admin/testimonies/${testimony.id}/media/audio` } : null,
+            hasVideo ? { kind: 'video', url: `/api/admin/testimonies/${testimony.id}/media/video` } : null,
+          ].filter(Boolean);
 
           return (
             <form key={testimony.id} action={`/api/admin/testimonies/${testimony.id}/moderate`} method="post" className="rounded-lg border bg-white p-4">
@@ -153,21 +157,7 @@ export default async function AdminTestimoniesPage({ searchParams }) {
               {hasAudio || hasVideo ? (
                 <div className="mt-4 rounded-md border border-slate-200 bg-white p-3">
                   <p className="text-xs font-semibold uppercase text-slate-500">Uploaded media</p>
-                  {hasAudio && !audioFieldContainsVideo ? (
-                    <audio className="mt-3 w-full" src={`/api/admin/testimonies/${testimony.id}/media/audio`} controls preload="metadata">
-                      Your browser does not support audio playback.
-                    </audio>
-                  ) : null}
-                  {hasAudio && audioFieldContainsVideo ? (
-                    <video className="mt-3 max-h-96 w-full rounded-md border bg-black object-contain" src={`/api/admin/testimonies/${testimony.id}/media/audio`} controls preload="metadata">
-                      Your browser does not support video playback.
-                    </video>
-                  ) : null}
-                  {hasVideo ? (
-                    <video className="mt-3 max-h-96 w-full rounded-md border bg-black object-contain" src={`/api/admin/testimonies/${testimony.id}/media/video`} controls preload="metadata">
-                      Your browser does not support video playback.
-                    </video>
-                  ) : null}
+                  <AdminMediaPlayer sources={mediaSources} />
                 </div>
               ) : null}
 
