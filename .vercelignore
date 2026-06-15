@@ -1,0 +1,11 @@
+.git
+.next
+node_modules
+.task1-whisper-env
+.task2-deberta-env
+task1-results
+task2-results
+task2-5-results
+task345-results
+ml-worker-hf-space
+.env*
