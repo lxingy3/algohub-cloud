@@ -37,7 +37,7 @@ function cleanExtension(fileName, contentType) {
 
 export async function POST(request) {
   if (!hasFirebaseStorageConfig()) {
-    return NextResponse.json({ error: 'Firebase media storage is not configured for this deployment.' }, { status: 503 });
+    return NextResponse.json({ error: 'Cloud media storage is not configured for this deployment.' }, { status: 503 });
   }
 
   const result = uploadSchema.safeParse(await request.json().catch(() => null));

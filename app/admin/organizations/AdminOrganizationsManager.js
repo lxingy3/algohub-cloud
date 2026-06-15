@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Check, ExternalLink, Pencil, Trash2, Upload } from 'lucide-react';
 
+const MAX_INLINE_LOGO_BYTES = 2 * 1024 * 1024;
+
 export function AdminOrganizationsManager({ organizations }) {
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -148,7 +150,13 @@ function OrganizationForm({ action, organization, submitLabel }) {
           }),
         });
         const presign = await presignResponse.json();
-        if (!presignResponse.ok) throw new Error(presign.error || 'Logo upload could not be prepared.');
+        if (!presignResponse.ok) {
+          if (presignResponse.status === 503) {
+            formData.set('logoUrl', await logoFileToDataUrl(logoFile));
+          } else {
+            throw new Error(presign.error || 'Logo upload could not be prepared.');
+          }
+        } else {
         const uploadResponse = await fetch(presign.uploadUrl, {
           method: 'PUT',
           headers: { 'Content-Type': logoFile.type },
@@ -156,6 +164,7 @@ function OrganizationForm({ action, organization, submitLabel }) {
         });
         if (!uploadResponse.ok) throw new Error('Logo upload failed.');
         formData.set('logoUrl', presign.storageUri);
+        }
       } catch (uploadError) {
         setError(uploadError.message || 'Logo upload failed.');
         setUploading(false);
@@ -214,6 +223,19 @@ function OrganizationForm({ action, organization, submitLabel }) {
       </div>
     </form>
   );
+}
+
+function logoFileToDataUrl(file) {
+  if (file.size > MAX_INLINE_LOGO_BYTES) {
+    throw new Error('Cloud media storage is not configured. Upload a logo smaller than 2 MB, or paste an existing image URL.');
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Logo file could not be read.'));
+    reader.readAsDataURL(file);
+  });
 }
 
 function Field({ label, children, className = '' }) {
