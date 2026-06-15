@@ -13,146 +13,194 @@ const outputPath = path.join(outputDir, `ml-calibration-run-${runStamp}.json`);
 const sampleStories = [
   {
     slug: 'housing-voucher-denial-old-address',
-    title: 'Training sample: Housing voucher denial from an old address',
+    title: 'My voucher was denied because of an old address',
     domain: 'Housing',
     expectedImpact: 'NEGATIVE',
     expectedThemes: ['data_accuracy', 'lack_of_recourse', 'process_confusion'],
     city: 'Pittsburgh',
+    zipCode: '15219',
+    occurredAtText: 'Spring 2026',
+    referralSource: 'Community listening session',
     narrativeText: 'My housing voucher application was marked ineligible after the automated eligibility system used an old address from a prior shelter stay. The notice did not explain how the address was selected. When I called the housing authority, staff said there was no appeal path until the next review cycle, so my family stayed on a waiting list for another month.',
   },
   {
     slug: 'benefits-approved-after-verification',
-    title: 'Training sample: Benefits approval after verification',
+    title: 'The renewal went through faster than expected',
     domain: 'Benefits Administration',
     expectedImpact: 'POSITIVE',
     expectedThemes: ['positive_experience', 'process_confusion'],
     city: 'Pittsburgh',
+    zipCode: '15206',
+    occurredAtText: 'May 2026',
+    referralSource: 'Public web form',
     narrativeText: 'The benefits verification engine matched my documents correctly and approved the food assistance renewal faster than the paper process. I still did not understand every step, but the caseworker could see the same result and explain why my file moved forward.',
   },
   {
     slug: 'traffic-camera-wrong-plate',
-    title: 'Training sample: Traffic citation from a wrong plate match',
+    title: 'I got a citation for a car that was not mine',
     domain: 'Traffic Management',
     expectedImpact: 'NEGATIVE',
     expectedThemes: ['data_accuracy', 'lack_of_recourse'],
     city: 'Pittsburgh',
+    zipCode: '15213',
+    occurredAtText: 'April 2026',
+    referralSource: 'Community partner referral',
     narrativeText: 'A traffic camera system sent me a citation for a car I do not own. The plate number in the photo was blurry, but the automated match treated it as mine. The Department of Mobility told me to pay first and dispute later, which made the process feel backwards.',
   },
   {
     slug: 'language-access-routing-success',
-    title: 'Training sample: Interpreter routing reached the right person',
+    title: 'The interpreter line finally got me to the right office',
     domain: 'Language Access',
     expectedImpact: 'POSITIVE',
     expectedThemes: ['positive_experience'],
     city: 'Pittsburgh',
+    zipCode: '15224',
+    occurredAtText: 'June 2026',
+    referralSource: 'Public web form',
     narrativeText: 'The language access routing system recognized that I needed a Spanish interpreter and connected me to the right office on the first call. The resident services worker confirmed my appointment and I did not have to repeat the same story to three people.',
   },
   {
     slug: 'student-support-risk-flag',
-    title: 'Training sample: Student support risk flag after absences',
+    title: 'My daughter stayed flagged after a family emergency',
     domain: 'Student Support',
     expectedImpact: 'NEGATIVE',
     expectedThemes: ['data_accuracy', 'loss_of_dignity', 'lack_of_notification'],
     city: 'Pittsburgh',
+    zipCode: '15217',
+    occurredAtText: 'February 2026',
+    referralSource: 'School family meeting',
     narrativeText: 'The student support system flagged my daughter as high risk after she missed school during a family emergency. No one told us an algorithm was involved. Even after her grades improved, the risk flag stayed in the counselor dashboard and teachers treated her like she was a problem.',
   },
   {
     slug: 'child-welfare-screening-home-visit',
-    title: 'Training sample: Child welfare screening sent workers to my home',
+    title: 'The risk score sent workers to my home before I could respond',
     domain: 'Child Welfare',
     expectedImpact: 'NEGATIVE',
     expectedThemes: ['loss_of_dignity', 'data_accuracy', 'lack_of_recourse'],
     city: 'Pittsburgh',
+    zipCode: '15210',
+    occurredAtText: 'March 2026',
+    referralSource: 'Community listening session',
     narrativeText: 'CPS workers came to my home after the family screening tool gave my report a high risk score. The score seemed to rely on old public benefits records and a previous address. I could not see the score or correct the information before the visit.',
   },
   {
     slug: 'job-matching-good-referral',
-    title: 'Training sample: Job matching referral worked',
+    title: 'The job match actually fit my schedule',
     domain: 'Job Matching',
     expectedImpact: 'POSITIVE',
     expectedThemes: ['positive_experience'],
     city: 'Pittsburgh',
+    zipCode: '15222',
+    occurredAtText: 'May 2026',
+    referralSource: 'Career center workshop',
     narrativeText: 'The workforce job matching system suggested a city maintenance opening that matched my license and schedule. A career center worker reviewed the match with me, and I got an interview the next week.',
   },
   {
     slug: 'energy-assistance-delayed-score',
-    title: 'Training sample: Energy assistance delayed by priority score',
+    title: 'My utility help stayed low priority for weeks',
     domain: 'Energy Forecasting',
     expectedImpact: 'NEGATIVE',
     expectedThemes: ['delayed_outcome', 'opacity', 'process_confusion'],
     city: 'Pittsburgh',
+    zipCode: '15208',
+    occurredAtText: 'Winter 2026',
+    referralSource: 'Utility assistance clinic',
     narrativeText: 'My energy assistance request stayed low priority for six weeks because the forecasting tool said my household was not urgent. The office could not explain the criteria. I only found out after calling twice that a priority score was holding the application.',
   },
   {
     slug: 'transit-safety-report-misrouted',
-    title: 'Training sample: Transit safety report went to the wrong team',
+    title: 'My safety report went to the wrong station',
     domain: 'Transit Safety',
     expectedImpact: 'NEGATIVE',
     expectedThemes: ['arbitrary_outcome', 'delayed_outcome'],
     city: 'Pittsburgh',
+    zipCode: '15212',
+    occurredAtText: 'April 2026',
+    referralSource: 'Public web form',
     narrativeText: 'I reported a broken light at a bus stop, but the routing system sent the safety concern to maintenance for a different station. It took two weeks before the transit authority corrected the category and sent someone to inspect the stop.',
   },
   {
     slug: 'housing-inspection-priority-fixed',
-    title: 'Training sample: Housing inspection priority was corrected',
+    title: 'Photos helped get our inspection priority corrected',
     domain: 'Housing Inspections',
     expectedImpact: 'MIXED',
     expectedThemes: ['data_accuracy', 'positive_experience', 'lack_of_recourse'],
     city: 'Pittsburgh',
+    zipCode: '15201',
+    occurredAtText: 'May 2026',
+    referralSource: 'Tenant meeting',
     narrativeText: 'Our building stayed low priority after repeated heat complaints because the inspection system had the wrong unit count. At first no one could tell us how to challenge the priority level. After a community group helped submit photos, the city corrected the record and scheduled an inspection.',
   },
   {
     slug: 'emergency-dispatch-clear',
-    title: 'Training sample: Emergency dispatch triage helped',
+    title: 'The dispatcher routed my call quickly',
     domain: 'Emergency Services',
     expectedImpact: 'POSITIVE',
     expectedThemes: ['positive_experience'],
     city: 'Pittsburgh',
+    zipCode: '15203',
+    occurredAtText: 'June 2026',
+    referralSource: 'Public web form',
     narrativeText: 'The emergency dispatch triage tool routed my call to the right response team quickly. The dispatcher still made the final decision, and the ambulance arrived faster than I expected.',
   },
   {
     slug: 'fraud-detection-benefit-hold',
-    title: 'Training sample: Fraud detection hold on benefits',
+    title: 'My benefits were paused over a tax refund',
     domain: 'Fraud Detection',
     expectedImpact: 'NEGATIVE',
     expectedThemes: ['data_accuracy', 'delayed_outcome', 'loss_of_dignity'],
     city: 'Pittsburgh',
+    zipCode: '15214',
+    occurredAtText: 'April 2026',
+    referralSource: 'Benefits workshop',
     narrativeText: 'A fraud detection system paused my benefits because my bank deposit looked unusual. It was a tax refund, not fraud. The benefits office made me submit the same documents twice, and I felt like I was being treated as dishonest before anyone looked at the evidence.',
   },
   {
     slug: 'school-lunch-eligibility-confusing',
-    title: 'Training sample: School lunch eligibility was unclear',
+    title: 'The lunch portal changed my status without explaining why',
     domain: 'Student Award',
     expectedImpact: 'UNCLEAR',
     expectedThemes: ['process_confusion', 'opacity'],
     city: 'Pittsburgh',
+    zipCode: '15207',
+    occurredAtText: 'March 2026',
+    referralSource: 'School family meeting',
     narrativeText: 'The school lunch eligibility portal changed my status from pending to review. I do not know whether an automated rule caused it or whether a staff member changed the file. The only message said more information was needed.',
   },
   {
     slug: 'community-services-duplicate-profile',
-    title: 'Training sample: Duplicate profile blocked community services',
+    title: 'Two versions of my name made the intake status change',
     domain: 'Community Services',
     expectedImpact: 'NEGATIVE',
     expectedThemes: ['data_accuracy', 'process_confusion'],
     city: 'Pittsburgh',
+    zipCode: '15221',
+    occurredAtText: 'Spring 2026',
+    referralSource: 'Community center intake',
     narrativeText: 'The community services intake system created two profiles for me with different spellings of my name. Because the records did not merge, my application looked incomplete and the front desk could not explain why the status kept changing.',
   },
   {
     slug: 'rental-aid-document-upload-worked',
-    title: 'Training sample: Rental aid document upload worked',
+    title: 'The rental aid upload worked the first time',
     domain: 'Benefits Administration',
     expectedImpact: 'POSITIVE',
     expectedThemes: ['positive_experience'],
     city: 'Pittsburgh',
+    zipCode: '15211',
+    occurredAtText: 'June 2026',
+    referralSource: 'Public web form',
     narrativeText: 'The rental aid portal read my uploaded lease and pay stubs correctly. The caseworker confirmed the automated check and my landlord received the approval notice the same day.',
   },
   {
     slug: 'homeless-services-length-rule',
-    title: 'Training sample: Homeless services rule missed the situation',
+    title: 'The ranking rule did not fit how I was actually living',
     domain: 'Housing',
     expectedImpact: 'NEGATIVE',
     expectedThemes: ['discriminatory_impact', 'arbitrary_outcome', 'loss_of_dignity'],
     city: 'Pittsburgh',
+    zipCode: '15219',
+    occurredAtText: 'February 2026',
+    referralSource: 'Housing outreach session',
     narrativeText: 'The homeless services ranking system said I was not homeless long enough to receive help, even though I had been moving between friends and shelters. The rule did not fit my situation and made me feel like my experience did not count.',
   },
 ];
@@ -230,15 +278,8 @@ function sleep(ms) {
 }
 
 async function upsertTrainingStory(analysis) {
-  const { story, result, evaluation } = analysis;
+  const { story, result } = analysis;
   const sourceId = `ml-training-${story.slug}`;
-  const notes = [
-    'ML training sample',
-    `Expected impact: ${story.expectedImpact}`,
-    `Expected themes: ${story.expectedThemes.join(', ')}`,
-    `Last model impact: ${evaluation.actualImpact || 'none'}`,
-    `Theme recall: ${evaluation.themeRecall}`,
-  ].join('\n');
 
   return prisma.testimony.upsert({
     where: { sourceId },
@@ -248,8 +289,10 @@ async function upsertTrainingStory(analysis) {
       title: story.title,
       summary: story.narrativeText.slice(0, 220),
       city: story.city,
-      submitterName: 'Training Sample',
-      referralSource: 'ML calibration set',
+      zipCode: story.zipCode,
+      occurredAtText: story.occurredAtText,
+      submitterName: null,
+      referralSource: story.referralSource,
       publicPosting: true,
       followupConsent: false,
       storyType: 'text',
@@ -268,14 +311,18 @@ async function upsertTrainingStory(analysis) {
       },
       aiProcessedAt: new Date(),
       moderationStatus: 'APPROVED',
-      moderationNotes: notes,
+      moderationNotes: null,
     },
     update: {
       title: story.title,
       summary: story.narrativeText.slice(0, 220),
       city: story.city,
-      referralSource: 'ML calibration set',
+      zipCode: story.zipCode,
+      occurredAtText: story.occurredAtText,
+      submitterName: null,
+      referralSource: story.referralSource,
       publicPosting: true,
+      followupConsent: false,
       narrativeText: story.narrativeText,
       affectedDomain: story.domain,
       selfReportedImpact: story.expectedImpact === 'MIXED' ? 'MIXED' : story.expectedImpact,
@@ -288,9 +335,37 @@ async function upsertTrainingStory(analysis) {
       },
       aiProcessedAt: new Date(),
       moderationStatus: 'APPROVED',
-      moderationNotes: notes,
+      moderationNotes: null,
     },
   });
+}
+
+async function updateTrainingStoryMetadataOnly() {
+  let updated = 0;
+  for (const story of sampleStories) {
+    const sourceId = `ml-training-${story.slug}`;
+    const result = await prisma.testimony.updateMany({
+      where: { jurisdictionId, sourceId },
+      data: {
+        title: story.title,
+        summary: story.narrativeText.slice(0, 220),
+        city: story.city,
+        zipCode: story.zipCode,
+        occurredAtText: story.occurredAtText,
+        submitterName: null,
+        referralSource: story.referralSource,
+        publicPosting: true,
+        followupConsent: false,
+        isAnonymous: true,
+        affectedDomain: story.domain,
+        selfReportedImpact: story.expectedImpact === 'MIXED' ? 'MIXED' : story.expectedImpact,
+        moderationStatus: 'APPROVED',
+        moderationNotes: null,
+      },
+    });
+    updated += result.count;
+  }
+  return updated;
 }
 
 async function updateExistingStories(skipSourceIds) {
@@ -346,6 +421,12 @@ async function updateExistingStories(skipSourceIds) {
 
 async function main() {
   requireEnv('DATABASE_URL');
+  if (process.argv.includes('--metadata-only')) {
+    const updated = await updateTrainingStoryMetadataOnly();
+    console.log(JSON.stringify({ mode: 'metadata-only', updated }, null, 2));
+    return;
+  }
+
   requireEnv('ML_WORKER_TOKEN');
   requireEnv('ML_DEBERTA_ENDPOINT');
   requireEnv('ML_BART_ENDPOINT');
