@@ -34,7 +34,6 @@ export default function MLQuickTest() {
     <section className="mt-5 rounded-lg border bg-white p-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-semibold text-slate-950">ML Quick Test</h2>
-        <p className="text-sm text-slate-600">Paste narrative_text here to check Task 2-5 without creating a story.</p>
       </div>
       <form onSubmit={runQuickTest} className="mt-3 space-y-3">
         <textarea
