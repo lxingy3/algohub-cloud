@@ -1,0 +1,3835 @@
+{
+  "generatedAt": "2026-06-15T07:04:04.282Z",
+  "jurisdictionId": "pittsburgh",
+  "tools": {
+    "task2": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+    "task3": "facebook/bart-large-mnli",
+    "task4": "spaCy",
+    "task5": "KeyBERT"
+  },
+  "summary": {
+    "trainingStories": 16,
+    "publishedTrainingStories": 16,
+    "impactAccuracyOnExpectedSet": 0.94,
+    "averageThemeRecall": 0.84,
+    "existingStoriesUpdated": 23,
+    "existingStoriesFailed": 0
+  },
+  "analyses": [
+    {
+      "story": {
+        "slug": "housing-voucher-denial-old-address",
+        "title": "Training sample: Housing voucher denial from an old address",
+        "domain": "Housing",
+        "expectedImpact": "NEGATIVE",
+        "expectedThemes": [
+          "data_accuracy",
+          "lack_of_recourse",
+          "process_confusion"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "My housing voucher application was marked ineligible after the automated eligibility system used an old address from a prior shelter stay. The notice did not explain how the address was selected. When I called the housing authority, staff said there was no appeal path until the next review cycle, so my family stayed on a waiting list for another month."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.8483,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.8483,
+            "POSITIVE": 0.0301,
+            "UNCLEAR": 0.1216
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9997,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "lack_of_recourse",
+              "confidence": 0.9995,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9994,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9993,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9993,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [
+              "housing authority"
+            ],
+            "locations": [],
+            "systems": [
+              "eligibility system"
+            ],
+            "dates": [
+              "another month"
+            ],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "housing voucher application",
+            "marked ineligible automated",
+            "old address prior",
+            "said appeal path",
+            "family stayed waiting",
+            "prior shelter",
+            "selected called",
+            "notice did explain",
+            "authority staff",
+            "cycle"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "NEGATIVE",
+        "actualImpact": "NEGATIVE",
+        "expectedThemes": [
+          "data_accuracy",
+          "lack_of_recourse",
+          "process_confusion"
+        ],
+        "actualThemes": [
+          "data_accuracy",
+          "lack_of_recourse",
+          "arbitrary_outcome",
+          "process_confusion",
+          "opacity"
+        ],
+        "matchingThemes": [
+          "data_accuracy",
+          "lack_of_recourse",
+          "process_confusion"
+        ],
+        "themeRecall": 1
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "benefits-approved-after-verification",
+        "title": "Training sample: Benefits approval after verification",
+        "domain": "Benefits Administration",
+        "expectedImpact": "POSITIVE",
+        "expectedThemes": [
+          "positive_experience",
+          "process_confusion"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "The benefits verification engine matched my documents correctly and approved the food assistance renewal faster than the paper process. I still did not understand every step, but the caseworker could see the same result and explain why my file moved forward."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "POSITIVE",
+          "aiConfidenceScore": 0.7475,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.2382,
+            "POSITIVE": 0.7475,
+            "UNCLEAR": 0.0142
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9995,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9987,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "positive_experience",
+              "confidence": 0.9965,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9864,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.904,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [
+              "verification engine"
+            ],
+            "dates": [],
+            "people_roles": [
+              "caseworker",
+              "worker"
+            ]
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "benefits verification engine",
+            "food assistance renewal",
+            "matched documents correctly",
+            "caseworker result",
+            "correctly approved",
+            "result explain file",
+            "paper process",
+            "file moved forward",
+            "faster",
+            "did understand"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "POSITIVE",
+        "actualImpact": "POSITIVE",
+        "expectedThemes": [
+          "positive_experience",
+          "process_confusion"
+        ],
+        "actualThemes": [
+          "process_confusion",
+          "opacity",
+          "positive_experience",
+          "arbitrary_outcome",
+          "discriminatory_impact"
+        ],
+        "matchingThemes": [
+          "positive_experience",
+          "process_confusion"
+        ],
+        "themeRecall": 1
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "traffic-camera-wrong-plate",
+        "title": "Training sample: Traffic citation from a wrong plate match",
+        "domain": "Traffic Management",
+        "expectedImpact": "NEGATIVE",
+        "expectedThemes": [
+          "data_accuracy",
+          "lack_of_recourse"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "A traffic camera system sent me a citation for a car I do not own. The plate number in the photo was blurry, but the automated match treated it as mine. The Department of Mobility told me to pay first and dispute later, which made the process feel backwards."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.743,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.743,
+            "POSITIVE": 0.0223,
+            "UNCLEAR": 0.2347
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9997,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9996,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9987,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9984,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "loss_of_dignity",
+              "confidence": 0.9974,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [
+              "The Department of Mobility"
+            ],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "citation car plate",
+            "traffic camera sent",
+            "dispute later process",
+            "photo blurry automated",
+            "number photo",
+            "match",
+            "pay",
+            "treated department mobility",
+            "told",
+            "sent"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "NEGATIVE",
+        "actualImpact": "NEGATIVE",
+        "expectedThemes": [
+          "data_accuracy",
+          "lack_of_recourse"
+        ],
+        "actualThemes": [
+          "process_confusion",
+          "arbitrary_outcome",
+          "opacity",
+          "data_accuracy",
+          "loss_of_dignity"
+        ],
+        "matchingThemes": [
+          "data_accuracy"
+        ],
+        "themeRecall": 0.5
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "language-access-routing-success",
+        "title": "Training sample: Interpreter routing reached the right person",
+        "domain": "Language Access",
+        "expectedImpact": "POSITIVE",
+        "expectedThemes": [
+          "positive_experience"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "The language access routing system recognized that I needed a Spanish interpreter and connected me to the right office on the first call. The resident services worker confirmed my appointment and I did not have to repeat the same story to three people."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "POSITIVE",
+          "aiConfidenceScore": 0.9408,
+          "humanReviewRequired": false,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.0509,
+            "POSITIVE": 0.9408,
+            "UNCLEAR": 0.0082
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "positive_experience",
+              "confidence": 0.9982,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9924,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9468,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9453,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.2093,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [
+              "routing system"
+            ],
+            "dates": [],
+            "people_roles": [
+              "worker",
+              "resident"
+            ]
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "spanish interpreter connected",
+            "appointment did repeat",
+            "language access",
+            "resident services",
+            "connected right office",
+            "worker",
+            "access routing",
+            "story people",
+            "needed",
+            "confirmed"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "POSITIVE",
+        "actualImpact": "POSITIVE",
+        "expectedThemes": [
+          "positive_experience"
+        ],
+        "actualThemes": [
+          "positive_experience",
+          "process_confusion",
+          "discriminatory_impact",
+          "opacity",
+          "arbitrary_outcome"
+        ],
+        "matchingThemes": [
+          "positive_experience"
+        ],
+        "themeRecall": 1
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "student-support-risk-flag",
+        "title": "Training sample: Student support risk flag after absences",
+        "domain": "Student Support",
+        "expectedImpact": "NEGATIVE",
+        "expectedThemes": [
+          "data_accuracy",
+          "loss_of_dignity",
+          "lack_of_notification"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "The student support system flagged my daughter as high risk after she missed school during a family emergency. No one told us an algorithm was involved. Even after her grades improved, the risk flag stayed in the counselor dashboard and teachers treated her like she was a problem."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.6648,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.6648,
+            "POSITIVE": 0.2499,
+            "UNCLEAR": 0.0853
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "lack_of_notification",
+              "confidence": 0.9993,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9982,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9971,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "loss_of_dignity",
+              "confidence": 0.9967,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9947,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [
+              "algorithm"
+            ],
+            "dates": [],
+            "people_roles": [
+              "student"
+            ]
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "risk missed school",
+            "improved risk flag",
+            "student support",
+            "support flagged daughter",
+            "involved grades improved",
+            "counselor dashboard",
+            "algorithm involved",
+            "treated like problem",
+            "family",
+            "told"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "NEGATIVE",
+        "actualImpact": "NEGATIVE",
+        "expectedThemes": [
+          "data_accuracy",
+          "loss_of_dignity",
+          "lack_of_notification"
+        ],
+        "actualThemes": [
+          "lack_of_notification",
+          "process_confusion",
+          "arbitrary_outcome",
+          "loss_of_dignity",
+          "opacity"
+        ],
+        "matchingThemes": [
+          "loss_of_dignity",
+          "lack_of_notification"
+        ],
+        "themeRecall": 0.67
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "child-welfare-screening-home-visit",
+        "title": "Training sample: Child welfare screening sent workers to my home",
+        "domain": "Child Welfare",
+        "expectedImpact": "NEGATIVE",
+        "expectedThemes": [
+          "loss_of_dignity",
+          "data_accuracy",
+          "lack_of_recourse"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "CPS workers came to my home after the family screening tool gave my report a high risk score. The score seemed to rely on old public benefits records and a previous address. I could not see the score or correct the information before the visit."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.8842,
+          "humanReviewRequired": false,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.8842,
+            "POSITIVE": 0.0367,
+            "UNCLEAR": 0.0791
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9993,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9987,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9978,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9929,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "lack_of_notification",
+              "confidence": 0.9927,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [
+              "CPS"
+            ],
+            "locations": [],
+            "systems": [
+              "screening tool",
+              "risk score",
+              "family screening tool"
+            ],
+            "dates": [],
+            "people_roles": [
+              "worker"
+            ]
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "public benefits records",
+            "report high risk",
+            "family screening tool",
+            "cps",
+            "score score rely",
+            "tool gave report",
+            "previous address",
+            "correct information",
+            "workers came home",
+            "came"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "NEGATIVE",
+        "actualImpact": "NEGATIVE",
+        "expectedThemes": [
+          "loss_of_dignity",
+          "data_accuracy",
+          "lack_of_recourse"
+        ],
+        "actualThemes": [
+          "data_accuracy",
+          "process_confusion",
+          "arbitrary_outcome",
+          "discriminatory_impact",
+          "lack_of_notification"
+        ],
+        "matchingThemes": [
+          "data_accuracy"
+        ],
+        "themeRecall": 0.33
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "job-matching-good-referral",
+        "title": "Training sample: Job matching referral worked",
+        "domain": "Job Matching",
+        "expectedImpact": "POSITIVE",
+        "expectedThemes": [
+          "positive_experience"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "The workforce job matching system suggested a city maintenance opening that matched my license and schedule. A career center worker reviewed the match with me, and I got an interview the next week."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "POSITIVE",
+          "aiConfidenceScore": 0.7701,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.2169,
+            "POSITIVE": 0.7701,
+            "UNCLEAR": 0.013
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "positive_experience",
+              "confidence": 0.998,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9647,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9482,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.5264,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.5075,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [
+              "the next week"
+            ],
+            "people_roles": [
+              "worker"
+            ]
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "matched license schedule",
+            "job matching suggested",
+            "career center worker",
+            "city maintenance",
+            "worker reviewed",
+            "got interview week",
+            "maintenance opening",
+            "opening matched",
+            "suggested city",
+            "reviewed match got"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "POSITIVE",
+        "actualImpact": "POSITIVE",
+        "expectedThemes": [
+          "positive_experience"
+        ],
+        "actualThemes": [
+          "positive_experience",
+          "process_confusion",
+          "discriminatory_impact",
+          "opacity",
+          "data_accuracy"
+        ],
+        "matchingThemes": [
+          "positive_experience"
+        ],
+        "themeRecall": 1
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "energy-assistance-delayed-score",
+        "title": "Training sample: Energy assistance delayed by priority score",
+        "domain": "Energy Forecasting",
+        "expectedImpact": "NEGATIVE",
+        "expectedThemes": [
+          "delayed_outcome",
+          "opacity",
+          "process_confusion"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "My energy assistance request stayed low priority for six weeks because the forecasting tool said my household was not urgent. The office could not explain the criteria. I only found out after calling twice that a priority score was holding the application."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.7354,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.7354,
+            "POSITIVE": 0.0983,
+            "UNCLEAR": 0.1663
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9992,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9989,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "delayed_outcome",
+              "confidence": 0.9984,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9982,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.998,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [
+              "six weeks"
+            ],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "low priority weeks",
+            "energy assistance request",
+            "request stayed low",
+            "score holding application",
+            "explain criteria calling",
+            "urgent",
+            "forecasting",
+            "household",
+            "calling twice",
+            "tool said"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "NEGATIVE",
+        "actualImpact": "NEGATIVE",
+        "expectedThemes": [
+          "delayed_outcome",
+          "opacity",
+          "process_confusion"
+        ],
+        "actualThemes": [
+          "process_confusion",
+          "arbitrary_outcome",
+          "delayed_outcome",
+          "opacity",
+          "data_accuracy"
+        ],
+        "matchingThemes": [
+          "delayed_outcome",
+          "opacity",
+          "process_confusion"
+        ],
+        "themeRecall": 1
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "transit-safety-report-misrouted",
+        "title": "Training sample: Transit safety report went to the wrong team",
+        "domain": "Transit Safety",
+        "expectedImpact": "NEGATIVE",
+        "expectedThemes": [
+          "arbitrary_outcome",
+          "delayed_outcome"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "I reported a broken light at a bus stop, but the routing system sent the safety concern to maintenance for a different station. It took two weeks before the transit authority corrected the category and sent someone to inspect the stop."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.6707,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.6707,
+            "POSITIVE": 0.3202,
+            "UNCLEAR": 0.0091
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9993,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.999,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.998,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "delayed_outcome",
+              "confidence": 0.9964,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "positive_experience",
+              "confidence": 0.9842,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [
+              "transit authority"
+            ],
+            "locations": [],
+            "systems": [
+              "routing system"
+            ],
+            "dates": [
+              "two weeks"
+            ],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "reported broken light",
+            "transit authority corrected",
+            "bus stop routing",
+            "inspect stop",
+            "station took weeks",
+            "safety concern",
+            "maintenance different",
+            "category sent inspect",
+            "authority",
+            "corrected"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "NEGATIVE",
+        "actualImpact": "NEGATIVE",
+        "expectedThemes": [
+          "arbitrary_outcome",
+          "delayed_outcome"
+        ],
+        "actualThemes": [
+          "process_confusion",
+          "arbitrary_outcome",
+          "data_accuracy",
+          "delayed_outcome",
+          "positive_experience"
+        ],
+        "matchingThemes": [
+          "arbitrary_outcome",
+          "delayed_outcome"
+        ],
+        "themeRecall": 1
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "housing-inspection-priority-fixed",
+        "title": "Training sample: Housing inspection priority was corrected",
+        "domain": "Housing Inspections",
+        "expectedImpact": "MIXED",
+        "expectedThemes": [
+          "data_accuracy",
+          "positive_experience",
+          "lack_of_recourse"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "Our building stayed low priority after repeated heat complaints because the inspection system had the wrong unit count. At first no one could tell us how to challenge the priority level. After a community group helped submit photos, the city corrected the record and scheduled an inspection."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.8092,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.8092,
+            "POSITIVE": 0.1708,
+            "UNCLEAR": 0.02
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9997,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9996,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9987,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9965,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "positive_experience",
+              "confidence": 0.9959,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "low priority repeated",
+            "heat complaints inspection",
+            "city corrected record",
+            "building stayed",
+            "low",
+            "submit photos",
+            "scheduled",
+            "unit count tell",
+            "group helped",
+            "wrong"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "MIXED",
+        "actualImpact": "NEGATIVE",
+        "expectedThemes": [
+          "data_accuracy",
+          "positive_experience",
+          "lack_of_recourse"
+        ],
+        "actualThemes": [
+          "data_accuracy",
+          "process_confusion",
+          "arbitrary_outcome",
+          "opacity",
+          "positive_experience"
+        ],
+        "matchingThemes": [
+          "data_accuracy",
+          "positive_experience"
+        ],
+        "themeRecall": 0.67
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "emergency-dispatch-clear",
+        "title": "Training sample: Emergency dispatch triage helped",
+        "domain": "Emergency Services",
+        "expectedImpact": "POSITIVE",
+        "expectedThemes": [
+          "positive_experience"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "The emergency dispatch triage tool routed my call to the right response team quickly. The dispatcher still made the final decision, and the ambulance arrived faster than I expected."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "POSITIVE",
+          "aiConfidenceScore": 0.982,
+          "humanReviewRequired": false,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.0106,
+            "POSITIVE": 0.982,
+            "UNCLEAR": 0.0074
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "positive_experience",
+              "confidence": 0.9956,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.7575,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.2402,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "emergency dispatch triage",
+            "decision ambulance arrived",
+            "team quickly dispatcher",
+            "triage tool",
+            "right response team",
+            "faster expected",
+            "tool routed right",
+            "arrived",
+            "right",
+            "final"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "POSITIVE",
+        "actualImpact": "POSITIVE",
+        "expectedThemes": [
+          "positive_experience"
+        ],
+        "actualThemes": [
+          "positive_experience",
+          "process_confusion",
+          "discriminatory_impact"
+        ],
+        "matchingThemes": [
+          "positive_experience"
+        ],
+        "themeRecall": 1
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "fraud-detection-benefit-hold",
+        "title": "Training sample: Fraud detection hold on benefits",
+        "domain": "Fraud Detection",
+        "expectedImpact": "NEGATIVE",
+        "expectedThemes": [
+          "data_accuracy",
+          "delayed_outcome",
+          "loss_of_dignity"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "A fraud detection system paused my benefits because my bank deposit looked unusual. It was a tax refund, not fraud. The benefits office made me submit the same documents twice, and I felt like I was being treated as dishonest before anyone looked at the evidence."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.9799,
+          "humanReviewRequired": false,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.9799,
+            "POSITIVE": 0.011,
+            "UNCLEAR": 0.0091
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9993,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "loss_of_dignity",
+              "confidence": 0.999,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9984,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9969,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "delayed_outcome",
+              "confidence": 0.9963,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [
+              "benefits office"
+            ],
+            "locations": [],
+            "systems": [
+              "fraud detection system"
+            ],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "refund fraud benefits",
+            "paused benefits bank",
+            "bank deposit looked",
+            "dishonest looked evidence",
+            "benefits office",
+            "unusual tax",
+            "detection paused",
+            "twice felt like",
+            "office submit documents",
+            "treated"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "NEGATIVE",
+        "actualImpact": "NEGATIVE",
+        "expectedThemes": [
+          "data_accuracy",
+          "delayed_outcome",
+          "loss_of_dignity"
+        ],
+        "actualThemes": [
+          "process_confusion",
+          "loss_of_dignity",
+          "arbitrary_outcome",
+          "opacity",
+          "delayed_outcome"
+        ],
+        "matchingThemes": [
+          "delayed_outcome",
+          "loss_of_dignity"
+        ],
+        "themeRecall": 0.67
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "school-lunch-eligibility-confusing",
+        "title": "Training sample: School lunch eligibility was unclear",
+        "domain": "Student Award",
+        "expectedImpact": "UNCLEAR",
+        "expectedThemes": [
+          "process_confusion",
+          "opacity"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "The school lunch eligibility portal changed my status from pending to review. I do not know whether an automated rule caused it or whether a staff member changed the file. The only message said more information was needed."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.7268,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.7268,
+            "POSITIVE": 0.1389,
+            "UNCLEAR": 0.1343
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9923,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9853,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9733,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.973,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9666,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "changed status pending",
+            "school lunch eligibility",
+            "eligibility portal changed",
+            "review",
+            "file message",
+            "caused staff member",
+            "know automated rule",
+            "portal",
+            "needed",
+            "said information"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": false,
+        "expectedImpact": "UNCLEAR",
+        "actualImpact": "NEGATIVE",
+        "expectedThemes": [
+          "process_confusion",
+          "opacity"
+        ],
+        "actualThemes": [
+          "process_confusion",
+          "arbitrary_outcome",
+          "opacity",
+          "discriminatory_impact",
+          "data_accuracy"
+        ],
+        "matchingThemes": [
+          "process_confusion",
+          "opacity"
+        ],
+        "themeRecall": 1
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "community-services-duplicate-profile",
+        "title": "Training sample: Duplicate profile blocked community services",
+        "domain": "Community Services",
+        "expectedImpact": "NEGATIVE",
+        "expectedThemes": [
+          "data_accuracy",
+          "process_confusion"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "The community services intake system created two profiles for me with different spellings of my name. Because the records did not merge, my application looked incomplete and the front desk could not explain why the status kept changing."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.7054,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.7054,
+            "POSITIVE": 0.1077,
+            "UNCLEAR": 0.1869
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9997,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9995,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.999,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9981,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9909,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "profiles different spellings",
+            "intake created profiles",
+            "status kept changing",
+            "community services intake",
+            "application looked incomplete",
+            "did merge",
+            "different",
+            "records",
+            "created",
+            "desk explain"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "NEGATIVE",
+        "actualImpact": "NEGATIVE",
+        "expectedThemes": [
+          "data_accuracy",
+          "process_confusion"
+        ],
+        "actualThemes": [
+          "arbitrary_outcome",
+          "process_confusion",
+          "opacity",
+          "data_accuracy",
+          "discriminatory_impact"
+        ],
+        "matchingThemes": [
+          "data_accuracy",
+          "process_confusion"
+        ],
+        "themeRecall": 1
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "rental-aid-document-upload-worked",
+        "title": "Training sample: Rental aid document upload worked",
+        "domain": "Benefits Administration",
+        "expectedImpact": "POSITIVE",
+        "expectedThemes": [
+          "positive_experience"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "The rental aid portal read my uploaded lease and pay stubs correctly. The caseworker confirmed the automated check and my landlord received the approval notice the same day."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "POSITIVE",
+          "aiConfidenceScore": 0.9427,
+          "humanReviewRequired": false,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.0441,
+            "POSITIVE": 0.9427,
+            "UNCLEAR": 0.0132
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "positive_experience",
+              "confidence": 0.9965,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.963,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9245,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.485,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [
+              "the same day"
+            ],
+            "people_roles": [
+              "caseworker",
+              "worker"
+            ]
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "automated check landlord",
+            "uploaded lease pay",
+            "confirmed automated check",
+            "rental aid",
+            "received approval",
+            "stubs correctly caseworker",
+            "aid portal read",
+            "read uploaded",
+            "check",
+            "notice day"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "POSITIVE",
+        "actualImpact": "POSITIVE",
+        "expectedThemes": [
+          "positive_experience"
+        ],
+        "actualThemes": [
+          "positive_experience",
+          "process_confusion",
+          "discriminatory_impact",
+          "opacity"
+        ],
+        "matchingThemes": [
+          "positive_experience"
+        ],
+        "themeRecall": 1
+      },
+      "syncStatus": "published"
+    },
+    {
+      "story": {
+        "slug": "homeless-services-length-rule",
+        "title": "Training sample: Homeless services rule missed the situation",
+        "domain": "Housing",
+        "expectedImpact": "NEGATIVE",
+        "expectedThemes": [
+          "discriminatory_impact",
+          "arbitrary_outcome",
+          "loss_of_dignity"
+        ],
+        "city": "Pittsburgh",
+        "narrativeText": "The homeless services ranking system said I was not homeless long enough to receive help, even though I had been moving between friends and shelters. The rule did not fit my situation and made me feel like my experience did not count."
+      },
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.9706,
+          "humanReviewRequired": false,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.9706,
+            "POSITIVE": 0.0119,
+            "UNCLEAR": 0.0175
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9993,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9991,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.999,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "loss_of_dignity",
+              "confidence": 0.999,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9924,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "homeless services ranking",
+            "friends shelters rule",
+            "said homeless long",
+            "help moving friends",
+            "long receive help",
+            "rule did",
+            "services",
+            "feel like experience",
+            "fit situation",
+            "count"
+          ]
+        }
+      },
+      "evaluation": {
+        "impactMatched": true,
+        "expectedImpact": "NEGATIVE",
+        "actualImpact": "NEGATIVE",
+        "expectedThemes": [
+          "discriminatory_impact",
+          "arbitrary_outcome",
+          "loss_of_dignity"
+        ],
+        "actualThemes": [
+          "process_confusion",
+          "data_accuracy",
+          "arbitrary_outcome",
+          "loss_of_dignity",
+          "opacity"
+        ],
+        "matchingThemes": [
+          "arbitrary_outcome",
+          "loss_of_dignity"
+        ],
+        "themeRecall": 0.67
+      },
+      "syncStatus": "published"
+    }
+  ],
+  "existingUpdates": [
+    {
+      "id": "adddc778-0c96-41e0-8c2c-7d13324b7d48",
+      "title": "My needs have changed but I am not in a state to prove it",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.8076,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.8076,
+            "POSITIVE": 0.0263,
+            "UNCLEAR": 0.1661
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9971,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9926,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9916,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "loss_of_dignity",
+              "confidence": 0.9822,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9695,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [
+              "today"
+            ],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "prove homeless housing",
+            "aren mental state",
+            "trust issue weird",
+            "foster kid adult",
+            "signs moving",
+            "want county",
+            "health issues issues",
+            "going panhandling flying",
+            "friend",
+            "doesn make"
+          ]
+        }
+      }
+    },
+    {
+      "id": "fc6e193b-7317-43df-96bf-ce796354127f",
+      "title": "Computers can't predict somebody's future",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.4145,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.4145,
+            "POSITIVE": 0.2612,
+            "UNCLEAR": 0.3244
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9914,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9665,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9664,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9142,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "loss_of_dignity",
+              "confidence": 0.9013,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "predict somebody future",
+            "world haven homeless",
+            "limited data",
+            "living cost income",
+            "institutions computer doesn",
+            "scared suffering fears",
+            "based",
+            "day criteria",
+            "evolve",
+            "just way"
+          ]
+        }
+      }
+    },
+    {
+      "id": "372b230d-9f21-4043-b39e-495b798b1234",
+      "title": "The staff needs better training",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "UNCLEAR",
+          "aiConfidenceScore": 0.4442,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.3531,
+            "POSITIVE": 0.2028,
+            "UNCLEAR": 0.4442
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9811,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9728,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9429,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.8254,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "loss_of_dignity",
+              "confidence": 0.668,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [
+              "CPS"
+            ],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": [
+              "worker"
+            ]
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "prms financially benefit",
+            "experience cps staff",
+            "housing basic needs",
+            "stop hiring workers",
+            "needs trained better",
+            "children real",
+            "money set",
+            "come college don",
+            "people making",
+            "maybe happy"
+          ]
+        }
+      }
+    },
+    {
+      "id": "f7448dd1-0865-44d5-a952-a8da6759dede",
+      "title": "Nobody trusts you when you are unhoused",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.9824,
+          "humanReviewRequired": false,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.9824,
+            "POSITIVE": 0.005,
+            "UNCLEAR": 0.0125
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9972,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9957,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "loss_of_dignity",
+              "confidence": 0.9955,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9954,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9937,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "went hospital searched",
+            "reasons free opioids",
+            "body misdiagnosed thought",
+            "drugs cancer inside",
+            "pain",
+            "past experience",
+            "record",
+            "judging based",
+            "time left looking",
+            "likely"
+          ]
+        }
+      }
+    },
+    {
+      "id": "466f3b83-f98c-42fa-8a10-1565a78ee5ba",
+      "title": "The computer system is adding to our already existing struggle with the agency",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.9613,
+          "humanReviewRequired": false,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.9613,
+            "POSITIVE": 0.0121,
+            "UNCLEAR": 0.0266
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9976,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "loss_of_dignity",
+              "confidence": 0.9896,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9895,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9887,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9724,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": [
+              "parent"
+            ]
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "foster care black",
+            "sense use demographics",
+            "computers carry decisions",
+            "determine fit parent",
+            "agency gonna fight",
+            "past somebody history",
+            "life unpredictable",
+            "people make",
+            "80",
+            "say wow oh"
+          ]
+        }
+      }
+    },
+    {
+      "id": "9ea2f196-fb30-4088-ac86-f317881722c0",
+      "title": "The community needs to be a part of what's happening",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.8874,
+          "humanReviewRequired": false,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.8874,
+            "POSITIVE": 0.0419,
+            "UNCLEAR": 0.0706
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.978,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9737,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "loss_of_dignity",
+              "confidence": 0.9521,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.95,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.8972,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [
+              "CPS"
+            ],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": [
+              "parent"
+            ]
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "neighbors cps case",
+            "setting laws happening",
+            "analytics looking age",
+            "live neighborhood mean",
+            "mean shitty parent",
+            "looking zip code",
+            "account things",
+            "language controlling setting",
+            "unfair say 10",
+            "safe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "2a7007c8-cc19-4de5-b53b-86e0af8cd201",
+      "title": "The unhoused individuals should have a voice",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "UNCLEAR",
+          "aiConfidenceScore": 0.4006,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.3598,
+            "POSITIVE": 0.2397,
+            "UNCLEAR": 0.4006
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9966,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9911,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9605,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "loss_of_dignity",
+              "confidence": 0.9576,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9557,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "unhoused individuals allowed",
+            "county homelessness end",
+            "problems society opposed",
+            "suffering internally",
+            "staff",
+            "sleep night",
+            "instead god knows",
+            "like trying prioritize",
+            "heard just",
+            "survive looks"
+          ]
+        }
+      }
+    },
+    {
+      "id": "fa3847c7-cd1c-479f-9a25-750607097ac4",
+      "title": "This tool is not supporting families",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.9936,
+          "humanReviewRequired": false,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.9936,
+            "POSITIVE": 0.0014,
+            "UNCLEAR": 0.005
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9912,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "loss_of_dignity",
+              "confidence": 0.9884,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9843,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.972,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9678,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [
+              "CPS"
+            ],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "supporting families",
+            "people treated badly",
+            "automatically scolded child",
+            "removed cps came",
+            "kid butt",
+            "turn house upside",
+            "naked cabinets uproar",
+            "badly good foot",
+            "just",
+            "think tool plays"
+          ]
+        }
+      }
+    },
+    {
+      "id": "61f3763a-a75b-4f18-ba40-a26e7076a66f",
+      "title": "My application was flagged and nobody could explain why",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.7932,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.7932,
+            "POSITIVE": 0.0176,
+            "UNCLEAR": 0.1892
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9991,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9982,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9958,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9904,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "delayed_outcome",
+              "confidence": 0.986,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "benefits application marked",
+            "extra review notice",
+            "tell record checking",
+            "information looked wrong",
+            "paperwork times",
+            "wrong bring paperwork",
+            "marked",
+            "did",
+            "tell",
+            "bring"
+          ]
+        }
+      }
+    },
+    {
+      "id": "35e1ce17-adca-4fc1-bb8a-3943710803ea",
+      "title": "The flag was fixed, but rent was due before the review ended",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.9222,
+          "humanReviewRequired": false,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.9222,
+            "POSITIVE": 0.0495,
+            "UNCLEAR": 0.0283
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "delayed_outcome",
+              "confidence": 0.9956,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9948,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9947,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9915,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9838,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [
+              "almost a month"
+            ],
+            "people_roles": [
+              "worker"
+            ]
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "fixed mismatch review",
+            "rent buying groceries",
+            "review took",
+            "worker",
+            "time choosing paying",
+            "took month time",
+            "fixed",
+            "buying",
+            "time",
+            "eventually"
+          ]
+        }
+      }
+    },
+    {
+      "id": "237151df-57b2-453f-9fd3-399a2319383c",
+      "title": "The dispatch category did not match what was happening",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.8471,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.8471,
+            "POSITIVE": 0.0945,
+            "UNCLEAR": 0.0584
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9987,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9968,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9947,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9712,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9463,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "request categorized routine",
+            "away dispatcher",
+            "suggested category did",
+            "kind suggested",
+            "request",
+            "routine",
+            "right away",
+            "needed help right",
+            "did match situation",
+            "people outside"
+          ]
+        }
+      }
+    },
+    {
+      "id": "894fb353-dcfd-4189-8531-03b3159b6d40",
+      "title": "The recommendation helped me find a job workshop",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "POSITIVE",
+          "aiConfidenceScore": 0.5841,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.2007,
+            "POSITIVE": 0.5841,
+            "UNCLEAR": 0.2153
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "positive_experience",
+              "confidence": 0.9953,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9748,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9377,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "lack_of_notification",
+              "confidence": 0.8791,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.8443,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "resume workshop",
+            "resume",
+            "recommendation pointed resume",
+            "library recommendation",
+            "branch reach bus",
+            "workshop branch reach",
+            "bus known",
+            "reach",
+            "known",
+            "pointed"
+          ]
+        }
+      }
+    },
+    {
+      "id": "b67a10cb-eb67-45e6-a7c2-0d73eff31894",
+      "title": "Our building stayed low priority after repeated complaints",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.9578,
+          "humanReviewRequired": false,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.9578,
+            "POSITIVE": 0.0084,
+            "UNCLEAR": 0.0338
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9992,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9992,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "delayed_outcome",
+              "confidence": 0.998,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9788,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "positive_experience",
+              "confidence": 0.9321,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "issues inspection date",
+            "building stayed low",
+            "reported heat",
+            "moving complaints want",
+            "date kept moving",
+            "heat water",
+            "low list",
+            "issues",
+            "know",
+            "kept"
+          ]
+        }
+      }
+    },
+    {
+      "id": "167b0c87-b825-438f-9415-512e6e58138b",
+      "title": "My safety report was routed to maintenance instead",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.9349,
+          "humanReviewRequired": false,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.9349,
+            "POSITIVE": 0.0189,
+            "UNCLEAR": 0.0462
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9992,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9991,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9958,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9618,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "positive_experience",
+              "confidence": 0.9583,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "routed maintenance category",
+            "report incident stop",
+            "maintenance",
+            "safety",
+            "category",
+            "changes responds",
+            "said routed",
+            "follow said",
+            "submitted",
+            "matters"
+          ]
+        }
+      }
+    },
+    {
+      "id": "40997255-0bf0-4b72-a887-2cb9ed454922",
+      "title": "The interpreter routing finally got me to the right person",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "POSITIVE",
+          "aiConfidenceScore": 0.9146,
+          "humanReviewRequired": false,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.0763,
+            "POSITIVE": 0.9146,
+            "UNCLEAR": 0.0092
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "positive_experience",
+              "confidence": 0.9932,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9862,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9611,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.8002,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.7271,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "language support appointment",
+            "bringing child translate",
+            "spanish saved",
+            "language",
+            "support",
+            "child",
+            "bringing",
+            "help",
+            "requested",
+            "routed help"
+          ]
+        }
+      }
+    },
+    {
+      "id": "04f92fc8-be29-4aef-bbae-3c99749e4905",
+      "title": "Workers need to know how employers get flagged",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.5142,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.5142,
+            "POSITIVE": 0.1841,
+            "UNCLEAR": 0.3017
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9994,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9987,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9982,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.7513,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.687,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": [
+              "Worker"
+            ]
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "complaints late pay",
+            "decides employers",
+            "workers know",
+            "lot filed complaints",
+            "pay",
+            "know information counts",
+            "investigate",
+            "filed",
+            "late",
+            "office"
+          ]
+        }
+      }
+    },
+    {
+      "id": "d8995c4a-c596-4a53-a3a8-fc3d7cebcca4",
+      "title": "Pending testimony about a school risk score",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.7193,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.7193,
+            "POSITIVE": 0.0294,
+            "UNCLEAR": 0.2513
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9994,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9993,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9978,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9493,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "loss_of_dignity",
+              "confidence": 0.9138,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [
+              "risk score"
+            ],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "notice risk score",
+            "ask questions support",
+            "family received notice",
+            "information used",
+            "decisions",
+            "used respond need",
+            "score",
+            "family",
+            "received",
+            "need way"
+          ]
+        }
+      }
+    },
+    {
+      "id": "5a61cae0-0310-4a08-90c5-0104f829ea94",
+      "title": "Flagged testimony about child welfare screening",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.5594,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.5594,
+            "POSITIVE": 0.128,
+            "UNCLEAR": 0.3126
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9991,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.9985,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9912,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.9901,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9712,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [
+              "child welfare"
+            ],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "welfare screening experience",
+            "family describes",
+            "experience asks clearer",
+            "explanations prior",
+            "current decisions",
+            "describes difficult",
+            "records influence current",
+            "influence",
+            "child",
+            "asks"
+          ]
+        }
+      }
+    },
+    {
+      "id": "538e2f4f-b298-4d2f-aa7f-72089ce91111",
+      "title": "Duplication Test",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.4668,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.4668,
+            "POSITIVE": 0.4087,
+            "UNCLEAR": 0.1245
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.8609,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "positive_experience",
+              "confidence": 0.6902,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.3922,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "duplication test",
+            "duplication",
+            "test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "01f91e13-b963-4567-8f89-eb1fb4d0027b",
+      "title": "aaa",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.4677,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.4677,
+            "POSITIVE": 0.3795,
+            "UNCLEAR": 0.1527
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9201,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9192,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.7743,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.7729,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.7563,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "aaaaaaa"
+          ]
+        }
+      }
+    },
+    {
+      "id": "ed91a561-f0ee-48ab-a08b-a5b6e38af7b5",
+      "title": "Task 1 audio sample: North Wind and the Sun",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "UNCLEAR",
+          "aiConfidenceScore": 0.527,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.1918,
+            "POSITIVE": 0.2812,
+            "UNCLEAR": 0.527
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9709,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9287,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "positive_experience",
+              "confidence": 0.9267,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.7696,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.764,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "cloak north wind",
+            "gave attempt sun",
+            "came wrapped warm",
+            "disputing stronger",
+            "succeeded making traveller",
+            "fold",
+            "confess",
+            "closely did",
+            "obliged",
+            "agreed"
+          ]
+        }
+      }
+    },
+    {
+      "id": "c79ba615-9fda-4eb5-b29a-d31131da7fe3",
+      "title": "Task 1 audio sample: Supportive housing remarks",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "POSITIVE",
+          "aiConfidenceScore": 0.7313,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.1033,
+            "POSITIVE": 0.7313,
+            "UNCLEAR": 0.1654
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "positive_experience",
+              "confidence": 0.9907,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.9303,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "data_accuracy",
+              "confidence": 0.8893,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "process_confusion",
+              "confidence": 0.8783,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.7545,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [],
+            "locations": [
+              "the City of Boston"
+            ],
+            "systems": [],
+            "dates": [],
+            "people_roles": [
+              "Gav",
+              "Taranda",
+              "Menino",
+              "tenant"
+            ]
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "jpndc intern mayor",
+            "boston benefit",
+            "thank governor",
+            "celebrate organization taranda",
+            "grateful excited come",
+            "multiple projects",
+            "gav undersecretary involved",
+            "100 units total",
+            "menino working small",
+            "assistance sort exploration"
+          ]
+        }
+      }
+    },
+    {
+      "id": "101c0adc-cab8-487a-b175-4e48857f2a7a",
+      "title": "Task 1 audio sample: Owl Creek narration",
+      "status": "updated",
+      "result": {
+        "status": "COMPLETED",
+        "task2": {
+          "status": "COMPLETED",
+          "tool": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "aiImpactClassification": "NEGATIVE",
+          "aiConfidenceScore": 0.631,
+          "humanReviewRequired": true,
+          "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+          "evidenceScores": {
+            "NEGATIVE": 0.631,
+            "POSITIVE": 0.1034,
+            "UNCLEAR": 0.2656
+          }
+        },
+        "task3": {
+          "status": "COMPLETED",
+          "tool": "facebook/bart-large-mnli",
+          "aiThemes": [
+            {
+              "theme": "process_confusion",
+              "confidence": 0.9657,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "loss_of_dignity",
+              "confidence": 0.9346,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "arbitrary_outcome",
+              "confidence": 0.9311,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "opacity",
+              "confidence": 0.8636,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            },
+            {
+              "theme": "discriminatory_impact",
+              "confidence": 0.822,
+              "evidence": [],
+              "model": "facebook/bart-large-mnli"
+            }
+          ]
+        },
+        "task4": {
+          "status": "COMPLETED",
+          "tool": "spaCy",
+          "entities": {
+            "agencies": [
+              "the Owl Creek Bridge"
+            ],
+            "locations": [
+              "the American States",
+              "North",
+              "South"
+            ],
+            "systems": [],
+            "dates": [],
+            "people_roles": []
+          }
+        },
+        "task5": {
+          "status": "COMPLETED",
+          "tool": "KeyBERT",
+          "keywords": [
+            "southern prisoner dreams",
+            "civil war 1860s",
+            "owl creek bridge",
+            "takes place",
+            "group soldiers hanging",
+            "escaped happens",
+            "north",
+            "farm",
+            "owner trying stop",
+            "american"
+          ]
+        }
+      }
+    }
+  ]
+}
