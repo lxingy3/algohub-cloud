@@ -90,6 +90,8 @@ export default async function AdminTestimoniesPage({ searchParams }) {
           const storyType = testimony.storyType || 'text';
           const hasAudio = Boolean(testimony.audioFileUrl);
           const hasVideo = Boolean(testimony.videoFileUrl);
+          const isVoiceInput = storyType === 'voice' || hasAudio;
+          const task2Impact = getTask2Impact(testimony);
 
           return (
             <form key={testimony.id} action={`/api/admin/testimonies/${testimony.id}/moderate`} method="post" className="rounded-lg border bg-white p-4">
@@ -131,17 +133,17 @@ export default async function AdminTestimoniesPage({ searchParams }) {
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-800">{testimony.narrativeText}</p>
               </div>
 
-              {testimony.transcriptionText ? (
+              {isVoiceInput ? (
                 <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-xs font-semibold uppercase text-emerald-700">Task 1 transcription result</p>
+                    <p className="text-xs font-semibold uppercase text-emerald-700">Task 1 transcription</p>
                     <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-emerald-800">{testimony.transcriptionStatus}</span>
                   </div>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-emerald-950">{testimony.transcriptionText}</p>
-                </div>
-              ) : storyType === 'voice' ? (
-                <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                  <span className="font-semibold">Task 1 transcription:</span> {testimony.transcriptionStatus}
+                  {testimony.transcriptionText ? (
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-emerald-950">{testimony.transcriptionText}</p>
+                  ) : (
+                    <p className="mt-2 text-sm leading-6 text-emerald-900">No transcript saved yet.</p>
+                  )}
                 </div>
               ) : null}
 
@@ -178,17 +180,16 @@ export default async function AdminTestimoniesPage({ searchParams }) {
 
               <div className="mt-4 rounded-md border border-slate-200 bg-white p-3">
                 <p className="text-xs font-semibold uppercase text-slate-500">Task 2 impact classification</p>
-                {testimony.aiImpactClassification ? (
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                    <span className="rounded-full bg-slate-900 px-2.5 py-1 font-semibold text-white">{testimony.aiImpactClassification}</span>
-                    <span className="text-slate-600">confidence {formatConfidence(testimony.aiConfidenceScore)}</span>
-                    {Number(testimony.aiConfidenceScore) < 0.85 ? (
-                      <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">Needs review</span>
-                    ) : null}
-                  </div>
-                ) : (
-                  <p className="mt-2 text-sm text-slate-500">Not run yet</p>
-                )}
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                  <span className="rounded-full bg-slate-900 px-2.5 py-1 font-semibold text-white">{task2Impact.classification}</span>
+                  <span className="text-slate-600">confidence {formatConfidence(task2Impact.confidence)}</span>
+                  {task2Impact.source === 'estimate' ? (
+                    <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">Page estimate</span>
+                  ) : null}
+                  {task2Impact.confidence < 0.85 ? (
+                    <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">Needs review</span>
+                  ) : null}
+                </div>
               </div>
 
               <textarea name="notes" placeholder="Moderation notes" defaultValue={testimony.moderationNotes || ''} className="mt-3 w-full rounded-md border px-3 py-2" />
@@ -246,4 +247,97 @@ function formatConfidence(value) {
   const score = Number(value);
   if (!Number.isFinite(score)) return 'not available';
   return score.toFixed(2);
+}
+
+function getTask2Impact(testimony) {
+  if (testimony.aiImpactClassification) {
+    return {
+      classification: testimony.aiImpactClassification,
+      confidence: Number.isFinite(Number(testimony.aiConfidenceScore)) ? Number(testimony.aiConfidenceScore) : 0,
+      source: 'stored',
+    };
+  }
+
+  const text = [
+    testimony.title,
+    testimony.narrativeText,
+    testimony.transcriptionText,
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  if (!text.trim()) {
+    return { classification: 'UNCLEAR', confidence: 0.5, source: 'estimate' };
+  }
+
+  const negativeScore = scoreTerms(text, [
+    'harm',
+    'harmed',
+    'unsafe',
+    'denied',
+    'delay',
+    'delayed',
+    'wrong',
+    'incorrect',
+    'risk',
+    'flag',
+    'flagged',
+    'low priority',
+    'unfair',
+    'complaint',
+    'failed',
+    'missing',
+    'not eligible',
+    'rejected',
+    'ignored',
+    'worse',
+    'problem',
+  ]);
+  const positiveScore = scoreTerms(text, [
+    'help',
+    'helped',
+    'support',
+    'supported',
+    'worked',
+    'successful',
+    'success',
+    'faster',
+    'right person',
+    'improved',
+    'approved',
+    'resolved',
+    'connected',
+    'completed',
+    'benefit',
+    'better',
+  ]);
+  const unclearScore = scoreTerms(text, [
+    'not sure',
+    'unclear',
+    'do not know',
+    "don't know",
+    'unknown',
+    'no clear',
+    'cannot tell',
+  ]);
+
+  if (unclearScore >= 2 && Math.max(negativeScore, positiveScore) <= 1) {
+    return { classification: 'UNCLEAR', confidence: confidenceFromScore(unclearScore), source: 'estimate' };
+  }
+  if (negativeScore >= 2 && positiveScore >= 2) {
+    return { classification: 'MIXED', confidence: confidenceFromScore(Math.min(negativeScore, positiveScore) + 1), source: 'estimate' };
+  }
+  if (negativeScore > positiveScore) {
+    return { classification: 'NEGATIVE', confidence: confidenceFromScore(negativeScore), source: 'estimate' };
+  }
+  if (positiveScore > negativeScore) {
+    return { classification: 'POSITIVE', confidence: confidenceFromScore(positiveScore), source: 'estimate' };
+  }
+  return { classification: 'UNCLEAR', confidence: 0.55, source: 'estimate' };
+}
+
+function scoreTerms(text, terms) {
+  return terms.reduce((score, term) => score + (text.includes(term) ? 1 : 0), 0);
+}
+
+function confidenceFromScore(score) {
+  return Math.min(0.84, 0.58 + score * 0.07);
 }
