@@ -26,8 +26,9 @@ function fieldValue(value) {
   return value || 'Not provided';
 }
 
-function getInlineMediaUrl(mediaUrl) {
-  return mediaUrl?.startsWith('data:') ? mediaUrl : '';
+function getDirectMediaUrl(mediaUrl) {
+  if (!mediaUrl || mediaUrl.startsWith('data:') || mediaUrl.startsWith('gcs://')) return '';
+  return mediaUrl;
 }
 
 export default async function AdminTestimoniesPage({ searchParams }) {
@@ -103,12 +104,12 @@ export default async function AdminTestimoniesPage({ searchParams }) {
             hasAudio ? {
               kind: audioFieldMediaKind,
               url: `/api/admin/testimonies/${testimony.id}/media/audio`,
-              inlineUrl: getInlineMediaUrl(testimony.audioFileUrl),
+              directUrl: getDirectMediaUrl(testimony.audioFileUrl),
             } : null,
             hasVideo ? {
               kind: 'video',
               url: `/api/admin/testimonies/${testimony.id}/media/video`,
-              inlineUrl: getInlineMediaUrl(testimony.videoFileUrl),
+              directUrl: getDirectMediaUrl(testimony.videoFileUrl),
             } : null,
           ].filter(Boolean);
 

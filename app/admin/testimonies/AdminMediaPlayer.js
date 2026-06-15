@@ -18,10 +18,10 @@ function MediaItem({ source }) {
   const mediaRef = useRef(null);
   const [objectUrl, setObjectUrl] = useState('');
   const [error, setError] = useState('');
-  const mediaUrl = source.inlineUrl || objectUrl;
+  const mediaUrl = source.directUrl || objectUrl;
 
   useEffect(() => {
-    if (source.inlineUrl) {
+    if (source.directUrl) {
       setError('');
       setObjectUrl('');
       return undefined;
@@ -53,7 +53,7 @@ function MediaItem({ source }) {
       controller.abort();
       if (nextObjectUrl) URL.revokeObjectURL(nextObjectUrl);
     };
-  }, [source.inlineUrl, source.url]);
+  }, [source.directUrl, source.url]);
 
   function pauseOtherMedia() {
     document.querySelectorAll('audio, video').forEach((element) => {
