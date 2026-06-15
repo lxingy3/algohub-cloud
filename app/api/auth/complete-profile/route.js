@@ -110,9 +110,9 @@ async function syncOAuthAccount(userId, provider, providerAccountId) {
 }
 
 function redirectToSetup(request, returnTo, error) {
-  const url = new URL('/auth/complete-profile', request.url);
-  url.searchParams.set('returnTo', returnTo);
-  url.searchParams.set('error', error);
+  const url = new URL(returnTo, request.url);
+  url.searchParams.set('authModal', 'complete-profile');
+  url.searchParams.set('profileError', error);
   return NextResponse.redirect(url, { status: 303 });
 }
 

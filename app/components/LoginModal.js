@@ -58,7 +58,7 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
   }, [initialCallbackUrl]);
 
   async function startSso(providerId) {
-    const setupCallbackUrl = `/auth/complete-profile?returnTo=${encodeURIComponent(callbackUrl)}`;
+    const setupCallbackUrl = withCompleteProfileModal(callbackUrl);
     await fetch('/api/auth/sso-role', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -221,4 +221,10 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
       </div>
     </div>
   );
+}
+
+function withCompleteProfileModal(callbackUrl) {
+  const url = new URL(safeCallbackUrl(callbackUrl) || '/', window.location.origin);
+  url.searchParams.set('authModal', 'complete-profile');
+  return `${url.pathname}${url.search}${url.hash}`;
 }
