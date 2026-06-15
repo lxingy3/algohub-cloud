@@ -7,6 +7,7 @@ import {
   moderationStatuses,
 } from '../../../lib/moderation';
 import { inferStoredMediaKind } from '../../../lib/mediaStorage';
+import { assessMlNarrativeScope } from '../../../lib/mlDomain.js';
 import AdminMediaPlayer from './AdminMediaPlayer';
 import MLQuickTest from './MLQuickTest';
 
@@ -203,6 +204,9 @@ export default async function AdminTestimoniesPage({ searchParams }) {
                   {task2Impact.source === 'estimate' ? (
                     <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">Page estimate</span>
                   ) : null}
+                  {task2Impact.source === 'out_of_scope' ? (
+                    <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">Outside scope</span>
+                  ) : null}
                   {task2Impact.confidence < 0.85 ? (
                     <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">Needs review</span>
                   ) : null}
@@ -214,6 +218,9 @@ export default async function AdminTestimoniesPage({ searchParams }) {
                   <p className="text-xs font-semibold uppercase text-slate-500">Task 3 theme detection</p>
                   {task345Insights.source === 'estimate' ? (
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">Page estimate</span>
+                  ) : null}
+                  {task345Insights.source === 'out_of_scope' ? (
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">Outside scope</span>
                   ) : null}
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -329,6 +336,9 @@ function getTask2Impact(testimony) {
   if (!text.trim()) {
     return { classification: 'UNCLEAR', confidence: 0.5, source: 'estimate' };
   }
+  if (!assessMlNarrativeScope(text).inScope) {
+    return { classification: 'UNCLEAR', confidence: 0, source: 'out_of_scope' };
+  }
 
   const negativeScore = scoreTerms(text, [
     'harm',
@@ -429,6 +439,14 @@ function getTask345Insights(testimony) {
       themes: storedThemes.length ? storedThemes : estimateThemes(testimony),
       entities: storedExperiences.entities,
       keywords: storedExperiences.keywords,
+    };
+  }
+  if (!assessMlNarrativeScope(getStoryText(testimony)).inScope) {
+    return {
+      source: 'out_of_scope',
+      themes: [],
+      entities: Object.fromEntries(entityGroups.map((group) => [group, []])),
+      keywords: [],
     };
   }
 
