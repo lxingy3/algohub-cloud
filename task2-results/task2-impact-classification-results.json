@@ -1,0 +1,84 @@
+{
+  "task": "Task 2: impact classification",
+  "inputField": "narrativeText",
+  "outputFields": [
+    "aiImpactClassification",
+    "aiConfidenceScore"
+  ],
+  "labels": [
+    "NEGATIVE",
+    "POSITIVE",
+    "MIXED",
+    "UNCLEAR"
+  ],
+  "threshold": 0.85,
+  "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+  "status": "COMPLETED",
+  "generatedAt": "2026-06-15T02:17:43.462082+00:00",
+  "results": [
+    {
+      "id": "negative-housing-priority",
+      "title": "Housing priority stayed low after repeated complaints",
+      "inputField": "narrativeText",
+      "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9972,
+      "humanReviewRequired": false,
+      "threshold": 0.85,
+      "evidenceScores": {
+        "NEGATIVE": 0.9972,
+        "POSITIVE": 0.0158,
+        "UNCLEAR": 0.968
+      },
+      "narrativeText": "I kept submitting inspection complaints about unsafe conditions in my apartment building, but the automated housing inspection system kept marking my case as low priority. No one explained how the priority score was calculated, and the delay made my family stay in unsafe housing for months."
+    },
+    {
+      "id": "positive-language-routing",
+      "title": "The interpreter routing finally got me to the right person",
+      "inputField": "narrativeText",
+      "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+      "aiImpactClassification": "POSITIVE",
+      "aiConfidenceScore": 0.9939,
+      "humanReviewRequired": false,
+      "threshold": 0.85,
+      "evidenceScores": {
+        "NEGATIVE": 0.0943,
+        "POSITIVE": 0.9939,
+        "UNCLEAR": 0.006
+      },
+      "narrativeText": "When I requested help in Spanish, the language access routing system connected me to an interpreter and then to the right benefits office. The process was faster than before and I was able to complete my application without having to restart the call."
+    },
+    {
+      "id": "mixed-student-support",
+      "title": "The school risk flag helped but stayed on too long",
+      "inputField": "narrativeText",
+      "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+      "aiImpactClassification": "MIXED",
+      "aiConfidenceScore": 0.9578,
+      "humanReviewRequired": false,
+      "threshold": 0.85,
+      "evidenceScores": {
+        "NEGATIVE": 0.9911,
+        "POSITIVE": 0.9578,
+        "UNCLEAR": 0.082
+      },
+      "narrativeText": "My experience with the student support system was mixed. It helped at first because it noticed that I had missed assignments and prompted my counselor to check in. But after my grades improved, the high-risk label stayed on my record and made teachers treat me like I was still failing."
+    },
+    {
+      "id": "unclear-traffic-notice",
+      "title": "I received a traffic system notice",
+      "inputField": "narrativeText",
+      "model": "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33",
+      "aiImpactClassification": "UNCLEAR",
+      "aiConfidenceScore": 0.9842,
+      "humanReviewRequired": false,
+      "threshold": 0.85,
+      "evidenceScores": {
+        "NEGATIVE": 0.9415,
+        "POSITIVE": 0.6371,
+        "UNCLEAR": 0.9842
+      },
+      "narrativeText": "I received a notice saying that a traffic management system changed signal timing near my street. I do not know whether it affected me personally because I have not noticed a clear change in my commute yet."
+    }
+  ]
+}

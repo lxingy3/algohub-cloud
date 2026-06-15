@@ -55,6 +55,8 @@ export default async function AdminTestimoniesPage({ searchParams }) {
         publicPosting: true,
         followupConsent: true,
         selfReportedImpact: true,
+        aiImpactClassification: true,
+        aiConfidenceScore: true,
         moderationNotes: true,
         submittedAt: true,
         user: { select: { name: true, email: true } },
@@ -174,6 +176,21 @@ export default async function AdminTestimoniesPage({ searchParams }) {
                 </div>
               </div>
 
+              <div className="mt-4 rounded-md border border-slate-200 bg-white p-3">
+                <p className="text-xs font-semibold uppercase text-slate-500">Task 2 impact classification</p>
+                {testimony.aiImpactClassification ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                    <span className="rounded-full bg-slate-900 px-2.5 py-1 font-semibold text-white">{testimony.aiImpactClassification}</span>
+                    <span className="text-slate-600">confidence {formatConfidence(testimony.aiConfidenceScore)}</span>
+                    {Number(testimony.aiConfidenceScore) < 0.85 ? (
+                      <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">Needs review</span>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-500">Not run yet</p>
+                )}
+              </div>
+
               <textarea name="notes" placeholder="Moderation notes" defaultValue={testimony.moderationNotes || ''} className="mt-3 w-full rounded-md border px-3 py-2" />
               <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                 {allowedModerationActions(testimony.moderationStatus).map(([nextStatus, label]) => (
@@ -223,4 +240,10 @@ function StatusTabs({ baseHref, activeStatus, counts }) {
 
 function formatStatusLabel(status) {
   return status.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatConfidence(value) {
+  const score = Number(value);
+  if (!Number.isFinite(score)) return 'not available';
+  return score.toFixed(2);
 }

@@ -12,4 +12,5 @@ pnpm-debug.log*
 
 .vercel
 .task1-whisper-env/
+.task2-deberta-env/
 __pycache__/
