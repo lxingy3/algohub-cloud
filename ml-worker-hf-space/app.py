@@ -19,6 +19,12 @@ AGENCY_PATTERNS = [
     "CPS",
     "child protective services",
     "child welfare",
+    "Pittsburgh Housing Authority",
+    "Housing Authority of the City of Pittsburgh",
+    "Allegheny County Department of Human Services",
+    "Allegheny County benefits office",
+    "Pittsburgh Public Schools",
+    "Pittsburgh Regional Transit",
     "housing authority",
     "public agency",
     "benefits office",
@@ -31,7 +37,18 @@ AGENCY_PATTERNS = [
 SYSTEM_PATTERNS = [
     "algorithm",
     "automated system",
+    "automated housing inspection system",
+    "housing inspection system",
+    "language access routing system",
+    "student support system",
+    "benefits eligibility verification engine",
+    "transit safety routing system",
+    "traffic management system",
     "screening tool",
+    "priority score",
+    "low priority score",
+    "low priority queue",
+    "high-risk label",
     "risk score",
     "risk assessment",
     "eligibility system",
@@ -52,6 +69,57 @@ ROLE_PATTERNS = [
     "parent",
     "applicant",
     "rider",
+    "caseworker",
+    "counselor",
+    "teacher",
+    "interpreter",
+    "benefits worker",
+    "transit worker",
+]
+
+LOCATION_PATTERNS = [
+    "Allegheny County",
+    "Pittsburgh",
+    "Downtown Pittsburgh",
+    "East Liberty",
+    "Homewood",
+    "Oakland",
+    "Squirrel Hill",
+    "Hill District",
+    "North Side",
+    "South Side",
+    "Bloomfield",
+    "Garfield",
+    "Larimer",
+    "Lawrenceville",
+    "Hazelwood",
+    "Carrick",
+    "Beechview",
+    "Brookline",
+    "Mount Washington",
+    "Shadyside",
+    "Manchester",
+    "Strip District",
+    "Forbes Avenue",
+    "East Busway",
+]
+
+ISSUE_PATTERNS = [
+    "mold",
+    "broken heat",
+    "unsafe housing",
+    "food assistance",
+    "benefits application",
+    "outdated income record",
+    "extra review",
+    "safety report",
+    "complaint categories",
+    "location history",
+    "zip code",
+    "missed assignments",
+    "grades improved",
+    "appeal",
+    "algorithm involved",
 ]
 
 
@@ -133,10 +201,12 @@ def spacy_entities(payload: TextRequest, authorization: str | None = Header(defa
 
     lower = text.lower()
     entities["agencies"].extend(find_phrases(text, lower, AGENCY_PATTERNS))
+    entities["locations"].extend(find_phrases(text, lower, LOCATION_PATTERNS))
     entities["systems"].extend(find_phrases(text, lower, SYSTEM_PATTERNS))
+    entities["dates"].extend(extract_date_phrases(text))
     entities["people_roles"].extend(find_phrases(text, lower, ROLE_PATTERNS))
 
-    return {"entities": {key: unique(values) for key, values in entities.items()}}
+    return {"entities": normalize_entities(entities)}
 
 
 @app.post("/keybert-keywords")
@@ -179,6 +249,12 @@ def keyword_candidates(text: str) -> list[str]:
             phrase = clean_keyword(ent.text)
             if phrase:
                 candidates.append(phrase)
+    lower = text.lower()
+    for phrase in AGENCY_PATTERNS + LOCATION_PATTERNS + SYSTEM_PATTERNS + ISSUE_PATTERNS + ROLE_PATTERNS:
+        if phrase.lower() in lower:
+            cleaned = clean_keyword(match_original_case(text, phrase))
+            if cleaned:
+                candidates.append(cleaned)
     return unique(candidates)
 
 
@@ -223,6 +299,33 @@ def empty_entities() -> dict[str, list[str]]:
         "dates": [],
         "people_roles": [],
     }
+
+
+def extract_date_phrases(text: str) -> list[str]:
+    pattern = r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2},?\s+\d{4}\b|\b(?:last year|weeks|months|one day|today|yesterday|tomorrow)\b"
+    return re.findall(pattern, text, flags=re.IGNORECASE)
+
+
+def normalize_entities(entities: dict[str, list[str]]) -> dict[str, list[str]]:
+    normalized = {key: unique([clean_entity(value) for value in values]) for key, values in entities.items()}
+    for key in ["agencies", "locations", "systems"]:
+        normalized[key] = compact_entities(normalized[key])
+    return normalized
+
+
+def clean_entity(value: str) -> str:
+    return re.sub(r"^the\s+", "", clean_text(value), flags=re.IGNORECASE)
+
+
+def compact_entities(values: list[str]) -> list[str]:
+    cleaned = unique(values)
+    result = []
+    for value in cleaned:
+        key = value.lower()
+        if any(other.lower() != key and other.lower().endswith(key) and len(other) > len(value) + 3 for other in cleaned):
+            continue
+        result.append(value)
+    return result
 
 
 def find_phrases(original: str, lower: str, phrases: list[str]) -> list[str]:
