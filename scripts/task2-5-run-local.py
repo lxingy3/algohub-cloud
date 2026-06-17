@@ -177,6 +177,11 @@ SYSTEM_TERMS = [
     "housing inspection system",
     "traffic management system",
     "language access routing system",
+    "transit safety incident classifier",
+    "public housing inspection scheduler",
+    "wage compliance risk model",
+    "library resource recommendation tool",
+    "emergency dispatch triage assistant",
 ]
 
 PITTSBURGH_AGENCIES = [
@@ -225,6 +230,10 @@ PITTSBURGH_LOCATIONS = [
     "Strip District",
     "Forbes Avenue",
     "East Busway",
+    "McKeesport",
+    "Wilkinsburg",
+    "Carrick",
+    "Beechview",
 ]
 
 
@@ -376,9 +385,10 @@ def clean_system_phrase(value: str) -> str:
     phrase = normalize_entity(value)
     phrase = re.sub(r"^.*\bits\s+", "", phrase, flags=re.IGNORECASE)
     phrase = re.sub(r"^.*\bthe\s+", "", phrase, flags=re.IGNORECASE)
+    phrase = re.sub(r"^.*\bto the\s+", "", phrase, flags=re.IGNORECASE)
     if re.search(r"\b(?:think|don't|doesn|didn|wasn|isn|aren)\b", phrase, flags=re.IGNORECASE):
         return ""
-    if phrase.lower() in {"this tool", "the tool", "computer system"}:
+    if phrase.lower() in {"this tool", "the tool", "computer system", "system"}:
         return ""
     for known in SYSTEM_TERMS:
         if phrase_in_text(phrase, known):
@@ -413,6 +423,45 @@ def extract_system_phrases(text: str) -> list[str]:
     return compact_systems(matches)
 
 
+def extract_date_phrases(text: str) -> list[str]:
+    matches = []
+    patterns = [
+        r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2},?\s+\d{4}\b",
+        r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}\b",
+        r"\b(?:Spring|Summer|Fall|Winter)\s+\d{4}\b",
+        r"\b\d{4}\b",
+    ]
+    for pattern in patterns:
+        matches.extend(re.findall(pattern, text, flags=re.IGNORECASE))
+    return unique(matches)
+
+
+def infer_roles(text: str, systems: list[str], agencies: list[str]) -> list[str]:
+    lower = " ".join([text, *systems, *agencies]).lower()
+    roles = []
+    if "child welfare" in lower or "family screening" in lower or "cps" in lower:
+        roles.append("cps worker")
+    if "housing" in lower or "benefits" in lower or "voucher" in lower or "rental aid" in lower:
+        roles.append("caseworker")
+    if "school" in lower or "student" in lower:
+        roles.append("school counselor")
+    if "transit" in lower:
+        roles.append("transit worker")
+    if "dispatch" in lower or "emergency" in lower:
+        roles.append("dispatcher")
+    if "inspection" in lower:
+        roles.append("inspector")
+    if "careerlink" in lower or "job matching" in lower or "employment" in lower:
+        roles.append("career center worker")
+    if "language" in lower or "interpreter" in lower:
+        roles.append("interpreter")
+    if "community services" in lower or "library" in lower:
+        roles.append("front desk worker")
+    if "public safety" in lower:
+        roles.append("public safety worker")
+    return unique(roles)
+
+
 def extract_entities(nlp, text: str) -> dict:
     doc = nlp(text)
     lower_text = text.lower()
@@ -436,14 +485,24 @@ def extract_entities(nlp, text: str) -> dict:
 
     agencies.extend(known_phrases(text, PITTSBURGH_AGENCIES))
     locations.extend(known_phrases(text, PITTSBURGH_LOCATIONS))
-    agencies = [agency for agency in agencies if not re.search(r"\b(?:Algorithm|Tool|System|Engine|Portal|Score)\b", agency, flags=re.IGNORECASE)]
+    systems = extract_system_phrases(text)
+    agencies = [
+        agency for agency in agencies
+        if not re.search(r"\b(?:Algorithm|Tool|System|Engine|Portal|Score|Scheduler|Classifier|Model)\b", agency, flags=re.IGNORECASE)
+        and agency.lower() not in {location.lower() for location in PITTSBURGH_LOCATIONS}
+    ]
+    locations = [
+        location for location in locations
+        if location not in agencies and not re.search(r"\b(?:Office|Department|Authority|Services|Government)\b", location, flags=re.IGNORECASE)
+    ]
+    roles = unique([term for term in ROLE_TERMS if term in lower_text] + infer_roles(text, systems, agencies))
 
     return {
         "agencies": compact_entities(agencies),
         "locations": compact_entities(locations),
-        "systems": extract_system_phrases(text),
-        "dates": unique(dates),
-        "people_roles": [term for term in ROLE_TERMS if term in lower_text],
+        "systems": systems,
+        "dates": compact_entities([*dates, *extract_date_phrases(text)]),
+        "people_roles": roles,
     }
 
 

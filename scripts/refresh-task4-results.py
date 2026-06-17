@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -15,7 +16,7 @@ def load_runner():
 
 
 def main():
-    output_dir = Path("task345-results/existing-stories-ml-output")
+    output_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "task345-results/existing-stories-ml-output")
     combined_path = output_dir / "task2-5-combined-results.json"
     task4_path = output_dir / "task4-entity-extraction-results.json"
     runner = load_runner()
