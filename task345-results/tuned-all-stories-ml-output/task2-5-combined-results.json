@@ -1,0 +1,2204 @@
+{
+  "task": "ML Part 1 Task 2-5",
+  "inputField": "narrativeText",
+  "generatedAt": "2026-06-17T06:19:51.044620+00:00",
+  "results": [
+    {
+      "id": "237151df-57b2-453f-9fd3-399a2319383c",
+      "title": "The dispatch category did not match what was happening",
+      "inputField": "narrativeText",
+      "narrativeText": "In February 2026, I called Allegheny County Emergency Services from Downtown Pittsburgh because two people outside our building needed help right away. The emergency dispatch triage assistant suggested a routine category after the dispatcher entered the first few answers.\n\nThe dispatcher listened when I pushed back and changed the priority, but I could hear the hesitation. The tool did not understand the scene the way a person standing there would. I am glad the dispatcher made the final call, and I worry about what happens when someone is too overwhelmed to explain why the category is wrong.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9954,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9954,
+        "POSITIVE": 0.9893,
+        "MIXED": 0.9744,
+        "UNCLEAR": 0.9918
+      },
+      "aiThemes": [
+        {
+          "theme": "process_confusion",
+          "confidence": 0.9989,
+          "matchedEvidence": [
+            "did not understand"
+          ]
+        },
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.9953,
+          "matchedEvidence": [
+            "wrong"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County Emergency Services"
+          ],
+          "locations": [
+            "Downtown Pittsburgh",
+            "Allegheny County"
+          ],
+          "systems": [
+            "emergency dispatch triage assistant"
+          ],
+          "dates": [
+            "February 2026"
+          ],
+          "people_roles": [
+            "dispatcher"
+          ]
+        },
+        "keywords": [
+          "dispatcher",
+          "routine category",
+          "allegheny county",
+          "hesitation",
+          "scene",
+          "downtown pittsburgh",
+          "two people",
+          "first few answers",
+          "final call",
+          "emergency dispatch triage assistant"
+        ]
+      }
+    },
+    {
+      "id": "7a56bfd1-e638-4f27-ab80-e09d45d39f15",
+      "title": "Incorrect Academic Risk Flag",
+      "inputField": "narrativeText",
+      "narrativeText": "In May 2026, Pittsburgh Public Schools still showed me as high risk in the student support dashboard because of assignments I missed during a family emergency. I was back in class in Oakland and my grades had improved, but the flag did not seem to update with the rest of my record.\n\nOne teacher pulled me aside in front of other students and asked if I was \"still having problems.\" A school counselor told me the student support risk flag system refreshed on its own schedule. I wanted support when I was struggling, not a label that kept explaining me after the situation changed.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9967,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9967,
+        "POSITIVE": 0.9284,
+        "MIXED": 0.1344,
+        "UNCLEAR": 0.9877
+      },
+      "aiThemes": [
+        {
+          "theme": "arbitrary_outcome",
+          "confidence": 0.9991,
+          "matchedEvidence": [
+            "flag did not seem to update"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Pittsburgh Public Schools"
+          ],
+          "locations": [
+            "Pittsburgh",
+            "Oakland"
+          ],
+          "systems": [
+            "student support risk flag system"
+          ],
+          "dates": [
+            "May 2026"
+          ],
+          "people_roles": [
+            "school counselor",
+            "teacher"
+          ]
+        },
+        "keywords": [
+          "student support dashboard",
+          "pittsburgh public schools",
+          "high risk",
+          "support",
+          "school counselor",
+          "family emergency",
+          "assignments",
+          "label",
+          "one teacher",
+          "other students"
+        ]
+      }
+    },
+    {
+      "id": "40997255-0bf0-4b72-a887-2cb9ed454922",
+      "title": "The interpreter routing finally got me to the right person",
+      "inputField": "narrativeText",
+      "narrativeText": "In April 2026, I called from Beechview about a city services appointment and asked for Spanish. The City of Pittsburgh language access routing system sent me to the right interpreter and resident services worker on the first try.\n\nThe difference was practical. I did not have to put my child on the phone, and I did not have to explain private information twice. The interpreter confirmed the appointment time and the documents I needed. I still want the city to explain how language requests are routed, but this time the system helped me reach a person who could actually help.",
+      "aiImpactClassification": "POSITIVE",
+      "aiConfidenceScore": 0.9917,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.0317,
+        "POSITIVE": 0.9917,
+        "MIXED": 0.0143,
+        "UNCLEAR": 0.0072
+      },
+      "aiThemes": [
+        {
+          "theme": "positive_experience",
+          "confidence": 0.9975,
+          "matchedEvidence": [
+            "sent me to the right",
+            "right interpreter",
+            "first try"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "City of Pittsburgh"
+          ],
+          "locations": [
+            "Pittsburgh",
+            "Beechview"
+          ],
+          "systems": [
+            "language access routing system"
+          ],
+          "dates": [
+            "April 2026"
+          ],
+          "people_roles": [
+            "interpreter"
+          ]
+        },
+        "keywords": [
+          "city services appointment",
+          "language access",
+          "interpreter",
+          "spanish",
+          "pittsburgh",
+          "beechview",
+          "private information",
+          "documents",
+          "phone",
+          "first try"
+        ]
+      }
+    },
+    {
+      "id": "b468d7cf-7f1e-4766-959f-5e2fb07db353",
+      "title": "My daughter stayed flagged after a family emergency",
+      "inputField": "narrativeText",
+      "narrativeText": "In February 2026, my daughter missed assignments while we were dealing with a family emergency in Oakland. Pittsburgh Public Schools' student support risk flag system marked her as high risk. We understood why the school wanted to notice students who might need help.\n\nThe problem came after her grades improved. The flag stayed in the counselor dashboard, and two teachers kept talking to her like she was already failing. A school counselor could not tell us when the label would come off or what evidence would clear it. Help starts to feel different when the old label follows the child longer than the crisis did.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9984,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9984,
+        "POSITIVE": 0.8588,
+        "MIXED": 0.9553,
+        "UNCLEAR": 0.9934
+      },
+      "aiThemes": [
+        {
+          "theme": "arbitrary_outcome",
+          "confidence": 0.9993,
+          "matchedEvidence": [
+            "flag stayed",
+            "old label follows"
+          ]
+        },
+        {
+          "theme": "process_confusion",
+          "confidence": 0.9988,
+          "matchedEvidence": [
+            "could not tell"
+          ]
+        },
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.9973,
+          "matchedEvidence": [
+            "grades improved"
+          ]
+        },
+        {
+          "theme": "opacity",
+          "confidence": 0.9969,
+          "matchedEvidence": [
+            "could not tell"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Pittsburgh Public Schools"
+          ],
+          "locations": [
+            "Pittsburgh",
+            "Oakland"
+          ],
+          "systems": [
+            "student support risk flag system"
+          ],
+          "dates": [
+            "February 2026"
+          ],
+          "people_roles": [
+            "school counselor",
+            "teacher"
+          ]
+        },
+        "keywords": [
+          "high risk",
+          "pittsburgh public schools",
+          "family emergency",
+          "counselor dashboard",
+          "old label",
+          "assignments",
+          "daughter",
+          "problem",
+          "two teachers",
+          "school counselor"
+        ]
+      }
+    },
+    {
+      "id": "894fb353-dcfd-4189-8531-03b3159b6d40",
+      "title": "The recommendation helped me find a job workshop",
+      "inputField": "narrativeText",
+      "narrativeText": "In March 2026, I used the Carnegie Library branch computer in Carrick to look for resume help. The library resource recommendation tool suggested a job workshop at a branch I could reach by bus, not just the biggest program downtown.\n\nA front desk worker printed the schedule and helped me register. I would not have known about the workshop otherwise. The recommendation was useful because it matched the practical detail that mattered most to me: whether I could get there after work without paying for a ride.",
+      "aiImpactClassification": "POSITIVE",
+      "aiConfidenceScore": 0.9828,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.0281,
+        "POSITIVE": 0.9828,
+        "MIXED": 0.0052,
+        "UNCLEAR": 0.0252
+      },
+      "aiThemes": [
+        {
+          "theme": "positive_experience",
+          "confidence": 0.9953,
+          "matchedEvidence": [
+            "helped me register"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Carnegie Library"
+          ],
+          "locations": [
+            "Downtown",
+            "Carrick"
+          ],
+          "systems": [
+            "library resource recommendation tool"
+          ],
+          "dates": [
+            "March 2026"
+          ],
+          "people_roles": [
+            "front desk worker"
+          ]
+        },
+        "keywords": [
+          "job workshop",
+          "resume help",
+          "recommendation",
+          "schedule",
+          "carrick",
+          "branch",
+          "front desk worker",
+          "practical detail",
+          "library resource recommendation tool"
+        ]
+      }
+    },
+    {
+      "id": "466f3b83-f98c-42fa-8a10-1565a78ee5ba",
+      "title": "The computer system is adding to our already existing struggle with the agency",
+      "inputField": "narrativeText",
+      "narrativeText": "In April 2026, I was dealing with Allegheny County Department of Human Services in Pittsburgh and the Allegheny Family Screening Tool became another thing to fight. Not only are you fighting the agency, now you have to fight this computer system too.\n\nCPS workers still make decisions, and people still program the tool. That is why it does not help to say the computer did it. A parent needs to know what information was used, who checked it, and how to correct it. Without that, the system just adds another closed door to a process families already do not trust.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9833,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9833,
+        "POSITIVE": 0.0133,
+        "MIXED": 0.0073,
+        "UNCLEAR": 0.1172
+      },
+      "aiThemes": [
+        {
+          "theme": "process_confusion",
+          "confidence": 0.998,
+          "matchedEvidence": [
+            "what information was used",
+            "who checked it",
+            "how to correct it"
+          ]
+        },
+        {
+          "theme": "opacity",
+          "confidence": 0.9856,
+          "matchedEvidence": [
+            "what information was used",
+            "who checked it",
+            "how to correct it"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County Department of Human Services",
+            "CPS"
+          ],
+          "locations": [
+            "Allegheny County",
+            "Pittsburgh"
+          ],
+          "systems": [
+            "allegheny family screening tool"
+          ],
+          "dates": [
+            "April 2026"
+          ],
+          "people_roles": [
+            "cps worker"
+          ]
+        },
+        "keywords": [
+          "family screening tool",
+          "process families",
+          "allegheny county department",
+          "cps workers",
+          "parent",
+          "human services",
+          "another thing",
+          "computer system",
+          "what information",
+          "another closed door"
+        ]
+      }
+    },
+    {
+      "id": "4a098256-c8f0-4b32-a665-e1d9d3676510",
+      "title": "The interpreter line finally got me to the right office",
+      "inputField": "narrativeText",
+      "narrativeText": "In June 2026, I called the City of Pittsburgh resident services office from Bloomfield to ask about a permit notice. The language access routing system recognized that I needed Spanish and moved me to an interpreter without making my child translate for me.\n\nThe interpreter stayed on the line while the resident services worker checked the case number and scheduled the appointment. I did not have to repeat the whole story to three different people. I still want to know how the routing works, but that day it respected my time and my privacy.",
+      "aiImpactClassification": "POSITIVE",
+      "aiConfidenceScore": 0.9922,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9578,
+        "POSITIVE": 0.9922,
+        "MIXED": 0.011,
+        "UNCLEAR": 0.0405
+      },
+      "aiThemes": [
+        {
+          "theme": "positive_experience",
+          "confidence": 0.9979,
+          "matchedEvidence": [
+            "recognized that i needed",
+            "moved me to an interpreter",
+            "interpreter stayed on the line"
+          ]
+        },
+        {
+          "theme": "opacity",
+          "confidence": 0.9138,
+          "matchedEvidence": [
+            "how the routing works"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "City of Pittsburgh resident services office"
+          ],
+          "locations": [
+            "Bloomfield",
+            "Pittsburgh"
+          ],
+          "systems": [
+            "language access routing system"
+          ],
+          "dates": [
+            "June 2026",
+            "that day"
+          ],
+          "people_roles": [
+            "interpreter"
+          ]
+        },
+        "keywords": [
+          "permit notice",
+          "language access",
+          "resident services worker",
+          "routing",
+          "pittsburgh",
+          "appointment",
+          "bloomfield",
+          "privacy",
+          "case number",
+          "child"
+        ]
+      }
+    },
+    {
+      "id": "fc6e193b-7317-43df-96bf-ce796354127f",
+      "title": "Computers can't predict somebody's future",
+      "inputField": "narrativeText",
+      "narrativeText": "In April 2026, I talked with the Allegheny County Government housing office about the housing allocation algorithm after trying to get housing help in Pittsburgh. There is just no way for a computer to accurately predict somebody's future based on limited data. If a person is alone, scared, and afraid of institutions, the computer does not know that.\n\nMy living cost, income, health, and support changed from month to month. A caseworker could hear that when I explained it, but the housing score treated the file like a stable picture. I kept thinking: the world changes every day, so the criteria should be able to change too.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9885,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9885,
+        "POSITIVE": 0.5119,
+        "MIXED": 0.9147,
+        "UNCLEAR": 0.9161
+      },
+      "aiThemes": [
+        {
+          "theme": "opacity",
+          "confidence": 0.993,
+          "matchedEvidence": [
+            "does not know"
+          ]
+        },
+        {
+          "theme": "arbitrary_outcome",
+          "confidence": 0.991,
+          "matchedEvidence": [
+            "score treated"
+          ]
+        },
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.9878,
+          "matchedEvidence": [
+            "limited data",
+            "stable picture"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County Government"
+          ],
+          "locations": [
+            "Allegheny County",
+            "Pittsburgh"
+          ],
+          "systems": [
+            "housing allocation algorithm"
+          ],
+          "dates": [
+            "April 2026",
+            "month"
+          ],
+          "people_roles": [
+            "caseworker"
+          ]
+        },
+        "keywords": [
+          "housing allocation algorithm",
+          "housing score",
+          "living cost",
+          "limited data",
+          "allegheny county government",
+          "criteria",
+          "month",
+          "health",
+          "caseworker",
+          "stable picture"
+        ]
+      }
+    },
+    {
+      "id": "9ea2f196-fb30-4088-ac86-f317881722c0",
+      "title": "The community needs to be a part of what's happening",
+      "inputField": "narrativeText",
+      "narrativeText": "In May 2026, I joined a Pittsburgh conversation about Allegheny County Department of Human Services and the Allegheny Family Screening Tool. We have to be part of the language that controls these systems and the laws around them.\n\nFamilies know what they are doing to keep children safe, even when the record only shows the crisis. A CPS worker or data team may not see the grandmother who stepped in, the neighbor who watched the kids, or the parent who found a way through the week. If the community is not part of the design, the tool will keep missing the work families are already doing.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.3334,
+        "POSITIVE": 0.1463,
+        "MIXED": 0.0024,
+        "UNCLEAR": 0.0357
+      },
+      "aiThemes": [
+        {
+          "theme": "loss_of_dignity",
+          "confidence": 0.9695,
+          "matchedEvidence": [
+            "work families are already doing",
+            "families know"
+          ]
+        },
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.9341,
+          "matchedEvidence": [
+            "record only shows",
+            "may not see",
+            "keep missing"
+          ]
+        },
+        {
+          "theme": "opacity",
+          "confidence": 0.8606,
+          "matchedEvidence": [
+            "language that controls",
+            "not part of the design"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County Department of Human Services",
+            "CPS"
+          ],
+          "locations": [
+            "Allegheny County",
+            "Pittsburgh"
+          ],
+          "systems": [
+            "allegheny family screening tool"
+          ],
+          "dates": [
+            "May 2026",
+            "week"
+          ],
+          "people_roles": [
+            "cps worker"
+          ]
+        },
+        "keywords": [
+          "family screening tool",
+          "allegheny county department",
+          "work families",
+          "cps worker",
+          "pittsburgh conversation",
+          "data team",
+          "neighbor",
+          "design",
+          "human services",
+          "these systems"
+        ]
+      }
+    },
+    {
+      "id": "a974b4ec-5d32-40bf-ae1b-1800a78c814d",
+      "title": "The renewal went through faster than expected",
+      "inputField": "narrativeText",
+      "narrativeText": "I renewed food assistance through the Allegheny County Department of Human Services in May 2026 while staying with family in McKeesport. The benefits verification engine matched my pay stubs and rent statement without asking for the same documents again.\n\nA caseworker still reviewed the file and explained what the system had checked. That mattered because I could ask questions instead of staring at a status page. The renewal finished faster than the paper process, and for once the technology reduced stress instead of adding another errand.",
+      "aiImpactClassification": "POSITIVE",
+      "aiConfidenceScore": 0.9959,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9657,
+        "POSITIVE": 0.9959,
+        "MIXED": 0.0256,
+        "UNCLEAR": 0.0219
+      },
+      "aiThemes": [
+        {
+          "theme": "positive_experience",
+          "confidence": 0.9978,
+          "matchedEvidence": [
+            "finished"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County Department of Human Services"
+          ],
+          "locations": [
+            "Allegheny County",
+            "McKeesport"
+          ],
+          "systems": [
+            "benefits verification engine"
+          ],
+          "dates": [
+            "May 2026"
+          ],
+          "people_roles": [
+            "caseworker"
+          ]
+        },
+        "keywords": [
+          "benefits verification engine",
+          "renewal",
+          "food assistance",
+          "allegheny county department",
+          "pay stubs",
+          "status page",
+          "mckeesport",
+          "caseworker",
+          "paper process",
+          "statement"
+        ]
+      }
+    },
+    {
+      "id": "6020f63a-5938-4138-9000-ca4e1ccb71da",
+      "title": "Incorrect Academic Risk Flag",
+      "inputField": "narrativeText",
+      "narrativeText": "In May 2026, Pittsburgh Public Schools still showed me as high risk in the student support dashboard because of assignments I missed during a family emergency. I was back in class in Oakland and my grades had improved, but the flag did not seem to update with the rest of my record.\n\nOne teacher pulled me aside in front of other students and asked if I was \"still having problems.\" A school counselor told me the student support risk flag system refreshed on its own schedule. I wanted support when I was struggling, not a label that kept explaining me after the situation changed.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9967,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9967,
+        "POSITIVE": 0.9284,
+        "MIXED": 0.1344,
+        "UNCLEAR": 0.9877
+      },
+      "aiThemes": [
+        {
+          "theme": "arbitrary_outcome",
+          "confidence": 0.9991,
+          "matchedEvidence": [
+            "flag did not seem to update"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Pittsburgh Public Schools"
+          ],
+          "locations": [
+            "Pittsburgh",
+            "Oakland"
+          ],
+          "systems": [
+            "student support risk flag system"
+          ],
+          "dates": [
+            "May 2026"
+          ],
+          "people_roles": [
+            "school counselor",
+            "teacher"
+          ]
+        },
+        "keywords": [
+          "student support dashboard",
+          "pittsburgh public schools",
+          "high risk",
+          "support",
+          "school counselor",
+          "family emergency",
+          "assignments",
+          "label",
+          "one teacher",
+          "other students"
+        ]
+      }
+    },
+    {
+      "id": "61f3763a-a75b-4f18-ba40-a26e7076a66f",
+      "title": "My application was flagged and nobody could explain why",
+      "inputField": "narrativeText",
+      "narrativeText": "In May 2026, the Allegheny County benefits office in McKeesport marked my application for extra review. The benefits eligibility verification engine said something in my file needed checking, but the notice did not name the record.\n\nI brought the same paperwork three times: pay stubs, lease, and a letter from my employer. Each benefits worker could see a little more of the file, but nobody could tell me what triggered the flag. I was not trying to avoid review. I wanted to know the question I was supposed to answer.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9877,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9877,
+        "POSITIVE": 0.7134,
+        "MIXED": 0.0054,
+        "UNCLEAR": 0.9142
+      },
+      "aiThemes": [
+        {
+          "theme": "process_confusion",
+          "confidence": 0.9982,
+          "matchedEvidence": [
+            "nobody could tell",
+            "what triggered"
+          ]
+        },
+        {
+          "theme": "opacity",
+          "confidence": 0.9948,
+          "matchedEvidence": [
+            "nobody could tell",
+            "what triggered"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County benefits office"
+          ],
+          "locations": [
+            "Allegheny County",
+            "McKeesport"
+          ],
+          "systems": [
+            "benefits eligibility verification engine"
+          ],
+          "dates": [
+            "May 2026"
+          ],
+          "people_roles": [
+            "benefits worker",
+            "caseworker"
+          ]
+        },
+        "keywords": [
+          "benefits office",
+          "allegheny county",
+          "extra review",
+          "mckeesport",
+          "notice",
+          "checking",
+          "application",
+          "stubs",
+          "same paperwork",
+          "each benefits worker"
+        ]
+      }
+    },
+    {
+      "id": "13544706-cbb5-4756-b4f7-4893448365e8",
+      "title": "The rental aid upload worked the first time",
+      "inputField": "narrativeText",
+      "narrativeText": "I used the Allegheny County Department of Human Services rental aid portal in June 2026 from a computer at the Downtown Pittsburgh library. I was nervous because the last paper application took weeks, but the benefits eligibility verification engine matched my lease, pay stubs, and landlord information the first time.\n\nA caseworker called the next afternoon and walked through what the automated check had accepted. The system did not replace her judgment; it gave her a clear file to review. My landlord received the approval notice the same week. This is the kind of public service technology I can live with: fast enough to matter and still understandable to the person using it.",
+      "aiImpactClassification": "POSITIVE",
+      "aiConfidenceScore": 0.9886,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.305,
+        "POSITIVE": 0.9886,
+        "MIXED": 0.0121,
+        "UNCLEAR": 0.0462
+      },
+      "aiThemes": [
+        {
+          "theme": "positive_experience",
+          "confidence": 0.9979,
+          "matchedEvidence": [
+            "approval notice",
+            "same week"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County Department of Human Services"
+          ],
+          "locations": [
+            "Downtown Pittsburgh",
+            "Allegheny County"
+          ],
+          "systems": [
+            "Department of Human Services rental aid portal",
+            "benefits eligibility verification engine"
+          ],
+          "dates": [
+            "June 2026",
+            "same week",
+            "weeks"
+          ],
+          "people_roles": [
+            "front desk worker",
+            "caseworker"
+          ]
+        },
+        "keywords": [
+          "rental aid portal",
+          "automated check",
+          "allegheny county department",
+          "approval notice",
+          "human services",
+          "downtown pittsburgh library",
+          "benefits",
+          "clear file",
+          "judgment",
+          "last paper application"
+        ]
+      }
+    },
+    {
+      "id": "adddc778-0c96-41e0-8c2c-7d13324b7d48",
+      "title": "My needs have changed but I am not in a state to prove it",
+      "inputField": "narrativeText",
+      "narrativeText": "In March 2026, I was trying to update my record with Allegheny County Government's housing allocation algorithm in Pittsburgh. My needs had changed. Before, I needed help because I had no support and no family. Now I am dealing with health issues and cannot work the same way.\n\nThe housing worker asked for proof, but the hardest parts of my situation were not easy to document. Being tired, sick, scared, or out of options does not fit neatly into an upload box. The score looked backward at old data while I was trying to explain what was happening right now.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9945,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9945,
+        "POSITIVE": 0.904,
+        "MIXED": 0.0328,
+        "UNCLEAR": 0.4457
+      },
+      "aiThemes": [
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.9902,
+          "matchedEvidence": [
+            "score looked backward"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County Government"
+          ],
+          "locations": [
+            "Allegheny County",
+            "Pittsburgh"
+          ],
+          "systems": [
+            "housing allocation algorithm"
+          ],
+          "dates": [
+            "March 2026"
+          ],
+          "people_roles": [
+            "caseworker"
+          ]
+        },
+        "keywords": [
+          "old data",
+          "housing allocation algorithm",
+          "allegheny county government",
+          "housing worker",
+          "health issues",
+          "upload box",
+          "hardest parts",
+          "no support",
+          "no family",
+          "allegheny county"
+        ]
+      }
+    },
+    {
+      "id": "e9f407de-be46-47f7-a4c0-2fd02279ebcd",
+      "title": "The job match actually fit my schedule",
+      "inputField": "narrativeText",
+      "narrativeText": "In May 2026, I met with a PA CareerLink Pittsburgh counselor downtown after months of getting job leads that did not fit my bus schedule. The workforce job matching system suggested a city maintenance opening that matched my license, shift limits, and childcare hours.\n\nThe career center worker did not just hand me a printout. She checked the match, noticed one requirement I had missed, and helped me update my resume before I applied. I got an interview the next week. The system was useful because a person treated it like a starting point, not a final answer.",
+      "aiImpactClassification": "POSITIVE",
+      "aiConfidenceScore": 0.9961,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.975,
+        "POSITIVE": 0.9961,
+        "MIXED": 0.023,
+        "UNCLEAR": 0.0454
+      },
+      "aiThemes": [
+        {
+          "theme": "positive_experience",
+          "confidence": 0.9983,
+          "matchedEvidence": [
+            "got an interview"
+          ]
+        },
+        {
+          "theme": "delayed_outcome",
+          "confidence": 0.9116,
+          "matchedEvidence": [
+            "months"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "PA CareerLink Pittsburgh"
+          ],
+          "locations": [
+            "CareerLink Pittsburgh",
+            "Downtown"
+          ],
+          "systems": [
+            "workforce job matching system"
+          ],
+          "dates": [
+            "next week",
+            "May 2026",
+            "months"
+          ],
+          "people_roles": [
+            "career center worker",
+            "counselor"
+          ]
+        },
+        "keywords": [
+          "career center worker",
+          "pa careerlink pittsburgh",
+          "city maintenance opening",
+          "resume",
+          "bus schedule",
+          "interview",
+          "shift limits",
+          "license",
+          "match",
+          "printout"
+        ]
+      }
+    },
+    {
+      "id": "d232ce9c-27c2-4791-9716-a96d44ed905f",
+      "title": "My utility help stayed low priority for weeks",
+      "inputField": "narrativeText",
+      "narrativeText": "During winter 2026, I applied for utility help through the Allegheny County assistance office after my gas bill jumped. I live in Hazelwood, and the house was getting cold enough that my mother slept in a coat. The energy assistance forecasting tool still kept the application in a low-priority group.\n\nAn assistance office worker told me the score was based on household size, past usage, and shutoff risk, but she could not show me the exact calculation. We waited six weeks. By the time help came through, the late fees had already made the bill harder to catch up.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9963,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9963,
+        "POSITIVE": 0.633,
+        "MIXED": 0.062,
+        "UNCLEAR": 0.9625
+      },
+      "aiThemes": [
+        {
+          "theme": "delayed_outcome",
+          "confidence": 0.9956,
+          "matchedEvidence": [
+            "waited",
+            "weeks"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County assistance office"
+          ],
+          "locations": [
+            "Allegheny County",
+            "Hazelwood"
+          ],
+          "systems": [
+            "energy assistance forecasting tool"
+          ],
+          "dates": [
+            "winter 2026",
+            "six weeks"
+          ],
+          "people_roles": [
+            "assistance office worker"
+          ]
+        },
+        "keywords": [
+          "utility help",
+          "assistance office worker",
+          "shutoff risk",
+          "late fees",
+          "household size",
+          "allegheny county",
+          "past usage",
+          "winter",
+          "gas bill",
+          "low-priority group"
+        ]
+      }
+    },
+    {
+      "id": "f7448dd1-0865-44d5-a952-a8da6759dede",
+      "title": "Nobody trusts you when you are unhoused",
+      "inputField": "narrativeText",
+      "narrativeText": "In February 2026, I was trying to get housing help in Pittsburgh while also dealing with pain and hospital visits. Allegheny County Government's housing allocation algorithm may not know what it feels like when every office treats you like you are hiding something.\n\nI went to the hospital and got searched again and again. Later, when I tried to explain why I needed stable housing, the record still seemed to treat me as a risk instead of a person. The caseworker had a form to complete, but I needed someone to understand why being unhoused makes every interaction harder.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9985,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9985,
+        "POSITIVE": 0.0044,
+        "MIXED": 0.8983,
+        "UNCLEAR": 0.9507
+      },
+      "aiThemes": [
+        {
+          "theme": "loss_of_dignity",
+          "confidence": 0.999,
+          "matchedEvidence": [
+            "hiding something"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County Government"
+          ],
+          "locations": [
+            "Allegheny County",
+            "Pittsburgh"
+          ],
+          "systems": [
+            "housing allocation algorithm"
+          ],
+          "dates": [
+            "February 2026"
+          ],
+          "people_roles": [
+            "caseworker"
+          ]
+        },
+        "keywords": [
+          "housing help",
+          "housing allocation algorithm",
+          "allegheny county government",
+          "caseworker",
+          "pittsburgh",
+          "hospital",
+          "every office",
+          "stable housing",
+          "every interaction",
+          "allegheny county"
+        ]
+      }
+    },
+    {
+      "id": "92a61f24-7db6-4c08-8eec-9ed983198aa3",
+      "title": "My safety report went to the wrong station",
+      "inputField": "narrativeText",
+      "narrativeText": "In April 2026 I reported a broken light and a harassment incident near an East Busway stop. Pittsburgh Regional Transit's transit safety routing system sent the complaint to maintenance for a different station. The confirmation email looked official, so I waited before realizing nobody was checking the right place.\n\nA transit worker eventually found the mistake and changed the report category from maintenance to safety. That correction mattered because it changed which team responded. My concern is that the first automated routing decision looked final even when it was wrong.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9976,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9976,
+        "POSITIVE": 0.9879,
+        "MIXED": 0.0078,
+        "UNCLEAR": 0.9173
+      },
+      "aiThemes": [
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.9992,
+          "matchedEvidence": [
+            "wrong"
+          ]
+        },
+        {
+          "theme": "delayed_outcome",
+          "confidence": 0.9737,
+          "matchedEvidence": [
+            "waited"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Pittsburgh Regional Transit"
+          ],
+          "locations": [
+            "East Busway",
+            "Pittsburgh"
+          ],
+          "systems": [
+            "transit safety routing system"
+          ],
+          "dates": [
+            "April 2026"
+          ],
+          "people_roles": [
+            "transit worker"
+          ]
+        },
+        "keywords": [
+          "pittsburgh regional transit",
+          "harassment incident",
+          "maintenance",
+          "broken light",
+          "correction",
+          "report category",
+          "safety",
+          "confirmation email",
+          "east busway stop",
+          "different station"
+        ]
+      }
+    },
+    {
+      "id": "6084cc8d-d392-4c72-b351-51998e9f628b",
+      "title": "Two versions of my name made the intake status change",
+      "inputField": "narrativeText",
+      "narrativeText": "In spring 2026, I went to the City of Pittsburgh community services office in the Hill District to ask about a neighborhood cleanup program and utility assistance. The front desk worker found two profiles for me in the community services intake system. One had my full legal name and the other had the shorter name I use every day.\n\nBecause the records did not merge, my status changed from complete to incomplete after I had already brought in the paperwork. Nobody at the desk was rude, but they were stuck clicking between two versions of me. I had to come back with the same ID and proof of address just to prove that both records were mine.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9949,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9949,
+        "POSITIVE": 0.8721,
+        "MIXED": 0.1205,
+        "UNCLEAR": 0.9484
+      },
+      "aiThemes": [
+        {
+          "theme": "process_confusion",
+          "confidence": 0.9994,
+          "matchedEvidence": [
+            "two profiles",
+            "clicking between two versions",
+            "status changed"
+          ]
+        },
+        {
+          "theme": "arbitrary_outcome",
+          "confidence": 0.9993,
+          "matchedEvidence": [
+            "status changed"
+          ]
+        },
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.9986,
+          "matchedEvidence": [
+            "not merge",
+            "records did not merge",
+            "two profiles"
+          ]
+        },
+        {
+          "theme": "discriminatory_impact",
+          "confidence": 0.9939,
+          "matchedEvidence": [
+            "neighborhood"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "City of Pittsburgh community services office"
+          ],
+          "locations": [
+            "Hill District",
+            "Pittsburgh"
+          ],
+          "systems": [
+            "community services intake system"
+          ],
+          "dates": [
+            "spring 2026"
+          ],
+          "people_roles": [
+            "front desk worker"
+          ]
+        },
+        "keywords": [
+          "paperwork",
+          "neighborhood cleanup program",
+          "records",
+          "status",
+          "pittsburgh",
+          "hill district",
+          "address",
+          "utility assistance",
+          "proof",
+          "spring"
+        ]
+      }
+    },
+    {
+      "id": "04f92fc8-be29-4aef-bbae-3c99749e4905",
+      "title": "Workers need to know how employers get flagged",
+      "inputField": "narrativeText",
+      "narrativeText": "In February 2026, several of us in Pittsburgh filed wage complaints with the Pennsylvania Department of Labor and Industry after a contractor kept paying late. The wage compliance risk model seemed to decide which employers got investigated first, but workers were not told what information counted.\n\nA labor office worker said complaints, payroll history, and prior violations could matter. That still did not tell us why our case sat for weeks while another employer was contacted quickly. If the model is supposed to protect workers, the people filing complaints should understand how the priority list is being made.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9954,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9954,
+        "POSITIVE": 0.007,
+        "MIXED": 0.0014,
+        "UNCLEAR": 0.9898
+      },
+      "aiThemes": [
+        {
+          "theme": "arbitrary_outcome",
+          "confidence": 0.9991,
+          "matchedEvidence": [
+            "priority list"
+          ]
+        },
+        {
+          "theme": "process_confusion",
+          "confidence": 0.9988,
+          "matchedEvidence": [
+            "what information counted"
+          ]
+        },
+        {
+          "theme": "opacity",
+          "confidence": 0.9987,
+          "matchedEvidence": [
+            "what information counted",
+            "how the priority list is being made"
+          ]
+        },
+        {
+          "theme": "delayed_outcome",
+          "confidence": 0.9979,
+          "matchedEvidence": [
+            "weeks"
+          ]
+        },
+        {
+          "theme": "positive_experience",
+          "confidence": 0.8963,
+          "matchedEvidence": [
+            "quickly"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Pennsylvania Department of Labor and Industry"
+          ],
+          "locations": [
+            "Pittsburgh"
+          ],
+          "systems": [
+            "wage compliance risk model"
+          ],
+          "dates": [
+            "February 2026",
+            "weeks"
+          ],
+          "people_roles": [
+            "worker"
+          ]
+        },
+        "keywords": [
+          "wage complaints",
+          "prior violations",
+          "pennsylvania department",
+          "payroll history",
+          "labor office worker",
+          "priority list",
+          "another employer",
+          "wage compliance risk model",
+          "pennsylvania department of labor and industry"
+        ]
+      }
+    },
+    {
+      "id": "87952919-4611-4873-b766-5280904d402f",
+      "title": "The risk score sent workers to my home before I could respond",
+      "inputField": "narrativeText",
+      "narrativeText": "In March 2026, Allegheny County Department of Human Services sent CPS workers to my home after the Allegheny Family Screening Tool marked a report as high risk. The score seemed to use an old address and public benefits records from a period when my family was already under stress.\n\nThe CPS worker who came to the door was not cruel, but the process started with suspicion before I could explain. I asked what information I could correct and was told the score itself was not something parents could review. That made the visit feel less like support and more like being judged by a record I could not see.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.993,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.993,
+        "POSITIVE": 0.015,
+        "MIXED": 0.0054,
+        "UNCLEAR": 0.9895
+      },
+      "aiThemes": [
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.999,
+          "matchedEvidence": [
+            "old address",
+            "public benefits records"
+          ]
+        },
+        {
+          "theme": "arbitrary_outcome",
+          "confidence": 0.9982,
+          "matchedEvidence": [
+            "score seemed to use an old address and public benefits records from"
+          ]
+        },
+        {
+          "theme": "loss_of_dignity",
+          "confidence": 0.9977,
+          "matchedEvidence": [
+            "being judged"
+          ]
+        },
+        {
+          "theme": "lack_of_recourse",
+          "confidence": 0.9891,
+          "matchedEvidence": [
+            "not something parents could review"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County Department of Human Services",
+            "CPS"
+          ],
+          "locations": [
+            "Allegheny County"
+          ],
+          "systems": [
+            "allegheny family screening tool"
+          ],
+          "dates": [
+            "March 2026"
+          ],
+          "people_roles": [
+            "cps worker",
+            "caseworker"
+          ]
+        },
+        "keywords": [
+          "allegheny county department",
+          "cps worker",
+          "public benefits records",
+          "family screening tool",
+          "high risk",
+          "old address",
+          "stress",
+          "suspicion",
+          "human services",
+          "cps workers"
+        ]
+      }
+    },
+    {
+      "id": "5755ec0c-6c2d-45e3-a904-239c53fdcea3",
+      "title": "The dispatcher routed my call quickly",
+      "inputField": "narrativeText",
+      "narrativeText": "On a rainy night in June 2026, I called Allegheny County Emergency Services from the South Side because a neighbor had collapsed near our building entrance. The dispatcher asked direct questions and used the emergency dispatch triage tool while staying on the line with me.\n\nThis time the system seemed to help instead of hiding the decision. The dispatcher repeated the priority level, explained why an ambulance and a responder were both being sent, and checked whether the person was breathing. The ambulance arrived faster than I expected. I still wanted a human making the final call, and it felt like that was what happened.",
+      "aiImpactClassification": "POSITIVE",
+      "aiConfidenceScore": 0.9936,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9611,
+        "POSITIVE": 0.9936,
+        "MIXED": 0.9578,
+        "UNCLEAR": 0.0268
+      },
+      "aiThemes": [
+        {
+          "theme": "positive_experience",
+          "confidence": 0.9963,
+          "matchedEvidence": [
+            "arrived faster"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County Emergency Services"
+          ],
+          "locations": [
+            "Allegheny County Emergency",
+            "South Side"
+          ],
+          "systems": [
+            "emergency dispatch triage tool"
+          ],
+          "dates": [
+            "June 2026"
+          ],
+          "people_roles": [
+            "dispatcher"
+          ]
+        },
+        "keywords": [
+          "ambulance",
+          "dispatcher",
+          "responder",
+          "priority level",
+          "neighbor",
+          "allegheny county",
+          "rainy night",
+          "direct questions",
+          "human making",
+          "south side"
+        ]
+      }
+    },
+    {
+      "id": "b5272d6c-3f67-4470-ba1c-5bbb9580fc5a",
+      "title": "Photos helped get our inspection priority corrected",
+      "inputField": "narrativeText",
+      "narrativeText": "Our Lawrenceville building had broken heat twice in May 2026, but the City of Pittsburgh Department of Permits, Licenses, and Inspections kept showing our complaint as low priority. The automated housing inspection system had the wrong unit count and did not show that several families were affected.\n\nAn inspector told us to submit photos of the thermostat, the boiler room notice, and the water damage near the hallway. Once those were attached, the priority changed and an inspection date appeared. The fix helped, but tenants should not need a perfect photo packet to make the system believe a building is unsafe.",
+      "aiImpactClassification": "MIXED",
+      "aiConfidenceScore": 0.88,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9973,
+        "POSITIVE": 0.9508,
+        "MIXED": 0.2557,
+        "UNCLEAR": 0.837
+      },
+      "aiThemes": [
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.9995,
+          "matchedEvidence": [
+            "wrong",
+            "unit count"
+          ]
+        },
+        {
+          "theme": "arbitrary_outcome",
+          "confidence": 0.9995,
+          "matchedEvidence": [
+            "kept showing our complaint as low priority",
+            "low priority"
+          ]
+        },
+        {
+          "theme": "positive_experience",
+          "confidence": 0.9815,
+          "matchedEvidence": [
+            "priority changed",
+            "inspection date appeared",
+            "fix helped"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "City of Pittsburgh Department of Permits, Licenses, and Inspections"
+          ],
+          "locations": [
+            "Lawrenceville",
+            "Pittsburgh"
+          ],
+          "systems": [
+            "automated housing inspection system"
+          ],
+          "dates": [
+            "May 2026"
+          ],
+          "people_roles": [
+            "caseworker",
+            "inspector",
+            "tenant"
+          ]
+        },
+        "keywords": [
+          "lawrenceville building",
+          "boiler room notice",
+          "inspections",
+          "pittsburgh",
+          "tenants",
+          "water damage",
+          "low priority",
+          "wrong unit count",
+          "perfect photo packet",
+          "several families"
+        ]
+      }
+    },
+    {
+      "id": "841b25da-25c8-48e3-a267-cc78de41d2c4",
+      "title": "The ranking rule did not fit how I was actually living",
+      "inputField": "narrativeText",
+      "narrativeText": "By February 2026 I was moving between a shelter bed near East Liberty and a friend's couch in Homewood, but the Pittsburgh Housing Authority record treated me like I was only temporarily doubled up. The housing prioritization system put me below people who had been outside longer. I understand why the agency tracks time homeless, but the rule did not fit how I was actually living.\n\nThe caseworker could see that I had no lease, no steady place to sleep, and no way to keep my medications cold. She still said the score came from the system and that she could not adjust it during intake. I left feeling like the form understood one narrow fact and ignored the rest of my life.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9987,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9987,
+        "POSITIVE": 0.0045,
+        "MIXED": 0.0055,
+        "UNCLEAR": 0.9723
+      },
+      "aiThemes": [
+        {
+          "theme": "loss_of_dignity",
+          "confidence": 0.9986,
+          "matchedEvidence": [
+            "treated me like"
+          ]
+        },
+        {
+          "theme": "arbitrary_outcome",
+          "confidence": 0.9973,
+          "matchedEvidence": [
+            "score came from"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Pittsburgh Housing Authority"
+          ],
+          "locations": [
+            "East Liberty",
+            "Pittsburgh",
+            "Homewood"
+          ],
+          "systems": [
+            "housing prioritization system"
+          ],
+          "dates": [
+            "February 2026"
+          ],
+          "people_roles": [
+            "caseworker"
+          ]
+        },
+        "keywords": [
+          "pittsburgh housing authority",
+          "shelter bed",
+          "caseworker",
+          "east liberty",
+          "medications",
+          "intake",
+          "housing prioritization system",
+          "no lease",
+          "no steady place",
+          "one narrow fact"
+        ]
+      }
+    },
+    {
+      "id": "2a7007c8-cc19-4de5-b53b-86e0af8cd201",
+      "title": "The unhoused individuals should have a voice",
+      "inputField": "narrativeText",
+      "narrativeText": "In February 2026, I spoke about Allegheny County Government's housing allocation algorithm in Pittsburgh because unhoused people should have a voice in how the system works. This is about us. Staff and county officials go home at night, but the people being ranked by the score live with the consequences.\n\nThe housing worker may be doing their job, but the design still decides who waits. If the county wants to reduce homelessness, people who have been outside, in shelters, or moving between couches should help define what urgency means. Otherwise the system will keep counting us without listening to us.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9964,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9964,
+        "POSITIVE": 0.0484,
+        "MIXED": 0.0154,
+        "UNCLEAR": 0.0239
+      },
+      "aiThemes": [
+        {
+          "theme": "opacity",
+          "confidence": 0.971,
+          "matchedEvidence": [
+            "how the system works"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County Government"
+          ],
+          "locations": [
+            "Allegheny County",
+            "Pittsburgh"
+          ],
+          "systems": [
+            "housing allocation algorithm"
+          ],
+          "dates": [
+            "February 2026"
+          ],
+          "people_roles": [
+            "caseworker"
+          ]
+        },
+        "keywords": [
+          "housing allocation algorithm",
+          "homelessness",
+          "unhoused people",
+          "housing worker",
+          "allegheny county government",
+          "pittsburgh",
+          "couches",
+          "consequences",
+          "voice",
+          "allegheny county"
+        ]
+      }
+    },
+    {
+      "id": "35e1ce17-adca-4fc1-bb8a-3943710803ea",
+      "title": "The flag was fixed, but rent was due before the review ended",
+      "inputField": "narrativeText",
+      "narrativeText": "In June 2026, my benefits renewal at the Allegheny County Department of Human Services was delayed because the benefits eligibility verification engine found an income mismatch. I live on the North Side, and the difference came from a short-term job that had already ended.\n\nThe caseworker eventually corrected the record, but the review took almost a month. During that time rent was due and I was choosing between groceries and late fees. A system can be technically corrected and still harm people if the correction happens after the deadline that matters.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9981,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9981,
+        "POSITIVE": 0.0114,
+        "MIXED": 0.1156,
+        "UNCLEAR": 0.0505
+      },
+      "aiThemes": [
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.9985,
+          "matchedEvidence": [
+            "mismatch"
+          ]
+        },
+        {
+          "theme": "delayed_outcome",
+          "confidence": 0.9974,
+          "matchedEvidence": [
+            "deadline"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County Department of Human Services"
+          ],
+          "locations": [
+            "Allegheny County",
+            "North Side"
+          ],
+          "systems": [
+            "benefits eligibility verification engine"
+          ],
+          "dates": [
+            "almost a month",
+            "June 2026"
+          ],
+          "people_roles": [
+            "caseworker"
+          ]
+        },
+        "keywords": [
+          "benefits renewal",
+          "income mismatch",
+          "allegheny county",
+          "late fees",
+          "human services",
+          "correction",
+          "caseworker",
+          "deadline",
+          "allegheny county department",
+          "north side"
+        ]
+      }
+    },
+    {
+      "id": "8e8234c7-759e-4c59-88b2-8ebe6f4f3cf6",
+      "title": "My benefits were paused over a tax refund",
+      "inputField": "narrativeText",
+      "narrativeText": "In April 2026, the Allegheny County benefits office paused my food assistance after a tax refund hit my bank account. I live on the North Side, and the deposit was the only unusual thing on my statement. The fraud detection system marked the case before anyone asked what the money was.\n\nThe benefits worker was polite, but the first letter made me feel like I had done something wrong. I uploaded the tax document, then brought a paper copy downtown because the review was still open. For two weeks I bought less food while waiting for a system flag to become a human conversation.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9987,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9987,
+        "POSITIVE": 0.8015,
+        "MIXED": 0.8632,
+        "UNCLEAR": 0.856
+      },
+      "aiThemes": [
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.9923,
+          "matchedEvidence": [
+            "wrong"
+          ]
+        },
+        {
+          "theme": "delayed_outcome",
+          "confidence": 0.9839,
+          "matchedEvidence": [
+            "two weeks",
+            "weeks"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County benefits office"
+          ],
+          "locations": [
+            "Allegheny County",
+            "North Side",
+            "Downtown"
+          ],
+          "systems": [
+            "less food while waiting for a system",
+            "fraud detection system"
+          ],
+          "dates": [
+            "April 2026",
+            "two weeks"
+          ],
+          "people_roles": [
+            "benefits worker",
+            "caseworker"
+          ]
+        },
+        "keywords": [
+          "food assistance",
+          "benefits office",
+          "tax refund",
+          "allegheny county",
+          "bank account",
+          "paper copy downtown",
+          "review",
+          "human conversation",
+          "north side",
+          "only unusual thing"
+        ]
+      }
+    },
+    {
+      "id": "69bf331e-ebc7-4990-b82f-8d29ad964170",
+      "title": "The lunch portal changed my status without explaining why",
+      "inputField": "narrativeText",
+      "narrativeText": "In March 2026, Pittsburgh Public Schools' student award eligibility portal changed my child's lunch benefit status from pending to review. We live in Squirrel Hill, and nothing in our household income had changed. The school staff member at the office could only see that the file needed more information.\n\nThe message did not say whether the student award eligibility portal used an income record, address record, or another rule. I uploaded the same documents twice and still could not tell what was wrong. My child was embarrassed asking the cafeteria worker what to do while the adults tried to decode a status label.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9981,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9981,
+        "POSITIVE": 0.9164,
+        "MIXED": 0.9016,
+        "UNCLEAR": 0.994
+      },
+      "aiThemes": [
+        {
+          "theme": "process_confusion",
+          "confidence": 0.9989,
+          "matchedEvidence": [
+            "could not tell"
+          ]
+        },
+        {
+          "theme": "opacity",
+          "confidence": 0.9985,
+          "matchedEvidence": [
+            "could not tell"
+          ]
+        },
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.997,
+          "matchedEvidence": [
+            "wrong"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Pittsburgh Public Schools'",
+            "Pittsburgh Public Schools"
+          ],
+          "locations": [
+            "Squirrel Hill",
+            "Pittsburgh"
+          ],
+          "systems": [
+            "student award eligibility portal"
+          ],
+          "dates": [
+            "March 2026"
+          ],
+          "people_roles": [
+            "school staff member",
+            "school counselor"
+          ]
+        },
+        "keywords": [
+          "income record",
+          "pittsburgh public schools",
+          "status label",
+          "address record",
+          "cafeteria worker",
+          "child",
+          "squirrel hill",
+          "review",
+          "household income",
+          "school staff member"
+        ]
+      }
+    },
+    {
+      "id": "fa3847c7-cd1c-479f-9a25-750607097ac4",
+      "title": "This tool is not supporting families",
+      "inputField": "narrativeText",
+      "narrativeText": "In June 2026, I spoke about the Allegheny Family Screening Tool after seeing families in Allegheny County treated badly when they were already under pressure. Some parents start on good footing, but without enough support things get out of hand. Then the system reads the situation like risk instead of need.\n\nA CPS worker may only see the score and the report in front of them. The family sees the bigger story: missed work, childcare falling through, food running short, and nobody helping before the crisis. The goal should be supporting families, and I do not think this tool does that by itself.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9973,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9973,
+        "POSITIVE": 0.2551,
+        "MIXED": 0.9723,
+        "UNCLEAR": 0.5201
+      },
+      "aiThemes": [
+        {
+          "theme": "loss_of_dignity",
+          "confidence": 0.9663,
+          "matchedEvidence": [
+            "treated badly",
+            "reads the situation like risk"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "CPS"
+          ],
+          "locations": [
+            "Allegheny County"
+          ],
+          "systems": [
+            "allegheny family screening tool"
+          ],
+          "dates": [
+            "June 2026"
+          ],
+          "people_roles": [
+            "cps worker"
+          ]
+        },
+        "keywords": [
+          "family screening tool",
+          "cps worker",
+          "families",
+          "childcare",
+          "allegheny county",
+          "good footing",
+          "some parents",
+          "enough support things",
+          "bigger story",
+          "missed work"
+        ]
+      }
+    },
+    {
+      "id": "77f45242-d588-443b-8f61-04acb3383814",
+      "title": "My voucher was denied because of an old address",
+      "inputField": "narrativeText",
+      "narrativeText": "In spring 2026, my housing voucher application with the Pittsburgh Housing Authority was marked ineligible because the automated eligibility system used an old shelter address. I had already moved, but the notice did not say where the address came from.\n\nWhen I called, the housing worker could see the mismatch but said there was no simple appeal button in the portal. I had to bring proof of the current address and wait for a manual review. The denial was not just a bad data point; it delayed the one piece of paperwork that could have helped me stabilize housing.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9981,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9981,
+        "POSITIVE": 0.0285,
+        "MIXED": 0.0162,
+        "UNCLEAR": 0.2616
+      },
+      "aiThemes": [
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.9995,
+          "matchedEvidence": [
+            "mismatch"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Pittsburgh Housing Authority"
+          ],
+          "locations": [
+            "Pittsburgh"
+          ],
+          "systems": [
+            "automated eligibility system"
+          ],
+          "dates": [
+            "spring 2026"
+          ],
+          "people_roles": [
+            "caseworker"
+          ]
+        },
+        "keywords": [
+          "housing voucher application",
+          "old shelter address",
+          "pittsburgh housing authority",
+          "current address",
+          "mismatch",
+          "paperwork",
+          "denial",
+          "manual review",
+          "portal",
+          "spring"
+        ]
+      }
+    },
+    {
+      "id": "d64b2cc0-6ab3-4772-a4aa-6d985785cafc",
+      "title": "I got a citation for a car that was not mine",
+      "inputField": "narrativeText",
+      "narrativeText": "In April 2026, the Pittsburgh Department of Mobility and Infrastructure mailed me a traffic citation from a Downtown Pittsburgh camera. The car in the picture was not mine. The plate was blurry, but the traffic management camera system matched it to my registration anyway.\n\nCity staff told me I could dispute it, but the instructions made it sound like I should pay first and argue later. A city staff member eventually reviewed the photo after I printed my registration and a note from my insurance company. The mistake was corrected, but the burden was on me to prove the system had guessed wrong.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9984,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9984,
+        "POSITIVE": 0.9568,
+        "MIXED": 0.0153,
+        "UNCLEAR": 0.7918
+      },
+      "aiThemes": [
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.9979,
+          "matchedEvidence": [
+            "wrong"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Pittsburgh Department of Mobility and Infrastructure"
+          ],
+          "locations": [
+            "Downtown Pittsburgh"
+          ],
+          "systems": [
+            "traffic management camera system"
+          ],
+          "dates": [
+            "April 2026"
+          ],
+          "people_roles": [
+            "city staff member",
+            "police officer"
+          ]
+        },
+        "keywords": [
+          "traffic citation",
+          "downtown pittsburgh camera",
+          "registration",
+          "mistake",
+          "insurance company",
+          "infrastructure",
+          "picture",
+          "plate",
+          "city staff member",
+          "pittsburgh department"
+        ]
+      }
+    },
+    {
+      "id": "372b230d-9f21-4043-b39e-495b798b1234",
+      "title": "The staff needs better training",
+      "inputField": "narrativeText",
+      "narrativeText": "In March 2026, I talked about Allegheny County Department of Human Services and the Allegheny Family Screening Tool in Pittsburgh. The tool is not the only issue. CPS staff need better training, better pay, and more real-life experience with families before they are sent into people's homes.\n\nWhen workers are rushed or burned out, a risk score can become a shortcut. Families feel that. A parent who needs help gets treated like a threat, and a worker who does not have enough support leans on whatever the screen says. No model can fix a system that has not invested in the people using it.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9884,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9884,
+        "POSITIVE": 0.0592,
+        "MIXED": 0.614,
+        "UNCLEAR": 0.0537
+      },
+      "aiThemes": [
+        {
+          "theme": "loss_of_dignity",
+          "confidence": 0.9925,
+          "matchedEvidence": [
+            "treated like a threat",
+            "families feel that"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Allegheny County Department of Human Services",
+            "CPS"
+          ],
+          "locations": [
+            "Allegheny County",
+            "Pittsburgh"
+          ],
+          "systems": [
+            "allegheny family screening tool",
+            "risk score"
+          ],
+          "dates": [
+            "March 2026"
+          ],
+          "people_roles": [
+            "cps worker"
+          ]
+        },
+        "keywords": [
+          "family screening tool",
+          "cps staff",
+          "human services",
+          "allegheny county",
+          "risk score",
+          "parent",
+          "better training",
+          "threat",
+          "shortcut",
+          "allegheny county department"
+        ]
+      }
+    },
+    {
+      "id": "b67a10cb-eb67-45e6-a7c2-0d73eff31894",
+      "title": "Our building stayed low priority after repeated complaints",
+      "inputField": "narrativeText",
+      "narrativeText": "In April 2026, tenants in our Wilkinsburg building reported heat and water problems to the City of Pittsburgh Department of Permits, Licenses, and Inspections more than once. The public housing inspection scheduler kept our case low priority, even after a neighbor with asthma called again.\n\nThe inspector who finally came said the record did not show enough affected units. That may be true in the database, but it was not true in the hallway. We had to collect photos and apartment numbers ourselves before the priority changed. The system turned a building problem into a paperwork problem for tenants who were already dealing with unsafe conditions.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9955,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9955,
+        "POSITIVE": 0.0363,
+        "MIXED": 0.0109,
+        "UNCLEAR": 0.3897
+      },
+      "aiThemes": [
+        {
+          "theme": "arbitrary_outcome",
+          "confidence": 0.9996,
+          "matchedEvidence": [
+            "kept our case low priority",
+            "low priority"
+          ]
+        },
+        {
+          "theme": "positive_experience",
+          "confidence": 0.8941,
+          "matchedEvidence": [
+            "priority changed"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "City of Pittsburgh Department of Permits, Licenses, and Inspections"
+          ],
+          "locations": [
+            "Wilkinsburg",
+            "Pittsburgh"
+          ],
+          "systems": [
+            "public housing inspection scheduler"
+          ],
+          "dates": [
+            "April 2026"
+          ],
+          "people_roles": [
+            "caseworker",
+            "inspector",
+            "tenant"
+          ]
+        },
+        "keywords": [
+          "tenants",
+          "low priority",
+          "wilkinsburg building",
+          "pittsburgh",
+          "unsafe conditions",
+          "paperwork problem",
+          "building problem",
+          "inspector",
+          "asthma",
+          "photos"
+        ]
+      }
+    },
+    {
+      "id": "167b0c87-b825-438f-9415-512e6e58138b",
+      "title": "My safety report was routed to maintenance instead",
+      "inputField": "narrativeText",
+      "narrativeText": "In April 2026, I used Pittsburgh Regional Transit's online safety form after someone followed me near an East Busway stop. The transit safety incident classifier routed the report as maintenance because I mentioned a broken light in the same paragraph.\n\nThat category changed who saw it. A maintenance worker checked the light, but nobody contacted me about the safety concern until I called again. The transit worker who fixed the category apologized, but the first automated label had already cost several days. A rider should not have to know the right keywords to get a safety report treated as safety.",
+      "aiImpactClassification": "NEGATIVE",
+      "aiConfidenceScore": 0.9955,
+      "humanReviewRequired": false,
+      "evidenceScores": {
+        "NEGATIVE": 0.9955,
+        "POSITIVE": 0.9247,
+        "MIXED": 0.0087,
+        "UNCLEAR": 0.4977
+      },
+      "aiThemes": [
+        {
+          "theme": "data_accuracy",
+          "confidence": 0.9988,
+          "matchedEvidence": [
+            "routed the report as maintenance"
+          ]
+        },
+        {
+          "theme": "arbitrary_outcome",
+          "confidence": 0.9988,
+          "matchedEvidence": [
+            "routed the report as maintenance"
+          ]
+        },
+        {
+          "theme": "delayed_outcome",
+          "confidence": 0.9966,
+          "matchedEvidence": [
+            "cost several days",
+            "several days"
+          ]
+        }
+      ],
+      "aiExtractedExperiences": {
+        "entities": {
+          "agencies": [
+            "Pittsburgh Regional Transit"
+          ],
+          "locations": [
+            "East Busway",
+            "Pittsburgh"
+          ],
+          "systems": [
+            "transit safety incident classifier"
+          ],
+          "dates": [
+            "several days",
+            "April 2026"
+          ],
+          "people_roles": [
+            "transit worker"
+          ]
+        },
+        "keywords": [
+          "safety report",
+          "broken light",
+          "pittsburgh regional transit",
+          "maintenance worker",
+          "east busway stop",
+          "right keywords",
+          "rider",
+          "same paragraph",
+          "safety concern",
+          "transit worker"
+        ]
+      }
+    }
+  ]
+}

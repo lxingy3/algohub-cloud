@@ -54,14 +54,25 @@ for (const expected of expectedRecords) {
     if (!Array.isArray(theme.matchedEvidence) || theme.matchedEvidence.length === 0) {
       issues.push({ id: row.id, title, type: 'theme_without_evidence', theme: theme.theme });
     }
+    for (const evidence of theme.matchedEvidence || []) {
+      if (String(evidence).length > 160) {
+        issues.push({ id: row.id, title, type: 'theme_evidence_too_long', theme: theme.theme, value: evidence });
+      }
+    }
   }
   for (const [field, required] of Object.entries(expected.requiredEntityFields || {})) {
     if (required && (!Array.isArray(entities[field]) || entities[field].length === 0)) {
       issues.push({ id: row.id, title, type: 'missing_entity_field', field });
     }
   }
+  const agencyKeys = new Set((entities.agencies || []).map(normalizeEntityKey));
+  for (const location of entities.locations || []) {
+    if (agencyKeys.has(normalizeEntityKey(location))) {
+      issues.push({ id: row.id, title, type: 'agency_location_duplicate', value: location });
+    }
+  }
   for (const system of entities.systems || []) {
-    if (/^(a |the )?system$|^(a |the )?tool$|can fix|fight this|you have to/i.test(system)) {
+    if (/^(a |the )?system$|^(a |the )?tool$|^(routing|inspection|screening|benefits|student support|traffic management|language access|public safety) system$|can fix|fight this|you have to/i.test(system)) {
       issues.push({ id: row.id, title, type: 'bad_system', value: system });
     }
   }
@@ -91,3 +102,7 @@ const report = {
 
 console.log(JSON.stringify(report, null, 2));
 process.exitCode = issues.length ? 1 : 0;
+
+function normalizeEntityKey(value) {
+  return String(value || '').toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
+}
