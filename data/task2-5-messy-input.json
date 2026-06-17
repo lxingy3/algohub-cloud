@@ -1,0 +1,52 @@
+[
+  {
+    "id": "messy-benefits-reopened-001",
+    "title": "The office found the missing proof after I had already panicked",
+    "narrativeText": "I went to the Allegheny County assistance office in Wilkinsburg on May 6, 2026 because my SNAP renewal looked dead on the portal. The benefits eligibility verification engine said my wage proof was missing, even though I had uploaded the same PDF twice. I was scared the card would shut off before the weekend.\n\nA benefits worker finally searched the state wage record and found the document under my old employer name. She reopened the case the same afternoon and explained what the system matched wrong. So the ending was good, but the first notice made it sound like I had failed to do something."
+  },
+  {
+    "id": "messy-transit-safety-002",
+    "title": "My bus stop report went into a pothole queue",
+    "narrativeText": "This was in South Side in June 2026, near the stop by East Carson. I reported that the same man kept following riders after dark. Pittsburgh Regional Transit's transit safety incident classifier put it under street repair because I mentioned the broken curb too.\n\nThe transit worker I reached by phone could see the wrong queue but said the classifier had already sent the report to maintenance. Nobody from safety called me for nine days. I stopped using that stop, which is not exactly a solution."
+  },
+  {
+    "id": "messy-school-lunch-003",
+    "title": "Two addresses made the lunch status flip",
+    "narrativeText": "In March 2026, Pittsburgh Public Schools sent my son home from a middle school in Carrick with a meal balance notice. The student award eligibility portal had our old Beechview address from last year and my current address from the shelter intake form.\n\nThe school secretary said the system showed two households and changed him from free lunch to reduced lunch. I asked which address controlled the decision, but she could not tell. It was embarrassing because he found out in the lunch line before I did."
+  },
+  {
+    "id": "messy-housing-photo-004",
+    "title": "The inspection score changed only after my neighbor helped with photos",
+    "narrativeText": "On April 18, 2026, I complained to the City of Pittsburgh Department of Permits, Licenses, and Inspections from my apartment in Lawrenceville. The automated housing inspection system kept my leak complaint low priority. The first description I typed was short because I was on my phone.\n\nMy neighbor helped me upload photos of the ceiling stain and the outlet. After that, an inspector called and the inspection date appeared. I am glad it moved, but it bothers me that the score seemed to trust pictures more than what I wrote."
+  },
+  {
+    "id": "messy-job-match-005",
+    "title": "The job list acted like I still owned a car",
+    "narrativeText": "PA CareerLink Pittsburgh sent me warehouse matches in the Strip District in July 2026. The workforce job matching system kept ranking jobs that started before buses run from McKeesport. My profile still had 'reliable transportation' from when I had a car last year.\n\nA career center worker showed me where to edit the answer, but the ranking did not change for the applications I had already saved. It felt like the old profile mattered more than what I can actually do now."
+  },
+  {
+    "id": "messy-language-court-006",
+    "title": "The interpreter helped on the call but not on the letter",
+    "narrativeText": "I called the City of Pittsburgh resident services office from Beechview on June 11, 2026 about a housing code letter. The language access routing system connected me to a Spanish interpreter quickly, and the city staff member stayed on the line while we went through the complaint number.\n\nThen the follow-up letter came only in English. I missed the part about sending photos within five days. The clerk reopened it later, but nobody explained why the language request did not carry over."
+  },
+  {
+    "id": "messy-child-welfare-007",
+    "title": "A score decided the visit before anyone read the doctor's note",
+    "narrativeText": "In February 2026, Allegheny County Department of Human Services used the Allegheny Family Screening Tool after someone called about my toddler's weight. The CPS worker came to our place in Homewood before the pediatrician fax was in the file.\n\nThe risk score treated the missed appointment as neglect. I had rescheduled because Children's Hospital moved the appointment after a snow day. The supervisor later said the note helped, but the first visit made me feel like the system had already decided what kind of parent I was."
+  },
+  {
+    "id": "messy-energy-positive-008",
+    "title": "The heat alert actually got my shutoff notice paused",
+    "narrativeText": "On January 24, 2026, I called the Allegheny County assistance office from Carrick after Duquesne Light sent a shutoff warning. The energy assistance forecasting tool flagged our block during the cold snap and the assistance office worker saw that my father uses an oxygen machine.\n\nShe paused the shutoff request and told me exactly which medical form to upload. The approval came that same week. I still do not love that a score sits between us and heat, but this time it helped someone notice the risk."
+  },
+  {
+    "id": "messy-traffic-sign-009",
+    "title": "The camera ticket ignored the temporary sign",
+    "narrativeText": "Downtown Pittsburgh, April 2026. I followed a temporary lane sign on Liberty Avenue, then got a citation from the City of Pittsburgh traffic management camera system. The photo showed my car in the bus lane, but it did not show the construction sign that sent drivers there.\n\nThe police officer at Zone 2 said the camera had been recalibrated, but the appeal portal still marked the ticket valid. I uploaded a photo and waited two weeks. No one explained which image counted, so I paid before the late fee."
+  },
+  {
+    "id": "messy-library-positive-010",
+    "title": "The library suggestion sent me to the right branch",
+    "narrativeText": "In August 2026, I used a Carnegie Library resource recommendation tool while looking for help printing housing forms. I was in Oakland but the tool noticed the Downtown branch had a walk-in legal clinic that afternoon.\n\nThe front desk worker there already knew which forms people were asking for and pointed me to the right computer. I finished the packet before the housing deadline. It was one of the few times an automated suggestion respected how little time I had."
+  }
+]

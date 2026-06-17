@@ -1,0 +1,97 @@
+{
+  "name": "task2-5-messy-user-story-eval-set",
+  "source": "data/task2-5-messy-input.json",
+  "updatedAt": "2026-06-17T00:00:00.000Z",
+  "records": [
+    {
+      "id": "messy-benefits-reopened-001",
+      "title": "The office found the missing proof after I had already panicked",
+      "expectedImpact": "MIXED",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "positive_experience", "process_confusion"],
+      "requiredEntityFields": { "agencies": true, "locations": true, "systems": true, "dates": true, "people_roles": true },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "messy-transit-safety-002",
+      "title": "My bus stop report went into a pothole queue",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "delayed_outcome", "arbitrary_outcome"],
+      "requiredEntityFields": { "agencies": true, "locations": true, "systems": true, "dates": true, "people_roles": true },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "messy-school-lunch-003",
+      "title": "Two addresses made the lunch status flip",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "process_confusion", "loss_of_dignity"],
+      "requiredEntityFields": { "agencies": true, "locations": true, "systems": true, "dates": true, "people_roles": true },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "messy-housing-photo-004",
+      "title": "The inspection score changed only after my neighbor helped with photos",
+      "expectedImpact": "MIXED",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["arbitrary_outcome", "data_accuracy", "positive_experience"],
+      "requiredEntityFields": { "agencies": true, "locations": true, "systems": true, "dates": true, "people_roles": true },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "messy-job-match-005",
+      "title": "The job list acted like I still owned a car",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "lack_of_recourse", "arbitrary_outcome"],
+      "requiredEntityFields": { "agencies": true, "locations": true, "systems": true, "dates": true, "people_roles": true },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "messy-language-court-006",
+      "title": "The interpreter helped on the call but not on the letter",
+      "expectedImpact": "MIXED",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["positive_experience", "lack_of_notification", "delayed_outcome", "opacity"],
+      "requiredEntityFields": { "agencies": true, "locations": true, "systems": true, "dates": true, "people_roles": true },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "messy-child-welfare-007",
+      "title": "A score decided the visit before anyone read the doctor's note",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "arbitrary_outcome", "loss_of_dignity"],
+      "requiredEntityFields": { "agencies": true, "locations": true, "systems": true, "dates": true, "people_roles": true },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "messy-energy-positive-008",
+      "title": "The heat alert actually got my shutoff notice paused",
+      "expectedImpact": "POSITIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["positive_experience"],
+      "requiredEntityFields": { "agencies": true, "locations": true, "systems": true, "dates": true, "people_roles": true },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "messy-traffic-sign-009",
+      "title": "The camera ticket ignored the temporary sign",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "opacity", "delayed_outcome", "lack_of_recourse"],
+      "requiredEntityFields": { "agencies": true, "locations": true, "systems": true, "dates": true, "people_roles": true },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "messy-library-positive-010",
+      "title": "The library suggestion sent me to the right branch",
+      "expectedImpact": "POSITIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["positive_experience"],
+      "requiredEntityFields": { "agencies": true, "locations": true, "systems": true, "dates": true, "people_roles": true },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    }
+  ]
+}

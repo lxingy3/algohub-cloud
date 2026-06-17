@@ -63,6 +63,14 @@ THEME_EVIDENCE = {
     "positive_experience": [
         r"\bconnected me\b",
         r"\brecognized\b[^\n.]{0,120}\bneeded\b",
+        r"\bfound the document\b",
+        r"\breopened the case\b",
+        r"\bsame afternoon\b",
+        r"\bpaused the shutoff\b",
+        r"\bpaused the shutoff request\b",
+        r"\bapproval came\b",
+        r"\btold me exactly\b",
+        r"\bhelped someone notice\b",
         r"\brouted\b[^\n.]{0,80}\bright\b",
         r"\brouted\b[^\n.]{0,80}\bquickly\b",
         r"\bsent me to the right\b",
@@ -104,9 +112,13 @@ THEME_EVIDENCE = {
         r"\bclosed door\b",
         r"\bhad to come back\b",
         r"\bnot easy to document\b",
+        r"\branking did not change\b",
+        r"\balready saved\b",
         r"\bprove it\b",
         r"\bpaid because the late fee\b",
         r"\blate fee was coming\b",
+        r"\bpaid before the late fee\b",
+        r"\bappeal portal\b[^\n.]{0,120}\bstill marked\b",
         r"\bno way to correct\b",
         r"\bdeleting my profile\b",
         r"\bseparate form\b[^\n.]{0,120}\bapproved\b",
@@ -132,6 +144,7 @@ THEME_EVIDENCE = {
         r"\btwo profiles\b",
         r"\bclicking between two versions\b",
         r"\bstatus changed\b",
+        r"\bfirst notice\b",
         r"\bdid not understand\b",
         r"\bdidn't understand\b",
         r"\bdo not know whether\b",
@@ -141,6 +154,9 @@ THEME_EVIDENCE = {
     ],
     "arbitrary_outcome": [
         r"\bkept\b[^\n.]{0,120}\b(low priority|high-risk|label|score)\b",
+        r"\bkept ranking\b",
+        r"\bwrong queue\b",
+        r"\bsent the report to maintenance\b",
         r"\bstayed\b[^\n.]{0,120}\b(record|label|priority)\b",
         r"\bflag stayed\b",
         r"\bflag\b[^\n.]{0,120}\bdid not seem to update\b",
@@ -153,6 +169,7 @@ THEME_EVIDENCE = {
         r"\bscore\b[^\n.]{0,120}\b(from|came from|decided)\b",
         r"\bscore treated\b",
         r"\bstill treated\b",
+        r"\bchanged only after\b",
         r"\bold label follows\b",
         r"\brandom\b",
         r"\binconsistent\b",
@@ -164,6 +181,8 @@ THEME_EVIDENCE = {
         r"\btwo weeks\b",
         r"\bthree weeks\b",
         r"\btwelve days\b",
+        r"\bnine days\b",
+        r"\bfive days\b",
         r"\bmissed the deadline\b",
         r"\bdeadline\b",
         r"\bweeks\b",
@@ -199,6 +218,8 @@ THEME_EVIDENCE = {
         r"\brecords did not merge\b",
         r"\btwo profiles\b",
         r"\btwo versions\b",
+        r"\btwo addresses\b",
+        r"\btwo households\b",
         r"\blimited data\b",
         r"\bstable picture\b",
         r"\bscore looked backward\b",
@@ -207,6 +228,18 @@ THEME_EVIDENCE = {
         r"\bkeep missing\b",
         r"\brecalibrated\b",
         r"\bfollowing the temporary signs\b",
+        r"\bold employer name\b",
+        r"\bold profile\b",
+        r"\breliable transportation\b",
+        r"\bold beechview address\b",
+        r"\bcurrent address\b",
+        r"\bshelter intake form\b",
+        r"\btrust pictures\b",
+        r"\bshort description\b",
+        r"\bpediatrician fax\b",
+        r"\bdoctor's note\b",
+        r"\bmissed appointment\b",
+        r"\brescheduled\b",
         r"\bonly saw missed days\b",
         r"\bweighted my old\b",
         r"\bcurrent availability\b",
@@ -226,6 +259,10 @@ THEME_EVIDENCE = {
     ],
     "loss_of_dignity": [
         r"\bbeing judged\b",
+        r"\bembarrassing\b",
+        r"\blunch line\b",
+        r"\bwhat kind of parent\b",
+        r"\balready decided\b",
         r"\bdid not count\b",
         r"\bhiding something\b",
         r"\btreated badly\b",
@@ -246,9 +283,17 @@ THEME_EVIDENCE = {
 }
 
 POSITIVE_CUES = [
-    r"\bworked\b",
-    r"\bconnected me\b",
-    r"\brecognized\b[^\n.]{0,120}\bneeded\b",
+        r"\bworked\b",
+        r"\bconnected me\b",
+        r"\brecognized\b[^\n.]{0,120}\bneeded\b",
+        r"\bfound the document\b",
+        r"\breopened the case\b",
+        r"\bsame afternoon\b",
+        r"\bpaused the shutoff\b",
+        r"\bpaused the shutoff request\b",
+        r"\bapproval came\b",
+        r"\btold me exactly\b",
+        r"\bhelped someone notice\b",
     r"\brouted\b[^\n.]{0,80}\bright\b",
     r"\brouted\b[^\n.]{0,80}\bquickly\b",
     r"\bsent me to the right\b",
@@ -287,9 +332,16 @@ NEGATIVE_CUES = [
     r"\bcould not explain\b",
     r"\bcould not tell\b",
     r"\bnobody could tell\b",
-    r"\bcould not change\b",
-    r"\bcould not adjust\b",
-    r"\bcould not see\b",
+        r"\bcould not change\b",
+        r"\bcould not adjust\b",
+        r"\bcould not see\b",
+        r"\bdid not change\b",
+        r"\bwrong queue\b",
+        r"\balready decided\b",
+        r"\bbefore anyone read\b",
+        r"\btreated\b[^\n.]{0,80}\bas neglect\b",
+        r"\bold profile mattered\b",
+        r"\bfirst notice made\b",
     r"\bnot something\b[^\n.]{0,120}\breview\b",
     r"\brecords did not merge\b",
     r"\bstatus changed\b",
@@ -316,7 +368,8 @@ NEGATIVE_CUES = [
     r"\bnot allowed\b",
     r"\bno way\b",
     r"\bdenied\b",
-    r"\bpaused\b",
+    r"\b(benefits|case|account|application|payment)\b[^\n.]{0,80}\bpaused\b",
+    r"\bpaused over\b",
     r"\bflagged\b",
     r"\bhigh risk\b",
     r"\blow priority\b",
@@ -530,7 +583,7 @@ def classify_impact(classifier, text: str) -> dict:
     positive_cues = count_matches(text, POSITIVE_CUES)
     negative_cues = count_matches(text, NEGATIVE_CUES)
     positive_resolution = re.search(
-        r"\b(priority changed|inspection date appeared|the fix helped|corrected|fixed the category|apologized|right unit|same day|same week)\b",
+        r"\b(priority changed|inspection date appeared|the fix helped|corrected|fixed the category|apologized|right unit|same day|same week|same afternoon|reopened the case|paused the shutoff|approval came)\b",
         text,
         flags=re.IGNORECASE,
     )
@@ -797,13 +850,15 @@ def extract_entities(nlp, text: str) -> dict:
     agencies = [
         agency for agency in agencies
         if not re.search(r"\b(?:Algorithm|Tool|System|Engine|Portal|Score|Scheduler|Classifier|Model)\b", agency, flags=re.IGNORECASE)
+        and not re.search(r"^(PDF|Zone\s+\d+|Children'?s?\s+Hospital)$", agency, flags=re.IGNORECASE)
+        and not re.search(r"\bafter\b", agency, flags=re.IGNORECASE)
         and agency.lower() not in {location.lower() for location in PITTSBURGH_LOCATIONS}
     ]
     agency_keys = {normalize_entity(agency).lower() for agency in agencies}
     locations = [
         location for location in locations
         if normalize_entity(location).lower() not in agency_keys
-        and not re.search(r"\b(?:Office|Department|Authority|Services|Government)\b", location, flags=re.IGNORECASE)
+        and not re.search(r"\b(?:Office|Department|Authority|Services|Government|CareerLink)\b", location, flags=re.IGNORECASE)
     ]
     roles = compact_roles([term for term in ROLE_TERMS if term in lower_text] + infer_roles(text, systems, agencies))
 

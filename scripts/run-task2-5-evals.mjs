@@ -11,6 +11,11 @@ const checks = [
     resultPath: 'task345-results/challenge-ml-output/task2-5-combined-results.json',
     evalSetPath: 'data/task2-5-challenge-eval-set.json',
   },
+  {
+    name: 'messy_stories',
+    resultPath: 'task345-results/messy-ml-output/task2-5-combined-results.json',
+    evalSetPath: 'data/task2-5-messy-eval-set.json',
+  },
 ];
 
 const runEval = (check) => {
