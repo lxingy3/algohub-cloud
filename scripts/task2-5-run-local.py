@@ -45,6 +45,11 @@ THEME_EVIDENCE = {
         r"\bwhat information was used\b",
         r"\bwho checked it\b",
         r"\bhow to correct it\b",
+        r"\bwhat image or rule\b",
+        r"\bwhich answer mattered\b",
+        r"\bplain language\b",
+        r"\bmatching process\b",
+        r"\blanguage request did not carry over\b",
         r"\blanguage that controls\b",
         r"\bnot part of the design\b",
         r"\bdoes not know\b",
@@ -93,12 +98,18 @@ THEME_EVIDENCE = {
     "lack_of_recourse": [
         r"\bcould not change\b",
         r"\bcould not adjust\b",
+        r"\bcould not adjust\b.*\bmedical equipment\b",
         r"\bcould not see\b.*\b(score|record|rule|reason)\b",
         r"\bnot something\b.*\breview\b",
         r"\bclosed door\b",
         r"\bhad to come back\b",
         r"\bnot easy to document\b",
         r"\bprove it\b",
+        r"\bpaid because the late fee\b",
+        r"\blate fee was coming\b",
+        r"\bno way to correct\b",
+        r"\bdeleting my profile\b",
+        r"\bseparate form\b.*\bapproved\b",
         r"\bno way to\b.*\b(appeal|challenge|change)\b",
         r"\bcould not appeal\b",
         r"\bdenied\b.*\bappeal\b",
@@ -115,6 +126,9 @@ THEME_EVIDENCE = {
         r"\bwhat information was used\b",
         r"\bwho checked it\b",
         r"\bhow to correct it\b",
+        r"\bwhat image or rule\b",
+        r"\bwhich answer mattered\b",
+        r"\bweighted my old\b",
         r"\btwo profiles\b",
         r"\bclicking between two versions\b",
         r"\bstatus changed\b",
@@ -145,6 +159,10 @@ THEME_EVIDENCE = {
         r"\bcost\b.*\b(days|weeks|months)\b",
         r"\bseveral days\b",
         r"\btwo weeks\b",
+        r"\bthree weeks\b",
+        r"\btwelve days\b",
+        r"\bmissed the deadline\b",
+        r"\bdeadline\b",
         r"\bweeks\b",
         r"\bmonths\b",
         r"\bdelay\b",
@@ -167,6 +185,9 @@ THEME_EVIDENCE = {
         r"\bno notice\b",
         r"\bnot notified\b",
         r"\bonly learned later\b",
+        r"\bnotice\b.*\bonly in english\b",
+        r"\blanguage request did not carry over\b",
+        r"\bdid not carry over to the notice\b",
     ],
     "data_accuracy": [
         r"\bwrong\b",
@@ -181,6 +202,14 @@ THEME_EVIDENCE = {
         r"\brecord only shows\b",
         r"\bmay not see\b",
         r"\bkeep missing\b",
+        r"\brecalibrated\b",
+        r"\bfollowing the temporary signs\b",
+        r"\bonly saw missed days\b",
+        r"\bweighted my old\b",
+        r"\bcurrent availability\b",
+        r"\bdid not count\b.*\bmedical equipment\b",
+        r"\bmedical equipment\b",
+        r"\bnot carry over\b",
         r"\bunit count\b",
         r"\bmisrouted\b",
         r"\brouted\b.*\b(maintenance|wrong)\b",
@@ -203,11 +232,12 @@ THEME_EVIDENCE = {
         r"\bfamilies feel that\b",
         r"\bwork families are already doing\b",
         r"\bfamilies know\b",
+        r"\bsplit my son from me\b",
         r"\btreated me like\b",
         r"\bhumiliated\b",
         r"\bdehumanized\b",
         r"\bscolded\b",
-        r"\bstrip\b",
+        r"\bstrip\s+(?:my|me|kid|child|children|someone)\b",
         r"\bnaked\b",
     ],
 }
@@ -262,6 +292,10 @@ NEGATIVE_CUES = [
     r"\bstatus changed\b",
     r"\bincomplete\b",
     r"\bhad to come back\b",
+    r"\bmissed the deadline\b",
+    r"\bdid not carry over\b",
+    r"\bnot carry over\b",
+    r"\bnotice\b.*\bonly in english\b",
     r"\blimited data\b",
     r"\bscore looked backward\b",
     r"\btreated badly\b",
@@ -273,6 +307,9 @@ NEGATIVE_CUES = [
     r"\bmay not see\b",
     r"\bkeep missing\b",
     r"\bdoes not trust\b",
+    r"\bno way to correct\b",
+    r"\bdeleting my profile\b",
+    r"\bseparate form\b.*\bapproved\b",
     r"\bnot allowed\b",
     r"\bno way\b",
     r"\bdenied\b",
@@ -345,6 +382,7 @@ ROLE_TERMS = [
     "interpreter",
     "agency staff",
     "community member",
+    "police officer",
 ]
 
 SYSTEM_TERMS = [
@@ -575,17 +613,17 @@ def detect_themes(classifier, text: str) -> list[dict]:
                     "matchedEvidence": evidence[:3],
                 }
             )
-            if evidence and (score >= 0.5 or (len(evidence) >= 2 and score >= 0.3)):
+            if evidence and (score >= 0.5 or len(evidence) >= 2):
                 rows.append(
                     {
                         "theme": theme,
-                        "confidence": round_score(score),
+                        "confidence": round_score(max(score, 0.65 if len(evidence) >= 2 else score)),
                         "matchedEvidence": evidence[:3],
                     }
                 )
     rows.sort(key=lambda row: row["confidence"], reverse=True)
     if rows:
-        return rows[:4]
+        return rows[:6]
     fallback_rows.sort(key=lambda row: row["confidence"], reverse=True)
     return []
 
@@ -703,6 +741,8 @@ def infer_roles(text: str, systems: list[str], agencies: list[str]) -> list[str]
         roles.append("school counselor")
     if "transit" in lower:
         roles.append("transit worker")
+    if "police" in lower or "citation" in lower:
+        roles.append("police officer")
     if "dispatch" in lower or "emergency dispatch" in lower or "emergency services" in lower:
         roles.append("dispatcher")
     if "inspection" in lower:

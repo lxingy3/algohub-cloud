@@ -1,0 +1,42 @@
+[
+  {
+    "id": "challenge-traffic-appeal-001",
+    "title": "The detour ticket stayed on my record after the camera was fixed",
+    "narrativeText": "On March 22, 2026, I got a traffic citation from the City of Pittsburgh after a detour camera near Liberty Avenue read my car as entering a closed lane. A police officer at the Zone 2 station told me the traffic management camera system had been recalibrated that week because it was catching cars that were following the temporary signs.\n\nThe online appeal portal still treated my ticket as valid, and nobody could tell me what image or rule it used. I uploaded the construction notice and a photo of the sign, but the status stayed pending for three weeks. I paid because the late fee was coming, not because I agreed with the decision."
+  },
+  {
+    "id": "challenge-benefits-help-002",
+    "title": "The renewal form found the missing income document",
+    "narrativeText": "In May 2026, I renewed food assistance with the Allegheny County assistance office from my apartment in Homewood. The benefits eligibility verification engine noticed that my employer document was already in a state wage record and showed the caseworker where to find it.\n\nThat saved me a bus trip and kept the renewal moving. The caseworker explained what the system matched, confirmed the document with me, and my benefits stayed active the same week. I still want plain language about the matching process, but this time the tool helped instead of creating another appointment."
+  },
+  {
+    "id": "challenge-shelter-priority-003",
+    "title": "The shelter list did not count where my son could sleep",
+    "narrativeText": "In April 2026, I called Allegheny County Department of Human Services from McKeesport about emergency shelter. The housing prioritization system asked if my child had a place to sleep that night, and I said my sister might let him stay on her couch but not me.\n\nThe score treated that as if our family had a safe option. The intake worker said she could not change the priority score and could not see which answer mattered most. I felt like the system split my son from me on paper, then told me to wait while other families moved ahead."
+  },
+  {
+    "id": "challenge-language-mixed-004",
+    "title": "The interpreter call worked, but the notice still arrived in English",
+    "narrativeText": "On June 3, 2026, I visited the City of Pittsburgh resident services office in Beechview and asked for Korean help with a housing inspection complaint. The language access routing system connected me to the right interpreter in a few minutes, and the staff member waited while I explained the leak.\n\nThat part worked. But the automated notice that came two days later was still only in English, so I missed the deadline to add photos. The clerk reopened the file after I came back, but nobody explained why my language request did not carry over to the notice system."
+  },
+  {
+    "id": "challenge-school-risk-005",
+    "title": "The attendance flag ignored my grandmother's hospital week",
+    "narrativeText": "In February 2026, Pittsburgh Public Schools sent me a warning from its student support risk flag system at Brashear High School. The school counselor said the attendance model marked my daughter as disengaged after five absences.\n\nThose absences were from the week my grandmother was in UPMC Mercy and I had no other ride for my younger child. The counselor was kind, but the flag stayed on the student record because the model only saw missed days, not what happened at home. My daughter felt like she was being judged before anyone heard the reason."
+  },
+  {
+    "id": "challenge-workforce-bias-006",
+    "title": "The job match sent night shifts after I marked childcare limits",
+    "narrativeText": "In July 2026, PA CareerLink Pittsburgh used a workforce job matching system to suggest warehouse jobs near the Strip District. I had already marked that I could only work before 5 p.m. because my childcare ends at 5:30.\n\nThe list kept sending me night shifts and overnight warehouse roles. A career center worker told me the model had weighted my old shipping experience more than my current availability. There was no way to correct the ranking except deleting my profile and starting over, which meant losing the applications I had already saved."
+  },
+  {
+    "id": "challenge-energy-medical-007",
+    "title": "The heat forecast missed the medical equipment in our unit",
+    "narrativeText": "On January 18, 2026, I called the Allegheny County assistance office from Carrick after our utility shutoff warning arrived. The energy assistance forecasting tool ranked our home as low urgency because the apartment was not in the coldest block group.\n\nThe score did not count my father's oxygen machine or the fact that the outlet near his bed was already failing. An assistance office worker said the system could not adjust for medical equipment unless a separate form was approved. We waited twelve days, and I spent that time worrying that the power would go out at night."
+  },
+  {
+    "id": "challenge-public-safety-positive-008",
+    "title": "The streetlight report reached the right safety team",
+    "narrativeText": "In August 2026, I used the City of Pittsburgh public safety portal to report a broken streetlight and repeated harassment near a bus stop in East Liberty. The public safety routing system recognized that it was not just a maintenance issue because I mentioned the same person following riders after dark.\n\nThe report went to the public safety office and the mobility team on the first try. A city staff member called the next morning, explained which team had the case, and added a temporary patrol note until the light was fixed. The system did not solve everything, but it helped the report reach people who could act."
+  }
+]

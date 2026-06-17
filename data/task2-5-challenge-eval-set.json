@@ -1,0 +1,127 @@
+{
+  "name": "task2-5-independent-challenge-eval-set",
+  "source": "data/task2-5-challenge-input.json",
+  "updatedAt": "2026-06-17T00:00:00.000Z",
+  "records": [
+    {
+      "id": "challenge-traffic-appeal-001",
+      "title": "The detour ticket stayed on my record after the camera was fixed",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["opacity", "lack_of_recourse", "delayed_outcome", "data_accuracy"],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "challenge-benefits-help-002",
+      "title": "The renewal form found the missing income document",
+      "expectedImpact": "POSITIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["positive_experience", "opacity"],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "challenge-shelter-priority-003",
+      "title": "The shelter list did not count where my son could sleep",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["opacity", "lack_of_recourse", "arbitrary_outcome", "loss_of_dignity"],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "challenge-language-mixed-004",
+      "title": "The interpreter call worked, but the notice still arrived in English",
+      "expectedImpact": "MIXED",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["positive_experience", "lack_of_notification", "opacity", "delayed_outcome"],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "challenge-school-risk-005",
+      "title": "The attendance flag ignored my grandmother's hospital week",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "loss_of_dignity", "arbitrary_outcome"],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "challenge-workforce-bias-006",
+      "title": "The job match sent night shifts after I marked childcare limits",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "lack_of_recourse", "process_confusion"],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "challenge-energy-medical-007",
+      "title": "The heat forecast missed the medical equipment in our unit",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "delayed_outcome", "lack_of_recourse"],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    },
+    {
+      "id": "challenge-public-safety-positive-008",
+      "title": "The streetlight report reached the right safety team",
+      "expectedImpact": "POSITIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["positive_experience"],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": ["priority", "score", "report", "computer", "decision", "decisions", "system", "tool", "model", "record", "worker", "weeks", "category"]
+    }
+  ]
+}
