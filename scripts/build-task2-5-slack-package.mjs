@@ -3,6 +3,7 @@ import path from 'node:path';
 
 const inputPath = process.argv[2] || 'task345-results/tuned-all-stories-ml-output/task2-5-combined-results.json';
 const outputDir = process.argv[3] || 'task2-5-slack-package-clean';
+const evalSetPath = process.argv[4] || 'data/task2-5-eval-set.json';
 
 const selectedTitles = [
   'Two versions of my name made the intake status change',
@@ -13,6 +14,8 @@ const selectedTitles = [
 ];
 
 const payload = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
+const evalSet = JSON.parse(fs.readFileSync(evalSetPath, 'utf8'));
+const expectedById = new Map((evalSet.records || []).map((record) => [record.id, record]));
 const rows = (Array.isArray(payload) ? payload : payload.results || [])
   .filter((row) => selectedTitles.includes(row.title))
   .sort((a, b) => selectedTitles.indexOf(a.title) - selectedTitles.indexOf(b.title));
@@ -40,6 +43,7 @@ const outputRows = rows.map((row, index) => {
     task2_impact_classification: {
       classification: row.aiImpactClassification,
       confidence: row.aiConfidenceScore,
+      expected: expectedById.get(row.id)?.expectedImpact || null,
     },
     task3_theme_detection: (row.aiThemes || []).map((theme) => ({
       theme: theme.theme,

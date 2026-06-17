@@ -1,0 +1,1091 @@
+{
+  "name": "task2-5-current-story-eval-set",
+  "source": "task345-results/tuned-all-stories-ml-output/task2-5-combined-results.json",
+  "updatedAt": "2026-06-17T04:48:06.905Z",
+  "records": [
+    {
+      "id": "237151df-57b2-453f-9fd3-399a2319383c",
+      "title": "The dispatch category did not match what was happening",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "process_confusion",
+        "data_accuracy"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "7a56bfd1-e638-4f27-ab80-e09d45d39f15",
+      "title": "Incorrect Academic Risk Flag",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "arbitrary_outcome"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "40997255-0bf0-4b72-a887-2cb9ed454922",
+      "title": "The interpreter routing finally got me to the right person",
+      "expectedImpact": "POSITIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "positive_experience"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "b468d7cf-7f1e-4766-959f-5e2fb07db353",
+      "title": "My daughter stayed flagged after a family emergency",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "arbitrary_outcome",
+        "process_confusion",
+        "data_accuracy",
+        "opacity"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "894fb353-dcfd-4189-8531-03b3159b6d40",
+      "title": "The recommendation helped me find a job workshop",
+      "expectedImpact": "POSITIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "positive_experience"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "466f3b83-f98c-42fa-8a10-1565a78ee5ba",
+      "title": "The computer system is adding to our already existing struggle with the agency",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "process_confusion",
+        "opacity"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "4a098256-c8f0-4b32-a665-e1d9d3676510",
+      "title": "The interpreter line finally got me to the right office",
+      "expectedImpact": "POSITIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "positive_experience",
+        "opacity"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "fc6e193b-7317-43df-96bf-ce796354127f",
+      "title": "Computers can't predict somebody's future",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "opacity",
+        "data_accuracy"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "9ea2f196-fb30-4088-ac86-f317881722c0",
+      "title": "The community needs to be a part of what's happening",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "loss_of_dignity",
+        "data_accuracy",
+        "opacity"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "a974b4ec-5d32-40bf-ae1b-1800a78c814d",
+      "title": "The renewal went through faster than expected",
+      "expectedImpact": "POSITIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "positive_experience"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "6020f63a-5938-4138-9000-ca4e1ccb71da",
+      "title": "Incorrect Academic Risk Flag",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "arbitrary_outcome"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "61f3763a-a75b-4f18-ba40-a26e7076a66f",
+      "title": "My application was flagged and nobody could explain why",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "process_confusion",
+        "opacity"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "13544706-cbb5-4756-b4f7-4893448365e8",
+      "title": "The rental aid upload worked the first time",
+      "expectedImpact": "POSITIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "positive_experience"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "adddc778-0c96-41e0-8c2c-7d13324b7d48",
+      "title": "My needs have changed but I am not in a state to prove it",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "data_accuracy"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "e9f407de-be46-47f7-a4c0-2fd02279ebcd",
+      "title": "The job match actually fit my schedule",
+      "expectedImpact": "POSITIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "positive_experience",
+        "delayed_outcome"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "d232ce9c-27c2-4791-9716-a96d44ed905f",
+      "title": "My utility help stayed low priority for weeks",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "delayed_outcome"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "f7448dd1-0865-44d5-a952-a8da6759dede",
+      "title": "Nobody trusts you when you are unhoused",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "loss_of_dignity"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "92a61f24-7db6-4c08-8eec-9ed983198aa3",
+      "title": "My safety report went to the wrong station",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "data_accuracy",
+        "delayed_outcome"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "6084cc8d-d392-4c72-b351-51998e9f628b",
+      "title": "Two versions of my name made the intake status change",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "process_confusion",
+        "arbitrary_outcome",
+        "data_accuracy",
+        "discriminatory_impact"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "04f92fc8-be29-4aef-bbae-3c99749e4905",
+      "title": "Workers need to know how employers get flagged",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "arbitrary_outcome",
+        "process_confusion",
+        "opacity",
+        "delayed_outcome"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "87952919-4611-4873-b766-5280904d402f",
+      "title": "The risk score sent workers to my home before I could respond",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "data_accuracy",
+        "arbitrary_outcome",
+        "loss_of_dignity",
+        "lack_of_recourse"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "5755ec0c-6c2d-45e3-a904-239c53fdcea3",
+      "title": "The dispatcher routed my call quickly",
+      "expectedImpact": "POSITIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "positive_experience"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "b5272d6c-3f67-4470-ba1c-5bbb9580fc5a",
+      "title": "Photos helped get our inspection priority corrected",
+      "expectedImpact": "MIXED",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "data_accuracy",
+        "arbitrary_outcome",
+        "positive_experience"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "841b25da-25c8-48e3-a267-cc78de41d2c4",
+      "title": "The ranking rule did not fit how I was actually living",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "loss_of_dignity",
+        "arbitrary_outcome"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "2a7007c8-cc19-4de5-b53b-86e0af8cd201",
+      "title": "The unhoused individuals should have a voice",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "opacity"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "35e1ce17-adca-4fc1-bb8a-3943710803ea",
+      "title": "The flag was fixed, but rent was due before the review ended",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "data_accuracy"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "8e8234c7-759e-4c59-88b2-8ebe6f4f3cf6",
+      "title": "My benefits were paused over a tax refund",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "data_accuracy",
+        "delayed_outcome"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "69bf331e-ebc7-4990-b82f-8d29ad964170",
+      "title": "The lunch portal changed my status without explaining why",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "process_confusion",
+        "opacity",
+        "data_accuracy"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "fa3847c7-cd1c-479f-9a25-750607097ac4",
+      "title": "This tool is not supporting families",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "loss_of_dignity"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "77f45242-d588-443b-8f61-04acb3383814",
+      "title": "My voucher was denied because of an old address",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "data_accuracy"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "d64b2cc0-6ab3-4772-a4aa-6d985785cafc",
+      "title": "I got a citation for a car that was not mine",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "data_accuracy"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "372b230d-9f21-4043-b39e-495b798b1234",
+      "title": "The staff needs better training",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "loss_of_dignity"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "b67a10cb-eb67-45e6-a7c2-0d73eff31894",
+      "title": "Our building stayed low priority after repeated complaints",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "arbitrary_outcome",
+        "positive_experience"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    },
+    {
+      "id": "167b0c87-b825-438f-9415-512e6e58138b",
+      "title": "My safety report was routed to maintenance instead",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": [
+        "data_accuracy",
+        "arbitrary_outcome",
+        "delayed_outcome"
+      ],
+      "requiredEntityFields": {
+        "agencies": true,
+        "locations": true,
+        "systems": true,
+        "dates": true,
+        "people_roles": true
+      },
+      "disallowedKeywords": [
+        "priority",
+        "score",
+        "report",
+        "computer",
+        "decision",
+        "decisions",
+        "system",
+        "tool",
+        "model",
+        "record",
+        "worker",
+        "weeks",
+        "category"
+      ]
+    }
+  ]
+}
