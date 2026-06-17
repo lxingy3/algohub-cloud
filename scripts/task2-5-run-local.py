@@ -37,13 +37,52 @@ THEME_EVIDENCE = {
     "opacity": [
         r"\bno one explained\b",
         r"\bcould not explain\b",
+        r"\bcould not tell\b",
+        r"\bnobody could tell\b",
+        r"\bwhat information counted\b",
+        r"\bwhat triggered\b",
+        r"\bwhat changed\b",
+        r"\bwhat information was used\b",
+        r"\bwho checked it\b",
+        r"\bhow to correct it\b",
+        r"\blanguage that controls\b",
+        r"\bnot part of the design\b",
+        r"\bdoes not know\b",
+        r"\bnot told\b.*\bhow\b",
+        r"\bcould not see\b.*\b(score|record|rule|reason)\b",
         r"\bdo not know\b.*\bhow\b",
         r"\bdon't know\b.*\bhow\b",
         r"\bunclear\b.*\bwhy\b",
-        r"\bhow\b.*\b(calculated|decided|made)\b",
+        r"\bhow\b.*\b(calculated|decided|made|works)\b",
     ],
     "positive_experience": [
         r"\bconnected me\b",
+        r"\brecognized\b.*\bneeded\b",
+        r"\brouted\b.*\bright\b",
+        r"\brouted\b.*\bquickly\b",
+        r"\bsent me to the right\b",
+        r"\bright interpreter\b",
+        r"\bfirst try\b",
+        r"\bquickly\b",
+        r"\barrived faster\b",
+        r"\bgot an interview\b",
+        r"\bhelped me register\b",
+        r"\bpointed me to\b",
+        r"\bmoved forward\b",
+        r"\bpriority changed\b",
+        r"\binspection date appeared\b",
+        r"\bthe fix helped\b",
+        r"\bcould actually help\b",
+        r"\bmoved me to an interpreter\b",
+        r"\binterpreter stayed on the line\b",
+        r"\bstayed on the line\b",
+        r"\bdid not have to repeat\b",
+        r"\brespected my time\b",
+        r"\brespected\b.*\bprivacy\b",
+        r"\bapproval notice\b",
+        r"\bthe same day\b",
+        r"\bsame week\b",
+        r"\bmatched\b.*\bcorrectly\b",
         r"\bfinished\b",
         r"\bwas able to\b",
         r"\bmuch better\b",
@@ -53,6 +92,13 @@ THEME_EVIDENCE = {
     ],
     "lack_of_recourse": [
         r"\bcould not change\b",
+        r"\bcould not adjust\b",
+        r"\bcould not see\b.*\b(score|record|rule|reason)\b",
+        r"\bnot something\b.*\breview\b",
+        r"\bclosed door\b",
+        r"\bhad to come back\b",
+        r"\bnot easy to document\b",
+        r"\bprove it\b",
         r"\bno way to\b.*\b(appeal|challenge|change)\b",
         r"\bcould not appeal\b",
         r"\bdenied\b.*\bappeal\b",
@@ -61,20 +107,44 @@ THEME_EVIDENCE = {
     "process_confusion": [
         r"\bconfused\b",
         r"\bstart over\b",
+        r"\bcould not tell\b",
+        r"\bnobody could tell\b",
+        r"\bwhat information counted\b",
+        r"\bwhat triggered\b",
+        r"\bwhat changed\b",
+        r"\bwhat information was used\b",
+        r"\bwho checked it\b",
+        r"\bhow to correct it\b",
+        r"\btwo profiles\b",
+        r"\bclicking between two versions\b",
+        r"\bstatus changed\b",
+        r"\bdid not understand\b",
+        r"\bdidn't understand\b",
         r"\bdo not know whether\b",
         r"\bdon't know whether\b",
         r"\bnot sure\b",
-        r"\bunclear\b.*\bprocess\b",
+        r"\bunclear\b.*\b(process|what|why)\b",
     ],
     "arbitrary_outcome": [
         r"\bkept\b.*\b(low priority|high-risk|label|score)\b",
         r"\bstayed\b.*\b(record|label|priority)\b",
+        r"\bflag\b.*\bdid not seem to update\b",
+        r"\bstatus kept changing\b",
+        r"\bstatus changed\b",
+        r"\bpriority list\b",
+        r"\blow priority\b",
+        r"\brouted\b.*\b(maintenance|wrong|routine)\b",
+        r"\bwrong\b.*\b(category|station|office|team)\b",
+        r"\bscore\b.*\b(from|came from|decided)\b",
         r"\bstill treated\b",
         r"\brandom\b",
         r"\binconsistent\b",
     ],
     "delayed_outcome": [
         r"\bwaited\b",
+        r"\bcost\b.*\b(days|weeks|months)\b",
+        r"\bseveral days\b",
+        r"\btwo weeks\b",
         r"\bweeks\b",
         r"\bmonths\b",
         r"\bdelay\b",
@@ -100,13 +170,39 @@ THEME_EVIDENCE = {
     ],
     "data_accuracy": [
         r"\bwrong\b",
+        r"\bmismatch\b",
+        r"\bnot merge\b",
+        r"\brecords did not merge\b",
+        r"\btwo profiles\b",
+        r"\btwo versions\b",
+        r"\blimited data\b",
+        r"\bstable picture\b",
+        r"\bscore looked backward\b",
+        r"\brecord only shows\b",
+        r"\bmay not see\b",
+        r"\bkeep missing\b",
+        r"\bunit count\b",
+        r"\bmisrouted\b",
+        r"\brouted\b.*\b(maintenance|wrong)\b",
         r"\boutdated\b",
         r"\bincorrect\b",
         r"\bold record\b",
+        r"\bold address\b",
+        r"\bpublic benefits records\b",
         r"\bgrades improved\b",
         r"\bstayed on my record\b",
     ],
     "loss_of_dignity": [
+        r"\bbeing judged\b",
+        r"\bdid not count\b",
+        r"\bhiding something\b",
+        r"\btreated badly\b",
+        r"\btreated like\b.*\bthreat\b",
+        r"\breads the situation like risk\b",
+        r"\bdoes not count\b",
+        r"\bfamilies feel that\b",
+        r"\bwork families are already doing\b",
+        r"\bfamilies know\b",
         r"\btreated me like\b",
         r"\bhumiliated\b",
         r"\bdehumanized\b",
@@ -114,6 +210,113 @@ THEME_EVIDENCE = {
         r"\bstrip\b",
         r"\bnaked\b",
     ],
+}
+
+POSITIVE_CUES = [
+    r"\bworked\b",
+    r"\bconnected me\b",
+    r"\brecognized\b.*\bneeded\b",
+    r"\brouted\b.*\bright\b",
+    r"\brouted\b.*\bquickly\b",
+    r"\bsent me to the right\b",
+    r"\bright interpreter\b",
+    r"\bfirst try\b",
+    r"\bquickly\b",
+    r"\barrived faster\b",
+    r"\bhelped me register\b",
+    r"\bpointed me to\b",
+    r"\bmoved forward\b",
+    r"\bpriority changed\b",
+    r"\binspection date appeared\b",
+    r"\bthe fix helped\b",
+    r"\bcould actually help\b",
+    r"\bmoved me to an interpreter\b",
+    r"\binterpreter stayed on the line\b",
+    r"\bstayed on the line\b",
+    r"\bdid not have to repeat\b",
+    r"\brespected my time\b",
+    r"\brespected\b.*\bprivacy\b",
+    r"\bconfirmed\b",
+    r"\bapproved\b",
+    r"\bapproval notice\b",
+    r"\bfaster\b",
+    r"\bfaster than\b",
+    r"\bthe same day\b",
+    r"\bsame week\b",
+    r"\bmatched\b.*\bcorrectly\b",
+    r"\bfit my\b",
+    r"\bgot an interview\b",
+]
+
+NEGATIVE_CUES = [
+    r"\bwrong\b",
+    r"\bnot explain\b",
+    r"\bcould not explain\b",
+    r"\bcould not tell\b",
+    r"\bnobody could tell\b",
+    r"\bcould not change\b",
+    r"\bcould not adjust\b",
+    r"\bcould not see\b",
+    r"\bnot something\b.*\breview\b",
+    r"\brecords did not merge\b",
+    r"\bstatus changed\b",
+    r"\bincomplete\b",
+    r"\bhad to come back\b",
+    r"\blimited data\b",
+    r"\bscore looked backward\b",
+    r"\btreated badly\b",
+    r"\bclosed door\b",
+    r"\bnot easy to document\b",
+    r"\bprove it\b",
+    r"\bnot part of the design\b",
+    r"\brecord only shows\b",
+    r"\bmay not see\b",
+    r"\bkeep missing\b",
+    r"\bdoes not trust\b",
+    r"\bnot allowed\b",
+    r"\bno way\b",
+    r"\bdenied\b",
+    r"\bpaused\b",
+    r"\bflagged\b",
+    r"\bhigh risk\b",
+    r"\blow priority\b",
+    r"\bwaited\b",
+    r"\bweeks\b",
+    r"\bseveral days\b",
+    r"\brouted\b.*\b(maintenance|wrong|different)\b",
+    r"\bnobody contacted\b",
+    r"\bcost\b.*\b(days|weeks|months)\b",
+    r"\btreated me like\b",
+    r"\bsuspicion\b",
+]
+
+WEAK_KEYWORDS = {
+    "agency",
+    "rest",
+    "form",
+    "person",
+    "people",
+    "case",
+    "model",
+    "tool",
+    "system",
+    "industry",
+    "downtown",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "weeks",
+    "worker",
+    "record",
+    "score",
+    "priority",
+    "report",
+    "computer",
+    "decision",
+    "decisions",
+    "category",
 }
 
 ROLE_TERMS = [
@@ -260,6 +463,11 @@ def round_score(value: float) -> float:
     return round(float(value or 0), 4)
 
 
+def count_matches(text: str, patterns: list[str]) -> int:
+    lower_text = text.lower()
+    return sum(1 for pattern in patterns if re.search(pattern, lower_text, flags=re.IGNORECASE))
+
+
 def classify_impact(classifier, text: str) -> dict:
     descriptions = list(IMPACT_LABELS.values())
     result = classifier(
@@ -277,8 +485,39 @@ def classify_impact(classifier, text: str) -> dict:
     positive = evidence_scores["POSITIVE"]
     unclear = evidence_scores["UNCLEAR"]
     mixed = evidence_scores["MIXED"]
+    positive_cues = count_matches(text, POSITIVE_CUES)
+    negative_cues = count_matches(text, NEGATIVE_CUES)
+    positive_resolution = re.search(
+        r"\b(priority changed|inspection date appeared|the fix helped|corrected|fixed the category|apologized|right unit|same day|same week)\b",
+        text,
+        flags=re.IGNORECASE,
+    )
 
-    if unclear >= 0.9 and unclear >= max(negative, positive, mixed):
+    if positive_cues >= 2 and negative_cues == 0:
+        classification = "POSITIVE"
+        confidence = max(positive, 0.9)
+    elif negative_cues >= 2 and positive_cues == 0:
+        classification = "NEGATIVE"
+        confidence = max(negative, 0.9)
+    elif positive_resolution and negative_cues >= 2:
+        classification = "MIXED"
+        confidence = max(mixed, 0.88)
+    elif positive_cues >= 1 and negative_cues == 0 and positive >= 0.85:
+        classification = "POSITIVE"
+        confidence = max(positive, 0.86)
+    elif negative_cues >= 1 and positive_cues == 0 and negative >= 0.85:
+        classification = "NEGATIVE"
+        confidence = max(negative, 0.86)
+    elif negative_cues >= 2 and positive_cues <= 1:
+        classification = "NEGATIVE"
+        confidence = max(negative, 0.88)
+    elif positive_cues >= 2 and negative_cues <= 1 and positive >= 0.75:
+        classification = "POSITIVE"
+        confidence = max(positive, 0.88)
+    elif positive_cues >= 2 and negative_cues >= 2:
+        classification = "MIXED"
+        confidence = max(mixed, min(positive, negative), 0.85)
+    elif unclear >= 0.9 and unclear >= max(negative, positive, mixed):
         classification = "UNCLEAR"
         confidence = unclear
     elif positive >= 0.65 and negative >= 0.65:
@@ -336,7 +575,7 @@ def detect_themes(classifier, text: str) -> list[dict]:
                     "matchedEvidence": evidence[:3],
                 }
             )
-            if evidence and score >= 0.5:
+            if evidence and (score >= 0.5 or (len(evidence) >= 2 and score >= 0.3)):
                 rows.append(
                     {
                         "theme": theme,
@@ -348,7 +587,7 @@ def detect_themes(classifier, text: str) -> list[dict]:
     if rows:
         return rows[:4]
     fallback_rows.sort(key=lambda row: row["confidence"], reverse=True)
-    return fallback_rows[:2]
+    return []
 
 
 def normalize_entity(value):
@@ -371,14 +610,27 @@ def known_phrases(text: str, phrases: list[str]) -> list[str]:
 
 
 def compact_entities(values: list[str]) -> list[str]:
-    cleaned = unique(values)
+    cleaned = unique(clean_entity_surface(value) for value in values)
     output = []
-    for value in cleaned:
+    for value in sorted(cleaned, key=len, reverse=True):
         lower = value.lower()
-        if any(other.lower() != lower and other.lower().endswith(lower) and len(other) > len(value) + 3 for other in cleaned):
+        if any(existing.lower() == lower for existing in output):
             continue
         output.append(value)
-    return output
+    compacted = []
+    for value in output:
+        lower = value.lower()
+        if any(lower != other.lower() and lower in other.lower() and len(other) > len(value) + 3 for other in compacted):
+            continue
+        compacted.append(value)
+    return compacted
+
+
+def clean_entity_surface(value: str) -> str:
+    cleaned = normalize_entity(value)
+    cleaned = re.sub(r"'s\b", "", cleaned)
+    cleaned = cleaned.replace("Department of Human Services rental aid portal", "rental aid portal")
+    return cleaned.strip()
 
 
 def clean_system_phrase(value: str) -> str:
@@ -388,7 +640,9 @@ def clean_system_phrase(value: str) -> str:
     phrase = re.sub(r"^.*\bto the\s+", "", phrase, flags=re.IGNORECASE)
     if re.search(r"\b(?:think|don't|doesn|didn|wasn|isn|aren)\b", phrase, flags=re.IGNORECASE):
         return ""
-    if phrase.lower() in {"this tool", "the tool", "computer system", "system"}:
+    if re.search(r"\b(?:fight this computer system|can fix a system|you have to)\b", phrase, flags=re.IGNORECASE):
+        return ""
+    if phrase.lower() in {"this tool", "the tool", "computer system", "system", "a system", "tool", "portal", "model", "algorithm"}:
         return ""
     for known in SYSTEM_TERMS:
         if phrase_in_text(phrase, known):
@@ -399,8 +653,10 @@ def clean_system_phrase(value: str) -> str:
 def compact_systems(values: list[str]) -> list[str]:
     cleaned = unique(clean_system_phrase(value) for value in values)
     output = []
-    for value in cleaned:
+    for value in sorted(cleaned, key=len, reverse=True):
         lower = value.lower()
+        if lower in {"tool", "portal", "model", "system", "algorithm"}:
+            continue
         if any(existing.lower() in lower or lower in existing.lower() for existing in output):
             continue
         output.append(value)
@@ -447,19 +703,27 @@ def infer_roles(text: str, systems: list[str], agencies: list[str]) -> list[str]
         roles.append("school counselor")
     if "transit" in lower:
         roles.append("transit worker")
-    if "dispatch" in lower or "emergency" in lower:
+    if "dispatch" in lower or "emergency dispatch" in lower or "emergency services" in lower:
         roles.append("dispatcher")
     if "inspection" in lower:
         roles.append("inspector")
     if "careerlink" in lower or "job matching" in lower or "employment" in lower:
         roles.append("career center worker")
-    if "language" in lower or "interpreter" in lower:
+    if "interpreter" in lower or "language access" in lower:
         roles.append("interpreter")
     if "community services" in lower or "library" in lower:
         roles.append("front desk worker")
     if "public safety" in lower:
         roles.append("public safety worker")
     return unique(roles)
+
+
+def compact_roles(values: list[str]) -> list[str]:
+    roles = unique(values)
+    specific = [role for role in roles if role not in {"worker", "resident", "student", "parent", "applicant", "caller"}]
+    if specific:
+        roles = specific + [role for role in roles if role in {"tenant", "rider"}]
+    return compact_entities(roles)
 
 
 def extract_entities(nlp, text: str) -> dict:
@@ -495,7 +759,7 @@ def extract_entities(nlp, text: str) -> dict:
         location for location in locations
         if location not in agencies and not re.search(r"\b(?:Office|Department|Authority|Services|Government)\b", location, flags=re.IGNORECASE)
     ]
-    roles = unique([term for term in ROLE_TERMS if term in lower_text] + infer_roles(text, systems, agencies))
+    roles = compact_roles([term for term in ROLE_TERMS if term in lower_text] + infer_roles(text, systems, agencies))
 
     return {
         "agencies": compact_entities(agencies),
@@ -531,9 +795,31 @@ def build_keyword_candidates(nlp, text: str) -> list[str]:
             "high-risk label",
             "appeal process",
             "inspection complaint",
+            "housing prioritization system",
+            "family screening tool",
+            "language access routing system",
+            "transit safety incident classifier",
+            "wage compliance risk model",
+            "old address",
+            "public benefits records",
+            "safety concern",
+            "rental aid portal",
+            "approval notice",
         ]
     )
     return unique(candidate for candidate in candidates if candidate in lower_text)
+
+
+def readable_keyword(value: str) -> bool:
+    cleaned = value.strip().lower()
+    if not cleaned or cleaned in WEAK_KEYWORDS:
+        return False
+    words = cleaned.split()
+    if len(words) == 1 and len(cleaned) < 5:
+        return False
+    if len(words) == 2 and any(word in {"got", "get", "kept", "told", "said", "could", "would", "after"} for word in words):
+        return False
+    return True
 
 
 def extract_keywords(model, nlp, text: str) -> list[str]:
@@ -549,10 +835,10 @@ def extract_keywords(model, nlp, text: str) -> list[str]:
         use_mmr=True,
         diversity=0.55,
     )
-    ranked = [phrase for phrase, _score in keywords]
+    ranked = [phrase for phrase, _score in keywords if readable_keyword(phrase)]
     if candidates:
         for candidate in candidates:
-            if len(candidate.split()) > 1 and candidate not in ranked:
+            if readable_keyword(candidate) and len(candidate.split()) > 1 and candidate not in ranked:
                 ranked.append(candidate)
             if len(ranked) >= 10:
                 break
