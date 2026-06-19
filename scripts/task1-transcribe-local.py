@@ -6,6 +6,115 @@ from pathlib import Path
 from faster_whisper import WhisperModel
 
 
+TERMINAL_PUNCTUATION = (".", "?", "!")
+CONTINUATION_WORDS = {
+    "and",
+    "but",
+    "or",
+    "for",
+    "nor",
+    "so",
+    "yet",
+    "because",
+    "while",
+    "when",
+    "where",
+    "which",
+    "who",
+    "whose",
+    "that",
+    "than",
+    "then",
+    "to",
+    "of",
+    "in",
+    "on",
+    "at",
+    "by",
+    "from",
+    "with",
+    "between",
+    "around",
+    "under",
+    "over",
+    "into",
+    "through",
+    "as",
+}
+
+
+def should_continue(current_text: str, next_text: str | None) -> bool:
+    text = current_text.strip()
+    if not text:
+        return True
+    if text.endswith(TERMINAL_PUNCTUATION):
+        return False
+    if text.endswith((",", ";", ":", "-", "—")):
+        return True
+    if not next_text:
+        return False
+    first_word_raw = next_text.strip().split(" ", 1)[0].strip("\"'“”‘’()[]{}")
+    first_word = first_word_raw.lower()
+    return first_word in CONTINUATION_WORDS or (first_word_raw[:1].islower() and first_word != "i")
+
+
+def sentence_case(text: str) -> str:
+    stripped = text.strip()
+    if not stripped:
+        return stripped
+    return stripped[0].upper() + stripped[1:]
+
+
+def build_readable_output(raw_segments: list[dict]) -> tuple[str, list[dict]]:
+    sentence_segments = []
+    current_parts: list[str] = []
+    current_start = None
+    current_end = None
+
+    for index, segment in enumerate(raw_segments):
+        text = segment["text"].strip()
+        if not text:
+            continue
+        next_text = raw_segments[index + 1]["text"] if index + 1 < len(raw_segments) else None
+        if current_start is None:
+            current_start = segment["start"]
+
+        current_parts.append(text)
+        current_end = segment["end"]
+
+        if should_continue(text, next_text):
+            continue
+
+        sentence_text = " ".join(current_parts).strip()
+        if not sentence_text.endswith(TERMINAL_PUNCTUATION):
+            sentence_text = f"{sentence_text}."
+        sentence_segments.append(
+            {
+                "start": current_start,
+                "end": current_end,
+                "text": sentence_case(sentence_text),
+            }
+        )
+        current_parts = []
+        current_start = None
+        current_end = None
+
+    if current_parts:
+        sentence_text = " ".join(current_parts).strip()
+        if not sentence_text.endswith(TERMINAL_PUNCTUATION):
+            sentence_text = f"{sentence_text}."
+        sentence_segments.append(
+            {
+                "start": current_start,
+                "end": current_end,
+                "text": sentence_case(sentence_text),
+            }
+        )
+
+    readable_transcript = " ".join(segment["text"] for segment in sentence_segments).strip()
+    return readable_transcript, sentence_segments
+
+
 def transcribe_audio(input_file: Path, model_name: str, language: str | None) -> dict:
     model = WhisperModel(model_name, device="cpu", compute_type="int8")
     segments, info = model.transcribe(
@@ -30,19 +139,23 @@ def transcribe_audio(input_file: Path, model_name: str, language: str | None) ->
             }
         )
 
-    transcript = " ".join(transcript_parts).strip()
+    raw_transcript = " ".join(transcript_parts).strip()
+    readable_transcript, sentence_segments = build_readable_output(segment_results)
     return {
         "task": "Task 1: audio transcription",
         "inputKind": "audio",
         "inputFile": str(input_file),
         "provider": "local-faster-whisper",
         "model": model_name,
-        "status": "COMPLETED" if transcript else "EMPTY",
+        "status": "COMPLETED" if raw_transcript else "EMPTY",
         "language": info.language,
         "languageProbability": round(info.language_probability, 4),
         "durationSeconds": round(info.duration, 2),
-        "transcript": transcript,
-        "segments": segment_results,
+        "transcript": readable_transcript,
+        "rawTranscript": raw_transcript,
+        "sentenceSegments": sentence_segments,
+        "rawSegments": segment_results,
+        "segments": sentence_segments,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
     }
 

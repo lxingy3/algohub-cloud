@@ -28,7 +28,7 @@ for (const expected of expectedRecords) {
   const title = row.title || expected.title || row.id;
   const impact = row.aiImpactClassification || row.task2?.aiImpactClassification;
   const confidence = Number(row.aiConfidenceScore ?? row.task2?.aiConfidenceScore ?? 0);
-  const themes = row.aiThemes || row.task3?.themes || [];
+  const themes = row.aiThemes || row.task3?.aiThemes || row.task3?.themes || [];
   const themeNames = new Set(themes.map((theme) => theme.theme).filter(Boolean));
   const entities = row.aiExtractedExperiences?.entities || row.task4?.entities || {};
   const keywords = row.aiExtractedExperiences?.keywords || row.task5?.keywords || [];
@@ -65,6 +65,29 @@ for (const expected of expectedRecords) {
       issues.push({ id: row.id, title, type: 'missing_entity_field', field });
     }
   }
+  for (const [field, expectedValues] of Object.entries(expected.requiredEntities || {})) {
+    const actualValues = Array.isArray(entities[field]) ? entities[field] : [];
+    for (const expectedValue of expectedValues) {
+      if (!containsEquivalent(actualValues, expectedValue)) {
+        issues.push({
+          id: row.id,
+          title,
+          type: 'missing_entity_value',
+          field,
+          expected: expectedValue,
+          actual: actualValues,
+        });
+      }
+    }
+  }
+  for (const [field, disallowedValues] of Object.entries(expected.disallowedEntities || {})) {
+    const actualValues = Array.isArray(entities[field]) ? entities[field] : [];
+    for (const disallowedValue of disallowedValues) {
+      if (actualValues.some((actualValue) => normalizeEntityKey(actualValue) === normalizeEntityKey(disallowedValue))) {
+        issues.push({ id: row.id, title, type: 'disallowed_entity_value', field, value: disallowedValue });
+      }
+    }
+  }
   const agencyKeys = new Set((entities.agencies || []).map(normalizeEntityKey));
   for (const location of entities.locations || []) {
     if (agencyKeys.has(normalizeEntityKey(location))) {
@@ -77,8 +100,12 @@ for (const expected of expectedRecords) {
     }
   }
   for (const keyword of keywords) {
-    const normalized = String(keyword || '').toLowerCase();
-    if ((expected.disallowedKeywords || []).includes(normalized)) {
+    const normalized = normalizeEntityKey(keyword);
+    const disallowed = (expected.disallowedKeywords || []).some((value) => {
+      const normalizedDisallowed = normalizeEntityKey(value);
+      return normalized === normalizedDisallowed || (normalizedDisallowed.includes(' ') && normalized.includes(normalizedDisallowed));
+    });
+    if (disallowed) {
       issues.push({ id: row.id, title, type: 'weak_keyword', value: keyword });
     }
   }
@@ -105,4 +132,12 @@ process.exitCode = issues.length ? 1 : 0;
 
 function normalizeEntityKey(value) {
   return String(value || '').toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function containsEquivalent(actualValues, expectedValue) {
+  const expectedKey = normalizeEntityKey(expectedValue);
+  return actualValues.some((actualValue) => {
+    const actualKey = normalizeEntityKey(actualValue);
+    return actualKey === expectedKey || actualKey.includes(expectedKey) || expectedKey.includes(actualKey);
+  });
 }

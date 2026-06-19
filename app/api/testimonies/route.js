@@ -5,6 +5,7 @@ import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../lib/auth';
 import { mediaStorageProvider, mediaStorageUri } from '../../../lib/mediaStorage';
 import { rankStoriesForSearch } from '../../../lib/searchRanking';
+import { buildStorySummary } from '../../../lib/storySummary';
 
 export const dynamic = 'force-dynamic';
 
@@ -209,7 +210,7 @@ export async function POST(request) {
       followupConsent,
       storyType,
       narrativeText: storedNarrative,
-      summary: storedNarrative.length > 160 ? `${storedNarrative.slice(0, 157)}...` : storedNarrative,
+      summary: buildStorySummary(storedNarrative),
       userId: user?.id,
       submitterName: isAnonymous ? null : (name || user?.name),
       submitterEmail: contactEmail || user?.email,

@@ -25,14 +25,18 @@ const IMAGE_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 function cleanExtension(fileName, contentType) {
   const extension = fileName.split('.').pop()?.toLowerCase();
   if (extension && /^[a-z0-9]{2,5}$/.test(extension)) return extension;
-  if (contentType.includes('mp4')) return 'mp4';
-  if (contentType.includes('mpeg')) return 'mp3';
-  if (contentType.includes('wav')) return 'wav';
-  if (contentType.includes('ogg')) return 'ogg';
-  if (contentType === 'image/jpeg') return 'jpg';
-  if (contentType === 'image/png') return 'png';
-  if (contentType === 'image/webp') return 'webp';
-  return contentType.startsWith('video/') ? 'webm' : 'webm';
+  const normalizedContentType = String(contentType || '').toLowerCase();
+  if (normalizedContentType === 'audio/mp4' || normalizedContentType.includes('m4a')) return 'm4a';
+  if (normalizedContentType.includes('mpeg') || normalizedContentType.includes('mp3')) return 'mp3';
+  if (normalizedContentType.includes('mp4')) return 'm4a';
+  if (normalizedContentType.includes('wav')) return 'wav';
+  if (normalizedContentType.includes('webm')) return 'webm';
+  if (normalizedContentType.includes('flac')) return 'flac';
+  if (normalizedContentType.includes('ogg')) return 'ogg';
+  if (normalizedContentType === 'image/jpeg') return 'jpg';
+  if (normalizedContentType === 'image/png') return 'png';
+  if (normalizedContentType === 'image/webp') return 'webp';
+  return normalizedContentType.startsWith('video/') ? 'webm' : 'webm';
 }
 
 export async function POST(request) {

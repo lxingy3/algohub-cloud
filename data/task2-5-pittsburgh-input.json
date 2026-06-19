@@ -1,0 +1,97 @@
+[
+  {
+    "id": "pittsburgh-transit-negated-worker-001",
+    "title": "My bus shelter report went to the wrong queue",
+    "narrativeText": "On April 10, 2026, I filed a transit safety report with Pittsburgh Regional Transit after a bus shelter light went out near East Liberty Station. The transit safety incident classifier sent it to the wrong maintenance queue even though I wrote that I was a rider, not a transit worker. A PRT customer service worker told me the category was already saved and could not be changed. The unsafe stop stayed open for nine days."
+  },
+  {
+    "id": "pittsburgh-311-dpw-mixed-002",
+    "title": "The sidewalk request had a tracking number but no owner",
+    "narrativeText": "In May 2026, I used the City of Pittsburgh 311 request intake software to report a sidewalk collapse in Bloomfield. The 311 operator gave me a tracking number, but the request bounced between the City of Pittsburgh 311 Response Center and the Department of Public Works for twelve days before a public works crew member came out. Nobody could tell me which queue owned it."
+  },
+  {
+    "id": "pittsburgh-onestoppgh-pli-003",
+    "title": "The rental permit correction kept the wrong parcel number",
+    "narrativeText": "On June 3, 2026, I uploaded a rental permit correction in the OneStopPGH portal for my Lawrenceville apartment. The rental permit system kept the wrong parcel number from an old record, and the Department of Permits, Licenses, and Inspections marked my inspection request incomplete. A permit reviewer and housing inspector both said they could not override the saved parcel record."
+  },
+  {
+    "id": "pittsburgh-domi-high-injury-004",
+    "title": "The crash map did not explain why my corner stayed low priority",
+    "narrativeText": "In February 2026, I asked the Department of Mobility and Infrastructure about the High Injury Network and a traffic signal prioritization system for Penn Avenue in Garfield. A mobility planner said the map used crash records, but could not explain which crash records counted. My intersection did not score high enough, so the signal delay stayed the same for months."
+  },
+  {
+    "id": "pittsburgh-allegheny-go-mixed-005",
+    "title": "The fare discount worked until the card stopped working",
+    "narrativeText": "In November 2022, I applied for Allegheny Go through the Allegheny County Department of Human Services because my family uses Pittsburgh Regional Transit every week. The Allegheny Go eligibility system correctly saw my SNAP status and selected my household for the discounted fares lottery, but the notice did not explain what data changed when my card stopped working. A DHS benefits worker helped me reapply."
+  },
+  {
+    "id": "pittsburgh-police-gunshot-routing-006",
+    "title": "No one could explain which alert triggered the stop",
+    "narrativeText": "On July 19, 2026, near Homewood Avenue, the Pittsburgh Bureau of Police responded after a gunshot detection alert. I was walking home and a police officer said the public safety routing system treated the block as high risk, but no one could tell me whether a camera, a 911 call, or the gunshot detection system triggered the stop. I was not charged, but the incident stayed in the report."
+  },
+  {
+    "id": "pittsburgh-fire-inspection-positive-007",
+    "title": "The daycare inspection slot appeared the next day",
+    "narrativeText": "In August 2026, our small daycare in Carrick used the City of Pittsburgh fire inspection scheduling portal. A fire inspector from the Pittsburgh Bureau of Fire saw the updated floor plan, the system offered a next-day inspection slot, and the approval notice arrived the same afternoon. The process was much faster than before."
+  },
+  {
+    "id": "pittsburgh-pwsa-lead-line-mixed-008",
+    "title": "The lead line score helped, but the bill record was wrong",
+    "narrativeText": "In September 2026, I called Pittsburgh Water and Sewer Authority about a lead service line replacement notice for my home in Manchester. The lead service line replacement prioritization model correctly moved my block up after my neighbor's test result, but the water billing exception system still had my old tenant account attached to the property. A water customer service representative fixed the account after three calls."
+  },
+  {
+    "id": "pittsburgh-parking-permit-negative-009",
+    "title": "My parking permit renewal kept using the old plate",
+    "narrativeText": "On October 4, 2026, I renewed a residential parking permit through the Pittsburgh Parking Authority while living in Shadyside. The parking permit portal kept pulling an old license plate from a prior car, and a parking clerk told me the saved record blocked my renewal. I received a parking citation before the Pittsburgh Parking Court corrected the plate."
+  },
+  {
+    "id": "pittsburgh-domi-right-of-way-negative-010",
+    "title": "The curb closure review ignored the wheelchair ramp",
+    "narrativeText": "In July 2026, our shop on Liberty Avenue submitted a right-of-way permit through DOMI for a short curb closure. The right-of-way permit system did not flag that the closure would block a wheelchair ramp, and a right-of-way reviewer said the traffic control diagram had already been accepted. A customer who uses a wheelchair had to cross in the street for two days."
+  },
+  {
+    "id": "pittsburgh-311-dip-positive-011",
+    "title": "The 311 map sent my tree request to the right crew",
+    "narrativeText": "In May 2026, I used the City of Pittsburgh 311 service request routing system to report a hanging tree limb near Brownsville Road in Carrick. The Department of Innovation and Performance showed the location on the service map, the Department of Public Works tree crew received the ticket, and a public works crew member cleared it the next morning."
+  },
+  {
+    "id": "pittsburgh-ura-business-aid-unclear-012",
+    "title": "The business aid portal asked for the same file twice",
+    "narrativeText": "In December 2026, I applied through the Urban Redevelopment Authority small business aid portal for my store in the Hill District. The portal asked for the same lease document twice and a business owner support specialist said the file was still under review. I do not know whether an automated eligibility rule, a missing upload, or a staff review caused the delay."
+  },
+  {
+    "id": "pittsburgh-language-access-negative-013",
+    "title": "The interpreter request disappeared when the ticket moved",
+    "narrativeText": "I went to the Downtown Service Center on Centre Avenue in June 2026 after the City of Pittsburgh resident services office moved my housing complaint into a language access routing system. I wrote that I needed a Spanish interpreter, but when the ticket moved to the next office the interpreter request did not carry over. A front desk worker told me to start over, and I missed the appointment window."
+  },
+  {
+    "id": "pittsburgh-careerlink-positive-014",
+    "title": "The job match finally sent me to a real workshop",
+    "narrativeText": "In March 2026, PA CareerLink Pittsburgh used its workforce job matching system after I updated my resume at the Oakland office. The first list was generic, but a career center worker adjusted my trade certificate field and the system pointed me to a building maintenance workshop on Penn Avenue. I got an interview the same week."
+  },
+  {
+    "id": "pittsburgh-pwsa-stormwater-mixed-015",
+    "title": "The water complaint was routed fast, but the old owner stayed on the account",
+    "narrativeText": "On May 12, 2026, I reported basement flooding in Beechview to the Pittsburgh Water and Sewer Authority. The stormwater complaint routing system sent a crew to my street the next morning, which helped, but the water billing exception system still showed the old property owner. A utility customer service representative said the account merge would take three more weeks."
+  },
+  {
+    "id": "pittsburgh-schools-risk-flag-negative-016",
+    "title": "The attendance flag stayed after my doctor sent the note",
+    "narrativeText": "During Spring 2026, Pittsburgh Public Schools used a student support risk flag system at my child's school in Squirrel Hill. My child missed classes after an asthma flare, and a school social worker uploaded the doctor's note, but the high-risk label stayed on the student profile. The school staff member could not tell me which attendance records the system counted."
+  },
+  {
+    "id": "pittsburgh-asr-onestop-pli-017",
+    "title": "The permit portal heard my address wrong",
+    "narrativeText": "On June 18, 2026, I called about my rental inspection from Center Avenue, and the voice note came out saying one stop P G H instead of OneStopPGH. I was trying to tell P L I that the permit review portal still had the wrong apartment number for my Lawrenceville unit. The permit clerk said the saved address had already gone to the inspector, so my inspection was delayed again."
+  },
+  {
+    "id": "pittsburgh-asr-pwsa-018",
+    "title": "The water account name kept coming through wrong",
+    "narrativeText": "In July 2026, I left a phone message for P W S A from Beechview because the water bill exception system kept using my old property owner name. The transcript spelled it as Pittsburgh Water Authority, but I meant Pittsburgh Water and Sewer Authority. A utility customer service representative said the account merge was still waiting, and the shutoff warning stayed active for two more days."
+  },
+  {
+    "id": "pittsburgh-asr-careerlink-019",
+    "title": "The job match worked after my trade certificate was fixed",
+    "narrativeText": "In April 2026, I recorded a message after visiting P A Career Link Pittsburgh at the Oakland office. The workforce job matching system first read my certificate as general labor and sent me to the wrong listings. A career center worker corrected the field, and the next list included an electrical maintenance workshop on Penn Avenue. That match helped me get an interview."
+  }
+]

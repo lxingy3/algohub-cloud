@@ -1,26 +1,207 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '../../../../lib/auth';
 import { analyzeNarrativeTextWithModels } from '../../../../lib/mlFullAnalysis';
+import { transcribeAudioForTask1 } from '../../../../lib/task1Transcription';
+import { buildStorySummary } from '../../../../lib/storySummary';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 export async function POST(request) {
-  if (!await requireAdmin()) {
-    return NextResponse.json({ error: 'Admin access is required.' }, { status: 401 });
+  try {
+    if (!await isAuthorized(request)) {
+      return NextResponse.json({ error: 'Admin access is required.' }, { status: 401 });
+    }
+
+    const contentType = request.headers.get('content-type') || '';
+    if (contentType.includes('multipart/form-data')) {
+      return await handleAudioQuickTest(request);
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const narrativeText = String(body.narrativeText || '').trim();
+    if (!narrativeText) {
+      return NextResponse.json({ error: 'Please enter narrative_text.' }, { status: 400 });
+    }
+    if (narrativeText.length > 8000) {
+      return NextResponse.json({ error: 'Please keep narrative_text under 8000 characters.' }, { status: 400 });
+    }
+
+    const result = await analyzeNarrativeTextWithModels(narrativeText);
+    return NextResponse.json({
+      ok: true,
+      result: {
+        ...result,
+        summary: buildStorySummary(narrativeText, { maxChars: 320 }),
+      },
+    });
+  } catch (error) {
+    console.error('ML quick test failed', error);
+    return NextResponse.json({
+      error: cleanQuickTestError(error),
+    }, { status: 500 });
+  }
+}
+
+async function isAuthorized(request) {
+  const workerToken = cleanEnvToken(process.env.ML_WORKER_TOKEN);
+  const requestToken = cleanEnvToken(request.headers.get('x-ml-worker-token'));
+  if (workerToken && requestToken === workerToken) return true;
+  const cronSecret = process.env.CRON_SECRET;
+  const authHeader = request.headers.get('authorization');
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) return true;
+  return Boolean(await requireAdmin());
+}
+
+function cleanEnvToken(value) {
+  return String(value || '').replace(/^\uFEFF/, '').trim();
+}
+
+async function handleAudioQuickTest(request) {
+  const formData = await request.formData();
+  const audioFile = formData.get('audio');
+  const taskMode = String(formData.get('task') || '').trim().toLowerCase();
+  const fallbackNarrativeText = String(formData.get('narrativeText') || '').trim();
+  if (!audioFile || typeof audioFile.arrayBuffer !== 'function') {
+    return NextResponse.json({ error: 'Please upload an audio file.' }, { status: 400 });
   }
 
-  const body = await request.json().catch(() => ({}));
-  const narrativeText = String(body.narrativeText || '').trim();
+  let task1;
+  try {
+    task1 = await transcribeAudioForTask1(audioFile);
+  } catch (task1Error) {
+    if (fallbackNarrativeText) {
+      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText);
+      return NextResponse.json({
+        ok: true,
+        result: {
+          ...analysis,
+          inputField: 'audio',
+          source: 'audio-upload',
+          status: 'PARTIAL',
+          summary: buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
+          task1: {
+            status: 'SKIPPED',
+            tool: process.env.HF_ASR_MODEL || 'openai/whisper-large-v3',
+            error: cleanQuickTestError(task1Error),
+          },
+        },
+      });
+    }
+    return NextResponse.json({
+      ok: true,
+      result: {
+        inputField: 'audio',
+        source: 'audio-upload',
+        status: 'PARTIAL',
+        task1: {
+          status: 'SKIPPED',
+          tool: process.env.HF_ASR_MODEL || 'openai/whisper-large-v3',
+          error: cleanQuickTestError(task1Error),
+        },
+      },
+    });
+  }
+  const narrativeText = String(task1.transcript || task1.rawTranscript || '').trim();
   if (!narrativeText) {
-    return NextResponse.json({ error: 'Please enter narrative_text.' }, { status: 400 });
+    if (fallbackNarrativeText) {
+      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText);
+      return NextResponse.json({
+        ok: true,
+        result: {
+          ...analysis,
+          inputField: 'audio',
+          source: 'audio-upload',
+          status: 'PARTIAL',
+          summary: buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
+          task1: {
+            ...task1,
+            status: task1.status || 'SKIPPED',
+            error: 'Task 1 did not return transcript text.',
+          },
+        },
+      });
+    }
+    return NextResponse.json({
+      ok: true,
+      result: {
+        inputField: 'audio',
+        source: 'audio-upload',
+        status: 'PARTIAL',
+        task1: {
+          ...task1,
+          status: task1.status || 'SKIPPED',
+          error: 'Task 1 did not return transcript text.',
+        },
+      },
+    });
+  }
+  if (taskMode === 'task1') {
+    return NextResponse.json({
+      ok: true,
+      result: {
+        inputField: 'audio',
+        source: 'audio-upload',
+        status: 'PARTIAL',
+        summary: buildStorySummary(narrativeText, { maxChars: 320 }),
+        task1,
+      },
+    });
   }
   if (narrativeText.length > 8000) {
-    return NextResponse.json({ error: 'Please keep narrative_text under 8000 characters.' }, { status: 400 });
+    if (fallbackNarrativeText && fallbackNarrativeText.length <= 8000) {
+      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText);
+      return NextResponse.json({
+        ok: true,
+        result: {
+          ...analysis,
+          inputField: 'audio',
+          source: 'audio-upload',
+          status: 'PARTIAL',
+          summary: buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
+          task1,
+        },
+      });
+    }
+    return NextResponse.json({
+      ok: true,
+      result: {
+        inputField: 'audio',
+        source: 'audio-upload',
+        status: 'PARTIAL',
+        task1,
+        task2: skippedPayload('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', 'Transcript is over 8000 characters. Add a shorter narrative_text excerpt to run Task 2-5.'),
+        task3: skippedPayload('facebook/bart-large-mnli', 'Transcript is over 8000 characters. Add a shorter narrative_text excerpt to run Task 2-5.'),
+        task4: skippedPayload('spaCy', 'Transcript is over 8000 characters. Add a shorter narrative_text excerpt to run Task 2-5.'),
+        task5: skippedPayload('KeyBERT', 'Transcript is over 8000 characters. Add a shorter narrative_text excerpt to run Task 2-5.'),
+      },
+    });
   }
 
+  const analysis = await analyzeNarrativeTextWithModels(narrativeText);
   return NextResponse.json({
     ok: true,
-    result: await analyzeNarrativeTextWithModels(narrativeText),
+    result: {
+      ...analysis,
+      inputField: 'audio',
+      source: 'audio-upload',
+      summary: buildStorySummary(narrativeText, { maxChars: 320 }),
+      task1,
+    },
   });
+}
+
+function skippedPayload(tool, error) {
+  return {
+    status: 'SKIPPED',
+    tool,
+    error,
+  };
+}
+
+function cleanQuickTestError(error) {
+  if (error?.name === 'AbortError') return 'ML quick test timed out. Try a shorter audio file or text sample.';
+  const message = error?.message || String(error || 'ML quick test failed.');
+  if (message.includes('Unexpected end of JSON input')) return 'ML quick test returned an empty response.';
+  return message;
 }

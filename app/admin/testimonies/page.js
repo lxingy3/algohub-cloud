@@ -7,7 +7,9 @@ import {
   moderationStatuses,
 } from '../../../lib/moderation';
 import { inferStoredMediaKind } from '../../../lib/mediaStorage';
+import { buildStorySummary } from '../../../lib/storySummary';
 import AdminMediaPlayer from './AdminMediaPlayer';
+import { InlineExpandableText, MLPipelinePanel } from './ExpandablePanels';
 import MLQuickTest from './MLQuickTest';
 
 export const dynamic = 'force-dynamic';
@@ -32,6 +34,17 @@ function getDirectMediaUrl(mediaUrl) {
   return mediaUrl;
 }
 
+function versionedMediaUrl(mediaUrl, testimony) {
+  if (!mediaUrl) return '';
+  const version = [
+    testimony.updatedAt ? new Date(testimony.updatedAt).getTime() : '',
+    testimony.mediaDurationSeconds || '',
+  ].filter(Boolean).join('-');
+  if (!version) return mediaUrl;
+  const separator = mediaUrl.includes('?') ? '&' : '?';
+  return `${mediaUrl}${separator}v=${encodeURIComponent(version)}`;
+}
+
 export default async function AdminTestimoniesPage({ searchParams }) {
   const params = await searchParams;
   const statusFilter = String(params?.status || '').toUpperCase();
@@ -48,6 +61,7 @@ export default async function AdminTestimoniesPage({ searchParams }) {
       select: {
         id: true,
         title: true,
+        summary: true,
         submitterName: true,
         submitterEmail: true,
         storyType: true,
@@ -69,7 +83,9 @@ export default async function AdminTestimoniesPage({ searchParams }) {
         aiExtractedExperiences: true,
         aiProcessedAt: true,
         moderationNotes: true,
+        mediaDurationSeconds: true,
         submittedAt: true,
+        updatedAt: true,
         user: { select: { name: true, email: true } },
         partnerOrganization: { select: { name: true } },
         algorithmLinks: { select: { algorithmId: true, algorithm: { select: { name: true } } } },
@@ -106,16 +122,18 @@ export default async function AdminTestimoniesPage({ searchParams }) {
           const isVoiceInput = storyType === 'voice' || hasAudio;
           const task2Impact = getTask2Impact(testimony);
           const task345Insights = getTask345Insights(testimony);
+          const aiSummary = testimony.summary || buildStorySummary(testimony.narrativeText || testimony.transcriptionText || '');
+          const transcriptSummary = buildStorySummary(testimony.transcriptionText || '', { maxChars: 260 });
           const mediaSources = [
             hasAudio ? {
               kind: audioFieldMediaKind,
               url: `/api/admin/testimonies/${testimony.id}/media/audio`,
-              directUrl: getDirectMediaUrl(testimony.audioFileUrl),
+              directUrl: versionedMediaUrl(getDirectMediaUrl(testimony.audioFileUrl), testimony),
             } : null,
             hasVideo ? {
               kind: 'video',
               url: `/api/admin/testimonies/${testimony.id}/media/video`,
-              directUrl: getDirectMediaUrl(testimony.videoFileUrl),
+              directUrl: versionedMediaUrl(getDirectMediaUrl(testimony.videoFileUrl), testimony),
             } : null,
           ].filter(Boolean);
 
@@ -154,24 +172,17 @@ export default async function AdminTestimoniesPage({ searchParams }) {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">Story details</p>
-                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-800">{testimony.narrativeText}</p>
-              </div>
+              <InlineExpandableText
+                className="mt-4 border-slate-200 bg-slate-50"
+                label="Story details"
+                text={testimony.narrativeText || 'No written story details were submitted.'}
+                collapsedChars={360}
+              />
 
-              {isVoiceInput ? (
-                <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-xs font-semibold uppercase text-emerald-700">Task 1 transcription</p>
-                    <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-emerald-800">{testimony.transcriptionStatus}</span>
-                  </div>
-                  {testimony.transcriptionText ? (
-                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-emerald-950">{testimony.transcriptionText}</p>
-                  ) : (
-                    <p className="mt-2 text-sm leading-6 text-emerald-900">No transcript saved yet.</p>
-                  )}
-                </div>
-              ) : null}
+              <div className="mt-4 rounded-md border border-slate-200 bg-white p-3">
+                <p className="text-xs font-semibold uppercase text-slate-500">AI-generated summary</p>
+                <p className="mt-2 text-sm leading-6 text-slate-800">{aiSummary || 'No summary available.'}</p>
+              </div>
 
               {hasAudio || hasVideo ? (
                 <div className="mt-4 rounded-md border border-slate-200 bg-white p-3">
@@ -195,56 +206,13 @@ export default async function AdminTestimoniesPage({ searchParams }) {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-md border border-slate-200 bg-white p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">Task 2 impact classification</p>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                  <span className="rounded-full bg-slate-900 px-2.5 py-1 font-semibold text-white">{task2Impact.classification}</span>
-                  <span className="text-slate-600">confidence {formatConfidence(task2Impact.confidence)}</span>
-                  {task2Impact.source === 'estimate' ? (
-                    <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">Page estimate</span>
-                  ) : null}
-                  {task2Impact.confidence < 0.85 ? (
-                    <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">Needs review</span>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-md border border-slate-200 bg-white p-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-xs font-semibold uppercase text-slate-500">Task 3 theme detection</p>
-                  {task345Insights.source === 'estimate' ? (
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">Page estimate</span>
-                  ) : null}
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {task345Insights.themes.map((theme) => (
-                    <span key={theme.theme} className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-800">
-                      {formatThemeLabel(theme.theme)} {formatConfidence(theme.confidence)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-md border border-slate-200 bg-white p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">Task 4 entity extraction</p>
-                <div className="mt-2 grid gap-3 text-sm text-slate-700 md:grid-cols-2">
-                  {Object.entries(task345Insights.entities).map(([group, values]) => (
-                    <div key={group}>
-                      <span className="block text-xs font-semibold uppercase text-slate-500">{formatEntityGroup(group)}</span>
-                      <span>{values.length ? values.join(', ') : 'None found'}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-md border border-slate-200 bg-white p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">Task 5 keyword extraction</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {task345Insights.keywords.length ? task345Insights.keywords.map((keyword) => (
-                    <span key={keyword} className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">{keyword}</span>
-                  )) : <span className="text-sm text-slate-600">None found</span>}
-                </div>
-              </div>
+              <MLPipelinePanel
+                testimony={testimony}
+                isVoiceInput={isVoiceInput}
+                transcriptSummary={transcriptSummary}
+                task2Impact={task2Impact}
+                task345Insights={task345Insights}
+              />
 
               <textarea name="notes" placeholder="Moderation notes" defaultValue={testimony.moderationNotes || ''} className="mt-3 w-full rounded-md border px-3 py-2" />
               <div className="mt-2 flex flex-col gap-2 sm:flex-row">
@@ -264,6 +232,7 @@ export default async function AdminTestimoniesPage({ searchParams }) {
     </div>
   );
 }
+
 
 function StatusTabs({ baseHref, activeStatus, counts }) {
   const allCount = moderationStatuses.reduce((sum, status) => sum + (counts[status] || 0), 0);
@@ -295,20 +264,6 @@ function StatusTabs({ baseHref, activeStatus, counts }) {
 
 function formatStatusLabel(status) {
   return status.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function formatConfidence(value) {
-  const score = Number(value);
-  if (!Number.isFinite(score)) return 'not available';
-  return score.toFixed(2);
-}
-
-function formatThemeLabel(value) {
-  return String(value || '').replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function formatEntityGroup(value) {
-  return String(value || '').replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function getTask2Impact(testimony) {

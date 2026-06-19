@@ -1,10 +1,14 @@
-import os
+﻿import os
 import re
+from datetime import datetime, timezone
 from functools import lru_cache
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 
 import spacy
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, File, Header, HTTPException, UploadFile
+from faster_whisper import WhisperModel
 from keybert import KeyBERT
 from pydantic import BaseModel
 from transformers import pipeline
@@ -14,6 +18,44 @@ app = FastAPI(title="AlgoStories ML Worker")
 
 TASK2_MODEL = "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33"
 TASK3_MODEL = "facebook/bart-large-mnli"
+TASK1_MODEL = os.environ.get("TASK1_WHISPER_MODEL", "small")
+TASK1_LANGUAGE = os.environ.get("TASK1_WHISPER_LANGUAGE") or None
+SUPPORTED_AUDIO_EXTENSIONS = {".wav", ".mp3", ".webm", ".flac", ".ogg", ".m4a"}
+TERMINAL_PUNCTUATION = (".", "?", "!")
+CONTINUATION_WORDS = {
+    "and",
+    "but",
+    "or",
+    "for",
+    "nor",
+    "so",
+    "yet",
+    "because",
+    "while",
+    "when",
+    "where",
+    "which",
+    "who",
+    "whose",
+    "that",
+    "than",
+    "then",
+    "to",
+    "of",
+    "in",
+    "on",
+    "at",
+    "by",
+    "from",
+    "with",
+    "between",
+    "around",
+    "under",
+    "over",
+    "into",
+    "through",
+    "as",
+}
 
 AGENCY_PATTERNS = [
     "CPS",
@@ -164,9 +206,74 @@ def get_bart_classifier():
     return pipeline("zero-shot-classification", model=TASK3_MODEL, device=-1)
 
 
+@lru_cache(maxsize=1)
+def get_whisper_model():
+    return WhisperModel(TASK1_MODEL, device="cpu", compute_type="int8")
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.post("/transcribe")
+async def transcribe_audio(file: UploadFile = File(...), authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    require_token(authorization)
+    file_bytes = await file.read()
+    if not file_bytes:
+        raise HTTPException(status_code=400, detail="audio file is required")
+    if len(file_bytes) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="audio file must be under 50 MB")
+
+    suffix = Path(file.filename or "audio").suffix.lower()
+    if suffix not in SUPPORTED_AUDIO_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Task 1 supports WAV, MP3, WebM, FLAC, OGG, and M4A audio files")
+    with TemporaryDirectory(prefix="algostories-task1-") as work_dir:
+        input_path = Path(work_dir) / f"input{suffix}"
+        input_path.write_bytes(file_bytes)
+        segments, info = get_whisper_model().transcribe(
+            str(input_path),
+            language=TASK1_LANGUAGE,
+            beam_size=5,
+            vad_filter=True,
+        )
+
+        raw_segments = []
+        transcript_parts = []
+        for segment in segments:
+            text = clean_text(segment.text)
+            if not text:
+                continue
+            transcript_parts.append(text)
+            raw_segments.append(
+                {
+                    "start": round(float(segment.start), 2),
+                    "end": round(float(segment.end), 2),
+                    "text": text,
+                }
+            )
+
+    raw_transcript = clean_text(" ".join(transcript_parts))
+    readable_transcript, sentence_segments = build_readable_task1_output(raw_segments)
+    return {
+        "task": "Task 1: audio transcription",
+        "inputKind": "audio",
+        "inputFile": file.filename or "uploaded audio",
+        "provider": "hf-space-faster-whisper",
+        "model": TASK1_MODEL,
+        "tool": TASK1_MODEL,
+        "status": "COMPLETED" if raw_transcript else "EMPTY",
+        "language": getattr(info, "language", None),
+        "languageProbability": round(float(getattr(info, "language_probability", 0) or 0), 4),
+        "durationSeconds": round(float(getattr(info, "duration", 0) or 0), 2),
+        "transcript": readable_transcript,
+        "rawTranscript": raw_transcript,
+        "segments": sentence_segments,
+        "sentenceSegments": sentence_segments,
+        "rawSegments": raw_segments,
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "outputFormat": "transcript and segments are sentence-smoothed; rawTranscript/rawSegments keep the original Whisper time chunks",
+    }
 
 
 @app.post("/deberta-impact")
@@ -289,6 +396,73 @@ def run_zero_shot(classifier: Any, payload: ZeroShotRequest) -> dict[str, Any]:
         "labels": output.get("labels", []),
         "scores": [round(float(score), 6) for score in output.get("scores", [])],
     }
+
+
+def build_readable_task1_output(raw_segments: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]]]:
+    sentence_segments = []
+    current_parts = []
+    current_start = None
+    current_end = None
+
+    for index, segment in enumerate(raw_segments):
+        text = clean_text(segment.get("text", ""))
+        if not text:
+            continue
+        if current_start is None:
+            current_start = segment.get("start")
+        current_end = segment.get("end")
+        current_parts.append(text)
+
+        next_text = raw_segments[index + 1].get("text") if index + 1 < len(raw_segments) else None
+        if should_continue_task1(text, next_text):
+            continue
+
+        sentence_segments.append(
+            {
+                "start": current_start,
+                "end": current_end,
+                "text": sentence_case_task1(" ".join(current_parts)),
+            }
+        )
+        current_parts = []
+        current_start = None
+        current_end = None
+
+    if current_parts:
+        sentence_segments.append(
+            {
+                "start": current_start,
+                "end": current_end,
+                "text": sentence_case_task1(" ".join(current_parts)),
+            }
+        )
+
+    readable_transcript = clean_text(" ".join(segment["text"] for segment in sentence_segments))
+    return readable_transcript, sentence_segments
+
+
+def should_continue_task1(current_text: str, next_text: str | None) -> bool:
+    text = clean_text(current_text)
+    if not text:
+        return True
+    if text.endswith(TERMINAL_PUNCTUATION):
+        return False
+    if text.endswith((",", ";", ":", "-", "—")):
+        return True
+    if not next_text:
+        return False
+    first_word_raw = clean_text(next_text).split(" ", 1)[0].strip("\"'“”’()[]{}")
+    first_word = first_word_raw.lower()
+    return first_word in CONTINUATION_WORDS or (first_word_raw[:1].islower() and first_word != "i")
+
+
+def sentence_case_task1(value: str) -> str:
+    sentence = clean_text(value)
+    if not sentence:
+        return sentence
+    if not sentence.endswith(TERMINAL_PUNCTUATION):
+        sentence += "."
+    return sentence[0].upper() + sentence[1:]
 
 
 def empty_entities() -> dict[str, list[str]]:

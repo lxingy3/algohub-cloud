@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Check, ChevronLeft, ChevronRight, Mic, Pause, Play, Send, Shield, Trash2, Type, Upload, Users } from 'lucide-react';
+import { AUDIO_ACCEPT, audioContentTypeForFile } from '../../lib/audioAccept';
 
 const steps = ['submit.stepShare', 'submit.stepSystem', 'submit.stepStory', 'submit.stepDetails', 'submit.stepReview'];
 const methods = [
@@ -273,7 +274,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
       body: JSON.stringify({
         kind: 'audio',
         fileName: mediaFile.name,
-        contentType: mediaFile.type || 'audio/webm',
+        contentType: audioContentTypeForFile(mediaFile),
         size: mediaFile.size,
       }),
     });
@@ -502,7 +503,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept="audio/*"
+                        accept={AUDIO_ACCEPT}
                         className="sr-only"
                         onChange={(event) => {
                           const file = event.target.files?.[0];

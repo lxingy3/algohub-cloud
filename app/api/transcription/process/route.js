@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '../../../../lib/auth';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
+import { analyzeNarrativeTextWithModels } from '../../../../lib/mlFullAnalysis';
 import { prisma } from '../../../../lib/prisma';
+import { buildStorySummary } from '../../../../lib/storySummary';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 300;
+
+const entityGroups = ['agencies', 'locations', 'systems', 'dates', 'people_roles'];
 
 async function isAuthorized(request) {
   const configuredSecret = process.env.TRANSCRIPTION_PROCESS_SECRET;
@@ -91,7 +96,7 @@ async function completeTranscription({ jobId, testimonyId, transcript, provider 
         transcribedAt: new Date(),
         ...(placeholderNarrative ? {
           narrativeText: cleanedTranscript,
-          summary: cleanedTranscript.length > 160 ? `${cleanedTranscript.slice(0, 157)}...` : cleanedTranscript,
+          summary: buildStorySummary(cleanedTranscript),
         } : {}),
       },
       select: {
@@ -106,13 +111,105 @@ async function completeTranscription({ jobId, testimonyId, transcript, provider 
     return { job: updatedJob, testimony: updatedTestimony };
   });
 
+  const task2To5 = await storeTask2To5ForTestimony(result.testimony.id, cleanedTranscript);
+
   return NextResponse.json({
     ok: true,
     task: 'Task 1: audio transcription',
     provider,
     confidence,
+    task2To5,
     result,
   });
+}
+
+async function storeTask2To5ForTestimony(testimonyId, text) {
+  try {
+    const testimony = await prisma.testimony.findUnique({
+      where: { id: testimonyId },
+      select: {
+        aiImpactClassification: true,
+        aiConfidenceScore: true,
+        aiThemes: true,
+        aiExtractedExperiences: true,
+      },
+    });
+    if (!testimony) {
+      return { status: 'SKIPPED', reason: 'testimony_not_found' };
+    }
+
+    const result = await analyzeNarrativeTextWithModels(text);
+    const update = buildMlUpdate(testimony, result);
+    await prisma.testimony.update({
+      where: { id: testimonyId },
+      data: update,
+    });
+
+    return {
+      status: result.status,
+      updatedFields: Object.keys(update),
+      skippedTasks: getSkippedTasks(result),
+    };
+  } catch (error) {
+    return {
+      status: 'FAILED',
+      error: error?.message || String(error),
+    };
+  }
+}
+
+function buildMlUpdate(testimony, result) {
+  const priorExperiences = testimony.aiExtractedExperiences && typeof testimony.aiExtractedExperiences === 'object'
+    ? testimony.aiExtractedExperiences
+    : {};
+  const priorEntities = priorExperiences.entities && typeof priorExperiences.entities === 'object'
+    ? priorExperiences.entities
+    : {};
+
+  const nextEntities = result.task4?.status === 'COMPLETED'
+    ? normalizeEntities(result.task4.entities)
+    : normalizeEntities(priorEntities);
+  const nextKeywords = result.task5?.status === 'COMPLETED'
+    ? normalizeStringArray(result.task5.keywords)
+    : normalizeStringArray(priorExperiences.keywords);
+
+  return {
+    aiImpactClassification: result.task2?.status === 'COMPLETED'
+      ? result.task2.aiImpactClassification
+      : testimony.aiImpactClassification,
+    aiConfidenceScore: result.task2?.status === 'COMPLETED'
+      ? Number(result.task2.aiConfidenceScore || 0)
+      : testimony.aiConfidenceScore,
+    aiThemes: result.task3?.status === 'COMPLETED'
+      ? normalizeThemes(result.task3.aiThemes)
+      : normalizeThemes(testimony.aiThemes),
+    aiExtractedExperiences: {
+      entities: nextEntities,
+      keywords: nextKeywords,
+    },
+    aiProcessedAt: new Date(),
+  };
+}
+
+function normalizeThemes(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function normalizeEntities(value) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return Object.fromEntries(entityGroups.map((group) => [group, normalizeStringArray(source[group])]));
+}
+
+function normalizeStringArray(value) {
+  return Array.isArray(value)
+    ? [...new Set(value.map((item) => String(item || '').trim()).filter(Boolean))]
+    : [];
+}
+
+function getSkippedTasks(result) {
+  return ['task2', 'task3', 'task4', 'task5']
+    .filter((key) => result[key]?.status !== 'COMPLETED')
+    .map((key) => ({ task: key, error: result[key]?.error || 'not completed' }));
 }
 
 async function failTranscription({ jobId, testimonyId, error, provider = 'open-source-whisper' }) {

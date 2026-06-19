@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../../lib/auth';
+import { buildStorySummary } from '../../../../lib/storySummary';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,7 +91,7 @@ export async function POST(request, { params }) {
         publicPosting: isChecked(formData.get('publicPosting')),
         followupConsent: true,
         narrativeText: storedNarrative,
-        summary: storedNarrative.length > 160 ? `${storedNarrative.slice(0, 157)}...` : storedNarrative,
+        summary: buildStorySummary(storedNarrative),
         submitterName: formText(formData, 'name') || user.name,
         submitterEmail: user.email,
         selfReportedImpact,

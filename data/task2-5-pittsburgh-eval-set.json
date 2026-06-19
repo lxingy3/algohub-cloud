@@ -1,0 +1,301 @@
+{
+  "name": "task2-5-pittsburgh-public-service-production-eval-set",
+  "source": "data/task2-5-pittsburgh-input.json",
+  "updatedAt": "2026-06-18T00:00:00.000Z",
+  "sourcesUsed": [
+    "https://data.wprdc.org/dataset/?organization=city-of-pittsburgh",
+    "https://www.pittsburghpa.gov/Business-Development/Permits-Licenses-and-Inspections",
+    "https://www.pittsburghpa.gov/Business-Development/Mobility-and-Infrastructure",
+    "https://analytics.alleghenycounty.us/2025/08/15/allegheny-county-discounted-fares-pilot-program/"
+  ],
+  "records": [
+    {
+      "id": "pittsburgh-transit-negated-worker-001",
+      "title": "My bus shelter report went to the wrong queue",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "arbitrary_outcome", "lack_of_recourse", "delayed_outcome"],
+      "requiredEntities": {
+        "agencies": ["Pittsburgh Regional Transit"],
+        "locations": ["East Liberty"],
+        "systems": ["transit safety incident classifier"],
+        "dates": ["April 10, 2026", "nine days"],
+        "people_roles": ["rider", "customer service worker"]
+      },
+      "disallowedEntities": {
+        "people_roles": ["transit worker"]
+      },
+      "disallowedKeywords": ["transit worker", "priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-311-dpw-mixed-002",
+      "title": "The sidewalk request had a tracking number but no owner",
+      "expectedImpact": "MIXED",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["positive_experience", "process_confusion", "delayed_outcome", "arbitrary_outcome"],
+      "requiredEntities": {
+        "agencies": ["City of Pittsburgh 311 Response Center", "Department of Public Works"],
+        "locations": ["Bloomfield"],
+        "systems": ["311 request intake software"],
+        "dates": ["May 2026", "twelve days"],
+        "people_roles": ["311 operator", "public works crew member"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-onestoppgh-pli-003",
+      "title": "The rental permit correction kept the wrong parcel number",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "opacity", "lack_of_recourse"],
+      "requiredEntities": {
+        "agencies": ["Department of Permits, Licenses, and Inspections"],
+        "locations": ["Lawrenceville"],
+        "systems": ["OneStopPGH portal", "rental permit system"],
+        "dates": ["June 3, 2026"],
+        "people_roles": ["permit reviewer", "housing inspector"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-domi-high-injury-004",
+      "title": "The crash map did not explain why my corner stayed low priority",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["opacity", "arbitrary_outcome", "delayed_outcome"],
+      "requiredEntities": {
+        "agencies": ["Department of Mobility and Infrastructure"],
+        "locations": ["Penn Avenue", "Garfield"],
+        "systems": ["High Injury Network", "traffic signal prioritization system"],
+        "dates": ["February 2026", "months"],
+        "people_roles": ["mobility planner"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-allegheny-go-mixed-005",
+      "title": "The fare discount worked until the card stopped working",
+      "expectedImpact": "MIXED",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["positive_experience", "opacity", "data_accuracy", "process_confusion"],
+      "requiredEntities": {
+        "agencies": ["Allegheny County Department of Human Services", "Pittsburgh Regional Transit"],
+        "locations": ["Allegheny County"],
+        "systems": ["Allegheny Go eligibility system", "discounted fares lottery"],
+        "dates": ["November 2022"],
+        "people_roles": ["benefits worker"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-police-gunshot-routing-006",
+      "title": "No one could explain which alert triggered the stop",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["opacity", "lack_of_notification", "loss_of_dignity", "arbitrary_outcome"],
+      "requiredEntities": {
+        "agencies": ["Pittsburgh Bureau of Police"],
+        "locations": ["Homewood"],
+        "systems": ["public safety routing system", "gunshot detection system"],
+        "dates": ["July 19, 2026"],
+        "people_roles": ["police officer"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-fire-inspection-positive-007",
+      "title": "The daycare inspection slot appeared the next day",
+      "expectedImpact": "POSITIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["positive_experience"],
+      "requiredEntities": {
+        "agencies": ["Pittsburgh Bureau of Fire"],
+        "locations": ["Carrick"],
+        "systems": ["fire inspection scheduling portal"],
+        "dates": ["August 2026"],
+        "people_roles": ["fire inspector"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-pwsa-lead-line-mixed-008",
+      "title": "The lead line score helped, but the bill record was wrong",
+      "expectedImpact": "MIXED",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["positive_experience", "data_accuracy", "delayed_outcome"],
+      "requiredEntities": {
+        "agencies": ["Pittsburgh Water and Sewer Authority"],
+        "locations": ["Manchester"],
+        "systems": ["lead service line replacement prioritization model", "water billing exception system"],
+        "dates": ["September 2026", "three calls"],
+        "people_roles": ["water customer service representative", "tenant"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-parking-permit-negative-009",
+      "title": "My parking permit renewal kept using the old plate",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "arbitrary_outcome", "lack_of_recourse"],
+      "requiredEntities": {
+        "agencies": ["Pittsburgh Parking Authority", "Pittsburgh Parking Court"],
+        "locations": ["Shadyside"],
+        "systems": ["parking permit portal", "parking citation review system"],
+        "dates": ["October 4, 2026"],
+        "people_roles": ["parking clerk"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-domi-right-of-way-negative-010",
+      "title": "The curb closure review ignored the wheelchair ramp",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "arbitrary_outcome", "loss_of_dignity"],
+      "requiredEntities": {
+        "agencies": ["DOMI"],
+        "locations": ["Liberty Avenue"],
+        "systems": ["right-of-way permit system"],
+        "dates": ["July 2026", "two days"],
+        "people_roles": ["right-of-way reviewer", "customer"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-311-dip-positive-011",
+      "title": "The 311 map sent my tree request to the right crew",
+      "expectedImpact": "POSITIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["positive_experience"],
+      "requiredEntities": {
+        "agencies": ["City of Pittsburgh 311 Response Center", "Department of Innovation and Performance", "Department of Public Works"],
+        "locations": ["Brownsville Road", "Carrick"],
+        "systems": ["311 service request routing system"],
+        "dates": ["May 2026", "next morning"],
+        "people_roles": ["public works crew member"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-ura-business-aid-unclear-012",
+      "title": "The business aid portal asked for the same file twice",
+      "expectedImpact": "UNCLEAR",
+      "minimumConfidence": 0.65,
+      "expectedThemes": ["process_confusion", "opacity", "delayed_outcome"],
+      "requiredEntities": {
+        "agencies": ["Urban Redevelopment Authority"],
+        "locations": ["Hill District"],
+        "systems": ["small business aid portal", "automated eligibility rule"],
+        "dates": ["December 2026"],
+        "people_roles": ["business owner support specialist"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-language-access-negative-013",
+      "title": "The interpreter request disappeared when the ticket moved",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "process_confusion", "delayed_outcome"],
+      "requiredEntities": {
+        "agencies": ["City of Pittsburgh resident services office"],
+        "locations": ["Downtown Service Center", "Centre Avenue"],
+        "systems": ["language access routing system"],
+        "dates": ["June 2026"],
+        "people_roles": ["interpreter", "front desk worker"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-careerlink-positive-014",
+      "title": "The job match finally sent me to a real workshop",
+      "expectedImpact": "POSITIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["positive_experience"],
+      "requiredEntities": {
+        "agencies": ["PA CareerLink Pittsburgh"],
+        "locations": ["Oakland", "Penn Avenue"],
+        "systems": ["workforce job matching system"],
+        "dates": ["March 2026", "same week"],
+        "people_roles": ["career center worker"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-pwsa-stormwater-mixed-015",
+      "title": "The water complaint was routed fast, but the old owner stayed on the account",
+      "expectedImpact": "MIXED",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["positive_experience", "data_accuracy", "delayed_outcome"],
+      "requiredEntities": {
+        "agencies": ["Pittsburgh Water and Sewer Authority"],
+        "locations": ["Beechview"],
+        "systems": ["stormwater complaint routing system", "water billing exception system"],
+        "dates": ["May 12, 2026", "next morning", "three more weeks"],
+        "people_roles": ["utility customer service representative"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-schools-risk-flag-negative-016",
+      "title": "The attendance flag stayed after my doctor sent the note",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "opacity", "arbitrary_outcome"],
+      "requiredEntities": {
+        "agencies": ["Pittsburgh Public Schools"],
+        "locations": ["Squirrel Hill"],
+        "systems": ["student support risk flag system"],
+        "dates": ["Spring 2026"],
+        "people_roles": ["school social worker", "school staff member"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-asr-onestop-pli-017",
+      "title": "The permit portal heard my address wrong",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "delayed_outcome", "lack_of_recourse"],
+      "requiredEntities": {
+        "agencies": ["City of Pittsburgh Department of Permits, Licenses, and Inspections"],
+        "locations": ["Centre Avenue", "Lawrenceville"],
+        "systems": ["OneStopPGH portal", "permit review portal"],
+        "dates": ["June 18, 2026"],
+        "people_roles": ["permit clerk", "inspector"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-asr-pwsa-018",
+      "title": "The water account name kept coming through wrong",
+      "expectedImpact": "NEGATIVE",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["data_accuracy", "delayed_outcome", "lack_of_recourse"],
+      "requiredEntities": {
+        "agencies": ["Pittsburgh Water and Sewer Authority"],
+        "locations": ["Beechview"],
+        "systems": ["water billing exception system"],
+        "dates": ["July 2026", "two more days"],
+        "people_roles": ["utility customer service representative", "property owner"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    },
+    {
+      "id": "pittsburgh-asr-careerlink-019",
+      "title": "The job match worked after my trade certificate was fixed",
+      "expectedImpact": "MIXED",
+      "minimumConfidence": 0.85,
+      "expectedThemes": ["positive_experience", "data_accuracy"],
+      "requiredEntities": {
+        "agencies": ["PA CareerLink Pittsburgh"],
+        "locations": ["Oakland", "Penn Avenue"],
+        "systems": ["workforce job matching system"],
+        "dates": ["April 2026"],
+        "people_roles": ["career center worker"]
+      },
+      "disallowedKeywords": ["priority", "score", "computer", "decision", "system", "tool", "model", "record", "worker", "category"]
+    }
+  ]
+}
