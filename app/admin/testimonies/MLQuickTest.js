@@ -1,7 +1,9 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { AUDIO_ACCEPT } from '../../../lib/audioAccept';
+import { AUDIO_ACCEPT, audioContentTypeForFile } from '../../../lib/audioAccept';
+
+const MAX_NARRATIVE_TEXT_CHARS = 12000;
 
 export default function MLQuickTest() {
   const [narrativeText, setNarrativeText] = useState('');
@@ -50,9 +52,13 @@ export default function MLQuickTest() {
   }
 
   async function runAudioQuickTest(file, fallbackText, runVersion, signal) {
-    setLoadingLabel('Running Task 1...');
+    setLoadingLabel('Uploading audio...');
     const fallbackNarrativeText = String(fallbackText || '').trim();
-    const task1Payload = await postQuickTest(buildAudioRequest(file, 'task1', signal, fallbackNarrativeText));
+    const uploadedAudio = await uploadAudioForQuickTest(file, signal);
+    if (!isCurrentRun(runVersion)) return;
+
+    setLoadingLabel('Running Task 1...');
+    const task1Payload = await postQuickTest(buildStoredAudioRequest(uploadedAudio, 'task1', signal, fallbackNarrativeText));
     if (!isCurrentRun(runVersion)) return;
     setResult(task1Payload.result);
 
@@ -62,16 +68,16 @@ export default function MLQuickTest() {
       return;
     }
 
-    const analysisText = transcript.length > 8000 ? fallbackNarrativeText : transcript;
-    if (!analysisText || analysisText.length > 8000) {
+    const analysisText = transcript.length > MAX_NARRATIVE_TEXT_CHARS ? fallbackNarrativeText : transcript;
+    if (!analysisText || analysisText.length > MAX_NARRATIVE_TEXT_CHARS) {
       if (!isCurrentRun(runVersion)) return;
       setResult((current) => ({
         ...(current || task1Payload.result),
         status: 'PARTIAL',
-        task2: skippedTask('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', 'Transcript is over 8000 characters. Add a shorter narrative_text excerpt to run Task 2-5.'),
-        task3: skippedTask('facebook/bart-large-mnli', 'Transcript is over 8000 characters. Add a shorter narrative_text excerpt to run Task 2-5.'),
-        task4: skippedTask('spaCy', 'Transcript is over 8000 characters. Add a shorter narrative_text excerpt to run Task 2-5.'),
-        task5: skippedTask('KeyBERT', 'Transcript is over 8000 characters. Add a shorter narrative_text excerpt to run Task 2-5.'),
+        task2: skippedTask('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
+        task3: skippedTask('facebook/bart-large-mnli', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
+        task4: skippedTask('spaCy', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
+        task5: skippedTask('KeyBERT', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
       }));
       return;
     }
@@ -211,15 +217,50 @@ async function parseQuickTestResponse(response) {
   }
 }
 
-function buildAudioRequest(audioFile, task = '', signal, fallbackText = '') {
-  const formData = new FormData();
-  formData.append('audio', audioFile);
-  if (task) formData.append('task', task);
-  if (fallbackText) formData.append('narrativeText', fallbackText);
+async function uploadAudioForQuickTest(audioFile, signal) {
+  const contentType = audioContentTypeForFile(audioFile);
+  const presignResponse = await fetch('/api/uploads/presign', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      kind: 'audio',
+      fileName: audioFile.name,
+      contentType,
+      size: audioFile.size,
+    }),
+    signal,
+  });
+  const presignPayload = await parseQuickTestResponse(presignResponse);
+  if (!presignResponse.ok) throw new Error(presignPayload.error || 'Audio upload could not be prepared.');
+
+  const uploadResponse = await fetch(presignPayload.uploadUrl, {
+    method: 'PUT',
+    headers: { 'content-type': presignPayload.contentType || contentType },
+    body: audioFile,
+    signal,
+  });
+  if (!uploadResponse.ok) throw new Error(`Audio upload failed (${uploadResponse.status}).`);
+
+  return {
+    objectKey: presignPayload.objectKey,
+    contentType: presignPayload.contentType || contentType,
+    fileName: audioFile.name,
+  };
+}
+
+function buildStoredAudioRequest(uploadedAudio, task = '', signal, fallbackText = '') {
   return {
     method: 'POST',
+    headers: { 'content-type': 'application/json' },
     credentials: 'include',
-    body: formData,
+    body: JSON.stringify({
+      mediaObjectKey: uploadedAudio.objectKey,
+      contentType: uploadedAudio.contentType,
+      fileName: uploadedAudio.fileName,
+      task,
+      narrativeText: fallbackText,
+    }),
     signal,
   };
 }

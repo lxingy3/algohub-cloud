@@ -20,7 +20,7 @@ const impacts = [
   ['UNCLEAR', 'submit.notSureImpact'],
 ];
 const DRAFT_KEY = 'algostories-submit-draft';
-const MAX_RECORDING_SECONDS = 600;
+const MAX_RECORDING_SECONDS = 1800;
 
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);

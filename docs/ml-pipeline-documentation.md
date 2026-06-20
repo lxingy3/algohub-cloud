@@ -1,10 +1,10 @@
 # ML pipeline documentation
 
-This document describes the current ML pipeline in AlgoStories. It is written for the project team, so it focuses on what runs, where the result is stored, and what still needs attention before a public demo.
+Current ML pipeline in AlgoStories.
 
 ## Scope
 
-The pipeline covers Task 1 through Task 5 from the Week 7 ML work.
+The pipeline covers Task 1 through Task 5 currently.
 
 - Task 1 transcribes audio stories.
 - Task 2 classifies the story impact.
@@ -41,7 +41,7 @@ The formal database fields are:
 - `Testimony.aiConfidenceScore`
 - `Testimony.aiProcessedAt`
 
-The admin page reads those stored fields first. If a stored value is missing, the page can still show a local fallback estimate for review. The label now makes clear that the result is not stored yet.
+The admin page reads those stored fields first. If a stored value is missing, the page can still show a local fallback estimate for review. The label now makes clear that the result is not stored yet, rather than showing `Page estimate`.
 
 ## Task 3: theme detection
 
@@ -101,15 +101,17 @@ The admin Quick Test route is:
 
 - `POST /api/ml/quick-test`
 
-Text input runs Task 2 through Task 5. Audio input runs Task 1 first, then feeds the transcript into Task 2 through Task 5. Quick Test is useful for demos and debugging, but it does not store results in the database.
+Text input runs Task 2 through Task 5. Audio input runs Task 1 first, then feeds the transcript into Task 2 through Task 5. Quick Test is convenient for demos and debugging, but it does not store results in the database.
 
 ## Current limits
 
-Task 2 and Task 3 can hit Hugging Face inference quota or timeout limits. The models are open source, but the hosted inference provider has account limits. Task 4 and Task 5 are more stable because they rely on backend logic and dictionaries.
+The expected demo limits are now 30 minutes for audio input and 12,000 characters for text input. Formal story uploads already use signed media upload, so the audio file does not pass through the app server as a large request body.
 
-The next stable option is to move more inference into our own worker process using open-source packages and cached models. That would avoid hosted inference quota during demos.
+The admin Quick Test audio path has been changed to match that approach. It uploads the audio file to media storage first, then sends the stored object key to the ML endpoint. This avoids Vercel's function payload limit, which is what caused the `FUNCTION_PAYLOAD_TOO_LARGE` error on a 29-minute audio test.
 
-Long audio should still be tested before a meeting. The transcript can be accurate, but long files produce long output, so the admin page now uses collapsible story details and an ML Pipeline panel.
+Task 2 and Task 3 can still hit Hugging Face inference quota or timeout limits. The models are open source, but the hosted inference provider has account limits. Task 4 and Task 5 are more stable because they rely on backend logic and dictionaries.
+
+The next stable option is to move more inference into our own worker process using open-source packages and cached models. That would avoid hosted inference quota during demos. Long audio can also produce long transcript output, so the admin page uses collapsible story details and an ML Pipeline panel.
 
 ## Files and routes to know
 

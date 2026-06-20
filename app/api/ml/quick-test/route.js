@@ -3,9 +3,12 @@ import { requireAdmin } from '../../../../lib/auth';
 import { analyzeNarrativeTextWithModels } from '../../../../lib/mlFullAnalysis';
 import { transcribeAudioForTask1 } from '../../../../lib/task1Transcription';
 import { buildStorySummary } from '../../../../lib/storySummary';
+import { createSignedMediaRead } from '../../../../lib/mediaStorage';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
+
+const MAX_NARRATIVE_TEXT_CHARS = 12000;
 
 export async function POST(request) {
   try {
@@ -19,12 +22,16 @@ export async function POST(request) {
     }
 
     const body = await request.json().catch(() => ({}));
+    if (body.mediaObjectKey) {
+      return await handleStoredAudioQuickTest(body);
+    }
+
     const narrativeText = String(body.narrativeText || '').trim();
     if (!narrativeText) {
       return NextResponse.json({ error: 'Please enter narrative_text.' }, { status: 400 });
     }
-    if (narrativeText.length > 8000) {
-      return NextResponse.json({ error: 'Please keep narrative_text under 8000 characters.' }, { status: 400 });
+    if (narrativeText.length > MAX_NARRATIVE_TEXT_CHARS) {
+      return NextResponse.json({ error: `Please keep narrative_text under ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters.` }, { status: 400 });
     }
 
     const result = await analyzeNarrativeTextWithModels(narrativeText);
@@ -41,6 +48,36 @@ export async function POST(request) {
       error: cleanQuickTestError(error),
     }, { status: 500 });
   }
+}
+
+async function handleStoredAudioQuickTest(body) {
+  const objectKey = String(body.mediaObjectKey || '').trim();
+  if (!objectKey) {
+    return NextResponse.json({ error: 'Please upload an audio file.' }, { status: 400 });
+  }
+
+  const file = await fileFromStoredMedia({
+    objectKey,
+    fileName: body.fileName,
+    contentType: body.contentType,
+  });
+  return analyzeAudioFile({
+    audioFile: file,
+    taskMode: String(body.task || '').trim().toLowerCase(),
+    fallbackNarrativeText: String(body.narrativeText || '').trim(),
+  });
+}
+
+async function fileFromStoredMedia({ objectKey, fileName, contentType }) {
+  const readUrl = await createSignedMediaRead({ objectKey });
+  const response = await fetch(readUrl);
+  if (!response.ok) {
+    throw new Error(`Could not read uploaded audio (${response.status}).`);
+  }
+  const blob = await response.blob();
+  const resolvedContentType = contentType || response.headers.get('content-type') || blob.type || 'audio/mpeg';
+  const resolvedFileName = fileName || objectKey.split('/').pop() || 'uploaded-audio';
+  return new File([blob], resolvedFileName, { type: resolvedContentType });
 }
 
 async function isAuthorized(request) {
@@ -66,6 +103,10 @@ async function handleAudioQuickTest(request) {
     return NextResponse.json({ error: 'Please upload an audio file.' }, { status: 400 });
   }
 
+  return analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText });
+}
+
+async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) {
   let task1;
   try {
     task1 = await transcribeAudioForTask1(audioFile);
@@ -148,8 +189,8 @@ async function handleAudioQuickTest(request) {
       },
     });
   }
-  if (narrativeText.length > 8000) {
-    if (fallbackNarrativeText && fallbackNarrativeText.length <= 8000) {
+  if (narrativeText.length > MAX_NARRATIVE_TEXT_CHARS) {
+    if (fallbackNarrativeText && fallbackNarrativeText.length <= MAX_NARRATIVE_TEXT_CHARS) {
       const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText);
       return NextResponse.json({
         ok: true,
@@ -170,10 +211,10 @@ async function handleAudioQuickTest(request) {
         source: 'audio-upload',
         status: 'PARTIAL',
         task1,
-        task2: skippedPayload('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', 'Transcript is over 8000 characters. Add a shorter narrative_text excerpt to run Task 2-5.'),
-        task3: skippedPayload('facebook/bart-large-mnli', 'Transcript is over 8000 characters. Add a shorter narrative_text excerpt to run Task 2-5.'),
-        task4: skippedPayload('spaCy', 'Transcript is over 8000 characters. Add a shorter narrative_text excerpt to run Task 2-5.'),
-        task5: skippedPayload('KeyBERT', 'Transcript is over 8000 characters. Add a shorter narrative_text excerpt to run Task 2-5.'),
+        task2: skippedPayload('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
+        task3: skippedPayload('facebook/bart-large-mnli', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
+        task4: skippedPayload('spaCy', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
+        task5: skippedPayload('KeyBERT', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
       },
     });
   }
