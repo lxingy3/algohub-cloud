@@ -16,14 +16,12 @@ export function InlineExpandableText({ label, text, collapsedChars = 360, classN
         aria-expanded={open}
       >
         <p className="text-xs font-semibold uppercase text-slate-500">{label}</p>
-        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-800">
+        <p className="mt-2 text-sm leading-6 text-slate-800">
           {preview}
           {hasOverflow && !open ? '...' : ''}
+          {hasOverflow && open ? rest : ''}
         </p>
       </button>
-      {hasOverflow && open ? (
-        <p className="whitespace-pre-wrap text-sm leading-6 text-slate-800">{rest}</p>
-      ) : null}
       {hasOverflow ? (
         <ExpandIconButton
           label={label}
@@ -153,19 +151,35 @@ function ExpandIconButton({ label, open, onClick }) {
 }
 
 function splitPreviewText(text, collapsedChars) {
-  const cleanText = String(text || '').trim();
+  const cleanText = normalizeInlineText(text);
   if (!cleanText || cleanText.length <= collapsedChars) {
     return { preview: cleanText, rest: '', hasOverflow: false };
   }
 
-  let previewEnd = cleanText.lastIndexOf(' ', collapsedChars);
-  if (previewEnd < collapsedChars * 0.6) previewEnd = collapsedChars;
+  const previewEnd = findPreviewSentenceEnd(cleanText, collapsedChars);
 
   return {
-    preview: cleanText.slice(0, previewEnd).trimEnd(),
-    rest: cleanText.slice(previewEnd),
+    preview: cleanText.slice(0, previewEnd).trim(),
+    rest: ` ${cleanText.slice(previewEnd).trimStart()}`,
     hasOverflow: true,
   };
+}
+
+function normalizeInlineText(text) {
+  return String(text || '').replace(/\s+/g, ' ').trim();
+}
+
+function findPreviewSentenceEnd(text, collapsedChars) {
+  const sentenceEnds = [...text.matchAll(/[.!?](?=\s|$)/g)].map((match) => match.index + 1);
+  const beforeLimit = sentenceEnds.filter((index) => index <= collapsedChars);
+  const afterMinimum = beforeLimit.filter((index) => index >= collapsedChars * 0.55);
+  if (afterMinimum.length) return afterMinimum[afterMinimum.length - 1];
+
+  const firstAfterLimit = sentenceEnds.find((index) => index > collapsedChars);
+  if (firstAfterLimit && firstAfterLimit <= collapsedChars * 1.35) return firstAfterLimit;
+
+  const wordEnd = text.lastIndexOf(' ', collapsedChars);
+  return wordEnd > 0 ? wordEnd : collapsedChars;
 }
 
 const entityGroups = ['agencies', 'locations', 'systems', 'dates', 'people_roles'];
