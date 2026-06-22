@@ -54,11 +54,8 @@ export default function MLQuickTest() {
   async function runAudioQuickTest(file, fallbackText, runVersion, signal) {
     setLoadingLabel('Uploading audio...');
     const fallbackNarrativeText = String(fallbackText || '').trim();
-    const uploadedAudio = await uploadAudioForQuickTest(file, signal);
-    if (!isCurrentRun(runVersion)) return;
-
     setLoadingLabel('Running Task 1...');
-    const task1Payload = await postQuickTest(buildStoredAudioRequest(uploadedAudio, 'task1', signal, fallbackNarrativeText));
+    const task1Payload = await postQuickTest(await buildAudioTask1Request(file, signal, fallbackNarrativeText));
     if (!isCurrentRun(runVersion)) return;
     setResult(task1Payload.result);
 
@@ -232,7 +229,11 @@ async function uploadAudioForQuickTest(audioFile, signal) {
     signal,
   });
   const presignPayload = await parseQuickTestResponse(presignResponse);
-  if (!presignResponse.ok) throw new Error(presignPayload.error || 'Audio upload could not be prepared.');
+  if (!presignResponse.ok) {
+    const error = new Error(presignPayload.error || 'Audio upload could not be prepared.');
+    error.status = presignResponse.status;
+    throw error;
+  }
 
   const uploadResponse = await fetch(presignPayload.uploadUrl, {
     method: 'PUT',
@@ -246,6 +247,29 @@ async function uploadAudioForQuickTest(audioFile, signal) {
     objectKey: presignPayload.objectKey,
     contentType: presignPayload.contentType || contentType,
     fileName: audioFile.name,
+  };
+}
+
+async function buildAudioTask1Request(audioFile, signal, fallbackText = '') {
+  try {
+    const uploadedAudio = await uploadAudioForQuickTest(audioFile, signal);
+    return buildStoredAudioRequest(uploadedAudio, 'task1', signal, fallbackText);
+  } catch (uploadError) {
+    if (uploadError.status !== 503) throw uploadError;
+    return buildDirectAudioRequest(audioFile, 'task1', signal, fallbackText);
+  }
+}
+
+function buildDirectAudioRequest(audioFile, task = '', signal, fallbackText = '') {
+  const formData = new FormData();
+  formData.append('audio', audioFile);
+  if (task) formData.append('task', task);
+  if (fallbackText) formData.append('narrativeText', fallbackText);
+  return {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+    signal,
   };
 }
 
