@@ -58,10 +58,7 @@ export async function POST(request) {
         continue;
       }
 
-      const text = [testimony.transcriptionText, testimony.narrativeText, testimony.title]
-        .filter(Boolean)
-        .join('\n\n')
-        .trim();
+      const text = buildAnalysisText(testimony);
       if (!text) {
         skipped.push({ id: testimony.id, title: testimony.title, reason: 'no_text' });
         continue;
@@ -116,10 +113,7 @@ export async function POST(request) {
       continue;
     }
 
-    const text = [testimony.transcriptionText, testimony.narrativeText, testimony.summary, testimony.title]
-      .filter(Boolean)
-      .join('\n\n')
-      .trim();
+    const text = buildAnalysisText(testimony);
     if (!text) {
       skipped.push({ id: testimony.id, title: testimony.title, reason: 'no_text' });
       continue;
@@ -160,6 +154,14 @@ export async function POST(request) {
     items: refreshed,
     skippedItems: skipped,
   });
+}
+
+function buildAnalysisText(testimony) {
+  const primaryText = [testimony.transcriptionText, testimony.narrativeText]
+    .filter(Boolean)
+    .join('\n\n')
+    .trim();
+  return primaryText || String(testimony.title || '').trim();
 }
 
 function isMissingTask4To7(testimony) {
