@@ -72,7 +72,7 @@ export async function POST(request) {
           algorithms,
           affectedDomain: testimony.affectedDomain,
         });
-        const update = buildMlUpdate(testimony, result);
+        const update = buildTask4To7Update(testimony, result);
         await prisma.$transaction(async (tx) => {
           await tx.testimony.update({
             where: { id: testimony.id },
@@ -218,6 +218,36 @@ function buildMlUpdate(testimony, result) {
     aiThemes: result.task3?.status === 'COMPLETED'
       ? normalizeThemes(result.task3.aiThemes)
       : normalizeThemes(testimony.aiThemes),
+    aiExtractedExperiences: {
+      entities: nextEntities,
+      keywords: nextKeywords,
+    },
+    aiLinkedAlgorithmIds: result.task6?.status === 'COMPLETED'
+      ? normalizeAlgorithmIds(result.task6.linkedAlgorithms)
+      : normalizeStringArray(testimony.aiLinkedAlgorithmIds),
+    summary: result.task7?.status === 'COMPLETED' && result.task7.summary
+      ? result.task7.summary
+      : testimony.summary,
+    aiProcessedAt: new Date(),
+  };
+}
+
+function buildTask4To7Update(testimony, result) {
+  const priorExperiences = testimony.aiExtractedExperiences && typeof testimony.aiExtractedExperiences === 'object'
+    ? testimony.aiExtractedExperiences
+    : {};
+  const priorEntities = priorExperiences.entities && typeof priorExperiences.entities === 'object'
+    ? priorExperiences.entities
+    : {};
+
+  const nextEntities = result.task4?.status === 'COMPLETED'
+    ? normalizeEntities(result.task4.entities)
+    : normalizeEntities(priorEntities);
+  const nextKeywords = result.task5?.status === 'COMPLETED'
+    ? normalizeStringArray(result.task5.keywords)
+    : normalizeStringArray(priorExperiences.keywords);
+
+  return {
     aiExtractedExperiences: {
       entities: nextEntities,
       keywords: nextKeywords,
