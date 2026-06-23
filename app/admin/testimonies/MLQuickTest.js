@@ -378,12 +378,6 @@ function QuickTestResult({ result, isRunning = false }) {
       {result.status === 'PARTIAL' && (!isRunning || hasIncompleteTask) ? (
         <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Some tasks did not return a result. Completed tasks are shown below.</p>
       ) : null}
-      {result.summary ? (
-        <div className="rounded-md border border-slate-200 bg-white p-3">
-          <p className="text-xs font-semibold uppercase text-slate-500">Task 7 summarization</p>
-          <p className="mt-1 text-sm leading-6 text-slate-800">{result.summary}</p>
-        </div>
-      ) : null}
       <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
         <p className="text-xs font-semibold uppercase text-slate-500">Task 1 transcription</p>
         {task1.status === 'SKIPPED' ? (
@@ -484,11 +478,11 @@ function QuickTestResult({ result, isRunning = false }) {
           )}
         </div>
       ) : null}
-      {hasTask7 && !result.summary ? (
+      {hasTask7 ? (
         <div className="rounded-md border border-slate-200 bg-white p-3">
           <p className="text-xs font-semibold uppercase text-slate-500">Task 7 summarization</p>
           {task7.status === 'SKIPPED' ? <TaskError task={task7} /> : (
-            <p className="mt-1 text-sm leading-6 text-slate-800">{task7.summary}</p>
+            <p className="mt-1 text-sm leading-6 text-slate-800">{task7.summary || result.summary}</p>
           )}
         </div>
       ) : null}
