@@ -4,13 +4,15 @@ Current ML pipeline in AlgoStories.
 
 ## Scope
 
-The pipeline covers Task 1 through Task 5 currently.
+The pipeline covers Task 1 through Task 7 currently.
 
 - Task 1 transcribes audio stories.
 - Task 2 classifies the story impact.
 - Task 3 detects themes in the story.
 - Task 4 extracts agencies, locations, systems, dates, and people roles.
 - Task 5 extracts keywords.
+- Task 6 links the story to likely algorithm cards in the registry.
+- Task 7 generates a short AI summary for the story.
 
 The admin "ML Quick Test" tool is for testing. It does not create or update a formal story record. Formal results are stored on testimony records in the database.
 
@@ -81,19 +83,38 @@ The formal database field is:
 
 - `Testimony.aiExtractedExperiences.keywords`
 
+## Task 6: algorithm linking
+
+Task 6 links a story to likely existing algorithm cards. The current v1 uses a local, explainable registry scorer instead of an external embedding service. It combines the story text, Task 4 entities, Task 5 keywords, the submitted affected domain, and each algorithm card's name, use case, agency, description, purpose, data used, and decision type.
+
+The formal database fields are:
+
+- `Testimony.aiLinkedAlgorithmIds`
+- `TestimonyAlgorithmLink` rows with `linkType = AI_DETECTED`
+
+Only AI-detected links are replaced when the ML refresh runs. Submitter-selected or facilitator-tagged links are preserved.
+
+## Task 7: summarization
+
+Task 7 creates a concise local-rule summary from the story text or transcript. This v1 stores the result in the existing story summary field so the public story page and admin review page can show the same AI-generated summary without a schema migration.
+
+The formal database field is:
+
+- `Testimony.summary`
+
 ## How results are stored
 
-Formal stories store Task 1 through Task 5 on the `Testimony` table and related `TranscriptionJob` table.
+Formal stories store Task 1 through Task 7 on the `Testimony` table, `TestimonyAlgorithmLink` table, and related `TranscriptionJob` table.
 
-For text stories, an admin can run the refresh endpoint to write Task 2 through Task 5 results:
+For text stories, an admin can run the refresh endpoint to write Task 2 through Task 7 results:
 
 - `POST /api/admin/testimonies/refresh-ml`
 
-For voice stories, Task 1 completion now also triggers Task 2 through Task 5 storage on the same testimony record:
+For voice stories, Task 1 completion now also triggers Task 2 through Task 7 storage on the same testimony record:
 
 - `POST /api/transcription/process` with `action: "complete"`
 
-This update is fail-safe. If Task 2 or Task 3 times out because of a hosted model limit, the transcript still saves. Any completed Task 2 through Task 5 result is written back without blocking Task 1.
+If Task 2 or Task 3 times out because of a hosted model limit, the transcript still saves. Any completed Task 2 through Task 7 result is written back without blocking Task 1.
 
 ## Quick Test
 
@@ -101,24 +122,24 @@ The admin Quick Test route is:
 
 - `POST /api/ml/quick-test`
 
-Text input runs Task 2 through Task 5. Audio input runs Task 1 first, then feeds the transcript into Task 2 through Task 5. Quick Test is convenient for demos and debugging, but it does not store results in the database.
+Text input runs Task 2 through Task 7. Audio input runs Task 1 first, then feeds the transcript into Task 2 through Task 7. Quick Test is convenient for demos and debugging, but it does not store results in the database.
 
 ## Current limits
 
-The expected demo limits are now 30 minutes for audio input and 12,000 characters for text input. Formal story uploads already use signed media upload, so the audio file does not pass through the app server as a large request body.
+The expected limits are 30 minutes for audio input and 12,000 characters for text input. Formal story uploads already use signed media upload, so the audio file does not pass through the app server as a large request body.
 
 The admin Quick Test audio path has been changed to match that approach. It uploads the audio file to media storage first, then sends the stored object key to the ML endpoint. This avoids Vercel's function payload limit, which is what caused the `FUNCTION_PAYLOAD_TOO_LARGE` error on a 29-minute audio test.
 
-Task 2 and Task 3 can still hit Hugging Face inference quota or timeout limits. The models are open source, but the hosted inference provider has account limits. Task 4 and Task 5 are more stable because they rely on backend logic and dictionaries.
+Task 2 and Task 3 can still hit Hugging Face inference quota or timeout limits. The models are open source, but the hosted inference provider has account limits. Task 4, Task 5, Task 6, and Task 7 are more stable because they rely on backend logic, dictionaries, and local scoring.
 
-The next stable option is to move more inference into our own worker process using open-source packages and cached models. That would avoid hosted inference quota during demos. Long audio can also produce long transcript output, so the admin page uses collapsible story details and an ML Pipeline panel.
+The next stable option is to move more inference into our own worker process using open-source packages and cached models.
 
 ## Files and routes to know
 
 - `prisma/schema.prisma`: database fields for Testimony and TranscriptionJob
 - `app/api/testimonies/route.js`: formal story creation
-- `app/api/transcription/process/route.js`: Task 1 completion and formal Task 2 through Task 5 storage after voice transcription
-- `app/api/admin/testimonies/refresh-ml/route.js`: formal Task 2 through Task 5 refresh for stored stories
+- `app/api/transcription/process/route.js`: Task 1 completion and formal Task 2 through Task 7 storage after voice transcription
+- `app/api/admin/testimonies/refresh-ml/route.js`: formal Task 2 through Task 7 refresh for stored stories
 - `app/api/ml/quick-test/route.js`: admin test route
-- `lib/mlFullAnalysis.js`: Task 2 through Task 5 analysis logic
+- `lib/mlFullAnalysis.js`: Task 2 through Task 7 analysis logic
 - `app/admin/testimonies/ExpandablePanels.js`: admin display for story details and the ML Pipeline panel

@@ -105,44 +105,56 @@ async function completeTranscription({ jobId, testimonyId, transcript, provider 
         transcriptionStatus: true,
         transcriptionText: true,
         transcribedAt: true,
+        affectedDomain: true,
       },
     });
 
     return { job: updatedJob, testimony: updatedTestimony };
   });
 
-  const task2To5 = await storeTask2To5ForTestimony(result.testimony.id, cleanedTranscript);
+  const task2To7 = await storeTask2To7ForTestimony(result.testimony.id, cleanedTranscript);
 
   return NextResponse.json({
     ok: true,
     task: 'Task 1: audio transcription',
     provider,
     confidence,
-    task2To5,
+    task2To7,
     result,
   });
 }
 
-async function storeTask2To5ForTestimony(testimonyId, text) {
+async function storeTask2To7ForTestimony(testimonyId, text) {
   try {
+    const jurisdictionId = getJurisdictionId();
     const testimony = await prisma.testimony.findUnique({
       where: { id: testimonyId },
       select: {
+        summary: true,
+        affectedDomain: true,
         aiImpactClassification: true,
         aiConfidenceScore: true,
         aiThemes: true,
         aiExtractedExperiences: true,
+        aiLinkedAlgorithmIds: true,
       },
     });
     if (!testimony) {
       return { status: 'SKIPPED', reason: 'testimony_not_found' };
     }
 
-    const result = await analyzeNarrativeTextWithModels(text);
+    const algorithms = await loadAlgorithmCandidates(jurisdictionId);
+    const result = await analyzeNarrativeTextWithModels(text, {
+      algorithms,
+      affectedDomain: testimony.affectedDomain,
+    });
     const update = buildMlUpdate(testimony, result);
-    await prisma.testimony.update({
-      where: { id: testimonyId },
-      data: update,
+    await prisma.$transaction(async (tx) => {
+      await tx.testimony.update({
+        where: { id: testimonyId },
+        data: update,
+      });
+      await replaceAiDetectedAlgorithmLinks(tx, testimonyId, result.task6);
     });
 
     return {
@@ -187,8 +199,66 @@ function buildMlUpdate(testimony, result) {
       entities: nextEntities,
       keywords: nextKeywords,
     },
+    aiLinkedAlgorithmIds: result.task6?.status === 'COMPLETED'
+      ? normalizeAlgorithmIds(result.task6.linkedAlgorithms)
+      : normalizeStringArray(testimony.aiLinkedAlgorithmIds),
+    summary: result.task7?.status === 'COMPLETED' && result.task7.summary
+      ? result.task7.summary
+      : testimony.summary,
     aiProcessedAt: new Date(),
   };
+}
+
+async function replaceAiDetectedAlgorithmLinks(tx, testimonyId, task6) {
+  if (task6?.status !== 'COMPLETED') return;
+  const links = normalizeAlgorithmLinks(task6.linkedAlgorithms);
+  await tx.testimonyAlgorithmLink.deleteMany({
+    where: {
+      testimonyId,
+      linkType: 'AI_DETECTED',
+    },
+  });
+  if (!links.length) return;
+  await tx.testimonyAlgorithmLink.createMany({
+    data: links.map((link) => ({
+      testimonyId,
+      algorithmId: link.algorithmId,
+      linkType: 'AI_DETECTED',
+      confidence: link.confidence,
+    })),
+    skipDuplicates: true,
+  });
+}
+
+async function loadAlgorithmCandidates(jurisdictionId) {
+  return prisma.algorithm.findMany({
+    where: { jurisdictionId },
+    select: {
+      id: true,
+      name: true,
+      useCase: true,
+      description: true,
+      purpose: true,
+      agencyName: true,
+      dataUsed: true,
+      decisionType: true,
+    },
+  });
+}
+
+function normalizeAlgorithmIds(value) {
+  return normalizeAlgorithmLinks(value).map((link) => link.algorithmId);
+}
+
+function normalizeAlgorithmLinks(value) {
+  return Array.isArray(value)
+    ? value
+        .map((link) => ({
+          algorithmId: String(link?.algorithmId || '').trim(),
+          confidence: Number(link?.confidence || 0),
+        }))
+        .filter((link) => link.algorithmId)
+    : [];
 }
 
 function normalizeThemes(value) {
@@ -207,7 +277,7 @@ function normalizeStringArray(value) {
 }
 
 function getSkippedTasks(result) {
-  return ['task2', 'task3', 'task4', 'task5']
+  return ['task2', 'task3', 'task4', 'task5', 'task6', 'task7']
     .filter((key) => result[key]?.status !== 'COMPLETED')
     .map((key) => ({ task: key, error: result[key]?.error || 'not completed' }));
 }

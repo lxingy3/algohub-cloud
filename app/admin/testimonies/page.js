@@ -81,6 +81,7 @@ export default async function AdminTestimoniesPage({ searchParams }) {
         aiConfidenceScore: true,
         aiThemes: true,
         aiExtractedExperiences: true,
+        aiLinkedAlgorithmIds: true,
         aiProcessedAt: true,
         moderationNotes: true,
         mediaDurationSeconds: true,
@@ -88,7 +89,7 @@ export default async function AdminTestimoniesPage({ searchParams }) {
         updatedAt: true,
         user: { select: { name: true, email: true } },
         partnerOrganization: { select: { name: true } },
-        algorithmLinks: { select: { algorithmId: true, algorithm: { select: { name: true } } } },
+        algorithmLinks: { select: { algorithmId: true, linkType: true, confidence: true, algorithm: { select: { name: true } } } },
       },
     }),
     prisma.testimony.groupBy({
@@ -122,6 +123,7 @@ export default async function AdminTestimoniesPage({ searchParams }) {
           const isVoiceInput = storyType === 'voice' || hasAudio;
           const task2Impact = getTask2Impact(testimony);
           const task345Insights = getTask345Insights(testimony);
+          const task6Links = getTask6Links(testimony);
           const aiSummary = testimony.summary || buildStorySummary(testimony.narrativeText || testimony.transcriptionText || '');
           const transcriptSummary = buildStorySummary(testimony.transcriptionText || '', { maxChars: 260 });
           const mediaSources = [
@@ -212,6 +214,8 @@ export default async function AdminTestimoniesPage({ searchParams }) {
                 transcriptSummary={transcriptSummary}
                 task2Impact={task2Impact}
                 task345Insights={task345Insights}
+                task6Links={task6Links}
+                aiSummary={aiSummary}
               />
 
               <textarea name="notes" placeholder="Moderation notes" defaultValue={testimony.moderationNotes || ''} className="mt-3 w-full rounded-md border px-3 py-2" />
@@ -393,6 +397,18 @@ function getTask345Insights(testimony) {
     entities: estimateEntities(testimony),
     keywords: estimateKeywords(testimony),
   };
+}
+
+function getTask6Links(testimony) {
+  return (testimony.algorithmLinks || [])
+    .filter((link) => link.linkType === 'AI_DETECTED' || (testimony.aiLinkedAlgorithmIds || []).includes(link.algorithmId))
+    .map((link) => ({
+      algorithmId: link.algorithmId,
+      name: link.algorithm?.name || 'Unknown algorithm',
+      confidence: Number.isFinite(Number(link.confidence)) ? Number(link.confidence) : 0,
+      linkType: link.linkType,
+    }))
+    .sort((a, b) => b.confidence - a.confidence || a.name.localeCompare(b.name));
 }
 
 function normalizeThemes(value) {

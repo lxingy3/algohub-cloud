@@ -4,6 +4,8 @@ import { analyzeNarrativeTextWithModels } from '../../../../lib/mlFullAnalysis';
 import { transcribeAudioForTask1 } from '../../../../lib/task1Transcription';
 import { buildStorySummary } from '../../../../lib/storySummary';
 import { createSignedMediaRead } from '../../../../lib/mediaStorage';
+import { getJurisdictionId } from '../../../../lib/jurisdiction';
+import { prisma } from '../../../../lib/prisma';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -34,12 +36,14 @@ export async function POST(request) {
       return NextResponse.json({ error: `Please keep narrative_text under ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters.` }, { status: 400 });
     }
 
-    const result = await analyzeNarrativeTextWithModels(narrativeText);
+    const result = await analyzeNarrativeTextWithModels(narrativeText, {
+      algorithms: await loadAlgorithmCandidates(),
+    });
     return NextResponse.json({
       ok: true,
       result: {
         ...result,
-        summary: buildStorySummary(narrativeText, { maxChars: 320 }),
+        summary: result.task7?.summary || buildStorySummary(narrativeText, { maxChars: 320 }),
       },
     });
   } catch (error) {
@@ -112,7 +116,9 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) 
     task1 = await transcribeAudioForTask1(audioFile);
   } catch (task1Error) {
     if (fallbackNarrativeText) {
-      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText);
+      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText, {
+        algorithms: await loadAlgorithmCandidates(),
+      });
       return NextResponse.json({
         ok: true,
         result: {
@@ -120,7 +126,7 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) 
           inputField: 'audio',
           source: 'audio-upload',
           status: 'PARTIAL',
-          summary: buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
+          summary: analysis.task7?.summary || buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
           task1: {
             status: 'SKIPPED',
             tool: process.env.HF_ASR_MODEL || 'openai/whisper-large-v3',
@@ -146,7 +152,9 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) 
   const narrativeText = String(task1.transcript || task1.rawTranscript || '').trim();
   if (!narrativeText) {
     if (fallbackNarrativeText) {
-      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText);
+      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText, {
+        algorithms: await loadAlgorithmCandidates(),
+      });
       return NextResponse.json({
         ok: true,
         result: {
@@ -154,7 +162,7 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) 
           inputField: 'audio',
           source: 'audio-upload',
           status: 'PARTIAL',
-          summary: buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
+          summary: analysis.task7?.summary || buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
           task1: {
             ...task1,
             status: task1.status || 'SKIPPED',
@@ -191,7 +199,9 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) 
   }
   if (narrativeText.length > MAX_NARRATIVE_TEXT_CHARS) {
     if (fallbackNarrativeText && fallbackNarrativeText.length <= MAX_NARRATIVE_TEXT_CHARS) {
-      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText);
+      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText, {
+        algorithms: await loadAlgorithmCandidates(),
+      });
       return NextResponse.json({
         ok: true,
         result: {
@@ -199,7 +209,7 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) 
           inputField: 'audio',
           source: 'audio-upload',
           status: 'PARTIAL',
-          summary: buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
+          summary: analysis.task7?.summary || buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
           task1,
         },
       });
@@ -210,24 +220,49 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) 
         inputField: 'audio',
         source: 'audio-upload',
         status: 'PARTIAL',
+        summary: buildStorySummary(narrativeText, { maxChars: 320 }),
         task1,
-        task2: skippedPayload('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
-        task3: skippedPayload('facebook/bart-large-mnli', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
-        task4: skippedPayload('spaCy', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
-        task5: skippedPayload('KeyBERT', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
+        task2: skippedPayload('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
+        task3: skippedPayload('facebook/bart-large-mnli', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
+        task4: skippedPayload('spaCy', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
+        task5: skippedPayload('KeyBERT', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
+        task6: skippedPayload('local algorithm registry linker', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
+        task7: {
+          status: 'COMPLETED',
+          tool: 'local summary rules',
+          summary: buildStorySummary(narrativeText, { maxChars: 320 }),
+        },
       },
     });
   }
 
-  const analysis = await analyzeNarrativeTextWithModels(narrativeText);
+  const analysis = await analyzeNarrativeTextWithModels(narrativeText, {
+    algorithms: await loadAlgorithmCandidates(),
+  });
   return NextResponse.json({
     ok: true,
     result: {
       ...analysis,
       inputField: 'audio',
       source: 'audio-upload',
-      summary: buildStorySummary(narrativeText, { maxChars: 320 }),
+      summary: analysis.task7?.summary || buildStorySummary(narrativeText, { maxChars: 320 }),
       task1,
+    },
+  });
+}
+
+async function loadAlgorithmCandidates() {
+  return prisma.algorithm.findMany({
+    where: { jurisdictionId: getJurisdictionId() },
+    select: {
+      id: true,
+      name: true,
+      useCase: true,
+      description: true,
+      purpose: true,
+      agencyName: true,
+      dataUsed: true,
+      decisionType: true,
     },
   });
 }

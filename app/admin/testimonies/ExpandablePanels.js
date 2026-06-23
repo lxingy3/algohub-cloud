@@ -33,7 +33,7 @@ export function InlineExpandableText({ label, text, collapsedChars = 360, classN
   );
 }
 
-export function MLPipelinePanel({ testimony, isVoiceInput, transcriptSummary, task2Impact, task345Insights }) {
+export function MLPipelinePanel({ testimony, isVoiceInput, transcriptSummary, task2Impact, task345Insights, task6Links = [], aiSummary = '' }) {
   const [open, setOpen] = useState(false);
   const transcriptionStatus = isVoiceInput
     ? (testimony.transcriptionStatus || (testimony.transcriptionText ? 'COMPLETED' : 'PENDING'))
@@ -45,6 +45,8 @@ export function MLPipelinePanel({ testimony, isVoiceInput, transcriptSummary, ta
     `Task 3 ${task345Insights.themes.length} theme${task345Insights.themes.length === 1 ? '' : 's'}`,
     `Task 4 ${entityCount} entit${entityCount === 1 ? 'y' : 'ies'}`,
     `Task 5 ${task345Insights.keywords.length} keyword${task345Insights.keywords.length === 1 ? '' : 's'}`,
+    `Task 6 ${task6Links.length} algorithm match${task6Links.length === 1 ? '' : 'es'}`,
+    `Task 7 ${aiSummary ? 'summary ready' : 'no summary'}`,
   ].join(' | ');
   const transcriptText = testimony.transcriptionText || '';
 
@@ -124,6 +126,30 @@ export function MLPipelinePanel({ testimony, isVoiceInput, transcriptSummary, ta
                 <span key={keyword} className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-900">{keyword}</span>
               )) : <span className="text-sm text-slate-600">None found</span>}
             </div>
+          </section>
+
+          <section>
+            <h3 className="text-xs font-semibold uppercase text-slate-500">Task 6 algorithm linking</h3>
+            <div className="mt-2 space-y-2">
+              {task6Links.length ? task6Links.map((link) => (
+                <div key={link.algorithmId} className="rounded-md border border-emerald-100 bg-emerald-50 p-2 text-sm text-emerald-950">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold">{link.name}</span>
+                    <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs font-semibold uppercase text-emerald-800">{formatConfidence(link.confidence)}</span>
+                  </div>
+                  <p className="mt-1 text-xs uppercase text-emerald-800">{formatStatusLabelLoose(link.linkType || 'AI_DETECTED')}</p>
+                </div>
+              )) : <span className="text-sm text-slate-600">No AI-detected algorithm link stored yet.</span>}
+            </div>
+          </section>
+
+          <section>
+            <h3 className="text-xs font-semibold uppercase text-slate-500">Task 7 summarization</h3>
+            {aiSummary ? (
+              <p className="mt-2 rounded-md bg-slate-50 p-3 text-sm leading-6 text-slate-800">{aiSummary}</p>
+            ) : (
+              <p className="mt-2 text-sm text-slate-600">No summary stored yet.</p>
+            )}
           </section>
         </div>
       ) : null}

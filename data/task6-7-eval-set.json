@@ -1,0 +1,65 @@
+{
+  "name": "task6-7-week8-local-eval-set",
+  "records": [
+    {
+      "id": "week8-housing-link-001",
+      "title": "Housing score missed current shelter needs",
+      "narrativeText": "The housing prioritization score kept using old records even after I was sleeping in a shelter. The Pittsburgh Housing Authority worker could not explain why my voucher request stayed low priority.",
+      "affectedDomain": "Housing Prioritization",
+      "entities": {
+        "agencies": ["Pittsburgh Housing Authority"],
+        "locations": ["Pittsburgh"],
+        "systems": ["housing prioritization system"],
+        "dates": [],
+        "people_roles": ["applicant", "worker"]
+      },
+      "keywords": ["housing prioritization score", "voucher request", "old records"],
+      "expectedAlgorithmName": "Housing Allocation Algorithm"
+    },
+    {
+      "id": "week8-child-welfare-link-002",
+      "title": "Family screening score made the visit feel already decided",
+      "narrativeText": "The Allegheny County Department of Human Services family screening score marked my family high risk before anyone listened to the new information.",
+      "affectedDomain": "Child Welfare",
+      "entities": {
+        "agencies": ["Allegheny County Department of Human Services"],
+        "locations": ["Allegheny County"],
+        "systems": ["family screening score"],
+        "dates": [],
+        "people_roles": ["parent", "screeners"]
+      },
+      "keywords": ["family screening score", "high risk", "new information"],
+      "expectedAlgorithmName": "Allegheny Family Screening Tool"
+    },
+    {
+      "id": "week8-job-link-003",
+      "title": "Job matching referral helped after staff review",
+      "narrativeText": "The job matching system at the employment office suggested a useful referral after the career center worker checked my skills and schedule.",
+      "affectedDomain": "Job Matching",
+      "entities": {
+        "agencies": ["Employment Services Agency"],
+        "locations": ["Pittsburgh"],
+        "systems": ["job matching system"],
+        "dates": [],
+        "people_roles": ["career center worker"]
+      },
+      "keywords": ["job matching system", "useful referral", "skills"],
+      "expectedAlgorithmName": "Job Matching Algorithm"
+    },
+    {
+      "id": "week8-unclear-no-link-004",
+      "title": "General platform feedback",
+      "narrativeText": "I attended a community meeting and learned that public technology can be hard to understand. I do not have a specific system story yet.",
+      "affectedDomain": "",
+      "entities": {
+        "agencies": [],
+        "locations": [],
+        "systems": [],
+        "dates": [],
+        "people_roles": ["community member"]
+      },
+      "keywords": ["community meeting", "public technology"],
+      "expectedAlgorithmName": null
+    }
+  ]
+}

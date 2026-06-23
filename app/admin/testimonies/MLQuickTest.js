@@ -71,15 +71,17 @@ export default function MLQuickTest() {
       setResult((current) => ({
         ...(current || task1Payload.result),
         status: 'PARTIAL',
-        task2: skippedTask('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
-        task3: skippedTask('facebook/bart-large-mnli', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
-        task4: skippedTask('spaCy', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
-        task5: skippedTask('KeyBERT', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
+        task2: skippedTask('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
+        task3: skippedTask('facebook/bart-large-mnli', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
+        task4: skippedTask('spaCy', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
+        task5: skippedTask('KeyBERT', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
+        task6: skippedTask('local algorithm registry linker', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
+        task7: skippedTask('local summary rules', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
       }));
       return;
     }
 
-    setLoadingLabel('Running Task 2-5...');
+    setLoadingLabel('Running Task 2-7...');
     try {
       const analysisPayload = await postQuickTest({
         method: 'POST',
@@ -100,10 +102,12 @@ export default function MLQuickTest() {
       setResult((current) => ({
         ...(current || task1Payload.result),
         status: 'PARTIAL',
-        task2: skippedTask('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', analysisError.message || 'Task 2-5 failed.'),
-        task3: skippedTask('facebook/bart-large-mnli', analysisError.message || 'Task 2-5 failed.'),
-        task4: skippedTask('spaCy', analysisError.message || 'Task 2-5 failed.'),
-        task5: skippedTask('KeyBERT', analysisError.message || 'Task 2-5 failed.'),
+        task2: skippedTask('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', analysisError.message || 'Task 2-7 failed.'),
+        task3: skippedTask('facebook/bart-large-mnli', analysisError.message || 'Task 2-7 failed.'),
+        task4: skippedTask('spaCy', analysisError.message || 'Task 2-7 failed.'),
+        task5: skippedTask('KeyBERT', analysisError.message || 'Task 2-7 failed.'),
+        task6: skippedTask('local algorithm registry linker', analysisError.message || 'Task 2-7 failed.'),
+        task7: skippedTask('local summary rules', analysisError.message || 'Task 2-7 failed.'),
       }));
     }
   }
@@ -303,12 +307,16 @@ function QuickTestResult({ result, isRunning = false }) {
   const task3 = result.task3 || {};
   const task4 = result.task4 || {};
   const task5 = result.task5 || {};
+  const task6 = result.task6 || {};
+  const task7 = result.task7 || {};
   const entities = task4.entities || {};
   const hasTask2 = task2.status === 'SKIPPED' || Boolean(task2.aiImpactClassification);
   const hasTask3 = task3.status === 'SKIPPED' || Array.isArray(task3.aiThemes);
   const hasTask4 = task4.status === 'SKIPPED' || Boolean(task4.entities);
   const hasTask5 = task5.status === 'SKIPPED' || Array.isArray(task5.keywords);
-  const hasIncompleteTask = [task1, task2, task3, task4, task5].some((task) => task.status === 'SKIPPED' && task.error);
+  const hasTask6 = task6.status === 'SKIPPED' || Array.isArray(task6.linkedAlgorithms);
+  const hasTask7 = task7.status === 'SKIPPED' || Boolean(task7.summary);
+  const hasIncompleteTask = [task1, task2, task3, task4, task5, task6, task7].some((task) => task.status === 'SKIPPED' && task.error);
 
   return (
     <div className="mt-4 space-y-3">
@@ -317,7 +325,7 @@ function QuickTestResult({ result, isRunning = false }) {
       ) : null}
       {result.summary ? (
         <div className="rounded-md border border-slate-200 bg-white p-3">
-          <p className="text-xs font-semibold uppercase text-slate-500">Summary</p>
+          <p className="text-xs font-semibold uppercase text-slate-500">Task 7 summarization</p>
           <p className="mt-1 text-sm leading-6 text-slate-800">{result.summary}</p>
         </div>
       ) : null}
@@ -399,6 +407,32 @@ function QuickTestResult({ result, isRunning = false }) {
                 <span key={keyword} className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">{keyword}</span>
               )) : <span className="text-sm text-slate-600">None found</span>}
             </div>
+          )}
+        </div>
+      ) : null}
+      {hasTask6 ? (
+        <div className="rounded-md border border-slate-200 bg-white p-3">
+          <p className="text-xs font-semibold uppercase text-slate-500">Task 6 algorithm linking</p>
+          {task6.status === 'SKIPPED' ? <TaskError task={task6} /> : (
+            <div className="mt-2 space-y-2">
+              {(task6.linkedAlgorithms || []).length ? task6.linkedAlgorithms.map((algorithm) => (
+                <div key={algorithm.algorithmId} className="rounded-md border bg-slate-50 p-2 text-sm text-slate-700">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-slate-900">{algorithm.name}</span>
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">confidence {formatScore(algorithm.confidence)}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{algorithm.method}</p>
+                </div>
+              )) : <span className="text-sm text-slate-600">No algorithm card matched strongly enough.</span>}
+            </div>
+          )}
+        </div>
+      ) : null}
+      {hasTask7 && !result.summary ? (
+        <div className="rounded-md border border-slate-200 bg-white p-3">
+          <p className="text-xs font-semibold uppercase text-slate-500">Task 7 summarization</p>
+          {task7.status === 'SKIPPED' ? <TaskError task={task7} /> : (
+            <p className="mt-1 text-sm leading-6 text-slate-800">{task7.summary}</p>
           )}
         </div>
       ) : null}

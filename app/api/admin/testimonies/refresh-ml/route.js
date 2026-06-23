@@ -36,14 +36,19 @@ export async function POST(request) {
       aiConfidenceScore: true,
       aiThemes: true,
       aiExtractedExperiences: true,
+      aiLinkedAlgorithmIds: true,
+      aiProcessedAt: true,
+      affectedDomain: true,
+      algorithmLinks: { select: { linkType: true } },
     },
   });
+  const algorithms = await loadAlgorithmCandidates(jurisdictionId);
 
   const refreshed = [];
   const skipped = [];
 
   for (const testimony of testimonies) {
-    if (missingOnly && !isMissingTask2To5(testimony)) {
+    if (missingOnly && !isMissingTask2To7(testimony)) {
       skipped.push({ id: testimony.id, title: testimony.title, reason: 'already_complete' });
       continue;
     }
@@ -58,11 +63,17 @@ export async function POST(request) {
     }
 
     try {
-      const result = await analyzeNarrativeTextWithModels(text);
+      const result = await analyzeNarrativeTextWithModels(text, {
+        algorithms,
+        affectedDomain: testimony.affectedDomain,
+      });
       const update = buildMlUpdate(testimony, result);
-      await prisma.testimony.update({
-        where: { id: testimony.id },
-        data: update,
+      await prisma.$transaction(async (tx) => {
+        await tx.testimony.update({
+          where: { id: testimony.id },
+          data: update,
+        });
+        await replaceAiDetectedAlgorithmLinks(tx, testimony.id, result.task6);
       });
       refreshed.push({
         id: testimony.id,
@@ -88,9 +99,10 @@ export async function POST(request) {
   });
 }
 
-function isMissingTask2To5(testimony) {
+function isMissingTask2To7(testimony) {
   const entities = testimony.aiExtractedExperiences?.entities || {};
   const keywords = testimony.aiExtractedExperiences?.keywords || [];
+  const hasAiDetectedLink = (testimony.algorithmLinks || []).some((link) => link.linkType === 'AI_DETECTED');
   return (
     !testimony.aiImpactClassification
     || !Number.isFinite(Number(testimony.aiConfidenceScore))
@@ -99,6 +111,8 @@ function isMissingTask2To5(testimony) {
     || entityGroups.some((group) => !Array.isArray(entities[group]) || entities[group].length === 0)
     || !Array.isArray(keywords)
     || keywords.length === 0
+    || !hasAiDetectedLink
+    || !testimony.summary
   );
 }
 
@@ -131,8 +145,66 @@ function buildMlUpdate(testimony, result) {
       entities: nextEntities,
       keywords: nextKeywords,
     },
+    aiLinkedAlgorithmIds: result.task6?.status === 'COMPLETED'
+      ? normalizeAlgorithmIds(result.task6.linkedAlgorithms)
+      : normalizeStringArray(testimony.aiLinkedAlgorithmIds),
+    summary: result.task7?.status === 'COMPLETED' && result.task7.summary
+      ? result.task7.summary
+      : testimony.summary,
     aiProcessedAt: new Date(),
   };
+}
+
+async function replaceAiDetectedAlgorithmLinks(tx, testimonyId, task6) {
+  if (task6?.status !== 'COMPLETED') return;
+  const links = normalizeAlgorithmLinks(task6.linkedAlgorithms);
+  await tx.testimonyAlgorithmLink.deleteMany({
+    where: {
+      testimonyId,
+      linkType: 'AI_DETECTED',
+    },
+  });
+  if (!links.length) return;
+  await tx.testimonyAlgorithmLink.createMany({
+    data: links.map((link) => ({
+      testimonyId,
+      algorithmId: link.algorithmId,
+      linkType: 'AI_DETECTED',
+      confidence: link.confidence,
+    })),
+    skipDuplicates: true,
+  });
+}
+
+async function loadAlgorithmCandidates(jurisdictionId) {
+  return prisma.algorithm.findMany({
+    where: { jurisdictionId },
+    select: {
+      id: true,
+      name: true,
+      useCase: true,
+      description: true,
+      purpose: true,
+      agencyName: true,
+      dataUsed: true,
+      decisionType: true,
+    },
+  });
+}
+
+function normalizeAlgorithmIds(value) {
+  return normalizeAlgorithmLinks(value).map((link) => link.algorithmId);
+}
+
+function normalizeAlgorithmLinks(value) {
+  return Array.isArray(value)
+    ? value
+        .map((link) => ({
+          algorithmId: String(link?.algorithmId || '').trim(),
+          confidence: Number(link?.confidence || 0),
+        }))
+        .filter((link) => link.algorithmId)
+    : [];
 }
 
 function normalizeThemes(value) {
@@ -151,7 +223,7 @@ function normalizeStringArray(value) {
 }
 
 function getSkippedTasks(result) {
-  return ['task2', 'task3', 'task4', 'task5']
+  return ['task2', 'task3', 'task4', 'task5', 'task6', 'task7']
     .filter((key) => result[key]?.status !== 'COMPLETED')
     .map((key) => ({ task: key, error: result[key]?.error || 'not completed' }));
 }
