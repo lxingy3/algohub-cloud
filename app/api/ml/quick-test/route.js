@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '../../../../lib/auth';
-import { analyzeNarrativeTextWithModels } from '../../../../lib/mlFullAnalysis';
+import {
+  analyzeNarrativeTextTask4To7,
+  analyzeNarrativeTextWithModels,
+} from '../../../../lib/mlFullAnalysis';
 import { transcribeAudioForTask1 } from '../../../../lib/task1Transcription';
 import { buildStorySummary } from '../../../../lib/storySummary';
 import { createSignedMediaRead } from '../../../../lib/mediaStorage';
@@ -36,8 +39,9 @@ export async function POST(request) {
       return NextResponse.json({ error: `Please keep narrative_text under ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters.` }, { status: 400 });
     }
 
-    const result = await analyzeNarrativeTextWithModels(narrativeText, {
-      algorithms: await loadAlgorithmCandidates(),
+    const result = await analyzeQuickTestText(narrativeText, {
+      tasks: body.tasks,
+      affectedDomain: body.affectedDomain,
     });
     return NextResponse.json({
       ok: true,
@@ -68,7 +72,9 @@ async function handleStoredAudioQuickTest(body) {
   return analyzeAudioFile({
     audioFile: file,
     taskMode: String(body.task || '').trim().toLowerCase(),
+    analysisMode: String(body.tasks || '').trim().toLowerCase(),
     fallbackNarrativeText: String(body.narrativeText || '').trim(),
+    affectedDomain: String(body.affectedDomain || '').trim(),
   });
 }
 
@@ -102,23 +108,23 @@ async function handleAudioQuickTest(request) {
   const formData = await request.formData();
   const audioFile = formData.get('audio');
   const taskMode = String(formData.get('task') || '').trim().toLowerCase();
+  const analysisMode = String(formData.get('tasks') || '').trim().toLowerCase();
   const fallbackNarrativeText = String(formData.get('narrativeText') || '').trim();
+  const affectedDomain = String(formData.get('affectedDomain') || '').trim();
   if (!audioFile || typeof audioFile.arrayBuffer !== 'function') {
     return NextResponse.json({ error: 'Please upload an audio file.' }, { status: 400 });
   }
 
-  return analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText });
+  return analyzeAudioFile({ audioFile, taskMode, analysisMode, fallbackNarrativeText, affectedDomain });
 }
 
-async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) {
+async function analyzeAudioFile({ audioFile, taskMode, analysisMode, fallbackNarrativeText, affectedDomain }) {
   let task1;
   try {
     task1 = await transcribeAudioForTask1(audioFile);
   } catch (task1Error) {
     if (fallbackNarrativeText) {
-      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText, {
-        algorithms: await loadAlgorithmCandidates(),
-      });
+      const analysis = await analyzeQuickTestText(fallbackNarrativeText, { tasks: analysisMode, affectedDomain });
       return NextResponse.json({
         ok: true,
         result: {
@@ -152,9 +158,7 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) 
   const narrativeText = String(task1.transcript || task1.rawTranscript || '').trim();
   if (!narrativeText) {
     if (fallbackNarrativeText) {
-      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText, {
-        algorithms: await loadAlgorithmCandidates(),
-      });
+      const analysis = await analyzeQuickTestText(fallbackNarrativeText, { tasks: analysisMode, affectedDomain });
       return NextResponse.json({
         ok: true,
         result: {
@@ -199,9 +203,7 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) 
   }
   if (narrativeText.length > MAX_NARRATIVE_TEXT_CHARS) {
     if (fallbackNarrativeText && fallbackNarrativeText.length <= MAX_NARRATIVE_TEXT_CHARS) {
-      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText, {
-        algorithms: await loadAlgorithmCandidates(),
-      });
+      const analysis = await analyzeQuickTestText(fallbackNarrativeText, { tasks: analysisMode, affectedDomain });
       return NextResponse.json({
         ok: true,
         result: {
@@ -236,9 +238,7 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) 
     });
   }
 
-  const analysis = await analyzeNarrativeTextWithModels(narrativeText, {
-    algorithms: await loadAlgorithmCandidates(),
-  });
+  const analysis = await analyzeQuickTestText(narrativeText, { tasks: analysisMode, affectedDomain });
   return NextResponse.json({
     ok: true,
     result: {
@@ -249,6 +249,21 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) 
       task1,
     },
   });
+}
+
+async function analyzeQuickTestText(narrativeText, { tasks, affectedDomain } = {}) {
+  const analysisMode = normalizeAnalysisMode(tasks);
+  const algorithms = await loadAlgorithmCandidates();
+  const options = { algorithms, affectedDomain };
+  if (analysisMode === 'task4-7') {
+    return analyzeNarrativeTextTask4To7(narrativeText, options);
+  }
+  return analyzeNarrativeTextWithModels(narrativeText, options);
+}
+
+function normalizeAnalysisMode(value) {
+  const mode = String(value || '').trim().toLowerCase();
+  return ['task4-7', '4-7', 'task6-7', '6-7'].includes(mode) ? 'task4-7' : 'task2-7';
 }
 
 async function loadAlgorithmCandidates() {
