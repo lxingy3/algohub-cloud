@@ -60,6 +60,23 @@
       },
       "keywords": ["community meeting", "public technology"],
       "expectedAlgorithmName": null
+    },
+    {
+      "id": "week8-summary-skip-fluff-005",
+      "title": "Housing summary should skip setup sentence",
+      "narrativeText": "Before I explain the issue, I want to say the front desk staff were polite. Last month the housing prioritization system used an old shelter record and kept my voucher request low priority. The worker at the Pittsburgh Housing Authority could not tell me which record caused the score.",
+      "affectedDomain": "Housing Prioritization",
+      "entities": {
+        "agencies": ["Pittsburgh Housing Authority"],
+        "locations": ["Pittsburgh"],
+        "systems": ["housing prioritization system"],
+        "dates": ["Last month"],
+        "people_roles": ["worker", "applicant"]
+      },
+      "keywords": ["housing prioritization system", "old shelter record", "voucher request", "score"],
+      "expectedAlgorithmName": "Housing Allocation Algorithm",
+      "expectedSummaryIncludes": ["housing prioritization system", "voucher request"],
+      "expectedSummaryExcludes": ["front desk staff were polite"]
     }
   ]
 }

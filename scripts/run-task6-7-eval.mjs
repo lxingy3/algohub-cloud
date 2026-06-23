@@ -125,6 +125,28 @@ for (const record of records) {
   if (summary.length > 320) {
     issues.push({ id: record.id, title: record.title, type: 'summary_too_long', length: summary.length });
   }
+  for (const expectedText of record.expectedSummaryIncludes || []) {
+    if (!summary.toLowerCase().includes(String(expectedText).toLowerCase())) {
+      issues.push({
+        id: record.id,
+        title: record.title,
+        type: 'summary_missing_expected_text',
+        expectedText,
+        summary,
+      });
+    }
+  }
+  for (const excludedText of record.expectedSummaryExcludes || []) {
+    if (summary.toLowerCase().includes(String(excludedText).toLowerCase())) {
+      issues.push({
+        id: record.id,
+        title: record.title,
+        type: 'summary_contains_excluded_text',
+        excludedText,
+        summary,
+      });
+    }
+  }
 }
 
 const report = {
