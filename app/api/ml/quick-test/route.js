@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '../../../../lib/auth';
-import {
-  analyzeNarrativeTextTask4To7,
-  analyzeNarrativeTextWithModels,
-} from '../../../../lib/mlFullAnalysis';
+import { analyzeNarrativeTextWithModels } from '../../../../lib/mlFullAnalysis';
 import { transcribeAudioForTask1 } from '../../../../lib/task1Transcription';
 import { buildStorySummary } from '../../../../lib/storySummary';
 import { createSignedMediaRead } from '../../../../lib/mediaStorage';
-import { getJurisdictionId } from '../../../../lib/jurisdiction';
-import { prisma } from '../../../../lib/prisma';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -39,15 +34,12 @@ export async function POST(request) {
       return NextResponse.json({ error: `Please keep narrative_text under ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters.` }, { status: 400 });
     }
 
-    const result = await analyzeQuickTestText(narrativeText, {
-      tasks: body.tasks,
-      affectedDomain: body.affectedDomain,
-    });
+    const result = await analyzeNarrativeTextWithModels(narrativeText);
     return NextResponse.json({
       ok: true,
       result: {
         ...result,
-        summary: result.task7?.summary || buildStorySummary(narrativeText, { maxChars: 320 }),
+        summary: buildStorySummary(narrativeText, { maxChars: 320 }),
       },
     });
   } catch (error) {
@@ -72,9 +64,7 @@ async function handleStoredAudioQuickTest(body) {
   return analyzeAudioFile({
     audioFile: file,
     taskMode: String(body.task || '').trim().toLowerCase(),
-    analysisMode: String(body.tasks || '').trim().toLowerCase(),
     fallbackNarrativeText: String(body.narrativeText || '').trim(),
-    affectedDomain: String(body.affectedDomain || '').trim(),
   });
 }
 
@@ -108,23 +98,21 @@ async function handleAudioQuickTest(request) {
   const formData = await request.formData();
   const audioFile = formData.get('audio');
   const taskMode = String(formData.get('task') || '').trim().toLowerCase();
-  const analysisMode = String(formData.get('tasks') || '').trim().toLowerCase();
   const fallbackNarrativeText = String(formData.get('narrativeText') || '').trim();
-  const affectedDomain = String(formData.get('affectedDomain') || '').trim();
   if (!audioFile || typeof audioFile.arrayBuffer !== 'function') {
     return NextResponse.json({ error: 'Please upload an audio file.' }, { status: 400 });
   }
 
-  return analyzeAudioFile({ audioFile, taskMode, analysisMode, fallbackNarrativeText, affectedDomain });
+  return analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText });
 }
 
-async function analyzeAudioFile({ audioFile, taskMode, analysisMode, fallbackNarrativeText, affectedDomain }) {
+async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) {
   let task1;
   try {
     task1 = await transcribeAudioForTask1(audioFile);
   } catch (task1Error) {
     if (fallbackNarrativeText) {
-      const analysis = await analyzeQuickTestText(fallbackNarrativeText, { tasks: analysisMode, affectedDomain });
+      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText);
       return NextResponse.json({
         ok: true,
         result: {
@@ -132,7 +120,7 @@ async function analyzeAudioFile({ audioFile, taskMode, analysisMode, fallbackNar
           inputField: 'audio',
           source: 'audio-upload',
           status: 'PARTIAL',
-          summary: analysis.task7?.summary || buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
+          summary: buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
           task1: {
             status: 'SKIPPED',
             tool: process.env.HF_ASR_MODEL || 'openai/whisper-large-v3',
@@ -158,7 +146,7 @@ async function analyzeAudioFile({ audioFile, taskMode, analysisMode, fallbackNar
   const narrativeText = String(task1.transcript || task1.rawTranscript || '').trim();
   if (!narrativeText) {
     if (fallbackNarrativeText) {
-      const analysis = await analyzeQuickTestText(fallbackNarrativeText, { tasks: analysisMode, affectedDomain });
+      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText);
       return NextResponse.json({
         ok: true,
         result: {
@@ -166,7 +154,7 @@ async function analyzeAudioFile({ audioFile, taskMode, analysisMode, fallbackNar
           inputField: 'audio',
           source: 'audio-upload',
           status: 'PARTIAL',
-          summary: analysis.task7?.summary || buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
+          summary: buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
           task1: {
             ...task1,
             status: task1.status || 'SKIPPED',
@@ -203,7 +191,7 @@ async function analyzeAudioFile({ audioFile, taskMode, analysisMode, fallbackNar
   }
   if (narrativeText.length > MAX_NARRATIVE_TEXT_CHARS) {
     if (fallbackNarrativeText && fallbackNarrativeText.length <= MAX_NARRATIVE_TEXT_CHARS) {
-      const analysis = await analyzeQuickTestText(fallbackNarrativeText, { tasks: analysisMode, affectedDomain });
+      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText);
       return NextResponse.json({
         ok: true,
         result: {
@@ -211,7 +199,7 @@ async function analyzeAudioFile({ audioFile, taskMode, analysisMode, fallbackNar
           inputField: 'audio',
           source: 'audio-upload',
           status: 'PARTIAL',
-          summary: analysis.task7?.summary || buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
+          summary: buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
           task1,
         },
       });
@@ -222,62 +210,24 @@ async function analyzeAudioFile({ audioFile, taskMode, analysisMode, fallbackNar
         inputField: 'audio',
         source: 'audio-upload',
         status: 'PARTIAL',
-        summary: buildStorySummary(narrativeText, { maxChars: 320 }),
         task1,
-        task2: skippedPayload('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
-        task3: skippedPayload('facebook/bart-large-mnli', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
-        task4: skippedPayload('spaCy', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
-        task5: skippedPayload('KeyBERT', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
-        task6: skippedPayload('local algorithm registry linker', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-7.`),
-        task7: {
-          status: 'COMPLETED',
-          tool: 'local summary rules',
-          summary: buildStorySummary(narrativeText, { maxChars: 320 }),
-        },
+        task2: skippedPayload('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
+        task3: skippedPayload('facebook/bart-large-mnli', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
+        task4: skippedPayload('spaCy', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
+        task5: skippedPayload('KeyBERT', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
       },
     });
   }
 
-  const analysis = await analyzeQuickTestText(narrativeText, { tasks: analysisMode, affectedDomain });
+  const analysis = await analyzeNarrativeTextWithModels(narrativeText);
   return NextResponse.json({
     ok: true,
     result: {
       ...analysis,
       inputField: 'audio',
       source: 'audio-upload',
-      summary: analysis.task7?.summary || buildStorySummary(narrativeText, { maxChars: 320 }),
+      summary: buildStorySummary(narrativeText, { maxChars: 320 }),
       task1,
-    },
-  });
-}
-
-async function analyzeQuickTestText(narrativeText, { tasks, affectedDomain } = {}) {
-  const analysisMode = normalizeAnalysisMode(tasks);
-  const algorithms = await loadAlgorithmCandidates();
-  const options = { algorithms, affectedDomain };
-  if (analysisMode === 'task4-7') {
-    return analyzeNarrativeTextTask4To7(narrativeText, options);
-  }
-  return analyzeNarrativeTextWithModels(narrativeText, options);
-}
-
-function normalizeAnalysisMode(value) {
-  const mode = String(value || '').trim().toLowerCase();
-  return ['task4-7', '4-7', 'task6-7', '6-7'].includes(mode) ? 'task4-7' : 'task2-7';
-}
-
-async function loadAlgorithmCandidates() {
-  return prisma.algorithm.findMany({
-    where: { jurisdictionId: getJurisdictionId() },
-    select: {
-      id: true,
-      name: true,
-      useCase: true,
-      description: true,
-      purpose: true,
-      agencyName: true,
-      dataUsed: true,
-      decisionType: true,
     },
   });
 }

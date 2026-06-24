@@ -4,15 +4,9 @@ import { useRef, useState } from 'react';
 import { AUDIO_ACCEPT, audioContentTypeForFile } from '../../../lib/audioAccept';
 
 const MAX_NARRATIVE_TEXT_CHARS = 12000;
-const analysisModes = [
-  { value: 'task2-7', label: 'Task 2-7' },
-  { value: 'task4-7', label: 'Task 4-7' },
-];
 
 export default function MLQuickTest() {
   const [narrativeText, setNarrativeText] = useState('');
-  const [analysisMode, setAnalysisMode] = useState('task2-7');
-  const [affectedDomain, setAffectedDomain] = useState('');
   const [audioFile, setAudioFile] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -39,7 +33,7 @@ export default function MLQuickTest() {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ narrativeText, tasks: analysisMode, affectedDomain }),
+          body: JSON.stringify({ narrativeText }),
           signal: abortController.signal,
         });
         if (!isCurrentRun(runVersion)) return;
@@ -61,7 +55,7 @@ export default function MLQuickTest() {
     setLoadingLabel('Uploading audio...');
     const fallbackNarrativeText = String(fallbackText || '').trim();
     setLoadingLabel('Running Task 1...');
-    const task1Payload = await postQuickTest(await buildAudioTask1Request(file, signal, fallbackNarrativeText, analysisMode, affectedDomain));
+    const task1Payload = await postQuickTest(await buildAudioTask1Request(file, signal, fallbackNarrativeText));
     if (!isCurrentRun(runVersion)) return;
     setResult(task1Payload.result);
 
@@ -77,23 +71,21 @@ export default function MLQuickTest() {
       setResult((current) => ({
         ...(current || task1Payload.result),
         status: 'PARTIAL',
-        task2: skippedTask('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', longTranscriptMessage(analysisMode)),
-        task3: skippedTask('facebook/bart-large-mnli', longTranscriptMessage(analysisMode)),
-        task4: skippedTask('spaCy', longTranscriptMessage(analysisMode)),
-        task5: skippedTask('KeyBERT', longTranscriptMessage(analysisMode)),
-        task6: skippedTask('local algorithm registry linker', longTranscriptMessage(analysisMode)),
-        task7: skippedTask('local summary rules', longTranscriptMessage(analysisMode)),
+        task2: skippedTask('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
+        task3: skippedTask('facebook/bart-large-mnli', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
+        task4: skippedTask('spaCy', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
+        task5: skippedTask('KeyBERT', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
       }));
       return;
     }
 
-    setLoadingLabel(`Running ${formatAnalysisMode(analysisMode)}...`);
+    setLoadingLabel('Running Task 2-5...');
     try {
       const analysisPayload = await postQuickTest({
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ narrativeText: analysisText, tasks: analysisMode, affectedDomain }),
+        body: JSON.stringify({ narrativeText: analysisText }),
         signal,
       });
       if (!isCurrentRun(runVersion)) return;
@@ -108,12 +100,10 @@ export default function MLQuickTest() {
       setResult((current) => ({
         ...(current || task1Payload.result),
         status: 'PARTIAL',
-        task2: skippedTask('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', analysisError.message || `${formatAnalysisMode(analysisMode)} failed.`),
-        task3: skippedTask('facebook/bart-large-mnli', analysisError.message || `${formatAnalysisMode(analysisMode)} failed.`),
-        task4: skippedTask('spaCy', analysisError.message || `${formatAnalysisMode(analysisMode)} failed.`),
-        task5: skippedTask('KeyBERT', analysisError.message || `${formatAnalysisMode(analysisMode)} failed.`),
-        task6: skippedTask('local algorithm registry linker', analysisError.message || `${formatAnalysisMode(analysisMode)} failed.`),
-        task7: skippedTask('local summary rules', analysisError.message || `${formatAnalysisMode(analysisMode)} failed.`),
+        task2: skippedTask('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', analysisError.message || 'Task 2-5 failed.'),
+        task3: skippedTask('facebook/bart-large-mnli', analysisError.message || 'Task 2-5 failed.'),
+        task4: skippedTask('spaCy', analysisError.message || 'Task 2-5 failed.'),
+        task5: skippedTask('KeyBERT', analysisError.message || 'Task 2-5 failed.'),
       }));
     }
   }
@@ -157,57 +147,12 @@ export default function MLQuickTest() {
     if (audioInputRef.current) audioInputRef.current.value = '';
   }
 
-  function handleAnalysisModeChange(nextMode) {
-    runVersionRef.current += 1;
-    abortCurrentRequest();
-    setAnalysisMode(nextMode);
-    setLoadingLabel('');
-    clearQuickTestOutput();
-  }
-
-  function handleAffectedDomainChange(event) {
-    runVersionRef.current += 1;
-    abortCurrentRequest();
-    setAffectedDomain(event.target.value);
-    setLoadingLabel('');
-    clearQuickTestOutput();
-  }
-
   return (
     <section data-testid="ml-quick-test" className="mt-5 rounded-lg border bg-white p-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-semibold text-slate-950">ML Quick Test</h2>
       </div>
       <form onSubmit={runQuickTest} className="mt-3 space-y-3">
-        <div className="grid gap-3 md:grid-cols-[1fr_1fr]">
-          <div>
-            <span className="block text-xs font-semibold uppercase text-slate-500">Pipeline mode</span>
-            <div className="mt-2 grid grid-cols-2 rounded-md border bg-slate-50 p-1" role="radiogroup" aria-label="Pipeline mode">
-              {analysisModes.map((mode) => (
-                <button
-                  key={mode.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={analysisMode === mode.value}
-                  onClick={() => handleAnalysisModeChange(mode.value)}
-                  className={`rounded px-3 py-2 text-sm font-semibold transition ${analysisMode === mode.value ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-white'}`}
-                >
-                  {mode.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold uppercase text-slate-500" htmlFor="ml-quick-test-domain">Affected domain</label>
-            <input
-              id="ml-quick-test-domain"
-              value={affectedDomain}
-              onChange={handleAffectedDomainChange}
-              placeholder="Housing, child welfare, jobs..."
-              className="mt-2 min-h-11 w-full rounded-md border px-3 py-2 text-sm"
-            />
-          </div>
-        </div>
         <textarea
           value={narrativeText}
           onChange={handleNarrativeTextChange}
@@ -305,23 +250,21 @@ async function uploadAudioForQuickTest(audioFile, signal) {
   };
 }
 
-async function buildAudioTask1Request(audioFile, signal, fallbackText = '', analysisMode = 'task2-7', affectedDomain = '') {
+async function buildAudioTask1Request(audioFile, signal, fallbackText = '') {
   try {
     const uploadedAudio = await uploadAudioForQuickTest(audioFile, signal);
-    return buildStoredAudioRequest(uploadedAudio, 'task1', signal, fallbackText, analysisMode, affectedDomain);
+    return buildStoredAudioRequest(uploadedAudio, 'task1', signal, fallbackText);
   } catch (uploadError) {
     if (uploadError.status !== 503) throw uploadError;
-    return buildDirectAudioRequest(audioFile, 'task1', signal, fallbackText, analysisMode, affectedDomain);
+    return buildDirectAudioRequest(audioFile, 'task1', signal, fallbackText);
   }
 }
 
-function buildDirectAudioRequest(audioFile, task = '', signal, fallbackText = '', analysisMode = 'task2-7', affectedDomain = '') {
+function buildDirectAudioRequest(audioFile, task = '', signal, fallbackText = '') {
   const formData = new FormData();
   formData.append('audio', audioFile);
   if (task) formData.append('task', task);
   if (fallbackText) formData.append('narrativeText', fallbackText);
-  if (analysisMode) formData.append('tasks', analysisMode);
-  if (affectedDomain) formData.append('affectedDomain', affectedDomain);
   return {
     method: 'POST',
     credentials: 'include',
@@ -330,7 +273,7 @@ function buildDirectAudioRequest(audioFile, task = '', signal, fallbackText = ''
   };
 }
 
-function buildStoredAudioRequest(uploadedAudio, task = '', signal, fallbackText = '', analysisMode = 'task2-7', affectedDomain = '') {
+function buildStoredAudioRequest(uploadedAudio, task = '', signal, fallbackText = '') {
   return {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -341,8 +284,6 @@ function buildStoredAudioRequest(uploadedAudio, task = '', signal, fallbackText 
       fileName: uploadedAudio.fileName,
       task,
       narrativeText: fallbackText,
-      tasks: analysisMode,
-      affectedDomain,
     }),
     signal,
   };
@@ -362,21 +303,23 @@ function QuickTestResult({ result, isRunning = false }) {
   const task3 = result.task3 || {};
   const task4 = result.task4 || {};
   const task5 = result.task5 || {};
-  const task6 = result.task6 || {};
-  const task7 = result.task7 || {};
   const entities = task4.entities || {};
   const hasTask2 = task2.status === 'SKIPPED' || Boolean(task2.aiImpactClassification);
   const hasTask3 = task3.status === 'SKIPPED' || Array.isArray(task3.aiThemes);
   const hasTask4 = task4.status === 'SKIPPED' || Boolean(task4.entities);
   const hasTask5 = task5.status === 'SKIPPED' || Array.isArray(task5.keywords);
-  const hasTask6 = task6.status === 'SKIPPED' || Array.isArray(task6.linkedAlgorithms);
-  const hasTask7 = task7.status === 'SKIPPED' || Boolean(task7.summary);
-  const hasIncompleteTask = [task1, task2, task3, task4, task5, task6, task7].some((task) => task.status === 'SKIPPED' && task.error);
+  const hasIncompleteTask = [task1, task2, task3, task4, task5].some((task) => task.status === 'SKIPPED' && task.error);
 
   return (
     <div className="mt-4 space-y-3">
       {result.status === 'PARTIAL' && (!isRunning || hasIncompleteTask) ? (
         <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Some tasks did not return a result. Completed tasks are shown below.</p>
+      ) : null}
+      {result.summary ? (
+        <div className="rounded-md border border-slate-200 bg-white p-3">
+          <p className="text-xs font-semibold uppercase text-slate-500">Summary</p>
+          <p className="mt-1 text-sm leading-6 text-slate-800">{result.summary}</p>
+        </div>
       ) : null}
       <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
         <p className="text-xs font-semibold uppercase text-slate-500">Task 1 transcription</p>
@@ -459,33 +402,6 @@ function QuickTestResult({ result, isRunning = false }) {
           )}
         </div>
       ) : null}
-      {hasTask6 ? (
-        <div className="rounded-md border border-slate-200 bg-white p-3">
-          <p className="text-xs font-semibold uppercase text-slate-500">Task 6 algorithm linking</p>
-          {task6.status === 'SKIPPED' ? <TaskError task={task6} /> : (
-            <div className="mt-2 space-y-2">
-              {(task6.linkedAlgorithms || []).length ? task6.linkedAlgorithms.map((algorithm) => (
-                <div key={algorithm.algorithmId} className="rounded-md border bg-slate-50 p-2 text-sm text-slate-700">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold text-slate-900">{algorithm.name}</span>
-                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">confidence {formatScore(algorithm.confidence)}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500">{algorithm.method}</p>
-                  <ScoreBreakdown breakdown={algorithm.scoreBreakdown} />
-                </div>
-              )) : <span className="text-sm text-slate-600">No algorithm card matched strongly enough.</span>}
-            </div>
-          )}
-        </div>
-      ) : null}
-      {hasTask7 ? (
-        <div className="rounded-md border border-slate-200 bg-white p-3">
-          <p className="text-xs font-semibold uppercase text-slate-500">Task 7 summarization</p>
-          {task7.status === 'SKIPPED' ? <TaskError task={task7} /> : (
-            <p className="mt-1 text-sm leading-6 text-slate-800">{task7.summary || result.summary}</p>
-          )}
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -496,31 +412,9 @@ function TaskError({ task }) {
   return (
     <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
       {task.tool ? <p className="font-semibold">{task.tool}</p> : null}
-      <p>{task.error || task.reason || 'No result returned.'}</p>
+      <p>{task.error || 'No result returned.'}</p>
     </div>
   );
-}
-
-function ScoreBreakdown({ breakdown }) {
-  const entries = Object.entries(breakdown || {}).filter(([, value]) => Number.isFinite(Number(value)));
-  if (!entries.length) return null;
-  return (
-    <div className="mt-2 flex flex-wrap gap-1.5">
-      {entries.map(([key, value]) => (
-        <span key={key} className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-slate-600">
-          {formatLabel(key)} {formatScore(value)}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function longTranscriptMessage(analysisMode) {
-  return `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run ${formatAnalysisMode(analysisMode)}.`;
-}
-
-function formatAnalysisMode(value) {
-  return value === 'task4-7' ? 'Task 4-7' : 'Task 2-7';
 }
 
 function formatScore(value) {
