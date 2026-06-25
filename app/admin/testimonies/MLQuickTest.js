@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { AUDIO_ACCEPT, audioContentTypeForFile } from '../../../lib/audioAccept';
 
 const MAX_NARRATIVE_TEXT_CHARS = 12000;
+const MAX_AUDIO_DURATION_SECONDS = 30 * 60;
 const DIRECT_AUDIO_UPLOAD_SAFE_BYTES = 3.5 * 1024 * 1024;
 
 export default function MLQuickTest() {
@@ -53,12 +54,18 @@ export default function MLQuickTest() {
   }
 
   async function runAudioQuickTest(file, fallbackText, runVersion, signal) {
-    setLoadingLabel('Uploading audio...');
+    setLoadingLabel('Checking audio...');
     const fallbackNarrativeText = String(fallbackText || '').trim();
+    const durationSeconds = await getAudioDurationSeconds(file).catch(() => null);
+    if (durationSeconds && durationSeconds > MAX_AUDIO_DURATION_SECONDS) {
+      throw new Error('Audio is over the 30 minute limit. Please upload a shorter file.');
+    }
+
+    setLoadingLabel('Uploading audio...');
     setLoadingLabel('Running Task 1...');
-    const task1Request = await buildAudioTask1Request(file, signal, fallbackNarrativeText);
+    const task1Request = await buildAudioTask1Request(file, signal, fallbackNarrativeText, durationSeconds);
     if (task1Request.fallbackOnly) {
-      await runAudioFallbackOnlyTask25({ file, fallbackNarrativeText, runVersion, signal, reason: task1Request.reason });
+      await runAudioFallbackOnlyTask25({ file, fallbackNarrativeText, runVersion, signal, reason: task1Request.reason, durationSeconds });
       return;
     }
 
@@ -115,7 +122,7 @@ export default function MLQuickTest() {
     }
   }
 
-  async function runAudioFallbackOnlyTask25({ file, fallbackNarrativeText, runVersion, signal, reason }) {
+  async function runAudioFallbackOnlyTask25({ file, fallbackNarrativeText, runVersion, signal, reason, durationSeconds }) {
     if (!fallbackNarrativeText) {
       throw new Error(reason);
     }
@@ -136,10 +143,11 @@ export default function MLQuickTest() {
       ...analysisPayload.result,
       inputField: 'audio',
       source: 'audio-upload',
-      status: 'PARTIAL',
-      task1: skippedTask('openai/whisper-large-v3', reason, {
+      status: 'COMPLETED',
+      task1: deferredTask('openai/whisper-large-v3', reason, {
         inputFile: file.name,
         fileSizeBytes: file.size,
+        durationSeconds,
       }),
     });
   }
@@ -286,27 +294,38 @@ async function uploadAudioForQuickTest(audioFile, signal) {
   };
 }
 
-async function buildAudioTask1Request(audioFile, signal, fallbackText = '') {
+async function buildAudioTask1Request(audioFile, signal, fallbackText = '', durationSeconds = null) {
   try {
     const uploadedAudio = await uploadAudioForQuickTest(audioFile, signal);
     return buildStoredAudioRequest(uploadedAudio, 'task1', signal, fallbackText);
   } catch (uploadError) {
     if (uploadError.status !== 503) throw uploadError;
     if (audioFile.size > DIRECT_AUDIO_UPLOAD_SAFE_BYTES) {
+      if (!fallbackText) {
+        return buildDirectAudioRequest(createAudioPreviewFile(audioFile), 'task1', signal, '', {
+          partialAudioPreview: 'true',
+          originalFileName: audioFile.name,
+          originalFileSizeBytes: String(audioFile.size),
+          originalDurationSeconds: durationSeconds ? String(durationSeconds) : '',
+        });
+      }
       return {
         fallbackOnly: true,
-        reason: `Cloud media storage is not configured, and this ${formatFileSize(audioFile.size)} audio file is too large for reliable direct upload. Task 2-5 can still run from narrative_text.`,
+        reason: 'Audio transcription is deferred for this Quick Test run. Task 2-5 ran from narrative_text.',
       };
     }
     return buildDirectAudioRequest(audioFile, 'task1', signal, fallbackText);
   }
 }
 
-function buildDirectAudioRequest(audioFile, task = '', signal, fallbackText = '') {
+function buildDirectAudioRequest(audioFile, task = '', signal, fallbackText = '', extraFields = {}) {
   const formData = new FormData();
   formData.append('audio', audioFile);
   if (task) formData.append('task', task);
   if (fallbackText) formData.append('narrativeText', fallbackText);
+  for (const [key, value] of Object.entries(extraFields)) {
+    if (value) formData.append(key, value);
+  }
   return {
     method: 'POST',
     credentials: 'include',
@@ -340,10 +359,43 @@ function skippedTask(tool, error, extra = {}) {
   };
 }
 
-function formatFileSize(bytes) {
-  if (!Number.isFinite(bytes) || bytes <= 0) return '0 MB';
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+function deferredTask(tool, reason, extra = {}) {
+  return {
+    status: 'DEFERRED',
+    tool,
+    reason,
+    ...extra,
+  };
+}
+
+function createAudioPreviewFile(audioFile) {
+  const previewBlob = audioFile.slice(0, DIRECT_AUDIO_UPLOAD_SAFE_BYTES, audioFile.type || 'application/octet-stream');
+  const extension = audioFile.name.includes('.') ? audioFile.name.slice(audioFile.name.lastIndexOf('.')) : '';
+  const previewName = `${audioFile.name.replace(/\.[^.]+$/, '') || 'audio'}-quick-test-preview${extension}`;
+  return new File([previewBlob], previewName, { type: audioFile.type || 'application/octet-stream' });
+}
+
+function getAudioDurationSeconds(file) {
+  return new Promise((resolve, reject) => {
+    const audio = document.createElement('audio');
+    const objectUrl = URL.createObjectURL(file);
+    const cleanup = () => {
+      URL.revokeObjectURL(objectUrl);
+      audio.removeAttribute('src');
+      audio.load();
+    };
+    audio.preload = 'metadata';
+    audio.onloadedmetadata = () => {
+      const duration = Number.isFinite(audio.duration) ? audio.duration : null;
+      cleanup();
+      resolve(duration);
+    };
+    audio.onerror = () => {
+      cleanup();
+      reject(new Error('Audio metadata could not be read.'));
+    };
+    audio.src = objectUrl;
+  });
 }
 
 function QuickTestResult({ result, isRunning = false }) {
@@ -372,7 +424,7 @@ function QuickTestResult({ result, isRunning = false }) {
       ) : null}
       <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
         <p className="text-xs font-semibold uppercase text-slate-500">Task 1 transcription</p>
-        {task1.status === 'SKIPPED' ? (
+        {task1.status === 'SKIPPED' || task1.status === 'DEFERRED' ? (
           <p className="mt-1 text-sm text-slate-700">{task1.reason || 'Skipped for text input.'}</p>
         ) : (
           <div className="mt-2 space-y-3">
@@ -381,6 +433,11 @@ function QuickTestResult({ result, isRunning = false }) {
               {task1.tool ? <span className="text-slate-600">{task1.tool}</span> : null}
               {task1.inputFile ? <span className="text-slate-600">{task1.inputFile}</span> : null}
             </div>
+            {task1.partialAudioPreview ? (
+              <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-sm text-amber-900">
+                Preview transcription from the beginning of the audio was used for this Quick Test run.
+              </p>
+            ) : null}
             <p className="whitespace-pre-wrap rounded-md border bg-white p-3 text-sm leading-6 text-slate-800">{task1.transcript || task1.rawTranscript}</p>
             {(task1.segments || []).length ? (
               <div className="grid gap-2 md:grid-cols-2">

@@ -99,18 +99,48 @@ async function handleAudioQuickTest(request) {
   const audioFile = formData.get('audio');
   const taskMode = String(formData.get('task') || '').trim().toLowerCase();
   const fallbackNarrativeText = String(formData.get('narrativeText') || '').trim();
+  const partialAudioPreview = String(formData.get('partialAudioPreview') || '').trim() === 'true';
+  const originalFileName = String(formData.get('originalFileName') || '').trim();
+  const originalFileSizeBytes = Number(formData.get('originalFileSizeBytes') || 0) || null;
+  const originalDurationSeconds = Number(formData.get('originalDurationSeconds') || 0) || null;
   if (!audioFile || typeof audioFile.arrayBuffer !== 'function') {
     return NextResponse.json({ error: 'Please upload an audio file.' }, { status: 400 });
   }
 
-  return analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText });
+  return analyzeAudioFile({
+    audioFile,
+    taskMode,
+    fallbackNarrativeText,
+    previewMetadata: partialAudioPreview ? {
+      partialAudioPreview,
+      originalFileName,
+      originalFileSizeBytes,
+      originalDurationSeconds,
+    } : null,
+  });
 }
 
-async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) {
+async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, previewMetadata = null }) {
   let task1;
   try {
     task1 = await transcribeAudioForTask1(audioFile);
   } catch (task1Error) {
+    if (previewMetadata && !fallbackNarrativeText) {
+      return NextResponse.json({
+        ok: true,
+        result: {
+          inputField: 'audio',
+          source: 'audio-upload',
+          status: 'PARTIAL',
+          task1: {
+            status: 'DEFERRED',
+            tool: process.env.HF_ASR_MODEL || 'openai/whisper-large-v3',
+            reason: 'Audio transcription is deferred for this Quick Test run. Add narrative_text to run Task 2-5.',
+            ...previewMetadata,
+          },
+        },
+      });
+    }
     if (fallbackNarrativeText) {
       const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText);
       return NextResponse.json({
@@ -142,6 +172,13 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText }) 
         },
       },
     });
+  }
+  if (previewMetadata) {
+    task1 = {
+      ...task1,
+      ...previewMetadata,
+      inputFile: previewMetadata.originalFileName || task1.inputFile,
+    };
   }
   const narrativeText = String(task1.transcript || task1.rawTranscript || '').trim();
   if (!narrativeText) {
