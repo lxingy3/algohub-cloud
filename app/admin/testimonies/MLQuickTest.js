@@ -5,7 +5,9 @@ import { AUDIO_ACCEPT, audioContentTypeForFile } from '../../../lib/audioAccept'
 
 const MAX_NARRATIVE_TEXT_CHARS = 12000;
 const MAX_AUDIO_DURATION_SECONDS = 30 * 60;
-const DIRECT_AUDIO_UPLOAD_SAFE_BYTES = 3.5 * 1024 * 1024;
+const DIRECT_AUDIO_UPLOAD_SAFE_BYTES = 4 * 1024 * 1024;
+const COMPRESSED_AUDIO_SAMPLE_RATE = 16000;
+const COMPRESSED_AUDIO_BITRATES = [16, 8];
 
 export default function MLQuickTest() {
   const [narrativeText, setNarrativeText] = useState('');
@@ -63,7 +65,7 @@ export default function MLQuickTest() {
 
     setLoadingLabel('Uploading audio...');
     setLoadingLabel('Running Task 1...');
-    const task1Request = await buildAudioTask1Request(file, signal, fallbackNarrativeText, durationSeconds);
+    const task1Request = await buildAudioTask1Request(file, signal, fallbackNarrativeText, durationSeconds, setLoadingLabel);
     if (task1Request.fallbackOnly) {
       await runAudioFallbackOnlyTask25({ file, fallbackNarrativeText, runVersion, signal, reason: task1Request.reason, durationSeconds });
       return;
@@ -294,20 +296,27 @@ async function uploadAudioForQuickTest(audioFile, signal) {
   };
 }
 
-async function buildAudioTask1Request(audioFile, signal, fallbackText = '', durationSeconds = null) {
+async function buildAudioTask1Request(audioFile, signal, fallbackText = '', durationSeconds = null, updateStatus = () => {}) {
   try {
     const uploadedAudio = await uploadAudioForQuickTest(audioFile, signal);
     return buildStoredAudioRequest(uploadedAudio, 'task1', signal, fallbackText);
   } catch (uploadError) {
     if (uploadError.status !== 503) throw uploadError;
     if (audioFile.size > DIRECT_AUDIO_UPLOAD_SAFE_BYTES) {
-      if (!fallbackText) {
-        return buildDirectAudioRequest(createAudioPreviewFile(audioFile), 'task1', signal, '', {
-          partialAudioPreview: 'true',
+      try {
+        updateStatus('Compressing audio...');
+        const compressedAudio = await compressAudioForDirectUpload(audioFile, updateStatus);
+        return buildDirectAudioRequest(compressedAudio, 'task1', signal, fallbackText, {
           originalFileName: audioFile.name,
           originalFileSizeBytes: String(audioFile.size),
           originalDurationSeconds: durationSeconds ? String(durationSeconds) : '',
+          compressedForQuickTest: 'true',
         });
+      } catch (compressionError) {
+        if (!fallbackText) {
+          throw new Error(`Audio compression did not finish in this browser. Add narrative_text up to ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters so Task 2-5 can run while audio transcription is retried later.`);
+        }
+        console.warn('Audio compression fallback failed', compressionError);
       }
       return {
         fallbackOnly: true,
@@ -368,13 +377,6 @@ function deferredTask(tool, reason, extra = {}) {
   };
 }
 
-function createAudioPreviewFile(audioFile) {
-  const previewBlob = audioFile.slice(0, DIRECT_AUDIO_UPLOAD_SAFE_BYTES, audioFile.type || 'application/octet-stream');
-  const extension = audioFile.name.includes('.') ? audioFile.name.slice(audioFile.name.lastIndexOf('.')) : '';
-  const previewName = `${audioFile.name.replace(/\.[^.]+$/, '') || 'audio'}-quick-test-preview${extension}`;
-  return new File([previewBlob], previewName, { type: audioFile.type || 'application/octet-stream' });
-}
-
 function getAudioDurationSeconds(file) {
   return new Promise((resolve, reject) => {
     const audio = document.createElement('audio');
@@ -396,6 +398,92 @@ function getAudioDurationSeconds(file) {
     };
     audio.src = objectUrl;
   });
+}
+
+async function compressAudioForDirectUpload(audioFile, updateStatus) {
+  const audioBuffer = await decodeAudioFile(audioFile);
+  for (const bitrate of COMPRESSED_AUDIO_BITRATES) {
+    updateStatus(`Compressing audio (${bitrate}kbps)...`);
+    const mp3File = await encodeAudioBufferAsMp3(audioBuffer, {
+      sourceName: audioFile.name,
+      bitrate,
+      updateStatus,
+    });
+    if (mp3File.size <= DIRECT_AUDIO_UPLOAD_SAFE_BYTES) {
+      return mp3File;
+    }
+  }
+  throw new Error('Compressed audio is still above the direct upload target.');
+}
+
+async function decodeAudioFile(audioFile) {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) {
+    throw new Error('Browser audio decoding is unavailable.');
+  }
+  const audioContext = new AudioContextClass();
+  try {
+    const buffer = await audioFile.arrayBuffer();
+    return await audioContext.decodeAudioData(buffer);
+  } finally {
+    await audioContext.close().catch(() => {});
+  }
+}
+
+async function encodeAudioBufferAsMp3(audioBuffer, { sourceName, bitrate, updateStatus }) {
+  const monoBuffer = await renderMonoBuffer(audioBuffer, COMPRESSED_AUDIO_SAMPLE_RATE);
+  const samples = monoBuffer.getChannelData(0);
+  const { Mp3Encoder } = await loadMp3Encoder();
+  const encoder = new Mp3Encoder(1, COMPRESSED_AUDIO_SAMPLE_RATE, bitrate);
+  const chunks = [];
+  const frameSize = 1152;
+  const totalFrames = Math.ceil(samples.length / frameSize);
+
+  for (let offset = 0, frame = 0; offset < samples.length; offset += frameSize, frame += 1) {
+    const mp3Buffer = encoder.encodeBuffer(floatToInt16(samples.subarray(offset, offset + frameSize)));
+    if (mp3Buffer.length) chunks.push(mp3Buffer);
+    if (frame % 200 === 0) {
+      updateStatus(`Compressing audio (${Math.min(99, Math.round((frame / totalFrames) * 100))}%)...`);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+  }
+
+  const finalBuffer = encoder.flush();
+  if (finalBuffer.length) chunks.push(finalBuffer);
+  const outputName = `${sourceName.replace(/\.[^.]+$/, '') || 'audio'}-compressed-${bitrate}kbps.mp3`;
+  return new File(chunks, outputName, { type: 'audio/mpeg' });
+}
+
+async function renderMonoBuffer(audioBuffer, sampleRate) {
+  const frameCount = Math.ceil(audioBuffer.duration * sampleRate);
+  const OfflineContextClass = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if (!OfflineContextClass) {
+    throw new Error('Browser offline audio rendering is unavailable.');
+  }
+  const offlineContext = new OfflineContextClass(1, frameCount, sampleRate);
+  const source = offlineContext.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(offlineContext.destination);
+  source.start(0);
+  return offlineContext.startRendering();
+}
+
+function floatToInt16(floatSamples) {
+  const output = new Int16Array(floatSamples.length);
+  for (let index = 0; index < floatSamples.length; index += 1) {
+    const sample = Math.max(-1, Math.min(1, floatSamples[index]));
+    output[index] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+  }
+  return output;
+}
+
+async function loadMp3Encoder() {
+  const lame = await import('lamejs');
+  const Mp3Encoder = lame.Mp3Encoder || lame.default?.Mp3Encoder;
+  if (!Mp3Encoder) {
+    throw new Error('MP3 encoder could not be loaded.');
+  }
+  return { Mp3Encoder };
 }
 
 function QuickTestResult({ result, isRunning = false }) {
@@ -433,9 +521,9 @@ function QuickTestResult({ result, isRunning = false }) {
               {task1.tool ? <span className="text-slate-600">{task1.tool}</span> : null}
               {task1.inputFile ? <span className="text-slate-600">{task1.inputFile}</span> : null}
             </div>
-            {task1.partialAudioPreview ? (
+            {task1.compressedForQuickTest ? (
               <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-sm text-amber-900">
-                Preview transcription from the beginning of the audio was used for this Quick Test run.
+                Audio was compressed for this Quick Test run before transcription.
               </p>
             ) : null}
             <p className="whitespace-pre-wrap rounded-md border bg-white p-3 text-sm leading-6 text-slate-800">{task1.transcript || task1.rawTranscript}</p>
