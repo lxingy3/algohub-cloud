@@ -5,9 +5,10 @@ import { AUDIO_ACCEPT, audioContentTypeForFile } from '../../../lib/audioAccept'
 
 const MAX_NARRATIVE_TEXT_CHARS = 12000;
 const MAX_AUDIO_DURATION_SECONDS = 30 * 60;
-const DIRECT_AUDIO_UPLOAD_SAFE_BYTES = 4 * 1024 * 1024;
+const DIRECT_AUDIO_UPLOAD_SAFE_BYTES = 4_500_000;
 const COMPRESSED_AUDIO_SAMPLE_RATE = 16000;
 const COMPRESSED_AUDIO_BITRATES = [16, 8];
+let mp3EncoderLoadPromise = null;
 
 export default function MLQuickTest() {
   const [narrativeText, setNarrativeText] = useState('');
@@ -438,11 +439,12 @@ async function encodeAudioBufferAsMp3(audioBuffer, { sourceName, bitrate, update
   const chunks = [];
   const frameSize = 1152;
   const totalFrames = Math.ceil(samples.length / frameSize);
+  const int16Samples = floatToInt16(samples);
 
   for (let offset = 0, frame = 0; offset < samples.length; offset += frameSize, frame += 1) {
-    const mp3Buffer = encoder.encodeBuffer(floatToInt16(samples.subarray(offset, offset + frameSize)));
+    const mp3Buffer = encoder.encodeBuffer(int16Samples.subarray(offset, offset + frameSize));
     if (mp3Buffer.length) chunks.push(mp3Buffer);
-    if (frame % 200 === 0) {
+    if (frame % 400 === 0) {
       updateStatus(`Compressing audio (${Math.min(99, Math.round((frame / totalFrames) * 100))}%)...`);
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
@@ -478,12 +480,33 @@ function floatToInt16(floatSamples) {
 }
 
 async function loadMp3Encoder() {
-  const lame = await import('lamejs');
-  const Mp3Encoder = lame.Mp3Encoder || lame.default?.Mp3Encoder;
+  if (window.lamejs?.Mp3Encoder) {
+    return { Mp3Encoder: window.lamejs.Mp3Encoder };
+  }
+  mp3EncoderLoadPromise ??= loadScript('/vendor/lame.all.js');
+  await mp3EncoderLoadPromise;
+  const Mp3Encoder = window.lamejs?.Mp3Encoder;
   if (!Mp3Encoder) {
     throw new Error('MP3 encoder could not be loaded.');
   }
   return { Mp3Encoder };
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const existingScript = document.querySelector(`script[src="${src}"]`);
+    if (existingScript) {
+      existingScript.addEventListener('load', resolve, { once: true });
+      existingScript.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = true;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(script);
+  });
 }
 
 function QuickTestResult({ result, isRunning = false }) {
