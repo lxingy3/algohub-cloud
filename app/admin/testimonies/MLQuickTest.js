@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { AUDIO_ACCEPT, audioContentTypeForFile } from '../../../lib/audioAccept';
 
 const MAX_NARRATIVE_TEXT_CHARS = 12000;
+const DIRECT_AUDIO_UPLOAD_SAFE_BYTES = 3.5 * 1024 * 1024;
 
 export default function MLQuickTest() {
   const [narrativeText, setNarrativeText] = useState('');
@@ -55,7 +56,13 @@ export default function MLQuickTest() {
     setLoadingLabel('Uploading audio...');
     const fallbackNarrativeText = String(fallbackText || '').trim();
     setLoadingLabel('Running Task 1...');
-    const task1Payload = await postQuickTest(await buildAudioTask1Request(file, signal, fallbackNarrativeText));
+    const task1Request = await buildAudioTask1Request(file, signal, fallbackNarrativeText);
+    if (task1Request.fallbackOnly) {
+      await runAudioFallbackOnlyTask25({ file, fallbackNarrativeText, runVersion, signal, reason: task1Request.reason });
+      return;
+    }
+
+    const task1Payload = await postQuickTest(task1Request);
     if (!isCurrentRun(runVersion)) return;
     setResult(task1Payload.result);
 
@@ -106,6 +113,35 @@ export default function MLQuickTest() {
         task5: skippedTask('KeyBERT', analysisError.message || 'Task 2-5 failed.'),
       }));
     }
+  }
+
+  async function runAudioFallbackOnlyTask25({ file, fallbackNarrativeText, runVersion, signal, reason }) {
+    if (!fallbackNarrativeText) {
+      throw new Error(reason);
+    }
+    if (fallbackNarrativeText.length > MAX_NARRATIVE_TEXT_CHARS) {
+      throw new Error(`Cloud media storage is not configured, and the fallback narrative_text is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters.`);
+    }
+
+    setLoadingLabel('Running Task 2-5 from narrative_text...');
+    const analysisPayload = await postQuickTest({
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ narrativeText: fallbackNarrativeText }),
+      signal,
+    });
+    if (!isCurrentRun(runVersion)) return;
+    setResult({
+      ...analysisPayload.result,
+      inputField: 'audio',
+      source: 'audio-upload',
+      status: 'PARTIAL',
+      task1: skippedTask('openai/whisper-large-v3', reason, {
+        inputFile: file.name,
+        fileSizeBytes: file.size,
+      }),
+    });
   }
 
   function isCurrentRun(runVersion) {
@@ -256,6 +292,12 @@ async function buildAudioTask1Request(audioFile, signal, fallbackText = '') {
     return buildStoredAudioRequest(uploadedAudio, 'task1', signal, fallbackText);
   } catch (uploadError) {
     if (uploadError.status !== 503) throw uploadError;
+    if (audioFile.size > DIRECT_AUDIO_UPLOAD_SAFE_BYTES) {
+      return {
+        fallbackOnly: true,
+        reason: `Cloud media storage is not configured, and this ${formatFileSize(audioFile.size)} audio file is too large for reliable direct upload. Task 2-5 can still run from narrative_text.`,
+      };
+    }
     return buildDirectAudioRequest(audioFile, 'task1', signal, fallbackText);
   }
 }
@@ -289,12 +331,19 @@ function buildStoredAudioRequest(uploadedAudio, task = '', signal, fallbackText 
   };
 }
 
-function skippedTask(tool, error) {
+function skippedTask(tool, error, extra = {}) {
   return {
     status: 'SKIPPED',
     tool,
     error,
+    ...extra,
   };
+}
+
+function formatFileSize(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 MB';
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function QuickTestResult({ result, isRunning = false }) {
