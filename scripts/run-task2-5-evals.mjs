@@ -2,6 +2,10 @@ import { spawnSync } from 'node:child_process';
 
 const checks = [
   {
+    name: 'live_smoke',
+    command: ['scripts/run-task2-5-live-smoke.mjs'],
+  },
+  {
     name: 'current_stories',
     resultPath: 'task345-results/tuned-all-stories-ml-output/task2-5-combined-results.json',
     evalSetPath: 'data/task2-5-eval-set.json',
@@ -19,6 +23,45 @@ const checks = [
 ];
 
 const runEval = (check) => {
+  if (check.command) {
+    const child = spawnSync(
+      process.execPath,
+      check.command,
+      { encoding: 'utf8' },
+    );
+
+    if (child.error) {
+      return {
+        name: check.name,
+        status: 'FAIL',
+        error: child.error.message,
+      };
+    }
+
+    let report = null;
+    try {
+      report = JSON.parse(child.stdout);
+    } catch {
+      return {
+        name: check.name,
+        status: 'FAIL',
+        error: 'Could not parse evaluation output.',
+        stdout: child.stdout,
+        stderr: child.stderr,
+      };
+    }
+
+    return {
+      name: check.name,
+      status: child.status === 0 && report.issueCount === 0 ? 'PASS' : 'FAIL',
+      count: Array.isArray(report.results) ? report.results.length : 0,
+      issueCount: report.issueCount,
+      issues: report.issues,
+      results: report.results,
+      stderr: child.stderr?.trim() || undefined,
+    };
+  }
+
   const child = spawnSync(
     process.execPath,
     ['scripts/evaluate-task2-5-results.mjs', check.resultPath, check.evalSetPath],
