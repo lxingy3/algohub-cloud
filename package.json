@@ -18,6 +18,7 @@
     "ml:eval:all": "npm run ml:eval && npm run ml:eval:production && npm run ml:eval:pittsburgh && npm run ml:eval:ui",
     "ml:eval:challenge": "node scripts/evaluate-task2-5-results.mjs task345-results/challenge-ml-output/task2-5-combined-results.json data/task2-5-challenge-eval-set.json",
     "ml:eval:current": "node scripts/evaluate-task2-5-results.mjs task345-results/tuned-all-stories-ml-output/task2-5-combined-results.json data/task2-5-eval-set.json",
+    "mobile:smoke": "node scripts/run-mobile-smoke.mjs",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "next start",
     "db:generate": "prisma generate",
