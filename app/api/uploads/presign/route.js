@@ -30,6 +30,7 @@ function cleanExtension(fileName, contentType) {
   if (normalizedContentType.includes('quicktime')) return 'mov';
   if (normalizedContentType.includes('x-m4v')) return 'm4v';
   if (normalizedContentType === 'audio/mp4' || normalizedContentType.includes('m4a')) return 'm4a';
+  if (normalizedContentType.includes('aac')) return 'aac';
   if (normalizedContentType.includes('mpeg') || normalizedContentType.includes('mp3')) return 'mp3';
   if (normalizedContentType.includes('mp4')) return 'mp4';
   if (normalizedContentType.includes('wav')) return 'wav';
