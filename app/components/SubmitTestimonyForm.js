@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Check, ChevronLeft, ChevronRight, Mic, Pause, Play, Send, Shield, Trash2, Type, Upload, Users } from 'lucide-react';
-import { AUDIO_ACCEPT, audioContentTypeForFile } from '../../lib/audioAccept';
+import { MEDIA_ACCEPT, audioContentTypeForFile } from '../../lib/audioAccept';
+import { extractAudioTrackFromVideo, getMediaDurationSeconds } from '../../lib/clientMedia';
 
 const steps = ['submit.stepShare', 'submit.stepSystem', 'submit.stepStory', 'submit.stepDetails', 'submit.stepReview'];
 const methods = [
@@ -50,6 +51,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
   const [recordingTime, setRecordingTime] = useState(0);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState('');
   const [mediaFile, setMediaFile] = useState(null);
+  const [mediaDurationSeconds, setMediaDurationSeconds] = useState(null);
   const [uploadedMedia, setUploadedMedia] = useState(null);
 
   const mediaRecorderRef = useRef(null);
@@ -200,8 +202,12 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
   function setMedia(file) {
     if (mediaPreviewUrl) URL.revokeObjectURL(mediaPreviewUrl);
     setMediaFile(file);
+    setMediaDurationSeconds(null);
     setUploadedMedia(null);
     setMediaPreviewUrl(URL.createObjectURL(file));
+    getMediaDurationSeconds(file)
+      .then((duration) => setMediaDurationSeconds(duration))
+      .catch(() => setMediaDurationSeconds(null));
   }
 
   async function startRecording() {
@@ -257,6 +263,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
     if (mediaPreviewUrl) URL.revokeObjectURL(mediaPreviewUrl);
     setMediaPreviewUrl('');
     setMediaFile(null);
+    setMediaDurationSeconds(null);
     setUploadedMedia(null);
     setRecordingState('idle');
     setRecordingTime(0);
@@ -268,14 +275,22 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
     if (uploadedMedia) return uploadedMedia;
     if (!mediaFile) throw new Error(t('submit.uploadFailed'));
 
+    let uploadFile = mediaFile;
+    const initialContentType = audioContentTypeForFile(mediaFile);
+    if (initialContentType.toLowerCase().startsWith('video/')) {
+      setMessage('Extracting audio from video...');
+      uploadFile = await extractAudioTrackFromVideo(mediaFile, setMessage, undefined, mediaDurationSeconds);
+    }
+    const uploadContentType = audioContentTypeForFile(uploadFile);
+
     const presign = await fetch('/api/uploads/presign', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         kind: 'audio',
-        fileName: mediaFile.name,
-        contentType: audioContentTypeForFile(mediaFile),
-        size: mediaFile.size,
+        fileName: uploadFile.name,
+        contentType: uploadContentType,
+        size: uploadFile.size,
       }),
     });
     const upload = await presign.json().catch(() => null);
@@ -284,7 +299,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
     const put = await fetch(upload.uploadUrl, {
       method: 'PUT',
       headers: { 'Content-Type': upload.contentType },
-      body: mediaFile,
+      body: uploadFile,
     });
     if (!put.ok) throw new Error(t('submit.uploadFailed'));
 
@@ -293,7 +308,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
       url: upload.storageUri,
       provider: upload.provider,
       mimeType: upload.contentType,
-      durationSeconds: recordingTime || undefined,
+      durationSeconds: recordingTime || mediaDurationSeconds || undefined,
     };
     setUploadedMedia(nextMedia);
     return nextMedia;
@@ -499,11 +514,11 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
                     </button>
                     <label className="inline-flex min-h-11 cursor-pointer items-center rounded-md border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50">
                       <Upload className="mr-2 h-4 w-4" />
-                      {t('submit.uploadAudio')}
+                      {t('submit.uploadAudioOrVideo', { defaultValue: 'Upload audio/video' })}
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept={AUDIO_ACCEPT}
+                        accept={MEDIA_ACCEPT}
                         className="sr-only"
                         onChange={(event) => {
                           const file = event.target.files?.[0];

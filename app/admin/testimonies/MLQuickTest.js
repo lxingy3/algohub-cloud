@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { MEDIA_ACCEPT, audioContentTypeForFile } from '../../../lib/audioAccept';
+import { extractAudioTrackFromVideo, getMediaDurationSeconds } from '../../../lib/clientMedia';
 
 const MAX_NARRATIVE_TEXT_CHARS = 12000;
 const MAX_AUDIO_DURATION_SECONDS = 30 * 60;
@@ -60,7 +61,7 @@ export default function MLQuickTest() {
   async function runAudioQuickTest(file, fallbackText, runVersion, signal) {
     setLoadingLabel('Checking audio...');
     const fallbackNarrativeText = String(fallbackText || '').trim();
-    const durationSeconds = await getAudioDurationSeconds(file).catch(() => null);
+    const durationSeconds = await getMediaDurationSeconds(file).catch(() => null);
     if (durationSeconds && durationSeconds > MAX_AUDIO_DURATION_SECONDS) {
       throw new Error('Audio is over the 30 minute limit. Please upload a shorter file.');
     }
@@ -302,6 +303,22 @@ async function uploadAudioForQuickTest(audioFile, signal) {
 async function buildAudioTask1Request(audioFile, signal, fallbackText = '', durationSeconds = null, updateStatus = () => {}) {
   const contentType = audioContentTypeForFile(audioFile);
   const isVideo = contentType.toLowerCase().startsWith('video/');
+  if (isVideo) {
+    try {
+      updateStatus('Extracting audio from video...');
+      const extractedAudio = await extractAudioTrackFromVideo(audioFile, updateStatus, signal, durationSeconds);
+      return buildAudioTask1Request(extractedAudio, signal, fallbackText, durationSeconds, updateStatus);
+    } catch (videoAudioError) {
+      if (!fallbackText) {
+        throw new Error(`Video audio extraction did not finish in this browser. Add narrative_text up to ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters so Task 2-5 can run while transcription is retried later.`);
+      }
+      console.warn('Video audio extraction fallback failed', videoAudioError);
+      return {
+        fallbackOnly: true,
+        reason: 'Video audio transcription is deferred for this Quick Test run. Task 2-5 ran from narrative_text.',
+      };
+    }
+  }
   try {
     const uploadedAudio = await uploadAudioForQuickTest(audioFile, signal);
     return buildStoredAudioRequest(uploadedAudio, 'task1', signal, fallbackText);
@@ -397,29 +414,6 @@ function cleanQuickTestErrorMessage(message) {
     return 'The hosted ML request timed out. Try again; completed tasks and local fallback results will be shown when available.';
   }
   return text.replace(/\s+[a-z]{3}\d+::[a-z0-9-]+$/i, '').trim();
-}
-
-function getAudioDurationSeconds(file) {
-  return new Promise((resolve, reject) => {
-    const audio = document.createElement('audio');
-    const objectUrl = URL.createObjectURL(file);
-    const cleanup = () => {
-      URL.revokeObjectURL(objectUrl);
-      audio.removeAttribute('src');
-      audio.load();
-    };
-    audio.preload = 'metadata';
-    audio.onloadedmetadata = () => {
-      const duration = Number.isFinite(audio.duration) ? audio.duration : null;
-      cleanup();
-      resolve(duration);
-    };
-    audio.onerror = () => {
-      cleanup();
-      reject(new Error('Audio metadata could not be read.'));
-    };
-    audio.src = objectUrl;
-  });
 }
 
 async function compressAudioForDirectUpload(audioFile, updateStatus, signal) {
