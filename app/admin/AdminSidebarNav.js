@@ -17,7 +17,7 @@ export function AdminSidebarNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="scrollbar-none mt-4 flex max-w-full gap-2 overflow-x-auto text-sm [-webkit-overflow-scrolling:touch] md:mt-6 md:grid md:overflow-visible">
+    <nav className="mt-4 flex max-w-full flex-wrap gap-2 text-sm md:mt-6 md:grid">
       {links.map(([href, label]) => {
         const active = href === '/admin' ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
         return (

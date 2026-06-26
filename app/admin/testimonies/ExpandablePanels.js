@@ -143,7 +143,7 @@ function ExpandIconButton({ label, open, onClick }) {
       type="button"
       aria-label={`${open ? 'Collapse' : 'Expand'} ${label}`}
       onClick={onClick}
-      className="absolute bottom-2 right-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-950"
+      className="absolute bottom-1 right-1 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-950"
     >
       <span className={`block h-2.5 w-2.5 rotate-45 border-b-2 border-r-2 border-current transition-transform ${open ? 'rotate-[225deg]' : ''}`} />
     </button>

@@ -158,7 +158,7 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
               </form>
             ) : null}
           </div>
-          <nav className="scrollbar-none order-3 -mx-1 flex w-full gap-1 overflow-x-auto pb-1 text-sm [-webkit-overflow-scrolling:touch] md:hidden">
+          <nav className="order-3 flex w-full flex-wrap gap-1 pb-1 text-sm md:hidden">
             {navItems.map(([href, label]) => (
               <Link key={href} href={href} data-no-i18n className="inline-flex min-h-11 shrink-0 items-center rounded-md px-3 py-2 font-medium text-gray-800 hover:bg-gray-100">
                 {t(label)}
