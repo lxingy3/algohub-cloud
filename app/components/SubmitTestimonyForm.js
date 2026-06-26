@@ -279,15 +279,21 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
     const initialContentType = audioContentTypeForFile(mediaFile);
     if (initialContentType.toLowerCase().startsWith('video/')) {
       setMessage('Extracting audio from video...');
-      uploadFile = await extractAudioTrackFromVideo(mediaFile, setMessage, undefined, mediaDurationSeconds);
+      try {
+        uploadFile = await extractAudioTrackFromVideo(mediaFile, setMessage, undefined, mediaDurationSeconds);
+      } catch (error) {
+        // ponytail: mobile Safari cannot capture video streams; worker reads the audio track server-side.
+        console.warn('Browser video audio extraction failed; uploading video for server-side transcription', error);
+      }
     }
     const uploadContentType = audioContentTypeForFile(uploadFile);
+    const uploadKind = uploadContentType.toLowerCase().startsWith('video/') ? 'video' : 'audio';
 
     const presign = await fetch('/api/uploads/presign', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        kind: 'audio',
+        kind: uploadKind,
         fileName: uploadFile.name,
         contentType: uploadContentType,
         size: uploadFile.size,

@@ -309,14 +309,7 @@ async function buildAudioTask1Request(audioFile, signal, fallbackText = '', dura
       const extractedAudio = await extractAudioTrackFromVideo(audioFile, updateStatus, signal, durationSeconds);
       return buildAudioTask1Request(extractedAudio, signal, fallbackText, durationSeconds, updateStatus);
     } catch (videoAudioError) {
-      if (!fallbackText) {
-        throw new Error(`Video audio extraction did not finish in this browser. Add narrative_text up to ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters so Task 2-5 can run while transcription is retried later.`);
-      }
-      console.warn('Video audio extraction fallback failed', videoAudioError);
-      return {
-        fallbackOnly: true,
-        reason: 'Video audio transcription is deferred for this Quick Test run. Task 2-5 ran from narrative_text.',
-      };
+      console.warn('Browser video audio extraction failed; uploading video for server-side transcription', videoAudioError);
     }
   }
   try {

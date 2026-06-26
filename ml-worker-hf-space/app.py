@@ -20,7 +20,7 @@ TASK2_MODEL = "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33"
 TASK3_MODEL = "facebook/bart-large-mnli"
 TASK1_MODEL = os.environ.get("TASK1_WHISPER_MODEL", "small")
 TASK1_LANGUAGE = os.environ.get("TASK1_WHISPER_LANGUAGE") or None
-SUPPORTED_AUDIO_EXTENSIONS = {".wav", ".mp3", ".webm", ".flac", ".ogg", ".m4a"}
+SUPPORTED_MEDIA_EXTENSIONS = {".wav", ".mp3", ".webm", ".flac", ".ogg", ".m4a", ".mp4", ".mov", ".m4v", ".ogv"}
 TERMINAL_PUNCTUATION = (".", "?", "!")
 CONTINUATION_WORDS = {
     "and",
@@ -226,8 +226,8 @@ async def transcribe_audio(file: UploadFile = File(...), authorization: str | No
         raise HTTPException(status_code=413, detail="audio file must be under 50 MB")
 
     suffix = Path(file.filename or "audio").suffix.lower()
-    if suffix not in SUPPORTED_AUDIO_EXTENSIONS:
-        raise HTTPException(status_code=400, detail="Task 1 supports WAV, MP3, WebM, FLAC, OGG, and M4A audio files")
+    if suffix not in SUPPORTED_MEDIA_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Task 1 supports WAV, MP3, WebM, FLAC, OGG, M4A, MP4, MOV, M4V, and OGV files")
     with TemporaryDirectory(prefix="algostories-task1-") as work_dir:
         input_path = Path(work_dir) / f"input{suffix}"
         input_path.write_bytes(file_bytes)
