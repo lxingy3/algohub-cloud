@@ -117,10 +117,10 @@ export default function MLQuickTest() {
       setResult((current) => ({
         ...(current || task1Payload.result),
         status: 'PARTIAL',
-        task2: skippedTask('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', analysisError.message || 'Task 2-5 failed.'),
-        task3: skippedTask('facebook/bart-large-mnli', analysisError.message || 'Task 2-5 failed.'),
-        task4: skippedTask('spaCy', analysisError.message || 'Task 2-5 failed.'),
-        task5: skippedTask('KeyBERT', analysisError.message || 'Task 2-5 failed.'),
+        task2: skippedTask('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', cleanQuickTestErrorMessage(analysisError.message || 'Task 2-5 failed.')),
+        task3: skippedTask('facebook/bart-large-mnli', cleanQuickTestErrorMessage(analysisError.message || 'Task 2-5 failed.')),
+        task4: skippedTask('spaCy', cleanQuickTestErrorMessage(analysisError.message || 'Task 2-5 failed.')),
+        task5: skippedTask('KeyBERT', cleanQuickTestErrorMessage(analysisError.message || 'Task 2-5 failed.')),
       }));
     }
   }
@@ -364,7 +364,7 @@ function skippedTask(tool, error, extra = {}) {
   return {
     status: 'SKIPPED',
     tool,
-    error,
+    error: cleanQuickTestErrorMessage(error),
     ...extra,
   };
 }
@@ -376,6 +376,14 @@ function deferredTask(tool, reason, extra = {}) {
     reason,
     ...extra,
   };
+}
+
+function cleanQuickTestErrorMessage(message) {
+  const text = String(message || 'Quick test failed.');
+  if (text.includes('FUNCTION_INVOCATION_TIMEOUT')) {
+    return 'The hosted ML request timed out. Try again; completed tasks and local fallback results will be shown when available.';
+  }
+  return text.replace(/\s+[a-z]{3}\d+::[a-z0-9-]+$/i, '').trim();
 }
 
 function getAudioDurationSeconds(file) {
