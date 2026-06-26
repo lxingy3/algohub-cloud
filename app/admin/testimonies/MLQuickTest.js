@@ -587,8 +587,7 @@ function QuickTestResult({ result, isRunning = false }) {
               </p>
             ) : null}
             {task1.translatedToEnglish ? (
-              <div className="flex flex-wrap items-center gap-2 rounded-md border border-blue-100 bg-blue-50 p-2 text-sm text-blue-900">
-                <span className="font-semibold">Showing English translation for Task 2-5 analysis.</span>
+              <div className="flex justify-end rounded-md border border-blue-100 bg-blue-50 p-2">
                 <button
                   type="button"
                   onClick={() => setShowOriginalTask1((current) => !current)}
