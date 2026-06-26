@@ -4,6 +4,7 @@ import { analyzeNarrativeTextWithModels } from '../../../../lib/mlFullAnalysis';
 import { transcribeAudioForTask1 } from '../../../../lib/task1Transcription';
 import { buildStorySummary } from '../../../../lib/storySummary';
 import { createSignedMediaRead } from '../../../../lib/mediaStorage';
+import { shouldTranslateToEnglish, translateLongText } from '../../../../lib/translation';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -34,12 +35,17 @@ export async function POST(request) {
       return NextResponse.json({ error: `Please keep narrative_text under ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters.` }, { status: 400 });
     }
 
-    const result = await analyzeNarrativeTextWithModels(narrativeText);
+    const preparedText = await prepareEnglishAnalysisText(narrativeText);
+    const result = await analyzeNarrativeTextWithModels(preparedText.text);
     return NextResponse.json({
       ok: true,
       result: {
         ...result,
-        summary: buildStorySummary(narrativeText, { maxChars: 320 }),
+        inputLanguage: preparedText.translatedToEnglish ? 'translated-to-english' : 'english',
+        originalNarrativeText: preparedText.translatedToEnglish ? narrativeText : undefined,
+        analysisText: preparedText.text,
+        translatedToEnglish: preparedText.translatedToEnglish,
+        summary: buildStorySummary(preparedText.text, { maxChars: 320 }),
       },
     });
   } catch (error) {
@@ -126,7 +132,8 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
     task1 = await transcribeAudioForTask1(audioFile);
   } catch (task1Error) {
     if (fallbackNarrativeText) {
-      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText);
+      const preparedFallbackText = await prepareEnglishAnalysisText(fallbackNarrativeText);
+      const analysis = await analyzeNarrativeTextWithModels(preparedFallbackText.text);
       return NextResponse.json({
         ok: true,
         result: {
@@ -134,7 +141,10 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
           inputField: 'audio',
           source: 'audio-upload',
           status: 'PARTIAL',
-          summary: buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
+          originalNarrativeText: preparedFallbackText.translatedToEnglish ? fallbackNarrativeText : undefined,
+          analysisText: preparedFallbackText.text,
+          translatedToEnglish: preparedFallbackText.translatedToEnglish,
+          summary: buildStorySummary(preparedFallbackText.text, { maxChars: 320 }),
           task1: {
             status: 'SKIPPED',
             tool: process.env.HF_ASR_MODEL || 'openai/whisper-large-v3',
@@ -164,10 +174,12 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
       inputFile: audioTransformMetadata.originalFileName || task1.inputFile,
     };
   }
+  task1 = await prepareTask1ForEnglishDisplay(task1);
   const narrativeText = String(task1.transcript || task1.rawTranscript || '').trim();
   if (!narrativeText) {
     if (fallbackNarrativeText) {
-      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText);
+      const preparedFallbackText = await prepareEnglishAnalysisText(fallbackNarrativeText);
+      const analysis = await analyzeNarrativeTextWithModels(preparedFallbackText.text);
       return NextResponse.json({
         ok: true,
         result: {
@@ -175,7 +187,10 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
           inputField: 'audio',
           source: 'audio-upload',
           status: 'PARTIAL',
-          summary: buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
+          originalNarrativeText: preparedFallbackText.translatedToEnglish ? fallbackNarrativeText : undefined,
+          analysisText: preparedFallbackText.text,
+          translatedToEnglish: preparedFallbackText.translatedToEnglish,
+          summary: buildStorySummary(preparedFallbackText.text, { maxChars: 320 }),
           task1: {
             ...task1,
             status: task1.status || 'SKIPPED',
@@ -212,7 +227,8 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
   }
   if (narrativeText.length > MAX_NARRATIVE_TEXT_CHARS) {
     if (fallbackNarrativeText && fallbackNarrativeText.length <= MAX_NARRATIVE_TEXT_CHARS) {
-      const analysis = await analyzeNarrativeTextWithModels(fallbackNarrativeText);
+      const preparedFallbackText = await prepareEnglishAnalysisText(fallbackNarrativeText);
+      const analysis = await analyzeNarrativeTextWithModels(preparedFallbackText.text);
       return NextResponse.json({
         ok: true,
         result: {
@@ -220,7 +236,10 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
           inputField: 'audio',
           source: 'audio-upload',
           status: 'PARTIAL',
-          summary: buildStorySummary(fallbackNarrativeText, { maxChars: 320 }),
+          originalNarrativeText: preparedFallbackText.translatedToEnglish ? fallbackNarrativeText : undefined,
+          analysisText: preparedFallbackText.text,
+          translatedToEnglish: preparedFallbackText.translatedToEnglish,
+          summary: buildStorySummary(preparedFallbackText.text, { maxChars: 320 }),
           task1,
         },
       });
@@ -251,6 +270,39 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
       task1,
     },
   });
+}
+
+async function prepareEnglishAnalysisText(text) {
+  const originalText = String(text || '').trim();
+  if (!shouldTranslateToEnglish(originalText)) {
+    return { text: originalText, translatedToEnglish: false };
+  }
+  const translatedText = await translateLongText(originalText, 'auto', 'en');
+  if (!translatedText || translatedText === originalText) {
+    return { text: originalText, translatedToEnglish: false };
+  }
+  return { text: translatedText, translatedToEnglish: true };
+}
+
+async function prepareTask1ForEnglishDisplay(task1) {
+  const originalTranscript = String(task1.transcript || task1.rawTranscript || '').trim();
+  if (!shouldTranslateToEnglish(originalTranscript)) return task1;
+
+  const translatedTranscript = await translateLongText(originalTranscript, 'auto', 'en');
+  if (!translatedTranscript || translatedTranscript === originalTranscript) return task1;
+
+  return {
+    ...task1,
+    transcript: translatedTranscript,
+    rawTranscript: translatedTranscript,
+    originalTranscript,
+    originalRawTranscript: task1.rawTranscript || originalTranscript,
+    originalSegments: task1.segments || task1.sentenceSegments || [],
+    segments: [],
+    sentenceSegments: [],
+    translatedToEnglish: true,
+    displayLanguage: 'en',
+  };
 }
 
 function skippedPayload(tool, error) {

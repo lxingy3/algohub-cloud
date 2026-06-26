@@ -550,6 +550,14 @@ function QuickTestResult({ result, isRunning = false }) {
   const hasTask4 = task4.status === 'SKIPPED' || Boolean(task4.entities);
   const hasTask5 = task5.status === 'SKIPPED' || Array.isArray(task5.keywords);
   const hasIncompleteTask = [task1, task2, task3, task4, task5].some((task) => task.status === 'SKIPPED' && task.error);
+  const [showOriginalTask1, setShowOriginalTask1] = useState(false);
+  const task1HasOriginal = Boolean(task1.originalTranscript);
+  const displayedTask1Transcript = showOriginalTask1 && task1HasOriginal
+    ? task1.originalTranscript
+    : task1.transcript || task1.rawTranscript;
+  const displayedTask1Segments = showOriginalTask1 && task1HasOriginal
+    ? task1.originalSegments || []
+    : task1.segments || [];
 
   return (
     <div className="mt-4 space-y-3">
@@ -578,10 +586,22 @@ function QuickTestResult({ result, isRunning = false }) {
                 Audio was compressed for this Quick Test run before transcription.
               </p>
             ) : null}
-            <p className="whitespace-pre-wrap rounded-md border bg-white p-3 text-sm leading-6 text-slate-800">{task1.transcript || task1.rawTranscript}</p>
-            {(task1.segments || []).length ? (
+            {task1.translatedToEnglish ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-md border border-blue-100 bg-blue-50 p-2 text-sm text-blue-900">
+                <span className="font-semibold">Showing English translation for Task 2-5 analysis.</span>
+                <button
+                  type="button"
+                  onClick={() => setShowOriginalTask1((current) => !current)}
+                  className="rounded-md border border-blue-200 bg-white px-2 py-1 text-xs font-semibold text-blue-900 hover:bg-blue-100"
+                >
+                  {showOriginalTask1 ? 'Show English translation' : 'Show original transcript'}
+                </button>
+              </div>
+            ) : null}
+            <p className="whitespace-pre-wrap rounded-md border bg-white p-3 text-sm leading-6 text-slate-800">{displayedTask1Transcript}</p>
+            {displayedTask1Segments.length ? (
               <div className="grid gap-2 md:grid-cols-2">
-                {task1.segments.map((segment, index) => (
+                {displayedTask1Segments.map((segment, index) => (
                   <div key={`${segment.start}-${segment.end}-${index}`} className="rounded-md border bg-white p-2 text-sm">
                     <p className="text-xs font-semibold text-slate-500">{formatTimestamp(segment.start)} - {formatTimestamp(segment.end)}</p>
                     <p className="mt-1 text-slate-800">{segment.text}</p>
