@@ -18,6 +18,7 @@ try {
   for (const route of publicRoutes) {
     await goto(page, route);
     await assertNoHorizontalOverflow(page, route);
+    await assertNoTinyTapTargets(page, route);
   }
 
   await page.getByRole('button', { name: /^Login$/i }).click();
@@ -28,6 +29,7 @@ try {
   for (const route of adminRoutes) {
     await goto(page, route);
     await assertNoHorizontalOverflow(page, route);
+    await assertNoTinyTapTargets(page, route);
   }
 
   await goto(page, '/admin/testimonies');
@@ -70,4 +72,31 @@ async function assertNoHorizontalOverflow(page, label) {
     return Math.max(root.scrollWidth, body.scrollWidth) - window.innerWidth;
   });
   if (overflow > 1) throw new Error(`${label} has horizontal overflow: ${overflow}px`);
+}
+
+async function assertNoTinyTapTargets(page, label) {
+  const badTargets = await page.evaluate(() => Array.from(document.querySelectorAll('button,a,input:not([type="hidden"]),select,textarea'))
+    .map((element) => {
+      const box = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return {
+        text: (element.innerText || element.value || element.getAttribute('aria-label') || element.getAttribute('placeholder') || element.getAttribute('href') || '').trim().slice(0, 80),
+        width: Math.round(box.width),
+        height: Math.round(box.height),
+        display: style.display,
+        visibility: style.visibility,
+        disabled: Boolean(element.disabled),
+      };
+    })
+    .filter((target) => target.display !== 'none'
+      && target.visibility !== 'hidden'
+      && !target.disabled
+      && target.width > 0
+      && target.height > 0
+      && (target.width < 32 || target.height < 32))
+    .slice(0, 5));
+
+  if (badTargets.length) {
+    throw new Error(`${label} has tiny tap targets: ${JSON.stringify(badTargets)}`);
+  }
 }

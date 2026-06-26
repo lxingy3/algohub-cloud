@@ -255,7 +255,7 @@ function PersonCard({ member }) {
       <Link href={member.href} className="block" target="_blank" rel="noreferrer">
         <img src={member.image} alt={member.name} className="h-52 w-full rounded-md object-cover" />
       </Link>
-      <Link href={member.href} className="mt-4 block text-lg font-bold text-gray-900 hover:text-amber-700" target="_blank" rel="noreferrer">
+      <Link href={member.href} className="mt-4 flex min-h-11 items-center text-lg font-bold text-gray-900 hover:text-amber-700" target="_blank" rel="noreferrer">
         {member.name}
       </Link>
       <p className="mt-2 text-sm leading-6 text-gray-600">{member.role}</p>
@@ -282,7 +282,7 @@ function PartnerCard({ partner }) {
         </div>
       )}
       {partner.href ? (
-        <Link href={partner.href} className="mt-4 text-lg font-bold text-gray-900 hover:text-amber-700" target="_blank" rel="noreferrer">
+        <Link href={partner.href} className="mt-4 flex min-h-11 items-center text-lg font-bold text-gray-900 hover:text-amber-700" target="_blank" rel="noreferrer">
           {partner.name}
         </Link>
       ) : (
