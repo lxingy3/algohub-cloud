@@ -20,6 +20,7 @@ try {
     await assertNoHorizontalOverflow(page, route);
     await assertNoTinyTapTargets(page, route);
   }
+  await runSubmitReviewSmoke(page);
 
   await page.getByRole('button', { name: /^Login$/i }).click();
   await page.getByRole('heading', { name: /^Login$/i }).waitFor({ timeout: 15000 });
@@ -65,6 +66,35 @@ async function login(page) {
   }, { adminEmail, adminPassword });
 }
 
+async function runSubmitReviewSmoke(page) {
+  await goto(page, '/submit-testimony');
+  await page.evaluate(() => window.localStorage.removeItem('algostories-submit-draft'));
+  await page.reload({ waitUntil: 'domcontentloaded' });
+
+  await page.getByRole('button', { name: /^Next$/i }).click();
+  await page.locator('input[name="uncertainSystem"]').check();
+  await page.locator('select[name="affectedDomain"]').selectOption('Housing');
+  await assertNoHorizontalOverflow(page, 'submit step 2');
+  await assertNoTinyTapTargets(page, 'submit step 2');
+
+  await page.getByRole('button', { name: /^Next$/i }).click();
+  await page.locator('input[name="title"]').fill('Mobile smoke story');
+  await page.locator('textarea[name="narrativeText"]').fill('A short mobile smoke story about a housing decision that needs review.');
+  await assertNoHorizontalOverflow(page, 'submit step 3');
+  await assertNoTinyTapTargets(page, 'submit step 3');
+
+  await page.getByRole('button', { name: /^Next$/i }).click();
+  await page.locator('input[name="city"]').fill('Pittsburgh');
+  await assertNoHorizontalOverflow(page, 'submit step 4');
+  await assertNoTinyTapTargets(page, 'submit step 4');
+
+  await page.getByRole('button', { name: /^Next$/i }).click();
+  await page.getByText('Mobile smoke story').waitFor({ timeout: 15000 });
+  await page.getByText('A short mobile smoke story about a housing decision that needs review.').waitFor({ timeout: 15000 });
+  await assertNoHorizontalOverflow(page, 'submit review');
+  await assertNoTinyTapTargets(page, 'submit review');
+}
+
 async function assertNoHorizontalOverflow(page, label) {
   const overflow = await page.evaluate(() => {
     const root = document.documentElement;
@@ -77,7 +107,8 @@ async function assertNoHorizontalOverflow(page, label) {
 async function assertNoTinyTapTargets(page, label) {
   const badTargets = await page.evaluate(() => Array.from(document.querySelectorAll('button,a,input:not([type="hidden"]),select,textarea'))
     .map((element) => {
-      const box = element.getBoundingClientRect();
+      const hitElement = (element.matches('input[type="checkbox"],input[type="radio"]') && element.closest('label')) || element;
+      const box = hitElement.getBoundingClientRect();
       const style = getComputedStyle(element);
       return {
         text: (element.innerText || element.value || element.getAttribute('aria-label') || element.getAttribute('placeholder') || element.getAttribute('href') || '').trim().slice(0, 80),

@@ -604,11 +604,11 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
             </label>
             <fieldset className="space-y-3 rounded-xl border border-gray-200 p-4">
               <legend className="px-1 text-sm font-medium text-gray-700">{t('submit.contact')}</legend>
-              <label className="flex items-center gap-3 text-sm text-gray-700">
+              <label className="flex min-h-11 items-center gap-3 text-sm text-gray-700">
                 <input type="radio" value="yes" {...form.register('wantsContact')} />
                 {t('submit.contactYes')}
               </label>
-              <label className="flex items-center gap-3 text-sm text-gray-700">
+              <label className="flex min-h-11 items-center gap-3 text-sm text-gray-700">
                 <input type="radio" value="no" {...form.register('wantsContact')} />
                 {t('submit.contactNo')}
               </label>
@@ -644,11 +644,11 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
                 <h3 className="text-lg font-semibold text-gray-900">{t('submit.consentTitle')}</h3>
               </div>
               <p className="rounded-md bg-amber-50 p-4 text-sm leading-6 text-gray-700">{t('submit.consent')}</p>
-              <label className="flex items-center gap-3 text-sm text-gray-800">
+              <label className="flex min-h-11 items-center gap-3 text-sm text-gray-800">
                 <input type="checkbox" {...form.register('publicPosting')} className="h-4 w-4" />
                 {t('submit.publicPosting')}
               </label>
-              <label className="flex items-start gap-3 text-sm text-gray-800">
+              <label className="flex min-h-11 items-start gap-3 text-sm text-gray-800">
                 <input type="checkbox" {...form.register('followupConsent')} className="mt-1 h-4 w-4" />
                 {t('submit.consentTitle')} *
               </label>
