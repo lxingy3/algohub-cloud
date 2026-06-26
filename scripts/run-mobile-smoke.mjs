@@ -89,7 +89,7 @@ async function runSubmitReviewSmoke(page) {
   await assertNoTinyTapTargets(page, 'submit step 4');
 
   await page.getByRole('button', { name: /^Next$/i }).click();
-  await page.getByText('Mobile smoke story').waitFor({ timeout: 15000 });
+  await page.getByText('Mobile smoke story', { exact: true }).waitFor({ timeout: 15000 });
   await page.getByText('A short mobile smoke story about a housing decision that needs review.').waitFor({ timeout: 15000 });
   await assertNoHorizontalOverflow(page, 'submit review');
   await assertNoTinyTapTargets(page, 'submit review');
