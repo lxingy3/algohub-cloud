@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { AUDIO_ACCEPT, audioContentTypeForFile } from '../../../lib/audioAccept';
+import { MEDIA_ACCEPT, audioContentTypeForFile } from '../../../lib/audioAccept';
 
 const MAX_NARRATIVE_TEXT_CHARS = 12000;
 const MAX_AUDIO_DURATION_SECONDS = 30 * 60;
@@ -210,12 +210,12 @@ export default function MLQuickTest() {
           className="w-full rounded-md border px-3 py-2 text-sm leading-6"
         />
         <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-3">
-          <label className="block text-xs font-semibold uppercase text-slate-500" htmlFor="ml-quick-test-audio">Audio input</label>
+          <label className="block text-xs font-semibold uppercase text-slate-500" htmlFor="ml-quick-test-audio">Audio or video input</label>
           <input
             id="ml-quick-test-audio"
             ref={audioInputRef}
             type="file"
-            accept={AUDIO_ACCEPT}
+            accept={MEDIA_ACCEPT}
             onChange={handleAudioChange}
             className="mt-2 block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
           />
@@ -225,7 +225,7 @@ export default function MLQuickTest() {
               onClick={clearAudioInput}
               className="mt-2 text-xs font-semibold text-slate-600 hover:text-slate-950"
             >
-              Clear audio
+            Clear media
             </button>
           ) : null}
         </div>
@@ -264,12 +264,13 @@ async function parseQuickTestResponse(response) {
 
 async function uploadAudioForQuickTest(audioFile, signal) {
   const contentType = audioContentTypeForFile(audioFile);
+  const kind = contentType.toLowerCase().startsWith('video/') ? 'video' : 'audio';
   const presignResponse = await fetch('/api/uploads/presign', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify({
-      kind: 'audio',
+      kind,
       fileName: audioFile.name,
       contentType,
       size: audioFile.size,
@@ -299,11 +300,22 @@ async function uploadAudioForQuickTest(audioFile, signal) {
 }
 
 async function buildAudioTask1Request(audioFile, signal, fallbackText = '', durationSeconds = null, updateStatus = () => {}) {
+  const contentType = audioContentTypeForFile(audioFile);
+  const isVideo = contentType.toLowerCase().startsWith('video/');
   try {
     const uploadedAudio = await uploadAudioForQuickTest(audioFile, signal);
     return buildStoredAudioRequest(uploadedAudio, 'task1', signal, fallbackText);
   } catch (uploadError) {
     if (uploadError.status !== 503) throw uploadError;
+    if (isVideo && audioFile.size > DIRECT_AUDIO_UPLOAD_SAFE_BYTES) {
+      if (!fallbackText) {
+        throw new Error(`Video uploads need cloud media storage for reliable audio-track transcription. Add narrative_text up to ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters so Task 2-5 can run now.`);
+      }
+      return {
+        fallbackOnly: true,
+        reason: 'Video audio transcription is deferred for this Quick Test run. Task 2-5 ran from narrative_text.',
+      };
+    }
     if (audioFile.size > DIRECT_AUDIO_UPLOAD_SAFE_BYTES) {
       try {
         updateStatus('Compressing audio...');

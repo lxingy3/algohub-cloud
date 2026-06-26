@@ -12,7 +12,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 const uploadSchema = z.object({
-  kind: z.enum(['audio', 'image']),
+  kind: z.enum(['audio', 'video', 'image']),
   scope: z.enum(['eventImage', 'organizationLogo']).optional(),
   fileName: z.string().trim().min(1).max(255),
   contentType: z.string().trim().min(1),
@@ -26,9 +26,12 @@ function cleanExtension(fileName, contentType) {
   const extension = fileName.split('.').pop()?.toLowerCase();
   if (extension && /^[a-z0-9]{2,5}$/.test(extension)) return extension;
   const normalizedContentType = String(contentType || '').toLowerCase();
+  if (normalizedContentType.startsWith('video/') && normalizedContentType.includes('mp4')) return 'mp4';
+  if (normalizedContentType.includes('quicktime')) return 'mov';
+  if (normalizedContentType.includes('x-m4v')) return 'm4v';
   if (normalizedContentType === 'audio/mp4' || normalizedContentType.includes('m4a')) return 'm4a';
   if (normalizedContentType.includes('mpeg') || normalizedContentType.includes('mp3')) return 'mp3';
-  if (normalizedContentType.includes('mp4')) return 'm4a';
+  if (normalizedContentType.includes('mp4')) return 'mp4';
   if (normalizedContentType.includes('wav')) return 'wav';
   if (normalizedContentType.includes('webm')) return 'webm';
   if (normalizedContentType.includes('flac')) return 'flac';
@@ -64,7 +67,7 @@ export async function POST(request) {
     } catch (error) {
       const message = error.message === 'MEDIA_FILE_TOO_LARGE'
         ? 'Please upload a media file smaller than 200 MB.'
-        : 'Please upload an audio file.';
+        : 'Please upload an audio or video file.';
       return NextResponse.json({ error: message }, { status: 400 });
     }
   }
