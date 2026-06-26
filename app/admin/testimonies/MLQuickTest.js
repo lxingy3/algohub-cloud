@@ -8,6 +8,7 @@ const MAX_AUDIO_DURATION_SECONDS = 30 * 60;
 const DIRECT_AUDIO_UPLOAD_SAFE_BYTES = 4_500_000;
 const COMPRESSED_AUDIO_SAMPLE_RATE = 16000;
 const COMPRESSED_AUDIO_BITRATES = [16, 8];
+const AUDIO_COMPRESSION_TIMEOUT_MS = 2 * 60 * 1000;
 let mp3EncoderLoadPromise = null;
 
 export default function MLQuickTest() {
@@ -306,7 +307,7 @@ async function buildAudioTask1Request(audioFile, signal, fallbackText = '', dura
     if (audioFile.size > DIRECT_AUDIO_UPLOAD_SAFE_BYTES) {
       try {
         updateStatus('Compressing audio...');
-        const compressedAudio = await compressAudioForDirectUpload(audioFile, updateStatus);
+        const compressedAudio = await compressAudioForDirectUpload(audioFile, updateStatus, signal);
         return buildDirectAudioRequest(compressedAudio, 'task1', signal, fallbackText, {
           originalFileName: audioFile.name,
           originalFileSizeBytes: String(audioFile.size),
@@ -409,14 +410,18 @@ function getAudioDurationSeconds(file) {
   });
 }
 
-async function compressAudioForDirectUpload(audioFile, updateStatus) {
+async function compressAudioForDirectUpload(audioFile, updateStatus, signal) {
+  const deadline = Date.now() + AUDIO_COMPRESSION_TIMEOUT_MS;
   const audioBuffer = await decodeAudioFile(audioFile);
   for (const bitrate of COMPRESSED_AUDIO_BITRATES) {
+    throwIfCompressionShouldStop(signal, deadline);
     updateStatus(`Compressing audio (${bitrate}kbps)...`);
     const mp3File = await encodeAudioBufferAsMp3(audioBuffer, {
       sourceName: audioFile.name,
       bitrate,
       updateStatus,
+      deadline,
+      signal,
     });
     if (mp3File.size <= DIRECT_AUDIO_UPLOAD_SAFE_BYTES) {
       return mp3File;
@@ -439,7 +444,7 @@ async function decodeAudioFile(audioFile) {
   }
 }
 
-async function encodeAudioBufferAsMp3(audioBuffer, { sourceName, bitrate, updateStatus }) {
+async function encodeAudioBufferAsMp3(audioBuffer, { sourceName, bitrate, updateStatus, deadline, signal }) {
   const monoBuffer = await renderMonoBuffer(audioBuffer, COMPRESSED_AUDIO_SAMPLE_RATE);
   const samples = monoBuffer.getChannelData(0);
   const { Mp3Encoder } = await loadMp3Encoder();
@@ -450,6 +455,9 @@ async function encodeAudioBufferAsMp3(audioBuffer, { sourceName, bitrate, update
   const int16Samples = floatToInt16(samples);
 
   for (let offset = 0, frame = 0; offset < samples.length; offset += frameSize, frame += 1) {
+    if (frame % 400 === 0) {
+      throwIfCompressionShouldStop(signal, deadline);
+    }
     const mp3Buffer = encoder.encodeBuffer(int16Samples.subarray(offset, offset + frameSize));
     if (mp3Buffer.length) chunks.push(mp3Buffer);
     if (frame % 400 === 0) {
@@ -458,10 +466,23 @@ async function encodeAudioBufferAsMp3(audioBuffer, { sourceName, bitrate, update
     }
   }
 
+  throwIfCompressionShouldStop(signal, deadline);
+  updateStatus('Finalizing compressed audio...');
   const finalBuffer = encoder.flush();
   if (finalBuffer.length) chunks.push(finalBuffer);
   const outputName = `${sourceName.replace(/\.[^.]+$/, '') || 'audio'}-compressed-${bitrate}kbps.mp3`;
   return new File(chunks, outputName, { type: 'audio/mpeg' });
+}
+
+function throwIfCompressionShouldStop(signal, deadline) {
+  if (signal?.aborted) {
+    const error = new Error('Audio compression was cancelled.');
+    error.name = 'AbortError';
+    throw error;
+  }
+  if (Date.now() > deadline) {
+    throw new Error('Audio compression took too long in this browser.');
+  }
 }
 
 async function renderMonoBuffer(audioBuffer, sampleRate) {
