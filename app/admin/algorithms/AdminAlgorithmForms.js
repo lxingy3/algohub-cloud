@@ -63,7 +63,7 @@ export function AddAlgorithmPanel({ currentRole = 'ADMIN' }) {
                 <h2 className="text-lg font-semibold text-slate-950">Add algorithm</h2>
                 <p className="mt-1 text-sm text-slate-500">Create a new registry record after checking the current list.</p>
               </div>
-              <button type="button" onClick={() => setOpen(false)} className="rounded-md p-2 text-slate-500 hover:bg-slate-100" aria-label="Close add algorithm">
+              <button type="button" onClick={() => setOpen(false)} className="inline-flex h-11 w-11 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100" aria-label="Close add algorithm">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -249,7 +249,7 @@ function ConfirmDialog({ title, message, confirmLabel, onConfirm, onCancel }) {
             <h3 className="text-lg font-semibold text-slate-950">{title}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">{message}</p>
           </div>
-          <button type="button" onClick={onCancel} className="rounded-md p-2 text-slate-500 hover:bg-slate-100" aria-label="Close confirmation">
+          <button type="button" onClick={onCancel} className="inline-flex h-11 w-11 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100" aria-label="Close confirmation">
             <X className="h-4 w-4" />
           </button>
         </div>
