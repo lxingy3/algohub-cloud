@@ -52,6 +52,7 @@ async function runProfile(profile) {
     await assertNoTinyTapTargets(page, `${name} ${route}`);
   }
   await runRoleSettingsSmoke(page, name);
+  await runAdminAddEventSmoke(page, name);
 
   await goto(page, '/admin/testimonies');
   await page.getByTestId('ml-quick-test').waitFor({ timeout: 15000 });
@@ -183,6 +184,14 @@ async function runRoleSettingsSmoke(page, profile) {
   await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 15000 });
 }
 
+async function runAdminAddEventSmoke(page, profile) {
+  await goto(page, '/admin/events');
+  await page.getByRole('button', { name: /^Add event$/i }).click();
+  await page.getByRole('heading', { name: /^Add event$/i }).waitFor({ timeout: 15000 });
+  await assertNoHorizontalOverflow(page, `${profile} add event form`);
+  await assertNoTinyTapTargets(page, `${profile} add event form`);
+}
+
 async function runSubmitReviewSmoke(page, profile) {
   await goto(page, '/submit-testimony');
   await page.evaluate(() => window.localStorage.removeItem('algostories-submit-draft'));
@@ -254,7 +263,7 @@ async function assertNoHorizontalOverflow(page, label) {
 async function assertNoTinyTapTargets(page, label) {
   const badTargets = await page.evaluate(() => Array.from(document.querySelectorAll('button,a,input:not([type="hidden"]),select,textarea'))
     .map((element) => {
-      const hitElement = (element.matches('input[type="checkbox"],input[type="radio"]') && element.closest('label')) || element;
+      const hitElement = (element.matches('input[type="checkbox"],input[type="radio"],input[type="file"]') && element.closest('label')) || element;
       const box = hitElement.getBoundingClientRect();
       const style = getComputedStyle(element);
       return {

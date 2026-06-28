@@ -200,11 +200,11 @@ function EventForm({ action, event, organizations, submitLabel }) {
         </label>
       </Field>
       <div className="flex flex-wrap items-center gap-4 pt-6">
-        <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+        <label className="inline-flex min-h-8 items-center gap-2 text-sm font-medium text-slate-700">
           <input name="isVirtual" type="checkbox" defaultChecked={Boolean(event?.isVirtual)} className="h-4 w-4 rounded border-slate-300" />
           Virtual event
         </label>
-        <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+        <label className="inline-flex min-h-8 items-center gap-2 text-sm font-medium text-slate-700">
           <input name="registrationRequired" type="checkbox" defaultChecked={Boolean(event?.registrationRequired)} className="h-4 w-4 rounded border-slate-300" />
           Registration required
         </label>
