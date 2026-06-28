@@ -109,6 +109,13 @@ async function runPublicDetailSmoke(page, profile) {
     await page.waitForURL(/\/stories\/[^/?#]+/, { timeout: 15000 });
     await assertNoHorizontalOverflow(page, `${profile} story detail`);
     await assertNoTinyTapTargets(page, `${profile} story detail`);
+    const shareSummary = page.locator('summary').filter({ hasText: /^Share$/ }).first();
+    if (await shareSummary.count()) {
+      await shareSummary.click();
+      await page.getByRole('menu').waitFor({ timeout: 15000 });
+      await assertNoHorizontalOverflow(page, `${profile} story share menu`);
+      await assertNoTinyTapTargets(page, `${profile} story share menu`);
+    }
   }
 }
 
