@@ -53,6 +53,7 @@ async function runProfile(profile) {
   }
   await runRoleSettingsSmoke(page, name);
   await runAdminAddEventSmoke(page, name);
+  await runAdminAddOrganizationSmoke(page, name);
 
   await goto(page, '/admin/testimonies');
   await page.getByTestId('ml-quick-test').waitFor({ timeout: 15000 });
@@ -190,6 +191,14 @@ async function runAdminAddEventSmoke(page, profile) {
   await page.getByRole('heading', { name: /^Add event$/i }).waitFor({ timeout: 15000 });
   await assertNoHorizontalOverflow(page, `${profile} add event form`);
   await assertNoTinyTapTargets(page, `${profile} add event form`);
+}
+
+async function runAdminAddOrganizationSmoke(page, profile) {
+  await goto(page, '/admin/organizations');
+  await page.getByRole('button', { name: /^Add organization$/i }).click();
+  await page.getByRole('heading', { name: /^Add organization$/i }).waitFor({ timeout: 15000 });
+  await assertNoHorizontalOverflow(page, `${profile} add organization form`);
+  await assertNoTinyTapTargets(page, `${profile} add organization form`);
 }
 
 async function runSubmitReviewSmoke(page, profile) {
