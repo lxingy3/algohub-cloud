@@ -6,6 +6,7 @@ const adminPassword = process.env.MOBILE_SMOKE_ADMIN_PASSWORD || '';
 
 const publicRoutes = ['/', '/algorithms', '/stories', '/events', '/about', '/submit-testimony'];
 const adminRoutes = ['/admin', '/admin/algorithms', '/admin/events', '/admin/organizations', '/admin/testimonies', '/admin/comments', '/admin/users'];
+const profiles = ['iPhone 13', 'Pixel 5'];
 
 const browser = await chromium.launch({
   headless: true,
@@ -13,24 +14,34 @@ const browser = await chromium.launch({
 });
 
 try {
-  const page = await browser.newPage({ ...devices['iPhone 13'] });
+  for (const profile of profiles) {
+    await runProfile(profile);
+  }
 
+  console.log(`mobile smoke PASS ${baseUrl} (${profiles.join(', ')})`);
+} finally {
+  await browser.close();
+}
+
+async function runProfile(profile) {
+  const page = await browser.newPage({ ...devices[profile] });
+  try {
   for (const route of publicRoutes) {
     await goto(page, route);
-    await assertNoHorizontalOverflow(page, route);
-    await assertNoTinyTapTargets(page, route);
+    await assertNoHorizontalOverflow(page, `${profile} ${route}`);
+    await assertNoTinyTapTargets(page, `${profile} ${route}`);
   }
-  await runSubmitReviewSmoke(page);
+  await runSubmitReviewSmoke(page, profile);
 
   await page.getByRole('button', { name: /^Login$/i }).click();
   await page.getByRole('heading', { name: /^Login$/i }).waitFor({ timeout: 15000 });
-  await assertNoHorizontalOverflow(page, 'login modal');
+  await assertNoHorizontalOverflow(page, `${profile} login modal`);
 
   await login(page);
   for (const route of adminRoutes) {
     await goto(page, route);
-    await assertNoHorizontalOverflow(page, route);
-    await assertNoTinyTapTargets(page, route);
+    await assertNoHorizontalOverflow(page, `${profile} ${route}`);
+    await assertNoTinyTapTargets(page, `${profile} ${route}`);
   }
 
   await goto(page, '/admin/testimonies');
@@ -44,12 +55,11 @@ try {
   const closeButton = page.getByRole('button', { name: /Close add algorithm/i }).last();
   const box = await closeButton.boundingBox();
   if (!box || box.width < 40 || box.height < 40) {
-    throw new Error(`Add algorithm close button is too small on mobile: ${JSON.stringify(box)}`);
+    throw new Error(`${profile} add algorithm close button is too small on mobile: ${JSON.stringify(box)}`);
   }
-
-  console.log(`mobile smoke PASS ${baseUrl}`);
-} finally {
-  await browser.close();
+  } finally {
+    await page.close();
+  }
 }
 
 async function goto(page, route) {
@@ -67,7 +77,7 @@ async function login(page) {
   }, { adminEmail, adminPassword });
 }
 
-async function runSubmitReviewSmoke(page) {
+async function runSubmitReviewSmoke(page, profile) {
   await goto(page, '/submit-testimony');
   await page.evaluate(() => window.localStorage.removeItem('algostories-submit-draft'));
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -75,25 +85,25 @@ async function runSubmitReviewSmoke(page) {
   await page.getByRole('button', { name: /^Next$/i }).click();
   await page.locator('input[name="uncertainSystem"]').check();
   await page.locator('select[name="affectedDomain"]').selectOption('Housing');
-  await assertNoHorizontalOverflow(page, 'submit step 2');
-  await assertNoTinyTapTargets(page, 'submit step 2');
+  await assertNoHorizontalOverflow(page, `${profile} submit step 2`);
+  await assertNoTinyTapTargets(page, `${profile} submit step 2`);
 
   await page.getByRole('button', { name: /^Next$/i }).click();
   await page.locator('input[name="title"]').fill('Mobile smoke story');
   await page.locator('textarea[name="narrativeText"]').fill('A short mobile smoke story about a housing decision that needs review.');
-  await assertNoHorizontalOverflow(page, 'submit step 3');
-  await assertNoTinyTapTargets(page, 'submit step 3');
+  await assertNoHorizontalOverflow(page, `${profile} submit step 3`);
+  await assertNoTinyTapTargets(page, `${profile} submit step 3`);
 
   await page.getByRole('button', { name: /^Next$/i }).click();
   await page.locator('input[name="city"]').fill('Pittsburgh');
-  await assertNoHorizontalOverflow(page, 'submit step 4');
-  await assertNoTinyTapTargets(page, 'submit step 4');
+  await assertNoHorizontalOverflow(page, `${profile} submit step 4`);
+  await assertNoTinyTapTargets(page, `${profile} submit step 4`);
 
   await page.getByRole('button', { name: /^Next$/i }).click();
   await page.getByText('Mobile smoke story', { exact: true }).waitFor({ timeout: 15000 });
   await page.getByText('A short mobile smoke story about a housing decision that needs review.').waitFor({ timeout: 15000 });
-  await assertNoHorizontalOverflow(page, 'submit review');
-  await assertNoTinyTapTargets(page, 'submit review');
+  await assertNoHorizontalOverflow(page, `${profile} submit review`);
+  await assertNoTinyTapTargets(page, `${profile} submit review`);
 }
 
 async function runMlQuickTestSmoke(page) {
