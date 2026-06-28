@@ -57,6 +57,7 @@ async function runProfile(profile) {
 
   await goto(page, '/admin/testimonies');
   await page.getByTestId('ml-quick-test').waitFor({ timeout: 15000 });
+  await runAdminTestimonyPanelsSmoke(page, name);
   const accept = await page.locator('#ml-quick-test-audio').getAttribute('accept');
   if (!String(accept || '').includes('video/*')) throw new Error('ML Quick Test media input does not accept video.');
   await runMlQuickTestSmoke(page);
@@ -202,6 +203,26 @@ async function runAdminAddOrganizationSmoke(page, profile) {
   await page.getByRole('heading', { name: /^Add organization$/i }).waitFor({ timeout: 15000 });
   await assertNoHorizontalOverflow(page, `${profile} add organization form`);
   await assertNoTinyTapTargets(page, `${profile} add organization form`);
+}
+
+async function runAdminTestimonyPanelsSmoke(page, profile) {
+  const firstTestimony = page.locator('form[action*="/api/admin/testimonies/"]').first();
+  if (!await firstTestimony.count()) return;
+
+  const storyDetails = firstTestimony.getByRole('button', { name: /^Expand Story details$/i }).first();
+  if (await storyDetails.count()) {
+    await storyDetails.click();
+    await assertNoHorizontalOverflow(page, `${profile} expanded story details`);
+    await assertNoTinyTapTargets(page, `${profile} expanded story details`);
+  }
+
+  const mlPipeline = firstTestimony.getByRole('button', { name: /^Expand ML Pipeline$/i }).first();
+  if (await mlPipeline.count()) {
+    await mlPipeline.click();
+    await firstTestimony.getByText(/Task 2 impact classification/i).waitFor({ timeout: 15000 });
+    await assertNoHorizontalOverflow(page, `${profile} expanded ML Pipeline`);
+    await assertNoTinyTapTargets(page, `${profile} expanded ML Pipeline`);
+  }
 }
 
 async function runSubmitReviewSmoke(page, profile) {
