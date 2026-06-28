@@ -63,6 +63,7 @@ async function runProfile(profile) {
   await runAdminTestimonyPanelsSmoke(page, name);
   const accept = await page.locator('#ml-quick-test-audio').getAttribute('accept');
   if (!String(accept || '').includes('video/*')) throw new Error('ML Quick Test media input does not accept video.');
+  await runMlQuickTestVideoSmoke(page);
   await runMlQuickTestSmoke(page);
 
   await goto(page, '/admin/algorithms');
@@ -85,7 +86,14 @@ function profileName(profile) {
 }
 
 async function goto(page, route) {
-  await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  const url = `${baseUrl}${route}`;
+  try {
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  } catch (error) {
+    if (!String(error?.message || error).includes('ERR_NETWORK_IO_SUSPENDED')) throw error;
+    await page.waitForTimeout(1000);
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  }
   await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
 }
 
@@ -272,7 +280,7 @@ async function runAdminTestimonyPanelsSmoke(page, profile) {
 async function runSubmitReviewSmoke(page, profile) {
   await goto(page, '/submit-testimony');
   await page.evaluate(() => window.localStorage.removeItem('algostories-submit-draft'));
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await goto(page, '/submit-testimony');
 
   await page.getByRole('button', { name: /^Next$/i }).click();
   await page.locator('input[name="uncertainSystem"]').check();
@@ -326,6 +334,82 @@ async function runMlQuickTestSmoke(page) {
   await assertNoHorizontalOverflow(page, 'admin ML Quick Test result');
   await assertNoTinyTapTargets(page, 'admin ML Quick Test result');
   await page.unroute('**/api/ml/quick-test');
+}
+
+async function runMlQuickTestVideoSmoke(page) {
+  let presignBody = null;
+  let uploaded = false;
+  const quickTestBodies = [];
+
+  await page.route('**/api/uploads/presign', async (route) => {
+    presignBody = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        uploadUrl: `${baseUrl}/mobile-smoke-video-upload`,
+        objectKey: 'testimonies/video/mobile-smoke.mov',
+        storageUri: 'gcs://mobile-smoke/testimonies/video/mobile-smoke.mov',
+        provider: 'firebase-gcs',
+        contentType: presignBody.contentType,
+      }),
+    });
+  });
+  await page.route('**/mobile-smoke-video-upload', async (route) => {
+    uploaded = route.request().method() === 'PUT';
+    await route.fulfill({ status: 200, body: '' });
+  });
+  await page.route('**/api/ml/quick-test', async (route) => {
+    const quickTestBody = route.request().postDataJSON();
+    quickTestBodies.push(quickTestBody);
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ok: true,
+        result: {
+          summary: 'A short video story was transcribed from its audio track.',
+          inputField: 'audio',
+          source: 'audio-upload',
+          status: 'PARTIAL',
+          task1: {
+            status: 'COMPLETED',
+            tool: 'openai/whisper-large-v3',
+            inputFile: 'mobile-smoke.mov',
+            transcript: 'A short video story was transcribed from its audio track.',
+            rawTranscript: 'A short video story was transcribed from its audio track.',
+            segments: [],
+          },
+        },
+      }),
+    });
+  });
+
+  try {
+    const quickTest = page.getByTestId('ml-quick-test');
+    await quickTest.locator('textarea[name="narrative_text"]').fill('');
+    await quickTest.locator('#ml-quick-test-audio').setInputFiles({
+      name: 'mobile-smoke.mov',
+      mimeType: 'video/quicktime',
+      buffer: Buffer.from('mobile smoke video placeholder'),
+    });
+    await quickTest.getByRole('button', { name: /^Run ML test$/i }).click();
+    await quickTest.getByText(/Task 1 transcription/i).waitFor({ timeout: 20000 });
+    await quickTest.getByText(/A short video story was transcribed/i).first().waitFor({ timeout: 20000 });
+    if (presignBody?.kind !== 'video') {
+      throw new Error(`ML Quick Test video upload used wrong presign kind: ${JSON.stringify(presignBody)}`);
+    }
+    if (!uploaded) throw new Error('ML Quick Test video upload did not PUT the selected video file.');
+    if (!quickTestBodies.some((body) => body?.mediaObjectKey === 'testimonies/video/mobile-smoke.mov')) {
+      throw new Error(`ML Quick Test video did not run from stored media: ${JSON.stringify(quickTestBodies)}`);
+    }
+    await assertNoHorizontalOverflow(page, 'admin ML Quick Test video result');
+    await assertNoTinyTapTargets(page, 'admin ML Quick Test video result');
+  } finally {
+    await page.unroute('**/api/uploads/presign').catch(() => {});
+    await page.unroute('**/mobile-smoke-video-upload').catch(() => {});
+    await page.unroute('**/api/ml/quick-test').catch(() => {});
+  }
 }
 
 async function assertNoHorizontalOverflow(page, label) {

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { MEDIA_ACCEPT, audioContentTypeForFile } from '../../../lib/audioAccept';
-import { extractAudioTrackFromVideo, getMediaDurationSeconds } from '../../../lib/clientMedia';
+import { getMediaDurationSeconds } from '../../../lib/clientMedia';
 
 const MAX_NARRATIVE_TEXT_CHARS = 12000;
 const MAX_AUDIO_DURATION_SECONDS = 30 * 60;
@@ -224,7 +224,7 @@ export default function MLQuickTest() {
             <button
               type="button"
               onClick={clearAudioInput}
-              className="mt-2 text-xs font-semibold text-slate-600 hover:text-slate-950"
+              className="mt-2 min-h-10 rounded-md px-2 text-xs font-semibold text-slate-600 hover:bg-white hover:text-slate-950"
             >
             Clear media
             </button>
@@ -303,15 +303,7 @@ async function uploadAudioForQuickTest(audioFile, signal) {
 async function buildAudioTask1Request(audioFile, signal, fallbackText = '', durationSeconds = null, updateStatus = () => {}) {
   const contentType = audioContentTypeForFile(audioFile);
   const isVideo = contentType.toLowerCase().startsWith('video/');
-  if (isVideo) {
-    try {
-      updateStatus('Extracting audio from video...');
-      const extractedAudio = await extractAudioTrackFromVideo(audioFile, updateStatus, signal, durationSeconds);
-      return buildAudioTask1Request(extractedAudio, signal, fallbackText, durationSeconds, updateStatus);
-    } catch (videoAudioError) {
-      console.warn('Browser video audio extraction failed; uploading video for server-side transcription', videoAudioError);
-    }
-  }
+  if (isVideo) updateStatus('Uploading video for audio transcription...');
   try {
     const uploadedAudio = await uploadAudioForQuickTest(audioFile, signal);
     return buildStoredAudioRequest(uploadedAudio, 'task1', signal, fallbackText);
