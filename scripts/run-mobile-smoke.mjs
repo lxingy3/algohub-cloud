@@ -91,13 +91,17 @@ async function goto(page, route) {
 
 async function runLanguageSelectorSmoke(page, profile) {
   await goto(page, '/');
-  const selector = page.getByRole('combobox', { name: /language|idioma|语言/i }).first();
+  const selector = page.locator('header select').first();
   await selector.selectOption('es');
   await page.waitForFunction(() => document.documentElement.lang.startsWith('es'), null, { timeout: 15000 });
   await assertNoHorizontalOverflow(page, `${profile} Spanish language switch`);
   await assertNoTinyTapTargets(page, `${profile} Spanish language switch`);
+  await selector.selectOption('ar');
+  await page.waitForFunction(() => document.documentElement.lang.startsWith('ar') && document.documentElement.dir === 'rtl', null, { timeout: 15000 });
+  await assertNoHorizontalOverflow(page, `${profile} Arabic RTL language switch`);
+  await assertNoTinyTapTargets(page, `${profile} Arabic RTL language switch`);
   await selector.selectOption('en');
-  await page.waitForFunction(() => document.documentElement.lang.startsWith('en'), null, { timeout: 15000 });
+  await page.waitForFunction(() => document.documentElement.lang.startsWith('en') && document.documentElement.dir === 'ltr', null, { timeout: 15000 });
 }
 
 async function login(page) {
