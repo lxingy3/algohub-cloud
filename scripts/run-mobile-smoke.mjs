@@ -63,6 +63,9 @@ async function runProfile(profile) {
 
   await goto(page, '/admin/algorithms');
   await page.getByRole('button', { name: /Add algorithm/i }).click();
+  await page.getByRole('dialog').waitFor({ timeout: 15000 });
+  await assertNoHorizontalOverflow(page, `${name} add algorithm modal`);
+  await assertNoTinyTapTargets(page, `${name} add algorithm modal`);
   const closeButton = page.getByRole('button', { name: /Close add algorithm/i }).last();
   const box = await closeButton.boundingBox();
   if (!box || box.width < 40 || box.height < 40) {
