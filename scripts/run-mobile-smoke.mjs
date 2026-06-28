@@ -6,7 +6,7 @@ const adminPassword = process.env.MOBILE_SMOKE_ADMIN_PASSWORD || '';
 
 const publicRoutes = ['/', '/algorithms', '/stories', '/events', '/about', '/submit-testimony'];
 const adminRoutes = ['/admin', '/admin/algorithms', '/admin/events', '/admin/organizations', '/admin/testimonies', '/admin/comments', '/admin/users'];
-const profiles = ['iPhone 13', 'Pixel 5'];
+const profiles = ['iPhone 13', 'Pixel 5', { name: 'Small 320px', viewport: { width: 320, height: 640 }, isMobile: true, hasTouch: true }];
 
 const browser = await chromium.launch({
   headless: true,
@@ -18,30 +18,31 @@ try {
     await runProfile(profile);
   }
 
-  console.log(`mobile smoke PASS ${baseUrl} (${profiles.join(', ')})`);
+  console.log(`mobile smoke PASS ${baseUrl} (${profiles.map(profileName).join(', ')})`);
 } finally {
   await browser.close();
 }
 
 async function runProfile(profile) {
-  const page = await browser.newPage({ ...devices[profile] });
+  const name = profileName(profile);
+  const page = await browser.newPage(typeof profile === 'string' ? { ...devices[profile] } : profile);
   try {
   for (const route of publicRoutes) {
     await goto(page, route);
-    await assertNoHorizontalOverflow(page, `${profile} ${route}`);
-    await assertNoTinyTapTargets(page, `${profile} ${route}`);
+    await assertNoHorizontalOverflow(page, `${name} ${route}`);
+    await assertNoTinyTapTargets(page, `${name} ${route}`);
   }
-  await runSubmitReviewSmoke(page, profile);
+  await runSubmitReviewSmoke(page, name);
 
   await page.getByRole('button', { name: /^Login$/i }).click();
   await page.getByRole('heading', { name: /^Login$/i }).waitFor({ timeout: 15000 });
-  await assertNoHorizontalOverflow(page, `${profile} login modal`);
+  await assertNoHorizontalOverflow(page, `${name} login modal`);
 
   await login(page);
   for (const route of adminRoutes) {
     await goto(page, route);
-    await assertNoHorizontalOverflow(page, `${profile} ${route}`);
-    await assertNoTinyTapTargets(page, `${profile} ${route}`);
+    await assertNoHorizontalOverflow(page, `${name} ${route}`);
+    await assertNoTinyTapTargets(page, `${name} ${route}`);
   }
 
   await goto(page, '/admin/testimonies');
@@ -55,11 +56,15 @@ async function runProfile(profile) {
   const closeButton = page.getByRole('button', { name: /Close add algorithm/i }).last();
   const box = await closeButton.boundingBox();
   if (!box || box.width < 40 || box.height < 40) {
-    throw new Error(`${profile} add algorithm close button is too small on mobile: ${JSON.stringify(box)}`);
+    throw new Error(`${name} add algorithm close button is too small on mobile: ${JSON.stringify(box)}`);
   }
   } finally {
     await page.close();
   }
+}
+
+function profileName(profile) {
+  return typeof profile === 'string' ? profile : profile.name;
 }
 
 async function goto(page, route) {
