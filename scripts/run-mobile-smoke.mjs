@@ -51,6 +51,7 @@ async function runProfile(profile) {
     await assertNoHorizontalOverflow(page, `${name} ${route}`);
     await assertNoTinyTapTargets(page, `${name} ${route}`);
   }
+  await runRoleSettingsSmoke(page, name);
 
   await goto(page, '/admin/testimonies');
   await page.getByTestId('ml-quick-test').waitFor({ timeout: 15000 });
@@ -170,6 +171,16 @@ async function runAuthModalSmoke(page, profile) {
   dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: /^Back to login$/i }).click();
   await page.getByRole('heading', { name: /^Login$/i }).waitFor({ timeout: 15000 });
+}
+
+async function runRoleSettingsSmoke(page, profile) {
+  await goto(page, '/admin/users');
+  await page.getByRole('button', { name: /^Role settings$/i }).click();
+  await page.getByRole('dialog').waitFor({ timeout: 15000 });
+  await assertNoHorizontalOverflow(page, `${profile} role settings modal`);
+  await assertNoTinyTapTargets(page, `${profile} role settings modal`);
+  await page.getByRole('button', { name: /^Close role settings$/i }).last().click();
+  await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 15000 });
 }
 
 async function runSubmitReviewSmoke(page, profile) {
