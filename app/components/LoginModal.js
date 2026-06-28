@@ -140,7 +140,7 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
               {resetLoading ? 'Submitting...' : 'Request reset link'}
             </button>
             {resetMessage ? <p className="rounded-md bg-amber-50 p-3 text-sm leading-6 text-amber-800">{resetMessage}</p> : null}
-            <button type="button" onClick={() => setMode('login')} className="text-sm font-semibold text-blue-700">
+            <button type="button" onClick={() => setMode('login')} className="inline-flex min-h-8 items-center text-sm font-semibold text-blue-700">
               Back to login
             </button>
           </form>
@@ -204,16 +204,16 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
         <p className="mt-4 text-sm text-slate-600">
           {t('login.noAccount', { defaultValue: 'No account?' })}{' '}
           {onSignup ? (
-            <button type="button" onClick={onSignup} className="font-semibold text-blue-700">
+            <button type="button" onClick={onSignup} className="inline-flex min-h-8 items-center font-semibold text-blue-700">
               {t('login.signUp', { defaultValue: 'Sign up' })}
             </button>
           ) : (
-            <Link href="/signup" className="font-semibold text-blue-700">
+            <Link href="/signup" className="inline-flex min-h-8 items-center font-semibold text-blue-700">
               {t('login.signUp', { defaultValue: 'Sign up' })}
             </Link>
           )}
         </p>
-        <button type="button" onClick={openResetMode} className="mt-4 text-sm font-semibold text-blue-700">
+        <button type="button" onClick={openResetMode} className="mt-2 inline-flex min-h-8 items-center text-sm font-semibold text-blue-700">
           Forgot password?
         </button>
           </>

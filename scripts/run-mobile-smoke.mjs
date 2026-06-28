@@ -38,6 +38,8 @@ async function runProfile(profile) {
   await page.getByRole('button', { name: /^Login$/i }).click();
   await page.getByRole('heading', { name: /^Login$/i }).waitFor({ timeout: 15000 });
   await assertNoHorizontalOverflow(page, `${name} login modal`);
+  await assertNoTinyTapTargets(page, `${name} login modal`);
+  await runAuthModalSmoke(page, name);
 
   await login(page);
   await dismissPasswordReminder(page);
@@ -133,6 +135,27 @@ async function runMyStoriesSmoke(page, profile) {
     await assertNoHorizontalOverflow(page, `${profile} edit my story`);
     await assertNoTinyTapTargets(page, `${profile} edit my story`);
   }
+}
+
+async function runAuthModalSmoke(page, profile) {
+  let dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: /^Sign up$/i }).click();
+  await page.getByRole('heading', { name: /^Signup$/i }).waitFor({ timeout: 15000 });
+  await assertNoHorizontalOverflow(page, `${profile} signup modal`);
+  await assertNoTinyTapTargets(page, `${profile} signup modal`);
+
+  dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: /^Login$/i }).click();
+  await page.getByRole('heading', { name: /^Login$/i }).waitFor({ timeout: 15000 });
+  dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: /^Forgot password\?$/i }).click();
+  await page.getByRole('heading', { name: /^Reset password$/i }).waitFor({ timeout: 15000 });
+  await assertNoHorizontalOverflow(page, `${profile} reset password modal`);
+  await assertNoTinyTapTargets(page, `${profile} reset password modal`);
+
+  dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: /^Back to login$/i }).click();
+  await page.getByRole('heading', { name: /^Login$/i }).waitFor({ timeout: 15000 });
 }
 
 async function runSubmitReviewSmoke(page, profile) {

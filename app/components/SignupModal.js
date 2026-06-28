@@ -93,9 +93,9 @@ export function SignupModal({ open, onClose, onLogin, forceOpen = false, errorMe
         <p className="mt-4 text-sm text-slate-600">
           Already have one?{' '}
           {onLogin ? (
-            <button type="button" onClick={onLogin} className="font-semibold text-blue-700">Login</button>
+            <button type="button" onClick={onLogin} className="inline-flex min-h-8 items-center font-semibold text-blue-700">Login</button>
           ) : (
-            <Link href="/login" className="font-semibold text-blue-700">Login</Link>
+            <Link href="/login" className="inline-flex min-h-8 items-center font-semibold text-blue-700">Login</Link>
           )}
         </p>
       </div>
