@@ -37,6 +37,7 @@ try {
   await page.getByTestId('ml-quick-test').waitFor({ timeout: 15000 });
   const accept = await page.locator('#ml-quick-test-audio').getAttribute('accept');
   if (!String(accept || '').includes('video/*')) throw new Error('ML Quick Test media input does not accept video.');
+  await runMlQuickTestSmoke(page);
 
   await goto(page, '/admin/algorithms');
   await page.getByRole('button', { name: /Add algorithm/i }).click();
@@ -93,6 +94,36 @@ async function runSubmitReviewSmoke(page) {
   await page.getByText('A short mobile smoke story about a housing decision that needs review.').waitFor({ timeout: 15000 });
   await assertNoHorizontalOverflow(page, 'submit review');
   await assertNoTinyTapTargets(page, 'submit review');
+}
+
+async function runMlQuickTestSmoke(page) {
+  await page.route('**/api/ml/quick-test', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ok: true,
+        result: {
+          summary: 'A resident reports a housing decision that needs review.',
+          task1: { status: 'SKIPPED', reason: 'Text input does not need transcription.' },
+          task2: { status: 'COMPLETED', aiImpactClassification: 'NEGATIVE', aiConfidenceScore: 0.88, humanReviewRequired: false },
+          task3: { status: 'COMPLETED', aiThemes: [{ theme: 'ACCESS_TO_SERVICES', confidence: 0.81 }] },
+          task4: { status: 'COMPLETED', entities: { agencies: ['Housing Authority'], locations: ['Pittsburgh'], systems: ['voucher portal'], dates: [], people_roles: ['caseworker'] } },
+          task5: { status: 'COMPLETED', keywords: ['housing voucher', 'caseworker'] },
+        },
+      }),
+    });
+  });
+
+  const quickTest = page.getByTestId('ml-quick-test');
+  await quickTest.locator('textarea[name="narrative_text"]').fill('My housing voucher review was delayed by an automated portal.');
+  await quickTest.getByRole('button', { name: /^Run ML test$/i }).click();
+  await quickTest.getByText(/Task 2 impact classification/i).waitFor({ timeout: 15000 });
+  await quickTest.getByText('NEGATIVE').waitFor({ timeout: 15000 });
+  await quickTest.getByText('housing voucher', { exact: true }).waitFor({ timeout: 15000 });
+  await assertNoHorizontalOverflow(page, 'admin ML Quick Test result');
+  await assertNoTinyTapTargets(page, 'admin ML Quick Test result');
+  await page.unroute('**/api/ml/quick-test');
 }
 
 async function assertNoHorizontalOverflow(page, label) {
