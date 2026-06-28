@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Check, ChevronLeft, ChevronRight, Mic, Pause, Play, Send, Shield, Trash2, Type, Upload, Users } from 'lucide-react';
 import { MEDIA_ACCEPT, audioContentTypeForFile } from '../../lib/audioAccept';
-import { extractAudioTrackFromVideo, getMediaDurationSeconds } from '../../lib/clientMedia';
+import { getMediaDurationSeconds } from '../../lib/clientMedia';
 
 const steps = ['submit.stepShare', 'submit.stepSystem', 'submit.stepStory', 'submit.stepDetails', 'submit.stepReview'];
 const methods = [
@@ -275,16 +275,10 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
     if (uploadedMedia) return uploadedMedia;
     if (!mediaFile) throw new Error(t('submit.uploadFailed'));
 
-    let uploadFile = mediaFile;
+    const uploadFile = mediaFile;
     const initialContentType = audioContentTypeForFile(mediaFile);
     if (initialContentType.toLowerCase().startsWith('video/')) {
-      setMessage('Extracting audio from video...');
-      try {
-        uploadFile = await extractAudioTrackFromVideo(mediaFile, setMessage, undefined, mediaDurationSeconds);
-      } catch (error) {
-        // ponytail: mobile Safari cannot capture video streams; worker reads the audio track server-side.
-        console.warn('Browser video audio extraction failed; uploading video for server-side transcription', error);
-      }
+      setMessage('Uploading video for audio transcription...');
     }
     const uploadContentType = audioContentTypeForFile(uploadFile);
     const uploadKind = uploadContentType.toLowerCase().startsWith('video/') ? 'video' : 'audio';

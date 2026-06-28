@@ -37,6 +37,7 @@ async function runProfile(profile) {
   await runEventModalSmoke(page, name);
   await runPartnerApplicationSmoke(page, name);
   await runSubmitReviewSmoke(page, name);
+  await runSubmitVideoMediaSmoke(page, name);
 
   await page.getByRole('button', { name: /^Login$/i }).click();
   await page.getByRole('heading', { name: /^Login$/i }).waitFor({ timeout: 15000 });
@@ -304,6 +305,67 @@ async function runSubmitReviewSmoke(page, profile) {
   await page.getByText('A short mobile smoke story about a housing decision that needs review.').waitFor({ timeout: 15000 });
   await assertNoHorizontalOverflow(page, `${profile} submit review`);
   await assertNoTinyTapTargets(page, `${profile} submit review`);
+}
+
+async function runSubmitVideoMediaSmoke(page, profile) {
+  let presignBody = null;
+  let uploaded = false;
+
+  await page.route('**/api/uploads/presign', async (route) => {
+    presignBody = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        uploadUrl: `${baseUrl}/submit-video-smoke-upload`,
+        objectKey: 'testimonies/video/submit-video-smoke.mov',
+        storageUri: 'gcs://mobile-smoke/testimonies/video/submit-video-smoke.mov',
+        provider: 'firebase-gcs',
+        contentType: presignBody.contentType,
+      }),
+    });
+  });
+  await page.route('**/submit-video-smoke-upload', async (route) => {
+    uploaded = route.request().method() === 'PUT';
+    await route.fulfill({ status: 200, body: '' });
+  });
+
+  try {
+    await goto(page, '/submit-testimony');
+    await page.evaluate(() => window.localStorage.removeItem('algostories-submit-draft'));
+    await goto(page, '/submit-testimony');
+
+    await page.getByRole('button', { name: /Record your story/i }).click();
+    await page.getByRole('button', { name: /^Next$/i }).click();
+    await page.locator('input[name="uncertainSystem"]').check();
+    await page.locator('select[name="affectedDomain"]').selectOption('Housing');
+    await page.getByRole('button', { name: /^Next$/i }).click();
+    await page.locator('input[name="title"]').fill('Mobile video smoke story');
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'submit-video-smoke.mov',
+      mimeType: 'video/quicktime',
+      buffer: Buffer.from('submit video smoke placeholder'),
+    });
+    await page.getByRole('button', { name: /^Next$/i }).click();
+    await page.locator('input[name="city"]').waitFor({ timeout: 20000 });
+
+    if (presignBody?.kind !== 'video') {
+      throw new Error(`Submit video media used wrong presign kind: ${JSON.stringify(presignBody)}`);
+    }
+    if (!uploaded) throw new Error('Submit video media did not PUT the selected video file.');
+
+    await page.locator('input[name="city"]').fill('Pittsburgh');
+    await assertNoHorizontalOverflow(page, `${profile} submit video details`);
+    await assertNoTinyTapTargets(page, `${profile} submit video details`);
+    await page.getByRole('button', { name: /^Next$/i }).click();
+    await page.getByText('Mobile video smoke story', { exact: true }).waitFor({ timeout: 15000 });
+    await page.getByText(/Media uploaded/i).waitFor({ timeout: 15000 });
+    await assertNoHorizontalOverflow(page, `${profile} submit video review`);
+    await assertNoTinyTapTargets(page, `${profile} submit video review`);
+  } finally {
+    await page.unroute('**/api/uploads/presign').catch(() => {});
+    await page.unroute('**/submit-video-smoke-upload').catch(() => {});
+  }
 }
 
 async function runMlQuickTestSmoke(page) {
