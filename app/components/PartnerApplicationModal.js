@@ -52,7 +52,7 @@ export function PartnerApplicationModal({ status }) {
                 <h3 id="partner-application-title" className="text-xl font-bold text-gray-900">Partner application</h3>
                 <p className="mt-2 text-sm leading-6 text-gray-600">Tell us how your organization would like to support community story collection, outreach, or review.</p>
               </div>
-              <button type="button" onClick={() => setOpen(false)} className="rounded-md border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+              <button type="button" onClick={() => setOpen(false)} className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 hover:text-gray-900" aria-label="Close partner application">
                 <X className="h-4 w-4" />
               </button>
             </div>

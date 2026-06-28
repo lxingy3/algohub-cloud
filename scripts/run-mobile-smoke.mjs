@@ -34,6 +34,7 @@ async function runProfile(profile) {
   }
   await runPublicDetailSmoke(page, name);
   await runEventModalSmoke(page, name);
+  await runPartnerApplicationSmoke(page, name);
   await runSubmitReviewSmoke(page, name);
 
   await page.getByRole('button', { name: /^Login$/i }).click();
@@ -139,6 +140,16 @@ async function runEventModalSmoke(page, profile) {
   await assertNoHorizontalOverflow(page, `${profile} event details modal`);
   await assertNoTinyTapTargets(page, `${profile} event details modal`);
   await page.getByRole('button', { name: /^Close event details$/i }).click();
+  await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 15000 });
+}
+
+async function runPartnerApplicationSmoke(page, profile) {
+  await goto(page, '/about');
+  await page.getByRole('button', { name: /^Apply to partner$/i }).click();
+  await page.getByRole('dialog').waitFor({ timeout: 15000 });
+  await assertNoHorizontalOverflow(page, `${profile} partner application modal`);
+  await assertNoTinyTapTargets(page, `${profile} partner application modal`);
+  await page.getByRole('button', { name: /^Close partner application$/i }).last().click();
   await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 15000 });
 }
 
