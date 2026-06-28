@@ -32,6 +32,7 @@ async function runProfile(profile) {
     await assertNoHorizontalOverflow(page, `${name} ${route}`);
     await assertNoTinyTapTargets(page, `${name} ${route}`);
   }
+  await runPublicDetailSmoke(page, name);
   await runSubmitReviewSmoke(page, name);
 
   await page.getByRole('button', { name: /^Login$/i }).click();
@@ -80,6 +81,26 @@ async function login(page) {
     form.set('callbackUrl', '/admin');
     await fetch('/api/auth/login', { method: 'POST', body: form, redirect: 'manual' });
   }, { adminEmail, adminPassword });
+}
+
+async function runPublicDetailSmoke(page, profile) {
+  await goto(page, '/algorithms');
+  const algorithmLink = page.locator('a[href^="/algorithms/"]').first();
+  if (await algorithmLink.count()) {
+    await algorithmLink.click();
+    await page.waitForURL(/\/algorithms\/[^/?#]+/, { timeout: 15000 });
+    await assertNoHorizontalOverflow(page, `${profile} algorithm detail`);
+    await assertNoTinyTapTargets(page, `${profile} algorithm detail`);
+  }
+
+  await goto(page, '/stories');
+  const storyLink = page.locator('a[href^="/stories/"]').first();
+  if (await storyLink.count()) {
+    await storyLink.click();
+    await page.waitForURL(/\/stories\/[^/?#]+/, { timeout: 15000 });
+    await assertNoHorizontalOverflow(page, `${profile} story detail`);
+    await assertNoTinyTapTargets(page, `${profile} story detail`);
+  }
 }
 
 async function runSubmitReviewSmoke(page, profile) {

@@ -76,9 +76,9 @@ export default async function StoryPage({ params }) {
           Back to Stories
         </Link>
         <nav className="mt-2 flex items-center gap-2 text-sm text-gray-500" aria-label="Breadcrumb">
-          <Link href="/" className="hover:text-gray-900">Home</Link>
+          <Link href="/" className="inline-flex min-h-11 items-center hover:text-gray-900">Home</Link>
           <span>/</span>
-          <Link href="/stories" className="hover:text-gray-900">Stories</Link>
+          <Link href="/stories" className="inline-flex min-h-11 items-center hover:text-gray-900">Stories</Link>
           <span>/</span>
           <span className="max-w-[200px] truncate text-gray-900" title={testimony.title}>{testimony.title}</span>
         </nav>
