@@ -55,6 +55,7 @@ async function runProfile(profile) {
     await assertNoTinyTapTargets(page, `${name} ${route}`);
   }
   await runRoleSettingsSmoke(page, name);
+  await runPasswordResetLinkSmoke(page, name);
   await runAdminAddEventSmoke(page, name);
   await runAdminAddOrganizationSmoke(page, name);
   await runAdminAlgorithmCardSmoke(page, name);
@@ -224,6 +225,46 @@ async function runRoleSettingsSmoke(page, profile) {
   await assertNoTinyTapTargets(page, `${profile} role settings modal`);
   await page.getByRole('button', { name: /^Close role settings$/i }).last().click();
   await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 15000 });
+}
+
+async function runPasswordResetLinkSmoke(page, profile) {
+  let requested = false;
+  await page.route('**/api/admin/users/*/password-reset', async (route) => {
+    requested = true;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        resetUrl: `${baseUrl}/auth/reset-password?token=mobile-smoke`,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      }),
+    });
+  });
+
+  try {
+    await goto(page, '/admin/users');
+    const resetButtons = page.getByRole('button', { name: /Get (requested |)reset link/i });
+    const resetButton = await firstEnabledLocator(resetButtons);
+    if (!resetButton) return;
+
+    await resetButton.click();
+    await page.getByText('Password reset link').waitFor({ timeout: 15000 });
+    await page.getByRole('button', { name: /^Copy link$/i }).waitFor({ timeout: 15000 });
+    if (!requested) throw new Error('Password reset link smoke did not call the reset endpoint.');
+    await assertNoHorizontalOverflow(page, `${profile} password reset link`);
+    await assertNoTinyTapTargets(page, `${profile} password reset link`);
+  } finally {
+    await page.unroute('**/api/admin/users/*/password-reset').catch(() => {});
+  }
+}
+
+async function firstEnabledLocator(locator) {
+  const count = await locator.count();
+  for (let index = 0; index < count; index += 1) {
+    const item = locator.nth(index);
+    if (!await item.isDisabled()) return item;
+  }
+  return null;
 }
 
 async function runAdminAddEventSmoke(page, profile) {

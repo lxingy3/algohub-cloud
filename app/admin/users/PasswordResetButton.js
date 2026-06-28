@@ -46,7 +46,7 @@ export function PasswordResetButton({ userId, disabled = false, requested = fals
           <p className="font-semibold text-slate-900">Password reset link</p>
           <p className="mt-1 break-all">{resetUrl}</p>
           <p className="mt-1 text-slate-500">Expires {formatDateTime(expiresAt)}</p>
-          <button type="button" onClick={copyLink} className="mt-2 rounded-md bg-slate-900 px-3 py-1.5 font-semibold text-white hover:bg-slate-800">
+          <button type="button" onClick={copyLink} className="mt-2 min-h-10 rounded-md bg-slate-900 px-3 py-2 font-semibold text-white hover:bg-slate-800">
             {copied ? 'Copied' : 'Copy link'}
           </button>
         </div>
