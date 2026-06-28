@@ -33,6 +33,7 @@ async function runProfile(profile) {
     await assertNoTinyTapTargets(page, `${name} ${route}`);
   }
   await runPublicDetailSmoke(page, name);
+  await runEventModalSmoke(page, name);
   await runSubmitReviewSmoke(page, name);
 
   await page.getByRole('button', { name: /^Login$/i }).click();
@@ -119,6 +120,19 @@ async function runPublicDetailSmoke(page, profile) {
       await assertNoTinyTapTargets(page, `${profile} story share menu`);
     }
   }
+}
+
+async function runEventModalSmoke(page, profile) {
+  await goto(page, '/events');
+  const detailsButton = page.getByRole('button', { name: /details for/i }).first();
+  if (!await detailsButton.count()) return;
+
+  await detailsButton.click();
+  await page.getByRole('dialog').waitFor({ timeout: 15000 });
+  await assertNoHorizontalOverflow(page, `${profile} event details modal`);
+  await assertNoTinyTapTargets(page, `${profile} event details modal`);
+  await page.getByRole('button', { name: /^Close event details$/i }).click();
+  await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 15000 });
 }
 
 async function runMyStoriesSmoke(page, profile) {
