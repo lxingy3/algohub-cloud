@@ -40,6 +40,9 @@ async function runProfile(profile) {
   await assertNoHorizontalOverflow(page, `${name} login modal`);
 
   await login(page);
+  await dismissPasswordReminder(page);
+  await runMyStoriesSmoke(page, name);
+
   for (const route of adminRoutes) {
     await goto(page, route);
     await assertNoHorizontalOverflow(page, `${name} ${route}`);
@@ -83,6 +86,12 @@ async function login(page) {
   }, { adminEmail, adminPassword });
 }
 
+async function dismissPasswordReminder(page) {
+  const laterButton = page.getByRole('button', { name: /^Later$/i });
+  await laterButton.waitFor({ state: 'visible', timeout: 2000 }).catch(() => {});
+  if (await laterButton.isVisible().catch(() => false)) await laterButton.click();
+}
+
 async function runPublicDetailSmoke(page, profile) {
   await goto(page, '/algorithms');
   const algorithmLink = page.locator('a[href^="/algorithms/"]').first();
@@ -100,6 +109,22 @@ async function runPublicDetailSmoke(page, profile) {
     await page.waitForURL(/\/stories\/[^/?#]+/, { timeout: 15000 });
     await assertNoHorizontalOverflow(page, `${profile} story detail`);
     await assertNoTinyTapTargets(page, `${profile} story detail`);
+  }
+}
+
+async function runMyStoriesSmoke(page, profile) {
+  await goto(page, '/my-stories');
+  await dismissPasswordReminder(page);
+  await assertNoHorizontalOverflow(page, `${profile} my stories`);
+  await assertNoTinyTapTargets(page, `${profile} my stories`);
+
+  const editLink = page.locator('a[href^="/my-stories/"][href$="/edit"]').first();
+  if (await editLink.count()) {
+    await editLink.click();
+    await page.waitForURL(/\/my-stories\/[^/?#]+\/edit/, { timeout: 15000 });
+    await page.getByRole('button', { name: /Resubmit for Review/i }).waitFor({ timeout: 15000 });
+    await assertNoHorizontalOverflow(page, `${profile} edit my story`);
+    await assertNoTinyTapTargets(page, `${profile} edit my story`);
   }
 }
 
