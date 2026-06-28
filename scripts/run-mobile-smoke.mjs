@@ -55,6 +55,7 @@ async function runProfile(profile) {
   await runRoleSettingsSmoke(page, name);
   await runAdminAddEventSmoke(page, name);
   await runAdminAddOrganizationSmoke(page, name);
+  await runAdminAlgorithmCardSmoke(page, name);
 
   await goto(page, '/admin/testimonies');
   await page.getByTestId('ml-quick-test').waitFor({ timeout: 15000 });
@@ -214,6 +215,22 @@ async function runAdminAddOrganizationSmoke(page, profile) {
   await page.getByRole('heading', { name: /^Add organization$/i }).waitFor({ timeout: 15000 });
   await assertNoHorizontalOverflow(page, `${profile} add organization form`);
   await assertNoTinyTapTargets(page, `${profile} add organization form`);
+}
+
+async function runAdminAlgorithmCardSmoke(page, profile) {
+  await goto(page, '/admin/algorithms');
+  const firstCard = page.locator('article').first();
+  if (!await firstCard.count()) return;
+
+  await firstCard.getByRole('button', { name: /^View$/i }).click();
+  await firstCard.getByRole('button', { name: /^Edit this algorithm$/i }).waitFor({ timeout: 15000 });
+  await assertNoHorizontalOverflow(page, `${profile} algorithm card details`);
+  await assertNoTinyTapTargets(page, `${profile} algorithm card details`);
+
+  await firstCard.getByRole('button', { name: /^Edit$/i }).click();
+  await firstCard.getByRole('button', { name: /^Save changes$/i }).waitFor({ timeout: 15000 });
+  await assertNoHorizontalOverflow(page, `${profile} algorithm edit form`);
+  await assertNoTinyTapTargets(page, `${profile} algorithm edit form`);
 }
 
 async function runAdminTestimonyPanelsSmoke(page, profile) {
