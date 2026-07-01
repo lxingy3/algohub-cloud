@@ -16,7 +16,7 @@ The admin "ML Quick Test" tool is for testing. It does not create or update a fo
 
 ## Task 1: transcription
 
-Task 1 takes an uploaded audio file and returns a transcript. The current worker path uses Whisper small through an open-source transcription flow. The server keeps the raw transcript, detected language, and timestamped segments for the admin test output.
+Task 1 takes an uploaded audio or video file and returns a transcript. Video uploads are transcribed from the audio track only. The current path uses Whisper small through a local or self-hosted open-source transcription flow. The server keeps the raw transcript, detected language, and timestamped segments for the admin test output.
 
 Supported formats are WAV, MP3, WebM, FLAC, OGG, and M4A. In the formal story flow, the submitted audio creates a `TranscriptionJob`. When the worker posts the completed transcript back to the app, the app saves:
 
@@ -33,7 +33,7 @@ If the original story text was only the voice placeholder, the transcript also b
 
 ## Task 2: impact classification
 
-Task 2 classifies a story as positive, negative, mixed, or unclear. The current model path uses the open-source zero-shot classifier `MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33` through Hugging Face inference. The app also includes tuned phrase rules for Pittsburgh public service stories so that common story patterns are not missed when a model call is slow or unavailable.
+Task 2 classifies a story as positive, negative, mixed, or unclear. The current model path uses the open-source zero-shot classifier `MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33` through the local Python runner or a self-hosted worker. The app also includes tuned phrase rules for Pittsburgh public service stories as a degraded fallback when the local model environment is unavailable.
 
 The formal database fields are:
 
@@ -47,7 +47,7 @@ The admin page reads those stored fields first. If a stored value is missing, th
 
 Task 3 detects themes such as data accuracy, opacity, delayed outcome, arbitrary outcome, lack of recourse, loss of dignity, positive experience, and process confusion.
 
-The current model path uses `facebook/bart-large-mnli` as a zero-shot classifier. The app also has local theme rules that were tuned with Pittsburgh-style stories and the Week 7 test set. This gives the interface a useful result even when the hosted model is unavailable.
+The current model path uses `facebook/bart-large-mnli` as a zero-shot classifier through the local Python runner or a self-hosted worker. The app also has local theme rules that were tuned with Pittsburgh-style stories and the Week 7 test set. This gives the interface a useful result even when the local model environment is unavailable.
 
 The formal database field is:
 
@@ -93,7 +93,7 @@ For voice stories, Task 1 completion now also triggers Task 2 through Task 5 sto
 
 - `POST /api/transcription/process` with `action: "complete"`
 
-This update is fail-safe. If Task 2 or Task 3 times out because of a hosted model limit, the transcript still saves. Any completed Task 2 through Task 5 result is written back without blocking Task 1.
+This update is fail-safe. If Task 2 through Task 5 cannot run because the local model environment is unavailable, the transcript still saves and the backend can return degraded local-rule results without blocking Task 1.
 
 ## Quick Test
 
@@ -105,13 +105,11 @@ Text input runs Task 2 through Task 5. Audio input runs Task 1 first, then feeds
 
 ## Current limits
 
-The expected demo limits are now 30 minutes for audio input and 12,000 characters for text input. Formal story uploads already use signed media upload, so the audio file does not pass through the app server as a large request body.
+The expected demo limits are now 30 minutes for audio input and 12,000 characters for ML text analysis. Longer narrative text is accepted by Quick Test but truncated for Task 2 through Task 5 analysis instead of returning a query-length error. Formal story uploads already use signed media upload, so the audio file does not pass through the app server as a large request body.
 
 The admin Quick Test audio path has been changed to match that approach. It uploads the audio file to media storage first, then sends the stored object key to the ML endpoint. This avoids Vercel's function payload limit, which is what caused the `FUNCTION_PAYLOAD_TOO_LARGE` error on a 29-minute audio test.
 
-Task 2 and Task 3 can still hit Hugging Face inference quota or timeout limits. The models are open source, but the hosted inference provider has account limits. Task 4 and Task 5 are more stable because they rely on backend logic and dictionaries.
-
-The next stable option is to move more inference into our own worker process using open-source packages and cached models. That would avoid hosted inference quota during demos. Long audio can also produce long transcript output, so the admin page uses collapsible story details and an ML Pipeline panel.
+Task 2 through Task 5 now prefer local open-source packages and cached models. External hosted model APIs are not part of the teacher-facing pipeline. Long audio can still produce long transcript output, so the admin page uses collapsible story details and an ML Pipeline panel.
 
 ## Files and routes to know
 

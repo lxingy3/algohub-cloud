@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from faster_whisper import WhisperModel
+import whisper
 
 
 TERMINAL_PUNCTUATION = (".", "?", "!")
@@ -116,42 +116,38 @@ def build_readable_output(raw_segments: list[dict]) -> tuple[str, list[dict]]:
 
 
 def transcribe_audio(input_file: Path, model_name: str, language: str | None) -> dict:
-    model = WhisperModel(model_name, device="cpu", compute_type="int8")
-    segments, info = model.transcribe(
-        str(input_file),
-        language=language,
-        beam_size=5,
-        vad_filter=True,
-    )
+    model = whisper.load_model(model_name)
+    result = model.transcribe(str(input_file), language=language, fp16=False, verbose=False)
 
     segment_results = []
     transcript_parts = []
-    for segment in segments:
-        text = segment.text.strip()
+    for segment in result.get("segments", []):
+        text = str(segment.get("text", "")).strip()
         if not text:
             continue
         transcript_parts.append(text)
         segment_results.append(
             {
-                "start": round(segment.start, 2),
-                "end": round(segment.end, 2),
+                "start": round(float(segment.get("start") or 0), 2),
+                "end": round(float(segment.get("end") or 0), 2),
                 "text": text,
             }
         )
 
-    raw_transcript = " ".join(transcript_parts).strip()
+    raw_transcript = " ".join(transcript_parts).strip() or str(result.get("text", "")).strip()
     readable_transcript, sentence_segments = build_readable_output(segment_results)
+    duration = segment_results[-1]["end"] if segment_results else 0
     return {
         "task": "Task 1: audio transcription",
         "inputKind": "audio",
         "inputFile": str(input_file),
-        "provider": "local-faster-whisper",
+        "provider": "local-openai-whisper",
         "model": model_name,
         "status": "COMPLETED" if raw_transcript else "EMPTY",
-        "language": info.language,
-        "languageProbability": round(info.language_probability, 4),
-        "durationSeconds": round(info.duration, 2),
-        "transcript": readable_transcript,
+        "language": result.get("language"),
+        "languageProbability": None,
+        "durationSeconds": round(duration, 2),
+        "transcript": readable_transcript or raw_transcript,
         "rawTranscript": raw_transcript,
         "sentenceSegments": sentence_segments,
         "rawSegments": segment_results,
@@ -161,7 +157,7 @@ def transcribe_audio(input_file: Path, model_name: str, language: str | None) ->
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run local faster-whisper transcription for ML Task 1.")
+    parser = argparse.ArgumentParser(description="Run local openai-whisper transcription for ML Task 1.")
     parser.add_argument("--input", default="../voice test.mp3", help="Audio file to transcribe.")
     parser.add_argument("--output", default="task1-results/task1-sample-transcription-result.json", help="JSON output path.")
     parser.add_argument("--model", default="small", help="Whisper model name. PPT Task 1 uses small; use tiny/base only for quick CPU smoke tests.")

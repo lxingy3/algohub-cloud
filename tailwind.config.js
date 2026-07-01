@@ -52,6 +52,10 @@ const config = {
           4: 'hsl(var(--chart-4))',
           5: 'hsl(var(--chart-5))',
         },
+        brand: {
+          gold: '#D4A017',
+          dark: '#1a1a2e',
+        },
         sidebar: {
           DEFAULT: 'hsl(var(--sidebar-background))',
           foreground: 'hsl(var(--sidebar-foreground))',

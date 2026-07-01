@@ -84,19 +84,8 @@ export default function MLQuickTest() {
       return;
     }
 
-    const analysisText = transcript.length > MAX_NARRATIVE_TEXT_CHARS ? fallbackNarrativeText : transcript;
-    if (!analysisText || analysisText.length > MAX_NARRATIVE_TEXT_CHARS) {
-      if (!isCurrentRun(runVersion)) return;
-      setResult((current) => ({
-        ...(current || task1Payload.result),
-        status: 'PARTIAL',
-        task2: skippedTask('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
-        task3: skippedTask('facebook/bart-large-mnli', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
-        task4: skippedTask('spaCy', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
-        task5: skippedTask('KeyBERT', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
-      }));
-      return;
-    }
+    const analysisText = transcript.slice(0, MAX_NARRATIVE_TEXT_CHARS);
+    if (!analysisText) return;
 
     setLoadingLabel('Running Task 2-5...');
     try {
@@ -131,10 +120,6 @@ export default function MLQuickTest() {
     if (!fallbackNarrativeText) {
       throw new Error(reason);
     }
-    if (fallbackNarrativeText.length > MAX_NARRATIVE_TEXT_CHARS) {
-      throw new Error(`Cloud media storage is not configured, and the fallback narrative_text is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters.`);
-    }
-
     setLoadingLabel('Running Task 2-5 from narrative_text...');
     const analysisPayload = await postQuickTest({
       method: 'POST',
@@ -149,7 +134,7 @@ export default function MLQuickTest() {
       inputField: 'audio',
       source: 'audio-upload',
       status: 'COMPLETED',
-      task1: deferredTask('openai/whisper-large-v3', reason, {
+      task1: deferredTask('small', reason, {
         inputFile: file.name,
         fileSizeBytes: file.size,
         durationSeconds,
@@ -554,6 +539,11 @@ function QuickTestResult({ result, isRunning = false }) {
     <div className="mt-4 space-y-3">
       {result.status === 'PARTIAL' && (!isRunning || hasIncompleteTask) ? (
         <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Some tasks did not return a result. Completed tasks are shown below.</p>
+      ) : null}
+      {result.truncatedForAnalysis ? (
+        <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          Task 2-5 used the first {MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters for analysis.
+        </p>
       ) : null}
       {result.summary ? (
         <div className="rounded-md border border-slate-200 bg-white p-3">

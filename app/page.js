@@ -66,7 +66,7 @@ export default async function HomePage() {
     <main className="min-h-screen bg-gradient-to-br from-amber-50 to-slate-100 text-gray-900">
       <SiteNav currentUser={user} />
 
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#e0ac19] via-[#8e690f] to-[#050505] text-white">
+      <section className="relative overflow-hidden bg-gradient-to-br from-brand-gold via-[#8e690f] to-brand-dark text-white">
         <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
         <svg aria-hidden="true" viewBox="0 0 1200 560" preserveAspectRatio="none" className="absolute inset-0 h-full w-full opacity-[0.36]">
           <g fill="none" stroke="rgba(255,255,255,.22)" strokeWidth="1.15">

@@ -31,21 +31,21 @@ export async function POST(request) {
     if (!narrativeText) {
       return NextResponse.json({ error: 'Please enter narrative_text.' }, { status: 400 });
     }
-    if (narrativeText.length > MAX_NARRATIVE_TEXT_CHARS) {
-      return NextResponse.json({ error: `Please keep narrative_text under ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters.` }, { status: 400 });
-    }
 
     const preparedText = await prepareEnglishAnalysisText(narrativeText);
-    const result = await analyzeNarrativeTextWithModels(preparedText.text);
+    const analysisInput = limitAnalysisText(preparedText.text);
+    const result = await analyzeNarrativeTextWithModels(analysisInput.text);
     return NextResponse.json({
       ok: true,
       result: {
         ...result,
         inputLanguage: preparedText.translatedToEnglish ? 'translated-to-english' : 'english',
         originalNarrativeText: preparedText.translatedToEnglish ? narrativeText : undefined,
-        analysisText: preparedText.text,
+        analysisText: analysisInput.text,
+        truncatedForAnalysis: analysisInput.truncated,
+        originalAnalysisTextLength: analysisInput.originalLength,
         translatedToEnglish: preparedText.translatedToEnglish,
-        summary: buildStorySummary(preparedText.text, { maxChars: 320 }),
+        summary: buildStorySummary(analysisInput.text, { maxChars: 320 }),
       },
     });
   } catch (error) {
@@ -133,7 +133,8 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
   } catch (task1Error) {
     if (fallbackNarrativeText) {
       const preparedFallbackText = await prepareEnglishAnalysisText(fallbackNarrativeText);
-      const analysis = await analyzeNarrativeTextWithModels(preparedFallbackText.text);
+      const analysisInput = limitAnalysisText(preparedFallbackText.text);
+      const analysis = await analyzeNarrativeTextWithModels(analysisInput.text);
       return NextResponse.json({
         ok: true,
         result: {
@@ -142,12 +143,14 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
           source: 'audio-upload',
           status: 'PARTIAL',
           originalNarrativeText: preparedFallbackText.translatedToEnglish ? fallbackNarrativeText : undefined,
-          analysisText: preparedFallbackText.text,
+          analysisText: analysisInput.text,
+          truncatedForAnalysis: analysisInput.truncated,
+          originalAnalysisTextLength: analysisInput.originalLength,
           translatedToEnglish: preparedFallbackText.translatedToEnglish,
-          summary: buildStorySummary(preparedFallbackText.text, { maxChars: 320 }),
+          summary: buildStorySummary(analysisInput.text, { maxChars: 320 }),
           task1: {
             status: 'SKIPPED',
-            tool: process.env.HF_ASR_MODEL || 'openai/whisper-large-v3',
+            tool: process.env.TASK1_WHISPER_MODEL || 'small',
             error: cleanQuickTestError(task1Error),
           },
         },
@@ -161,7 +164,7 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
         status: 'PARTIAL',
         task1: {
           status: 'SKIPPED',
-          tool: process.env.HF_ASR_MODEL || 'openai/whisper-large-v3',
+          tool: process.env.TASK1_WHISPER_MODEL || 'small',
           error: cleanQuickTestError(task1Error),
         },
       },
@@ -179,7 +182,8 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
   if (!narrativeText) {
     if (fallbackNarrativeText) {
       const preparedFallbackText = await prepareEnglishAnalysisText(fallbackNarrativeText);
-      const analysis = await analyzeNarrativeTextWithModels(preparedFallbackText.text);
+      const analysisInput = limitAnalysisText(preparedFallbackText.text);
+      const analysis = await analyzeNarrativeTextWithModels(analysisInput.text);
       return NextResponse.json({
         ok: true,
         result: {
@@ -188,9 +192,11 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
           source: 'audio-upload',
           status: 'PARTIAL',
           originalNarrativeText: preparedFallbackText.translatedToEnglish ? fallbackNarrativeText : undefined,
-          analysisText: preparedFallbackText.text,
+          analysisText: analysisInput.text,
+          truncatedForAnalysis: analysisInput.truncated,
+          originalAnalysisTextLength: analysisInput.originalLength,
           translatedToEnglish: preparedFallbackText.translatedToEnglish,
-          summary: buildStorySummary(preparedFallbackText.text, { maxChars: 320 }),
+          summary: buildStorySummary(analysisInput.text, { maxChars: 320 }),
           task1: {
             ...task1,
             status: task1.status || 'SKIPPED',
@@ -226,9 +232,10 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
     });
   }
   if (narrativeText.length > MAX_NARRATIVE_TEXT_CHARS) {
-    if (fallbackNarrativeText && fallbackNarrativeText.length <= MAX_NARRATIVE_TEXT_CHARS) {
+    if (fallbackNarrativeText) {
       const preparedFallbackText = await prepareEnglishAnalysisText(fallbackNarrativeText);
-      const analysis = await analyzeNarrativeTextWithModels(preparedFallbackText.text);
+      const analysisInput = limitAnalysisText(preparedFallbackText.text);
+      const analysis = await analyzeNarrativeTextWithModels(analysisInput.text);
       return NextResponse.json({
         ok: true,
         result: {
@@ -237,36 +244,29 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
           source: 'audio-upload',
           status: 'PARTIAL',
           originalNarrativeText: preparedFallbackText.translatedToEnglish ? fallbackNarrativeText : undefined,
-          analysisText: preparedFallbackText.text,
+          analysisText: analysisInput.text,
+          truncatedForAnalysis: analysisInput.truncated,
+          originalAnalysisTextLength: analysisInput.originalLength,
           translatedToEnglish: preparedFallbackText.translatedToEnglish,
-          summary: buildStorySummary(preparedFallbackText.text, { maxChars: 320 }),
+          summary: buildStorySummary(analysisInput.text, { maxChars: 320 }),
           task1,
         },
       });
     }
-    return NextResponse.json({
-      ok: true,
-      result: {
-        inputField: 'audio',
-        source: 'audio-upload',
-        status: 'PARTIAL',
-        task1,
-        task2: skippedPayload('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
-        task3: skippedPayload('facebook/bart-large-mnli', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
-        task4: skippedPayload('spaCy', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
-        task5: skippedPayload('KeyBERT', `Transcript is over ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters. Add a shorter narrative_text excerpt to run Task 2-5.`),
-      },
-    });
   }
 
-  const analysis = await analyzeNarrativeTextWithModels(narrativeText);
+  const analysisInput = limitAnalysisText(narrativeText);
+  const analysis = await analyzeNarrativeTextWithModels(analysisInput.text);
   return NextResponse.json({
     ok: true,
     result: {
       ...analysis,
       inputField: 'audio',
       source: 'audio-upload',
-      summary: buildStorySummary(narrativeText, { maxChars: 320 }),
+      analysisText: analysisInput.text,
+      truncatedForAnalysis: analysisInput.truncated,
+      originalAnalysisTextLength: analysisInput.originalLength,
+      summary: buildStorySummary(analysisInput.text, { maxChars: 320 }),
       task1,
     },
   });
@@ -282,6 +282,15 @@ async function prepareEnglishAnalysisText(text) {
     return { text: originalText, translatedToEnglish: false };
   }
   return { text: translatedText, translatedToEnglish: true };
+}
+
+function limitAnalysisText(text) {
+  const value = String(text || '').trim();
+  return {
+    text: value.slice(0, MAX_NARRATIVE_TEXT_CHARS),
+    truncated: value.length > MAX_NARRATIVE_TEXT_CHARS,
+    originalLength: value.length,
+  };
 }
 
 async function prepareTask1ForEnglishDisplay(task1) {
@@ -302,14 +311,6 @@ async function prepareTask1ForEnglishDisplay(task1) {
     sentenceSegments: [],
     translatedToEnglish: true,
     displayLanguage: 'en',
-  };
-}
-
-function skippedPayload(tool, error) {
-  return {
-    status: 'SKIPPED',
-    tool,
-    error,
   };
 }
 
