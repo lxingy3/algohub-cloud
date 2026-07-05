@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getApprovedBriefingCorpus, monthKey, normalizeThemes, parseExploreFilters } from '../../../../lib/briefingsExplore';
+import { getAlgorithmLandscape, getApprovedBriefingCorpus, monthKey, normalizeThemes, parseExploreFilters } from '../../../../lib/briefingsExplore';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   const filters = parseExploreFilters(request);
-  const rows = await getApprovedBriefingCorpus(filters);
+  const [rows, algorithms] = await Promise.all([
+    getApprovedBriefingCorpus(filters),
+    getAlgorithmLandscape(filters),
+  ]);
   const buckets = new Map();
   for (const row of rows) {
     const month = monthKey(row.submittedAt);
@@ -18,6 +21,14 @@ export async function GET(request) {
     }
     buckets.set(month, bucket);
   }
-  return NextResponse.json({ label: 'monthly suggested pattern trend', buckets: [...buckets.values()].sort((a, b) => a.month.localeCompare(b.month)) });
-}
+  const markers = algorithms
+    .filter((algorithm) => algorithm.yearDeployed || algorithm.currentVersion)
+    .map((algorithm) => ({
+      algorithmSlug: algorithm.slug,
+      algorithmName: algorithm.name,
+      yearDeployed: algorithm.yearDeployed,
+      currentVersion: algorithm.currentVersion,
+    }));
 
+  return NextResponse.json({ label: 'monthly suggested pattern trend', buckets: [...buckets.values()].sort((a, b) => a.month.localeCompare(b.month)), markers });
+}

@@ -622,7 +622,9 @@ function LiveBlockData({ block, snapshot }) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live theme matrix" rows={(snapshot.themeMatrix?.rows || []).slice(0, 4).map((row) => [`${row.domain} / ${row.theme}`, row.count])} />;
   }
   if (api.includes('trend')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live trend buckets" rows={(snapshot.trend?.buckets || []).slice(-4).map((row) => [row.month, row.total])} />;
+    const bucketRows = (snapshot.trend?.buckets || []).slice(-2).map((row) => [row.month, row.total]);
+    const markerRows = (snapshot.trend?.markers || []).slice(0, 2).map((row) => [row.algorithmName, row.currentVersion || row.yearDeployed || 'marker']);
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live trend markers" rows={[...bucketRows, ...markerRows]} />;
   }
   if (api.includes('recognition')) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live similar-story examples" rows={(snapshot.recognition?.examples || []).slice(0, 3).map((row) => [row.title, row.isLessCommonExperience ? 'less common' : 'representative'])} />;
