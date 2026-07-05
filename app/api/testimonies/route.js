@@ -6,6 +6,7 @@ import { getCurrentUser } from '../../../lib/auth';
 import { mediaStorageProvider, mediaStorageUri } from '../../../lib/mediaStorage';
 import { rankStoriesForSearch } from '../../../lib/searchRanking';
 import { buildStorySummary } from '../../../lib/storySummary';
+import { parseExploreFilters } from '../../../lib/briefingsExplore';
 
 export const dynamic = 'force-dynamic';
 
@@ -204,22 +205,26 @@ function pickBriefingExcerpts(stories, limit) {
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
+  const filters = parseExploreFilters(request);
   const page = Math.max(Number(searchParams.get('page') || 1), 1);
   const limit = Math.min(Math.max(Number(searchParams.get('limit') || 20), 1), 50);
   const jurisdictionId = getJurisdictionId();
   const search = searchParams.get('search') || '';
-  const domain = searchParams.get('domain') || '';
-  const theme = searchParams.get('theme') || '';
-  const impact = searchParams.get('impact') || '';
-  const algorithm = searchParams.get('algorithm') || '';
+  const { algorithm, domain, impact, language, lens, submissionMethod, theme } = filters;
   const fields = searchParams.get('fields') || '';
-  const lens = searchParams.get('lens') || '';
+  const submittedAt = {
+    ...(filters.dateFrom ? { gte: filters.dateFrom } : {}),
+    ...(filters.dateTo ? { lte: filters.dateTo } : {}),
+  };
 
   const where = {
     jurisdictionId,
     moderationStatus: 'APPROVED',
     ...(domain ? { affectedDomain: domain } : {}),
-    ...(impact ? { selfReportedImpact: impact } : {}),
+    ...(language ? { originalLanguage: language } : {}),
+    ...(submissionMethod ? { submissionMethod } : {}),
+    ...(Object.keys(submittedAt).length ? { submittedAt } : {}),
+    ...(impact ? { OR: [{ selfReportedImpact: impact }, { aiImpactClassification: impact }] } : {}),
     ...(algorithm ? { algorithmLinks: { some: algorithmLinkWhere(algorithm) } } : {}),
   };
 
