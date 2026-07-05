@@ -14,11 +14,22 @@ const scopes = [
   { id: 'algorithm', label: 'Filter by Algorithm' },
 ];
 
-const algorithms = [
+const fallbackAlgorithms = [
   { slug: 'allegheny-family-screening-tool', name: 'Allegheny Family Screening Tool', domain: 'Child Welfare' },
   { slug: 'housing-allocation-algorithm', name: 'Housing Allocation Algorithm', domain: 'Housing Services' },
   { slug: 'job-matching-algorithm', name: 'Job Matching Algorithm', domain: 'Jobs & Employment' },
   { slug: 'student-risk-assessment', name: 'Student Risk Assessment', domain: 'Student Services' },
+];
+
+const readingLevels = [
+  { id: 'plain', label: 'Plain' },
+  { id: 'standard', label: 'Standard' },
+  { id: 'detail', label: 'Detailed' },
+];
+
+const languageModes = [
+  { id: 'en', label: 'English' },
+  { id: 'original', label: 'Original' },
 ];
 
 const briefingViews = {
@@ -136,7 +147,10 @@ export function BriefingsClient() {
   const [lens, setLens] = useState('community');
   const [scope, setScope] = useState('overview');
   const [domain, setDomain] = useState('All domains');
-  const [algorithm, setAlgorithm] = useState(algorithms[0].slug);
+  const [algorithm, setAlgorithm] = useState(fallbackAlgorithms[0].slug);
+  const [algorithms, setAlgorithms] = useState(fallbackAlgorithms);
+  const [readingLevel, setReadingLevel] = useState('standard');
+  const [languageMode, setLanguageMode] = useState('en');
   const [paramsReady, setParamsReady] = useState(false);
   const [liveSnapshot, setLiveSnapshot] = useState(null);
   const view = briefingViews[scope][lens];
@@ -158,13 +172,38 @@ export function BriefingsClient() {
     const nextScope = params.get('scope');
     const nextDomain = params.get('domain');
     const nextAlgorithm = params.get('algorithm');
+    const nextReading = params.get('reading');
+    const nextLanguage = params.get('language');
 
     if (lenses.some((item) => item.id === nextLens)) setLens(nextLens);
     if (scopes.some((item) => item.id === nextScope)) setScope(nextScope);
     if (domains.includes(nextDomain)) setDomain(nextDomain);
     if (algorithms.some((item) => item.slug === nextAlgorithm)) setAlgorithm(nextAlgorithm);
+    if (readingLevels.some((item) => item.id === nextReading)) setReadingLevel(nextReading);
+    if (languageModes.some((item) => item.id === nextLanguage)) setLanguageMode(nextLanguage);
     setParamsReady(true);
   }, [domains]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/algorithms?limit=50')
+      .then((response) => response.json())
+      .then((payload) => {
+        if (cancelled || !Array.isArray(payload.items) || !payload.items.length) return;
+        const nextAlgorithms = payload.items.map((item) => ({
+          slug: item.slug,
+          name: item.name,
+          domain: item.useCase || 'Uncategorized',
+        })).filter((item) => item.slug && item.name);
+        if (!nextAlgorithms.length) return;
+        setAlgorithms(nextAlgorithms);
+        setAlgorithm((current) => nextAlgorithms.some((item) => item.slug === current) ? current : nextAlgorithms[0].slug);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!paramsReady) return;
@@ -175,8 +214,10 @@ export function BriefingsClient() {
       params.set('domain', domain);
       params.set('algorithm', selectedVisibleAlgorithm);
     }
+    params.set('reading', readingLevel);
+    params.set('language', languageMode);
     window.history.replaceState(null, '', `/briefings?${params.toString()}`);
-  }, [domain, lens, paramsReady, scope, selectedVisibleAlgorithm]);
+  }, [domain, languageMode, lens, paramsReady, readingLevel, scope, selectedVisibleAlgorithm]);
 
   useEffect(() => {
     let cancelled = false;
@@ -245,7 +286,7 @@ export function BriefingsClient() {
             </div>
           </div>
           {scope === 'algorithm' ? (
-            <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2">
+            <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2 lg:grid-cols-4">
               <label className="text-sm font-semibold text-slate-700">
                 Domain
                 <select
@@ -267,8 +308,15 @@ export function BriefingsClient() {
                   {visibleAlgorithms.map((item) => <option key={item.slug} value={item.slug}>{item.name}</option>)}
                 </select>
               </label>
+              <ControlSelect label="Reading level" value={readingLevel} options={readingLevels} onChange={setReadingLevel} />
+              <ControlSelect label="Language" value={languageMode} options={languageModes} onChange={setLanguageMode} />
             </div>
-          ) : null}
+          ) : (
+            <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2">
+              <ControlSelect label="Reading level" value={readingLevel} options={readingLevels} onChange={setReadingLevel} />
+              <ControlSelect label="Language" value={languageMode} options={languageModes} onChange={setLanguageMode} />
+            </div>
+          )}
         </div>
       </section>
 
@@ -347,6 +395,17 @@ function buttonClass(active) {
   return active
     ? 'inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white'
     : 'inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100';
+}
+
+function ControlSelect({ label, value, options, onChange }) {
+  return (
+    <label className="text-sm font-semibold text-slate-700">
+      {label}
+      <select value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900">
+        {options.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+      </select>
+    </label>
+  );
 }
 
 function BriefingBlock({ block, snapshot }) {
