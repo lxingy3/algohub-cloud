@@ -213,6 +213,7 @@ export async function GET(request) {
   const impact = searchParams.get('impact') || '';
   const algorithm = searchParams.get('algorithm') || '';
   const fields = searchParams.get('fields') || '';
+  const lens = searchParams.get('lens') || '';
 
   const where = {
     jurisdictionId,
@@ -223,6 +224,18 @@ export async function GET(request) {
   };
 
   if (fields === 'excerpt') {
+    if (lens === 'government') {
+      return NextResponse.json({
+        items: [],
+        page,
+        limit,
+        total: 0,
+        scope: searchParams.get('scope') || (algorithm ? 'algorithm' : 'corpus'),
+        fields: 'excerpt',
+        notes: ['Government lens is aggregate-only; story excerpts are not returned.'],
+      });
+    }
+
     const candidates = await prisma.testimony.findMany({
       where,
       orderBy: [

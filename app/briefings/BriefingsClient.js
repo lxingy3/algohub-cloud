@@ -162,17 +162,21 @@ export function BriefingsClient() {
   const selectedAlgorithm = algorithms.find((item) => item.slug === selectedVisibleAlgorithm) || algorithms[0];
   const liveQuery = useMemo(() => {
     const params = new URLSearchParams();
+    params.set('lens', lens);
+    params.set('scope', scope === 'algorithm' ? 'algorithm' : 'corpus');
     if (scope === 'algorithm') params.set('algorithm', selectedVisibleAlgorithm);
-    return params.toString() ? `?${params.toString()}` : '';
-  }, [scope, selectedVisibleAlgorithm]);
+    if (domain !== 'All domains') params.set('domain', domain);
+    return `?${params.toString()}`;
+  }, [domain, lens, scope, selectedVisibleAlgorithm]);
   const excerptQuery = useMemo(() => {
     const params = new URLSearchParams();
     params.set('fields', 'excerpt');
     params.set('limit', '6');
+    params.set('lens', lens);
     params.set('scope', scope === 'algorithm' ? 'algorithm' : 'corpus');
     if (scope === 'algorithm') params.set('algorithm', selectedVisibleAlgorithm);
     return `?${params.toString()}`;
-  }, [scope, selectedVisibleAlgorithm]);
+  }, [lens, scope, selectedVisibleAlgorithm]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
