@@ -11,6 +11,13 @@ function getPagination(searchParams) {
   return { page, limit, skip: (page - 1) * limit };
 }
 
+function normalizeStatusList(value) {
+  const valid = new Set(['ACTIVE', 'UNDER_REVIEW', 'DEPRECATED', 'PROPOSED']);
+  return value.split(',')
+    .map((item) => item.trim().toUpperCase().replace(/[\s-]+/g, '_'))
+    .filter((item) => valid.has(item));
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const jurisdictionId = getJurisdictionId();
@@ -18,11 +25,13 @@ export async function GET(request) {
   const search = searchParams.get('search') || '';
   const useCase = searchParams.get('use_case') || '';
   const location = searchParams.get('location') || '';
+  const statuses = normalizeStatusList(searchParams.get('status') || '');
 
   const where = {
     jurisdictionId,
     ...(useCase ? { useCase } : {}),
     ...(location ? { location } : {}),
+    ...(statuses.length ? { status: { in: statuses } } : {}),
   };
 
   if (search) {

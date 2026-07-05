@@ -247,10 +247,11 @@ export function BriefingsClient() {
       getJson('/api/testimonies', excerptQuery),
       fetch('/api/organizations?role=library&limit=6').then((response) => response.json()),
       fetch('/api/events?limit=6').then((response) => response.json()),
+      fetch('/api/algorithms?status=PROPOSED,UNDER_REVIEW&limit=6').then((response) => response.json()),
       fetch('/api/briefings').then((response) => response.json()),
-    ]).then(([landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, excerpts, organizations, events, briefings]) => {
+    ]).then(([landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, excerpts, organizations, events, proposedAlgorithms, briefings]) => {
       if (!cancelled) {
-        setLiveSnapshot({ landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, excerpts, organizations, events, briefings });
+        setLiveSnapshot({ landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, excerpts, organizations, events, proposedAlgorithms, briefings });
       }
     }).catch(() => {
       if (!cancelled) setLiveSnapshot({ error: true });
@@ -460,6 +461,7 @@ function LiveVisual({ block, snapshot, fallbackType }) {
   if (api.includes('coverage')) return <LiveTable rows={Object.entries(snapshot.coverage?.whatsMissing || {})} />;
   if (api.includes('silence')) return <LiveTable rows={(snapshot.silence?.rows || []).map((row) => [row.algorithmName, row.priority])} />;
   if (api.includes('organizations') || api.includes('events')) return <LiveLinks organizations={snapshot.organizations?.items || []} events={snapshot.events?.items || []} />;
+  if (api.includes('status=proposed')) return <LiveAlgorithmCards algorithms={snapshot.proposedAlgorithms?.items || []} />;
   if (api.includes('evidence-strength')) return <LiveBars rows={(snapshot.evidence?.findings || []).map((row) => [row.label, row.count])} />;
   if (api.includes('compare')) return <LiveBars rows={(snapshot.compare?.groups || []).map((row) => [row.label, row.total])} />;
   if (api.includes('impact')) return <LiveBars rows={(snapshot.impact?.aiSuggested || []).map((row) => [row.label, row.count])} />;
@@ -595,6 +597,21 @@ function LiveLinks({ organizations, events }) {
   );
 }
 
+function LiveAlgorithmCards({ algorithms }) {
+  const rows = algorithms.slice(0, 3);
+  if (!rows.length) return <Visual type="cards" />;
+  return (
+    <div className="mt-6 grid gap-3">
+      {rows.map((item) => (
+        <div key={item.id} className="rounded-md border border-white/15 bg-white/10 p-3 text-sm text-slate-100">
+          <p className="font-semibold text-amber-100">{item.name}</p>
+          <p className="mt-1 text-xs uppercase tracking-wide text-slate-300">{item.status}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function LiveBlockData({ block, snapshot }) {
   if (!snapshot || snapshot.error) return null;
   const api = block.api.toLowerCase();
@@ -625,6 +642,9 @@ function LiveBlockData({ block, snapshot }) {
   }
   if (api.includes('silence')) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live silence review" rows={(snapshot.silence?.rows || []).slice(0, 4).map((row) => [row.algorithmName, row.priority])} />;
+  }
+  if (api.includes('status=proposed')) {
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live proposed systems" rows={(snapshot.proposedAlgorithms?.items || []).slice(0, 4).map((row) => [row.name, row.status])} />;
   }
   if (api.includes('organizations') || api.includes('events')) {
     const orgRows = (snapshot.organizations?.items || []).slice(0, 2).map((row) => [row.name, row.role || 'organization']);
