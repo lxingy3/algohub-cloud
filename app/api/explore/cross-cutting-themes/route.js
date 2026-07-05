@@ -12,9 +12,11 @@ export async function GET(request) {
     domain: params.get('domain') || '',
   });
   const byTheme = new Map();
+  const byPair = new Map();
   for (const row of rows) {
     const algorithmNames = row.algorithmLinks.map((link) => link.algorithm.name);
-    for (const item of normalizeThemes(row.aiThemes)) {
+    const rowThemes = normalizeThemes(row.aiThemes);
+    for (const item of rowThemes) {
       const current = byTheme.get(item.theme) || { theme: item.theme, count: 0, confidenceSum: 0, confidenceCount: 0, domains: new Set(), algorithms: new Set() };
       current.count += 1;
       if (Number.isFinite(item.confidence)) {
@@ -24,6 +26,13 @@ export async function GET(request) {
       if (row.affectedDomain) current.domains.add(row.affectedDomain);
       for (const name of algorithmNames) current.algorithms.add(name);
       byTheme.set(item.theme, current);
+    }
+    const uniqueThemes = [...new Set(rowThemes.map((item) => item.theme))].sort((a, b) => a.localeCompare(b));
+    for (let i = 0; i < uniqueThemes.length; i += 1) {
+      for (let j = i + 1; j < uniqueThemes.length; j += 1) {
+        const key = `${uniqueThemes[i]}|||${uniqueThemes[j]}`;
+        byPair.set(key, (byPair.get(key) || 0) + 1);
+      }
     }
   }
 
@@ -56,5 +65,10 @@ export async function GET(request) {
     };
   }).sort((a, b) => b.count - a.count || a.theme.localeCompare(b.theme));
 
-  return NextResponse.json({ totalStories: rows.length, themes });
+  const coOccurrences = [...byPair.entries()].map(([key, count]) => {
+    const [source, target] = key.split('|||');
+    return { source, target, count };
+  }).sort((a, b) => b.count - a.count || a.source.localeCompare(b.source) || a.target.localeCompare(b.target));
+
+  return NextResponse.json({ totalStories: rows.length, themes, coOccurrences });
 }
