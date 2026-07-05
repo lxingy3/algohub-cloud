@@ -640,6 +640,9 @@ function LiveBlockData({ block, snapshot }) {
   if (api.includes('impact')) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live impact split" rows={(snapshot.impact?.aiSuggested || []).slice(0, 4).map((row) => [row.label, row.count])} />;
   }
+  if (block.title.toLowerCase().includes('improvement') || block.title.toLowerCase().includes('policy direction')) {
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live improvement map" rows={(snapshot.themes?.themes || []).slice(0, 4).map((row) => [row.theme, row.policyDirection || row.improvementDirection || 'needs mapping'])} />;
+  }
   if (api.includes('themes') || api.includes('cross-cutting-themes')) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live suggested themes" rows={(snapshot.themes?.themes || []).slice(0, 4).map((row) => [row.theme, row.count])} />;
   }

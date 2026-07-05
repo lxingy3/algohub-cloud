@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getApprovedBriefingCorpus, normalizeThemes } from '../../../../lib/briefingsExplore';
+import { prisma } from '../../../../lib/prisma';
+import { getJurisdictionId } from '../../../../lib/jurisdiction';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,15 +27,34 @@ export async function GET(request) {
     }
   }
 
-  const themes = [...byTheme.values()].map((theme) => ({
-    theme: theme.theme,
-    label: 'suggested',
-    count: theme.count,
-    averageConfidence: theme.confidenceCount ? Number((theme.confidenceSum / theme.confidenceCount).toFixed(2)) : null,
-    spanDomains: theme.domains.size,
-    spanAlgorithms: theme.algorithms.size,
-  })).sort((a, b) => b.count - a.count || a.theme.localeCompare(b.theme));
+  const maps = await prisma.themeImprovementMap.findMany({
+    where: {
+      OR: [
+        { jurisdictionId: getJurisdictionId() },
+        { jurisdictionId: null },
+      ],
+    },
+    select: {
+      theme: true,
+      improvementDirection: true,
+      policyDirection: true,
+    },
+  });
+  const directionByTheme = new Map(maps.map((item) => [item.theme.toLowerCase(), item]));
+
+  const themes = [...byTheme.values()].map((theme) => {
+    const direction = directionByTheme.get(theme.theme.toLowerCase());
+    return {
+      theme: theme.theme,
+      label: 'suggested',
+      count: theme.count,
+      averageConfidence: theme.confidenceCount ? Number((theme.confidenceSum / theme.confidenceCount).toFixed(2)) : null,
+      spanDomains: theme.domains.size,
+      spanAlgorithms: theme.algorithms.size,
+      improvementDirection: direction?.improvementDirection || null,
+      policyDirection: direction?.policyDirection || null,
+    };
+  }).sort((a, b) => b.count - a.count || a.theme.localeCompare(b.theme));
 
   return NextResponse.json({ totalStories: rows.length, themes });
 }
-
