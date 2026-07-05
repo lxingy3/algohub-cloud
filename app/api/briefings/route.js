@@ -9,16 +9,31 @@ function enumValue(value, allowed) {
   return allowed.includes(normalized) ? normalized : '';
 }
 
+function dateValue(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export async function GET(request) {
   const params = new URL(request.url).searchParams;
   const jurisdictionId = getJurisdictionId();
+  const algorithm = params.get('algorithm') || '';
+  const dateFrom = dateValue(params.get('date_from'));
+  const dateTo = dateValue(params.get('date_to'));
   const reviewStatus = enumValue(params.get('review_status'), ['DRAFT', 'REVIEWED', 'PUBLISHED']);
   const briefingType = enumValue(params.get('type'), ['ALGORITHM_SPECIFIC', 'THEMATIC', 'SILENCE_REPORT', 'CROSS_CUTTING']);
   const generatedBy = params.get('generated_by') || '';
   const targetTheme = params.get('target_theme') || '';
+  const dateFilters = [
+    ...(dateFrom ? [{ OR: [{ dateRangeEnd: null }, { dateRangeEnd: { gte: dateFrom } }] }] : []),
+    ...(dateTo ? [{ OR: [{ dateRangeStart: null }, { dateRangeStart: { lte: dateTo } }] }] : []),
+  ];
   const items = await prisma.briefing.findMany({
     where: {
       jurisdictionId,
+      ...(algorithm ? { targetAlgorithm: { slug: algorithm } } : {}),
+      ...(dateFilters.length ? { AND: dateFilters } : {}),
       ...(reviewStatus ? { reviewStatus } : {}),
       ...(briefingType ? { briefingType } : {}),
       ...(generatedBy ? { generatedBy } : {}),
