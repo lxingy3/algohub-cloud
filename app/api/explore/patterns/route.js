@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server';
-import { anonymizedExcerpt, getApprovedBriefingCorpus } from '../../../../lib/briefingsExplore';
+import { anonymizedExcerpt, getApprovedBriefingCorpus, parseExploreFilters } from '../../../../lib/briefingsExplore';
 import { prisma } from '../../../../lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
-  const params = new URL(request.url).searchParams;
-  const rows = await getApprovedBriefingCorpus({
-    algorithm: params.get('algorithm') || '',
-    domain: params.get('domain') || '',
-  });
-  const topics = await prisma.corpusTopic.findMany({ orderBy: { topicId: 'asc' } });
+  const rows = await getApprovedBriefingCorpus(parseExploreFilters(request));
+  const topicIds = [...new Set(rows.map((row) => row.topicId).filter((topicId) => topicId !== null))];
+  const topics = topicIds.length
+    ? await prisma.corpusTopic.findMany({ where: { topicId: { in: topicIds } }, orderBy: { topicId: 'asc' } })
+    : [];
 
   return NextResponse.json({
     label: 'suggested corpus patterns',
@@ -29,4 +28,3 @@ export async function GET(request) {
     })),
   });
 }
-
