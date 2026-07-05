@@ -12,6 +12,10 @@ export async function GET(request) {
     where: {
       jurisdictionId,
       ...(filters.algorithm ? { slug: filters.algorithm } : {}),
+      ...(filters.agency ? { agencyName: { contains: filters.agency, mode: 'insensitive' } } : {}),
+      ...(filters.domain ? { useCase: filters.domain } : {}),
+      ...(filters.impactLevel ? { impactLevel: filters.impactLevel } : {}),
+      ...(filters.status?.length ? { status: { in: filters.status } } : {}),
     },
     select: { id: true, slug: true, name: true, claims: { orderBy: { createdAt: 'desc' }, take: 3 } },
     orderBy: { name: 'asc' },
