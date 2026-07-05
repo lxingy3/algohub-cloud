@@ -36,7 +36,7 @@ export async function GET(request) {
         algorithmName: algorithm.name,
         claims: algorithm.claims.map((claim) => ({ text: claim.claimText, source: claim.claimSource, date: claim.claimDate })),
         experienceCount: stories.length,
-        experienceExamples: stories.slice(0, 3).map((story) => ({
+        experienceExamples: filters.lens === 'government' ? [] : stories.slice(0, 3).map((story) => ({
           id: story.id,
           title: storyTitle(story),
           impact: story.aiImpactClassification,
@@ -46,4 +46,3 @@ export async function GET(request) {
     }).filter((row) => row.claims.length || row.experienceCount),
   });
 }
-

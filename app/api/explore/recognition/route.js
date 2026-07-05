@@ -16,7 +16,7 @@ export async function GET(request) {
     label: 'others like this',
     method: 'uses cached topic/cluster/theme assignments from the offline batch; no real-time embedding search',
     totalMatches: sorted.length,
-    examples: sorted.slice(0, 8).map((row) => ({
+    examples: filters.lens === 'government' ? [] : sorted.slice(0, 8).map((row) => ({
       id: row.id,
       title: storyTitle(row),
       topicLabel: row.corpusTopic?.label || null,
@@ -26,4 +26,3 @@ export async function GET(request) {
     })),
   });
 }
-
