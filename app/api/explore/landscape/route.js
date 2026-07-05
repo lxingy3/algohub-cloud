@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { countBy, getAlgorithmLandscape, getApprovedBriefingCorpus } from '../../../../lib/briefingsExplore';
+import { countBy, getAlgorithmLandscape, getApprovedBriefingCorpus, parseExploreFilters } from '../../../../lib/briefingsExplore';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const [algorithms, testimonies] = await Promise.all([getAlgorithmLandscape(), getApprovedBriefingCorpus()]);
+export async function GET(request) {
+  const filters = parseExploreFilters(request);
+  const [algorithms, testimonies] = await Promise.all([getAlgorithmLandscape(filters), getApprovedBriefingCorpus(filters)]);
   return NextResponse.json({
     totalAlgorithms: algorithms.length,
     totalApprovedStories: testimonies.length,
@@ -14,4 +15,3 @@ export async function GET() {
     byImpactLevel: countBy(algorithms, (row) => row.impactLevel),
   });
 }
-
