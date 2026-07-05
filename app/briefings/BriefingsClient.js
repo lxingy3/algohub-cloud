@@ -179,8 +179,12 @@ export function BriefingsClient() {
       fetch('/api/explore/landscape').then((response) => response.json()),
       fetch('/api/explore/patterns').then((response) => response.json()),
       fetch('/api/explore/coverage').then((response) => response.json()),
-    ]).then(([landscape, patterns, coverage]) => {
-      if (!cancelled) setLiveSnapshot({ landscape, patterns, coverage });
+      fetch('/api/explore/theme-matrix').then((response) => response.json()),
+      fetch('/api/explore/trend').then((response) => response.json()),
+      fetch('/api/explore/recognition').then((response) => response.json()),
+      fetch('/api/explore/claim-vs-experience').then((response) => response.json()),
+    ]).then(([landscape, patterns, coverage, themeMatrix, trend, recognition, claimVsExperience]) => {
+      if (!cancelled) setLiveSnapshot({ landscape, patterns, coverage, themeMatrix, trend, recognition, claimVsExperience });
     }).catch(() => {
       if (!cancelled) setLiveSnapshot({ error: true });
     });
@@ -296,14 +300,30 @@ function LiveSnapshot({ snapshot }) {
     ['Suggested topics', snapshot.patterns?.topics?.length ?? 0],
     ['Less common stories', outliers],
   ];
+  const pipelines = [
+    ['Theme matrix', snapshot.themeMatrix?.rows?.length ?? 0],
+    ['Trend buckets', snapshot.trend?.buckets?.length ?? 0],
+    ['Recognition examples', snapshot.recognition?.examples?.length ?? 0],
+    ['Claim rows', snapshot.claimVsExperience?.rows?.length ?? 0],
+  ];
   return (
-    <div className="mt-5 grid max-w-4xl gap-2 sm:grid-cols-4">
-      {stats.map(([label, value]) => (
-        <div key={label} className="rounded-md border border-slate-200 bg-white px-3 py-2">
-          <div className="text-xl font-bold text-slate-950">{value}</div>
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
-        </div>
-      ))}
+    <div className="mt-5 max-w-5xl">
+      <div className="grid gap-2 sm:grid-cols-4">
+        {stats.map(([label, value]) => (
+          <div key={label} className="rounded-md border border-slate-200 bg-white px-3 py-2">
+            <div className="text-xl font-bold text-slate-950">{value}</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-2 grid gap-2 sm:grid-cols-4">
+        {pipelines.map(([label, value]) => (
+          <div key={label} className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2">
+            <div className="text-lg font-bold text-emerald-900">{value}</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">{label}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
