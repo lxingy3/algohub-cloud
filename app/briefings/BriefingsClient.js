@@ -138,6 +138,7 @@ export function BriefingsClient() {
   const [domain, setDomain] = useState('All domains');
   const [algorithm, setAlgorithm] = useState(algorithms[0].slug);
   const [paramsReady, setParamsReady] = useState(false);
+  const [liveSnapshot, setLiveSnapshot] = useState(null);
   const view = briefingViews[scope][lens];
   const domains = useMemo(() => ['All domains', ...new Set(algorithms.map((item) => item.domain))], []);
   const visibleAlgorithms = domain === 'All domains' ? algorithms : algorithms.filter((item) => item.domain === domain);
@@ -172,6 +173,22 @@ export function BriefingsClient() {
     window.history.replaceState(null, '', `/briefings?${params.toString()}`);
   }, [domain, lens, paramsReady, scope, selectedVisibleAlgorithm]);
 
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      fetch('/api/explore/landscape').then((response) => response.json()),
+      fetch('/api/explore/patterns').then((response) => response.json()),
+      fetch('/api/explore/coverage').then((response) => response.json()),
+    ]).then(([landscape, patterns, coverage]) => {
+      if (!cancelled) setLiveSnapshot({ landscape, patterns, coverage });
+    }).catch(() => {
+      if (!cancelled) setLiveSnapshot({ error: true });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <>
       <section className="border-b border-slate-200 bg-white">
@@ -183,8 +200,9 @@ export function BriefingsClient() {
                 Briefing pages
               </h1>
               <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-                Choose a lens, then choose Overview or Filter by Algorithm. The blocks below follow the current wireframes. Data fields, endpoints, and model methods are listed, but the models are not connected yet.
+                Choose a lens, then choose Overview or Filter by Algorithm. The blocks below follow the current wireframes and now read from the first live explore API prototype.
               </p>
+              <LiveSnapshot snapshot={liveSnapshot} />
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <div className="grid grid-cols-3 gap-2">
@@ -260,6 +278,33 @@ export function BriefingsClient() {
         </div>
       </section>
     </>
+  );
+}
+
+function LiveSnapshot({ snapshot }) {
+  if (!snapshot) {
+    return <div className="mt-5 text-sm font-semibold text-slate-500">Loading live corpus snapshot...</div>;
+  }
+  if (snapshot.error) {
+    return <div className="mt-5 text-sm font-semibold text-red-700">Live corpus snapshot is unavailable.</div>;
+  }
+  const points = snapshot.patterns?.points || [];
+  const outliers = points.filter((point) => point.isOutlier).length;
+  const stats = [
+    ['Approved stories', snapshot.landscape?.totalApprovedStories ?? 0],
+    ['Algorithms', snapshot.landscape?.totalAlgorithms ?? 0],
+    ['Suggested topics', snapshot.patterns?.topics?.length ?? 0],
+    ['Less common stories', outliers],
+  ];
+  return (
+    <div className="mt-5 grid max-w-4xl gap-2 sm:grid-cols-4">
+      {stats.map(([label, value]) => (
+        <div key={label} className="rounded-md border border-slate-200 bg-white px-3 py-2">
+          <div className="text-xl font-bold text-slate-950">{value}</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
+        </div>
+      ))}
+    </div>
   );
 }
 
