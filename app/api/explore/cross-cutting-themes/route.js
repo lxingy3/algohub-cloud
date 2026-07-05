@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getApprovedBriefingCorpus, normalizeThemes } from '../../../../lib/briefingsExplore';
+import { getApprovedBriefingCorpus, normalizeThemes, parseExploreFilters } from '../../../../lib/briefingsExplore';
 import { prisma } from '../../../../lib/prisma';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
-  const params = new URL(request.url).searchParams;
-  const rows = await getApprovedBriefingCorpus({
-    algorithm: params.get('algorithm') || '',
-    domain: params.get('domain') || '',
-  });
+  const rows = await getApprovedBriefingCorpus(parseExploreFilters(request));
   const byTheme = new Map();
   const byPair = new Map();
   for (const row of rows) {
