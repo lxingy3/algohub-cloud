@@ -3,6 +3,22 @@ import { countBy, evidenceLevel, getApprovedBriefingCorpus } from '../../../../l
 
 export const dynamic = 'force-dynamic';
 
+function summarizeRepresentation(items) {
+  const positiveCount = items.filter((item) => item.aiImpactClassification === 'POSITIVE' || item.selfReportedImpact === 'POSITIVE').length;
+  const dissentCount = items.filter((item) => (
+    item.selfReportedImpact
+    && item.aiImpactClassification
+    && item.selfReportedImpact !== item.aiImpactClassification
+  )).length;
+  const minorityCount = items.filter((item) => item.isOutlier).length;
+
+  return {
+    positiveCount,
+    minorityCount,
+    dissentCount,
+  };
+}
+
 export async function GET(request) {
   const params = new URL(request.url).searchParams;
   const rows = await getApprovedBriefingCorpus({
@@ -28,9 +44,14 @@ export async function GET(request) {
       averageConfidence: confidences.length ? Number(avg.toFixed(2)) : null,
       strength: evidenceLevel(items.length, outliers, avg),
       impactMix: countBy(items, (item) => item.aiImpactClassification),
+      representation: summarizeRepresentation(items),
     };
   }).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 
-  return NextResponse.json({ label: 'suggested evidence strength', totalStories: rows.length, findings });
+  return NextResponse.json({
+    label: 'suggested evidence strength',
+    totalStories: rows.length,
+    representation: summarizeRepresentation(rows),
+    findings,
+  });
 }
-

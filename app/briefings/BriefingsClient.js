@@ -654,7 +654,11 @@ function LiveBlockData({ block, snapshot }) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live help links" rows={[...orgRows, ...eventRows]} />;
   }
   if (api.includes('evidence-strength')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live evidence strength" rows={(snapshot.evidence?.findings || []).slice(0, 4).map((row) => [row.label, row.strength])} />;
+    const evidenceRows = (snapshot.evidence?.findings || []).slice(0, 3).map((row) => [
+      row.label,
+      `${row.strength}; positive ${row.representation?.positiveCount || 0}, minority ${row.representation?.minorityCount || 0}, dissent ${row.representation?.dissentCount || 0}`,
+    ]);
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live evidence strength" rows={evidenceRows} />;
   }
   if (api.includes('compare')) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live comparison" rows={(snapshot.compare?.groups || []).slice(0, 4).map((row) => [row.label, row.total])} />;
