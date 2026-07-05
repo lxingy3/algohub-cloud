@@ -643,7 +643,10 @@ function LiveBlockData({ block, snapshot }) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live coverage gaps" rows={Object.entries(missing).slice(0, 4)} />;
   }
   if (api.includes('silence')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live silence review" rows={(snapshot.silence?.rows || []).slice(0, 4).map((row) => [row.algorithmName, row.priority])} />;
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live silence review" rows={(snapshot.silence?.rows || []).slice(0, 4).map((row) => [
+      row.algorithmName,
+      `${row.priority}; vol ${row.factors?.volumeGap ?? 0}, sem ${row.factors?.semanticGap ?? 0}, dom ${row.factors?.domainGap ?? 0}`,
+    ])} />;
   }
   if (api.includes('status=proposed')) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live proposed systems" rows={(snapshot.proposedAlgorithms?.items || []).slice(0, 4).map((row) => [row.name, row.status])} />;
