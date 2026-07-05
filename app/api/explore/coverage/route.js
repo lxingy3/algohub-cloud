@@ -1,20 +1,17 @@
 import { NextResponse } from 'next/server';
-import { countBy, getApprovedBriefingCorpus } from '../../../../lib/briefingsExplore';
+import { countBy, getApprovedBriefingCorpus, parseExploreFilters } from '../../../../lib/briefingsExplore';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { prisma } from '../../../../lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
-  const params = new URL(request.url).searchParams;
-  const rows = await getApprovedBriefingCorpus({
-    algorithm: params.get('algorithm') || '',
-    domain: params.get('domain') || '',
-  });
+  const filters = parseExploreFilters(request);
+  const rows = await getApprovedBriefingCorpus(filters);
   const briefings = await prisma.briefing.findMany({
     where: {
       jurisdictionId: getJurisdictionId(),
-      ...(params.get('algorithm') ? { targetAlgorithm: { slug: params.get('algorithm') } } : {}),
+      ...(filters.algorithm ? { targetAlgorithm: { slug: filters.algorithm } } : {}),
     },
     select: {
       reviewStatus: true,
