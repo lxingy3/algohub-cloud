@@ -245,10 +245,12 @@ export function BriefingsClient() {
       getJson('/api/explore/compare'),
       getJson('/api/explore/claim-vs-experience'),
       getJson('/api/testimonies', excerptQuery),
+      fetch('/api/organizations?role=library&limit=6').then((response) => response.json()),
+      fetch('/api/events?limit=6').then((response) => response.json()),
       fetch('/api/briefings').then((response) => response.json()),
-    ]).then(([landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, excerpts, briefings]) => {
+    ]).then(([landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, excerpts, organizations, events, briefings]) => {
       if (!cancelled) {
-        setLiveSnapshot({ landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, excerpts, briefings });
+        setLiveSnapshot({ landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, excerpts, organizations, events, briefings });
       }
     }).catch(() => {
       if (!cancelled) setLiveSnapshot({ error: true });
@@ -457,6 +459,7 @@ function LiveVisual({ block, snapshot, fallbackType }) {
   if (api.includes('patterns')) return <LiveScatter points={snapshot.patterns?.points || []} />;
   if (api.includes('coverage')) return <LiveTable rows={Object.entries(snapshot.coverage?.whatsMissing || {})} />;
   if (api.includes('silence')) return <LiveTable rows={(snapshot.silence?.rows || []).map((row) => [row.algorithmName, row.priority])} />;
+  if (api.includes('organizations') || api.includes('events')) return <LiveLinks organizations={snapshot.organizations?.items || []} events={snapshot.events?.items || []} />;
   if (api.includes('evidence-strength')) return <LiveBars rows={(snapshot.evidence?.findings || []).map((row) => [row.label, row.count])} />;
   if (api.includes('compare')) return <LiveBars rows={(snapshot.compare?.groups || []).map((row) => [row.label, row.total])} />;
   if (api.includes('impact')) return <LiveBars rows={(snapshot.impact?.aiSuggested || []).map((row) => [row.label, row.count])} />;
@@ -574,6 +577,24 @@ function LiveTable({ rows }) {
   );
 }
 
+function LiveLinks({ organizations, events }) {
+  const rows = [
+    ...organizations.slice(0, 2).map((item) => ({ id: item.id, title: item.name, detail: item.websiteUrl || item.role || 'organization' })),
+    ...events.slice(0, 2).map((item) => ({ id: item.id, title: item.title, detail: item.location || 'event' })),
+  ];
+  if (!rows.length) return <Visual type="links" />;
+  return (
+    <div className="mt-6 space-y-2">
+      {rows.map((row) => (
+        <div key={row.id} className="rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm text-slate-100">
+          <p className="font-semibold text-amber-100">{row.title}</p>
+          <p className="mt-1 truncate text-xs text-slate-300">{row.detail}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function LiveBlockData({ block, snapshot }) {
   if (!snapshot || snapshot.error) return null;
   const api = block.api.toLowerCase();
@@ -604,6 +625,11 @@ function LiveBlockData({ block, snapshot }) {
   }
   if (api.includes('silence')) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live silence review" rows={(snapshot.silence?.rows || []).slice(0, 4).map((row) => [row.algorithmName, row.priority])} />;
+  }
+  if (api.includes('organizations') || api.includes('events')) {
+    const orgRows = (snapshot.organizations?.items || []).slice(0, 2).map((row) => [row.name, row.role || 'organization']);
+    const eventRows = (snapshot.events?.items || []).slice(0, 2).map((row) => [row.title, row.location || 'event']);
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live help links" rows={[...orgRows, ...eventRows]} />;
   }
   if (api.includes('evidence-strength')) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live evidence strength" rows={(snapshot.evidence?.findings || []).slice(0, 4).map((row) => [row.label, row.strength])} />;
