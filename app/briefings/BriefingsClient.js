@@ -154,7 +154,7 @@ export function BriefingsClient() {
   const [paramsReady, setParamsReady] = useState(false);
   const [liveSnapshot, setLiveSnapshot] = useState(null);
   const view = briefingViews[scope][lens];
-  const domains = useMemo(() => ['All domains', ...new Set(algorithms.map((item) => item.domain))], []);
+  const domains = useMemo(() => ['All domains', ...new Set(algorithms.map((item) => item.domain))], [algorithms]);
   const visibleAlgorithms = domain === 'All domains' ? algorithms : algorithms.filter((item) => item.domain === domain);
   const selectedVisibleAlgorithm = visibleAlgorithms.some((item) => item.slug === algorithm)
     ? algorithm
@@ -164,6 +164,14 @@ export function BriefingsClient() {
     const params = new URLSearchParams();
     if (scope === 'algorithm') params.set('algorithm', selectedVisibleAlgorithm);
     return params.toString() ? `?${params.toString()}` : '';
+  }, [scope, selectedVisibleAlgorithm]);
+  const excerptQuery = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set('fields', 'excerpt');
+    params.set('limit', '6');
+    params.set('scope', scope === 'algorithm' ? 'algorithm' : 'corpus');
+    if (scope === 'algorithm') params.set('algorithm', selectedVisibleAlgorithm);
+    return `?${params.toString()}`;
   }, [scope, selectedVisibleAlgorithm]);
 
   useEffect(() => {
@@ -222,7 +230,7 @@ export function BriefingsClient() {
   useEffect(() => {
     let cancelled = false;
     setLiveSnapshot(null);
-    const getJson = (path) => fetch(`${path}${liveQuery}`).then((response) => response.json());
+    const getJson = (path, query = liveQuery) => fetch(`${path}${query}`).then((response) => response.json());
     Promise.all([
       getJson('/api/explore/landscape'),
       getJson('/api/explore/impact'),
@@ -236,10 +244,11 @@ export function BriefingsClient() {
       getJson('/api/explore/recognition'),
       getJson('/api/explore/compare'),
       getJson('/api/explore/claim-vs-experience'),
+      getJson('/api/testimonies', excerptQuery),
       fetch('/api/briefings').then((response) => response.json()),
-    ]).then(([landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, briefings]) => {
+    ]).then(([landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, excerpts, briefings]) => {
       if (!cancelled) {
-        setLiveSnapshot({ landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, briefings });
+        setLiveSnapshot({ landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, excerpts, briefings });
       }
     }).catch(() => {
       if (!cancelled) setLiveSnapshot({ error: true });
@@ -247,7 +256,7 @@ export function BriefingsClient() {
     return () => {
       cancelled = true;
     };
-  }, [liveQuery]);
+  }, [excerptQuery, liveQuery]);
 
   return (
     <>
@@ -366,7 +375,7 @@ function LiveSnapshot({ snapshot }) {
   const pipelines = [
     ['Theme matrix', snapshot.themeMatrix?.rows?.length ?? 0],
     ['Trend buckets', snapshot.trend?.buckets?.length ?? 0],
-    ['Recognition examples', snapshot.recognition?.examples?.length ?? 0],
+    ['Story excerpts', snapshot.excerpts?.items?.length ?? 0],
     ['Claim rows', snapshot.claimVsExperience?.rows?.length ?? 0],
   ];
   return (
@@ -442,7 +451,8 @@ function LiveVisual({ block, snapshot, fallbackType }) {
   const api = block.api.toLowerCase();
   if (api.includes('theme-matrix')) return <LiveHeatmap rows={snapshot.themeMatrix?.rows || []} />;
   if (api.includes('trend')) return <LiveTrend buckets={snapshot.trend?.buckets || []} />;
-  if (api.includes('recognition') || api.includes('testimonies')) return <LiveExcerpts examples={snapshot.recognition?.examples || []} />;
+  if (api.includes('testimonies')) return <LiveExcerpts examples={snapshot.excerpts?.items || []} />;
+  if (api.includes('recognition')) return <LiveExcerpts examples={snapshot.recognition?.examples || []} />;
   if (api.includes('claim-vs-experience')) return <LiveTable rows={(snapshot.claimVsExperience?.rows || []).map((row) => [row.algorithmName, row.experienceCount])} />;
   if (api.includes('patterns')) return <LiveScatter points={snapshot.patterns?.points || []} />;
   if (api.includes('coverage')) return <LiveTable rows={Object.entries(snapshot.coverage?.whatsMissing || {})} />;
@@ -541,7 +551,8 @@ function LiveExcerpts({ examples }) {
       <MessageSquare className="h-8 w-8 text-amber-300" />
       {rows.map((row) => (
         <div key={row.id} className="rounded-md border border-white/15 bg-white/10 p-3 text-sm leading-6 text-slate-100">
-          {row.title}
+          <p className="font-semibold text-amber-100">{row.title}</p>
+          <p className="mt-1 line-clamp-3 text-slate-100">{row.excerpt || row.title}</p>
         </div>
       ))}
     </div>
@@ -577,6 +588,9 @@ function LiveBlockData({ block, snapshot }) {
   }
   if (api.includes('recognition')) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live similar-story examples" rows={(snapshot.recognition?.examples || []).slice(0, 3).map((row) => [row.title, row.isLessCommonExperience ? 'less common' : 'representative'])} />;
+  }
+  if (api.includes('testimonies')) {
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live story excerpts" rows={(snapshot.excerpts?.items || []).slice(0, 3).map((row) => [row.title, row.whyShown])} />;
   }
   if (api.includes('claim-vs-experience')) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live claim rows" rows={(snapshot.claimVsExperience?.rows || []).slice(0, 3).map((row) => [row.algorithmName, row.experienceCount])} />;
