@@ -177,14 +177,22 @@ export function BriefingsClient() {
     let cancelled = false;
     Promise.all([
       fetch('/api/explore/landscape').then((response) => response.json()),
+      fetch('/api/explore/impact').then((response) => response.json()),
+      fetch('/api/explore/cross-cutting-themes').then((response) => response.json()),
       fetch('/api/explore/patterns').then((response) => response.json()),
       fetch('/api/explore/coverage').then((response) => response.json()),
+      fetch('/api/explore/evidence-strength').then((response) => response.json()),
+      fetch('/api/explore/silence').then((response) => response.json()),
       fetch('/api/explore/theme-matrix').then((response) => response.json()),
       fetch('/api/explore/trend').then((response) => response.json()),
       fetch('/api/explore/recognition').then((response) => response.json()),
+      fetch('/api/explore/compare').then((response) => response.json()),
       fetch('/api/explore/claim-vs-experience').then((response) => response.json()),
-    ]).then(([landscape, patterns, coverage, themeMatrix, trend, recognition, claimVsExperience]) => {
-      if (!cancelled) setLiveSnapshot({ landscape, patterns, coverage, themeMatrix, trend, recognition, claimVsExperience });
+      fetch('/api/briefings').then((response) => response.json()),
+    ]).then(([landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, briefings]) => {
+      if (!cancelled) {
+        setLiveSnapshot({ landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, briefings });
+      }
     }).catch(() => {
       if (!cancelled) setLiveSnapshot({ error: true });
     });
@@ -277,7 +285,7 @@ export function BriefingsClient() {
 
         <div className="space-y-5">
           {view.blocks.map((block) => (
-            <BriefingBlock key={block.code} block={block} />
+            <BriefingBlock key={block.code} block={block} snapshot={liveSnapshot} />
           ))}
         </div>
       </section>
@@ -334,7 +342,7 @@ function buttonClass(active) {
     : 'inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100';
 }
 
-function BriefingBlock({ block }) {
+function BriefingBlock({ block, snapshot }) {
   return (
     <article className="grid overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.25fr)]">
       <div className="border-b border-slate-200 bg-slate-950 p-5 text-white lg:border-b-0 lg:border-r">
@@ -357,8 +365,72 @@ function BriefingBlock({ block }) {
           <SpecRow icon={Search} label="API endpoint" value={block.api} />
           <SpecRow icon={Filter} label="ML / NLP method" value={block.ml} />
         </dl>
+        <LiveBlockData block={block} snapshot={snapshot} />
       </div>
     </article>
+  );
+}
+
+function LiveBlockData({ block, snapshot }) {
+  if (!snapshot || snapshot.error) return null;
+  const api = block.api.toLowerCase();
+  const titleClass = 'text-xs font-bold uppercase tracking-wide text-emerald-700';
+  const boxClass = 'mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3';
+
+  if (api.includes('theme-matrix')) {
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live theme matrix" rows={(snapshot.themeMatrix?.rows || []).slice(0, 4).map((row) => [`${row.domain} / ${row.theme}`, row.count])} />;
+  }
+  if (api.includes('trend')) {
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live trend buckets" rows={(snapshot.trend?.buckets || []).slice(-4).map((row) => [row.month, row.total])} />;
+  }
+  if (api.includes('recognition')) {
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live similar-story examples" rows={(snapshot.recognition?.examples || []).slice(0, 3).map((row) => [row.title, row.isLessCommonExperience ? 'less common' : 'representative'])} />;
+  }
+  if (api.includes('claim-vs-experience')) {
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live claim rows" rows={(snapshot.claimVsExperience?.rows || []).slice(0, 3).map((row) => [row.algorithmName, row.experienceCount])} />;
+  }
+  if (api.includes('patterns')) {
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live suggested topics" rows={(snapshot.patterns?.topics || []).slice(0, 4).map((row) => [row.label || `Topic ${row.topicId}`, row.size])} />;
+  }
+  if (api.includes('coverage')) {
+    const missing = snapshot.coverage?.whatsMissing || {};
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live coverage gaps" rows={Object.entries(missing).slice(0, 4)} />;
+  }
+  if (api.includes('silence')) {
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live silence review" rows={(snapshot.silence?.rows || []).slice(0, 4).map((row) => [row.algorithmName, row.priority])} />;
+  }
+  if (api.includes('evidence-strength')) {
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live evidence strength" rows={(snapshot.evidence?.findings || []).slice(0, 4).map((row) => [row.label, row.strength])} />;
+  }
+  if (api.includes('compare')) {
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live comparison" rows={(snapshot.compare?.groups || []).slice(0, 4).map((row) => [row.label, row.total])} />;
+  }
+  if (api.includes('impact')) {
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live impact split" rows={(snapshot.impact?.aiSuggested || []).slice(0, 4).map((row) => [row.label, row.count])} />;
+  }
+  if (api.includes('themes') || api.includes('cross-cutting-themes')) {
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live suggested themes" rows={(snapshot.themes?.themes || []).slice(0, 4).map((row) => [row.theme, row.count])} />;
+  }
+  if (api.includes('landscape') || api.includes('algorithms')) {
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live landscape" rows={(snapshot.landscape?.byDomain || []).slice(0, 4).map((row) => [row.label, row.count])} />;
+  }
+  return null;
+}
+
+function MiniRows({ className, titleClass, title, rows }) {
+  if (!rows?.length) return null;
+  return (
+    <div className={className}>
+      <p className={titleClass}>{title}</p>
+      <div className="mt-2 grid gap-2">
+        {rows.map(([label, value]) => (
+          <div key={`${label}-${value}`} className="flex items-center justify-between gap-3 text-sm">
+            <span className="min-w-0 truncate text-slate-800">{label}</span>
+            <span className="shrink-0 rounded bg-white px-2 py-1 text-xs font-bold text-slate-900">{value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
