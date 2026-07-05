@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { countBy, evidenceLevel, getApprovedBriefingCorpus } from '../../../../lib/briefingsExplore';
+import { countBy, evidenceLevel, getApprovedBriefingCorpus, parseExploreFilters } from '../../../../lib/briefingsExplore';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,11 +20,7 @@ function summarizeRepresentation(items) {
 }
 
 export async function GET(request) {
-  const params = new URL(request.url).searchParams;
-  const rows = await getApprovedBriefingCorpus({
-    algorithm: params.get('algorithm') || '',
-    domain: params.get('domain') || '',
-  });
+  const rows = await getApprovedBriefingCorpus(parseExploreFilters(request));
   const grouped = new Map();
   for (const row of rows) {
     const key = row.corpusTopic?.label || row.affectedDomain || 'Unlabeled';
