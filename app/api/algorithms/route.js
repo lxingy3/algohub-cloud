@@ -18,19 +18,28 @@ function normalizeStatusList(value) {
     .filter((item) => valid.has(item));
 }
 
+function normalizeImpactLevel(value) {
+  const normalized = (value || '').trim().toUpperCase();
+  return ['HIGH', 'MEDIUM', 'LOW'].includes(normalized) ? normalized : '';
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const jurisdictionId = getJurisdictionId();
   const { page, limit, skip } = getPagination(searchParams);
   const search = searchParams.get('search') || '';
-  const useCase = searchParams.get('use_case') || '';
+  const useCase = searchParams.get('use_case') || searchParams.get('domain') || '';
   const location = searchParams.get('location') || '';
+  const agency = searchParams.get('agency') || '';
+  const impactLevel = normalizeImpactLevel(searchParams.get('impact_level'));
   const statuses = normalizeStatusList(searchParams.get('status') || '');
 
   const where = {
     jurisdictionId,
     ...(useCase ? { useCase } : {}),
     ...(location ? { location } : {}),
+    ...(agency ? { agencyName: { contains: agency, mode: 'insensitive' } } : {}),
+    ...(impactLevel ? { impactLevel } : {}),
     ...(statuses.length ? { status: { in: statuses } } : {}),
   };
 
