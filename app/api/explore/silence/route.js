@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getAlgorithmLandscape } from '../../../../lib/briefingsExplore';
+import { getAlgorithmLandscape, parseExploreFilters } from '../../../../lib/briefingsExplore';
 
 export const dynamic = 'force-dynamic';
 
 const impactWeight = { HIGH: 3, MEDIUM: 2, LOW: 1 };
 
-export async function GET() {
-  const algorithms = await getAlgorithmLandscape();
+export async function GET(request) {
+  const algorithms = await getAlgorithmLandscape(parseExploreFilters(request));
   const rows = algorithms.map((algorithm) => {
     const volumeGap = algorithm.approvedTestimonyCount === 0 ? 1 : algorithm.approvedTestimonyCount < 3 ? 0.6 : algorithm.approvedTestimonyCount < 6 ? 0.3 : 0;
     const weight = impactWeight[algorithm.impactLevel] || 1;
@@ -30,4 +30,3 @@ export async function GET() {
 
   return NextResponse.json({ label: 'suggested silence review queue', rows });
 }
-
