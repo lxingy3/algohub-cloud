@@ -175,8 +175,9 @@ export function BriefingsClient() {
     params.set('lens', lens);
     params.set('scope', scope === 'algorithm' ? 'algorithm' : 'corpus');
     if (scope === 'algorithm') params.set('algorithm', selectedVisibleAlgorithm);
+    if (domain !== 'All domains') params.set('domain', domain);
     return `?${params.toString()}`;
-  }, [lens, scope, selectedVisibleAlgorithm]);
+  }, [domain, lens, scope, selectedVisibleAlgorithm]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -222,8 +223,8 @@ export function BriefingsClient() {
     const params = new URLSearchParams();
     params.set('lens', lens);
     params.set('scope', scope);
+    if (domain !== 'All domains') params.set('domain', domain);
     if (scope === 'algorithm') {
-      params.set('domain', domain);
       params.set('algorithm', selectedVisibleAlgorithm);
     }
     params.set('reading', readingLevel);
@@ -328,7 +329,13 @@ export function BriefingsClient() {
               <ControlSelect label="Language" value={languageMode} options={languageModes} onChange={setLanguageMode} />
             </div>
           ) : (
-            <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2">
+            <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-3">
+              <label className="text-sm font-semibold text-slate-700">
+                Domain
+                <select value={domain} onChange={(event) => setDomain(event.target.value)} className="mt-1 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900">
+                  {domains.map((item) => <option key={item}>{item}</option>)}
+                </select>
+              </label>
               <ControlSelect label="Reading level" value={readingLevel} options={readingLevels} onChange={setReadingLevel} />
               <ControlSelect label="Language" value={languageMode} options={languageModes} onChange={setLanguageMode} />
             </div>
