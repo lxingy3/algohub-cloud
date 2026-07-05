@@ -12,6 +12,7 @@ import { SetPasswordModal } from './SetPasswordModal';
 const navItems = [
   ['/', 'nav.home'],
   ['/algorithms', 'nav.algorithms'],
+  ['/briefings', 'Briefings', true],
   ['/stories', 'nav.stories'],
   ['/events', 'nav.events'],
   ['/about', 'nav.about'],
@@ -127,9 +128,9 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
             <img src="/newlogo.png" alt="AlgoStories Logo" className="h-7 w-auto sm:h-8" />
           </Link>
           <nav className="hidden items-center gap-1 text-sm md:flex">
-            {navItems.map(([href, label]) => (
+            {navItems.map(([href, label, literal]) => (
               <Link key={href} href={href} data-no-i18n className="rounded-md px-4 py-2 font-medium text-gray-800 hover:bg-gray-100">
-                {t(label)}
+                {literal ? label : t(label)}
               </Link>
             ))}
           </nav>
@@ -159,9 +160,9 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
             ) : null}
           </div>
           <nav className="order-3 flex w-full flex-wrap gap-1 pb-1 text-sm md:hidden">
-            {navItems.map(([href, label]) => (
+            {navItems.map(([href, label, literal]) => (
               <Link key={href} href={href} data-no-i18n className="inline-flex min-h-11 shrink-0 items-center rounded-md px-3 py-2 font-medium text-gray-800 hover:bg-gray-100">
-                {t(label)}
+                {literal ? label : t(label)}
               </Link>
             ))}
             {isLoggedIn ? (

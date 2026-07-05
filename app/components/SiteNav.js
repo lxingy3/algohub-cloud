@@ -1,9 +1,9 @@
 import { SiteNavClient } from './SiteNavClient';
 import { auth } from '../../lib/nextauth';
 
-export async function SiteNav({ currentUser }) {
+export async function SiteNav({ currentUser, disableSsoCheck = false }) {
   const isAdmin = Boolean(currentUser?.userRoles?.some((userRole) => userRole.role.name === 'ADMIN'));
-  const ssoSession = currentUser ? null : await auth();
+  const ssoSession = currentUser || disableSsoCheck ? null : await auth();
   const pendingSsoEmail = ssoSession?.user?.email?.trim().toLowerCase() || '';
 
   return (

@@ -90,39 +90,40 @@ enum ReactionType {
 }
 
 model Jurisdiction {
-  id               String             @id @db.VarChar(50)
-  name             String             @db.VarChar(255)
-  state            String?            @db.VarChar(100)
-  country          String             @default("US") @db.VarChar(100)
-  timezone         String             @default("America/New_York") @db.VarChar(50)
-  isActive         Boolean            @default(true) @map("is_active")
-  config           Json?
-  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
-  algorithms       Algorithm[]
-  testimonies      Testimony[]
-  organizations    Organization[]
-  users            User[]
-  communityEvents  CommunityEvent[]
-  briefings        Briefing[]
-  newsUpdates      NewsUpdate[]
-  comments         Comment[]
-  reactions        TestimonyReaction[]
-  sharedTaxonomies SharedTaxonomy[]
-  submissionDrafts SubmissionDraft[]
+  id                   String                @id @db.VarChar(50)
+  name                 String                @db.VarChar(255)
+  state                String?               @db.VarChar(100)
+  country              String                @default("US") @db.VarChar(100)
+  timezone             String                @default("America/New_York") @db.VarChar(50)
+  isActive             Boolean               @default(true) @map("is_active")
+  config               Json?
+  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  algorithms           Algorithm[]
+  testimonies          Testimony[]
+  organizations        Organization[]
+  users                User[]
+  communityEvents      CommunityEvent[]
+  briefings            Briefing[]
+  newsUpdates          NewsUpdate[]
+  comments             Comment[]
+  reactions            TestimonyReaction[]
+  sharedTaxonomies     SharedTaxonomy[]
+  submissionDrafts     SubmissionDraft[]
+  themeImprovementMaps ThemeImprovementMap[]
 
   @@map("jurisdictions")
 }
 
 model SharedTaxonomy {
-  id             String          @id @db.VarChar(100)
-  jurisdictionId String?         @map("jurisdiction_id") @db.VarChar(50)
-  category       String          @db.VarChar(50)
-  label          String          @db.VarChar(255)
+  id             String           @id @db.VarChar(100)
+  jurisdictionId String?          @map("jurisdiction_id") @db.VarChar(50)
+  category       String           @db.VarChar(50)
+  label          String           @db.VarChar(255)
   description    String?
-  parentId       String?         @map("parent_id") @db.VarChar(100)
-  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  jurisdiction   Jurisdiction?   @relation(fields: [jurisdictionId], references: [id])
-  parent         SharedTaxonomy? @relation("TaxonomyTree", fields: [parentId], references: [id])
+  parentId       String?          @map("parent_id") @db.VarChar(100)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  jurisdiction   Jurisdiction?    @relation(fields: [jurisdictionId], references: [id])
+  parent         SharedTaxonomy?  @relation("TaxonomyTree", fields: [parentId], references: [id])
   children       SharedTaxonomy[] @relation("TaxonomyTree")
 
   @@index([category])
@@ -168,14 +169,14 @@ model Algorithm {
 }
 
 model AlgorithmClaim {
-  id             String       @id @default(uuid()) @db.Uuid
-  algorithmId    String       @map("algorithm_id") @db.Uuid
-  jurisdictionId String       @map("jurisdiction_id") @db.VarChar(50)
-  claimText      String       @map("claim_text")
-  claimSource    String?      @map("claim_source")
-  claimDate      DateTime?    @map("claim_date") @db.Date
-  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  algorithm      Algorithm    @relation(fields: [algorithmId], references: [id], onDelete: Cascade)
+  id             String    @id @default(uuid()) @db.Uuid
+  algorithmId    String    @map("algorithm_id") @db.Uuid
+  jurisdictionId String    @map("jurisdiction_id") @db.VarChar(50)
+  claimText      String    @map("claim_text")
+  claimSource    String?   @map("claim_source")
+  claimDate      DateTime? @map("claim_date") @db.Date
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  algorithm      Algorithm @relation(fields: [algorithmId], references: [id], onDelete: Cascade)
 
   @@index([algorithmId])
   @@index([jurisdictionId])
@@ -243,6 +244,12 @@ model Testimony {
   aiConfidenceScore      Float?                   @map("ai_confidence_score")
   aiExtractedExperiences Json?                    @map("ai_extracted_experiences")
   aiProcessedAt          DateTime?                @map("ai_processed_at") @db.Timestamptz(6)
+  clusterId              Int?                     @map("cluster_id")
+  isOutlier              Boolean                  @default(false) @map("is_outlier")
+  topicId                Int?                     @map("topic_id")
+  umapX                  Float?                   @map("umap_x")
+  umapY                  Float?                   @map("umap_y")
+  neighbourhood          String?                  @db.VarChar(120)
   moderationStatus       ModerationStatus         @default(PENDING) @map("moderation_status")
   moderatorId            String?                  @map("moderator_id") @db.Uuid
   moderationNotes        String?                  @map("moderation_notes")
@@ -258,31 +265,48 @@ model Testimony {
   comments               Comment[]
   reactions              TestimonyReaction[]
   transcriptionJobs      TranscriptionJob[]
+  corpusTopic            CorpusTopic?             @relation(fields: [topicId], references: [topicId])
 
   @@index([jurisdictionId])
   @@index([moderationStatus])
   @@index([affectedDomain])
+  @@index([clusterId])
+  @@index([topicId])
+  @@index([neighbourhood])
   @@map("testimonies")
 }
 
+model CorpusTopic {
+  topicId        Int         @id @map("topic_id")
+  label          String?
+  topKeywords    Json?       @map("top_keywords")
+  size           Int?
+  spanAlgorithms Int?        @map("span_algorithms")
+  spanDomains    Int?        @map("span_domains")
+  updatedAt      DateTime    @default(now()) @map("updated_at") @db.Timestamptz(6)
+  testimonies    Testimony[]
+
+  @@map("corpus_topics")
+}
+
 model TranscriptionJob {
-  id             String    @id @default(uuid()) @db.Uuid
-  testimonyId    String    @map("testimony_id") @db.Uuid
-  jurisdictionId String    @map("jurisdiction_id") @db.VarChar(50)
-  mediaKind      String    @map("media_kind") @db.VarChar(20)
-  objectKey      String    @map("object_key")
-  mediaUrl       String    @map("media_url")
-  storageProvider String   @default("firebase-gcs") @map("storage_provider") @db.VarChar(50)
-  mimeType       String?   @map("mime_type") @db.VarChar(100)
-  status         String    @default("PENDING") @db.VarChar(50)
-  provider       String    @default("open-source-pipeline-pending") @db.VarChar(100)
-  transcript     String?
-  error          String?
-  attempts       Int       @default(0)
-  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  processedAt    DateTime? @map("processed_at") @db.Timestamptz(6)
-  testimony      Testimony @relation(fields: [testimonyId], references: [id], onDelete: Cascade)
+  id              String    @id @default(uuid()) @db.Uuid
+  testimonyId     String    @map("testimony_id") @db.Uuid
+  jurisdictionId  String    @map("jurisdiction_id") @db.VarChar(50)
+  mediaKind       String    @map("media_kind") @db.VarChar(20)
+  objectKey       String    @map("object_key")
+  mediaUrl        String    @map("media_url")
+  storageProvider String    @default("firebase-gcs") @map("storage_provider") @db.VarChar(50)
+  mimeType        String?   @map("mime_type") @db.VarChar(100)
+  status          String    @default("PENDING") @db.VarChar(50)
+  provider        String    @default("open-source-pipeline-pending") @db.VarChar(100)
+  transcript      String?
+  error           String?
+  attempts        Int       @default(0)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  processedAt     DateTime? @map("processed_at") @db.Timestamptz(6)
+  testimony       Testimony @relation(fields: [testimonyId], references: [id], onDelete: Cascade)
 
   @@index([jurisdictionId])
   @@index([status])
@@ -374,32 +398,32 @@ model TestimonyReaction {
 }
 
 model User {
-  id                       String              @id @default(uuid()) @db.Uuid
-  jurisdictionId           String              @map("jurisdiction_id") @db.VarChar(50)
-  email                    String              @db.VarChar(255)
-  primaryRoleName          String              @default("COMMUNITY_MEMBER") @map("primary_role_name") @db.VarChar(50)
-  emailVerified            DateTime?           @map("email_verified") @db.Timestamptz(6)
-  name                     String              @db.VarChar(255)
-  image                    String?
-  passwordHash             String?             @map("password_hash")
-  passwordSetAt            DateTime?           @map("password_set_at") @db.Timestamptz(6)
-  organizationId           String?             @map("organization_id") @db.Uuid
-  createdAt                DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
-  jurisdiction             Jurisdiction        @relation(fields: [jurisdictionId], references: [id])
-  organization             Organization?       @relation(fields: [organizationId], references: [id])
-  accounts                 Account[]
-  sessions                 Session[]
-  passwordResetTokens      PasswordResetToken[]
-  userRoles                UserRole[]
-  submittedTestimonies     Testimony[]         @relation("SubmittedTestimonies")
-  facilitatedTestimonies   Testimony[]         @relation("FacilitatedTestimonies")
-  moderatedTestimonies     Testimony[]         @relation("ModeratedTestimonies")
-  reviewedTestimonyBriefs  TestimonyBrief[]    @relation("ReviewedTestimonyBriefs")
-  reviewedBriefings        Briefing[]          @relation("ReviewedBriefings")
-  comments                 Comment[]
-  commentLikes             CommentLike[]
-  testimonyReactions       TestimonyReaction[]
-  submissionDrafts         SubmissionDraft[]
+  id                      String               @id @default(uuid()) @db.Uuid
+  jurisdictionId          String               @map("jurisdiction_id") @db.VarChar(50)
+  email                   String               @db.VarChar(255)
+  primaryRoleName         String               @default("COMMUNITY_MEMBER") @map("primary_role_name") @db.VarChar(50)
+  emailVerified           DateTime?            @map("email_verified") @db.Timestamptz(6)
+  name                    String               @db.VarChar(255)
+  image                   String?
+  passwordHash            String?              @map("password_hash")
+  passwordSetAt           DateTime?            @map("password_set_at") @db.Timestamptz(6)
+  organizationId          String?              @map("organization_id") @db.Uuid
+  createdAt               DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  jurisdiction            Jurisdiction         @relation(fields: [jurisdictionId], references: [id])
+  organization            Organization?        @relation(fields: [organizationId], references: [id])
+  accounts                Account[]
+  sessions                Session[]
+  passwordResetTokens     PasswordResetToken[]
+  userRoles               UserRole[]
+  submittedTestimonies    Testimony[]          @relation("SubmittedTestimonies")
+  facilitatedTestimonies  Testimony[]          @relation("FacilitatedTestimonies")
+  moderatedTestimonies    Testimony[]          @relation("ModeratedTestimonies")
+  reviewedTestimonyBriefs TestimonyBrief[]     @relation("ReviewedTestimonyBriefs")
+  reviewedBriefings       Briefing[]           @relation("ReviewedBriefings")
+  comments                Comment[]
+  commentLikes            CommentLike[]
+  testimonyReactions      TestimonyReaction[]
+  submissionDrafts        SubmissionDraft[]
 
   @@unique([jurisdictionId, email])
   @@index([jurisdictionId])
@@ -541,35 +565,50 @@ model CommunityEvent {
 }
 
 model Briefing {
-  id                String        @id @default(uuid()) @db.Uuid
-  jurisdictionId    String        @map("jurisdiction_id") @db.VarChar(50)
-  title             String        @db.VarChar(255)
-  slug              String        @unique @db.VarChar(255)
-  briefingType      BriefingType  @map("briefing_type")
-  targetAlgorithmId String?       @map("target_algorithm_id") @db.Uuid
-  targetTheme       String?       @map("target_theme") @db.VarChar(255)
-  dateRangeStart    DateTime?     @map("date_range_start") @db.Date
-  dateRangeEnd      DateTime?     @map("date_range_end") @db.Date
-  testimonyCount    Int?          @map("testimony_count")
-  executiveSummary  String?       @map("executive_summary")
-  keyFindings       Json?         @map("key_findings")
-  patternAnalysis   String?       @map("pattern_analysis")
-  silenceGaps       Json?         @map("silence_gaps")
+  id                String       @id @default(uuid()) @db.Uuid
+  jurisdictionId    String       @map("jurisdiction_id") @db.VarChar(50)
+  title             String       @db.VarChar(255)
+  slug              String       @unique @db.VarChar(255)
+  briefingType      BriefingType @map("briefing_type")
+  targetAlgorithmId String?      @map("target_algorithm_id") @db.Uuid
+  targetTheme       String?      @map("target_theme") @db.VarChar(255)
+  dateRangeStart    DateTime?    @map("date_range_start") @db.Date
+  dateRangeEnd      DateTime?    @map("date_range_end") @db.Date
+  testimonyCount    Int?         @map("testimony_count")
+  executiveSummary  String?      @map("executive_summary")
+  keyFindings       Json?        @map("key_findings")
+  patternAnalysis   String?      @map("pattern_analysis")
+  silenceGaps       Json?        @map("silence_gaps")
   recommendations   Json?
-  claimVsExperience Json?         @map("claim_vs_experience")
-  generatedBy       String?       @map("generated_by") @db.VarChar(50)
-  reviewedByUserId  String?       @map("reviewed_by") @db.Uuid
-  reviewStatus      ReviewStatus  @default(DRAFT) @map("review_status")
-  publishedAt       DateTime?     @map("published_at") @db.Timestamptz(6)
-  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  jurisdiction      Jurisdiction  @relation(fields: [jurisdictionId], references: [id])
-  targetAlgorithm   Algorithm?    @relation(fields: [targetAlgorithmId], references: [id])
-  reviewedBy        User?         @relation("ReviewedBriefings", fields: [reviewedByUserId], references: [id])
+  claimVsExperience Json?        @map("claim_vs_experience")
+  generatedBy       String?      @map("generated_by") @db.VarChar(50)
+  reviewedByUserId  String?      @map("reviewed_by") @db.Uuid
+  reviewStatus      ReviewStatus @default(DRAFT) @map("review_status")
+  publishedAt       DateTime?    @map("published_at") @db.Timestamptz(6)
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  jurisdiction      Jurisdiction @relation(fields: [jurisdictionId], references: [id])
+  targetAlgorithm   Algorithm?   @relation(fields: [targetAlgorithmId], references: [id])
+  reviewedBy        User?        @relation("ReviewedBriefings", fields: [reviewedByUserId], references: [id])
 
   @@index([jurisdictionId])
   @@index([briefingType])
   @@index([reviewStatus])
   @@map("briefings")
+}
+
+model ThemeImprovementMap {
+  id                   String        @id @default(uuid()) @db.Uuid
+  jurisdictionId       String?       @map("jurisdiction_id") @db.VarChar(50)
+  theme                String        @db.VarChar(255)
+  improvementDirection String?       @map("improvement_direction")
+  policyDirection      String?       @map("policy_direction")
+  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  jurisdiction         Jurisdiction? @relation(fields: [jurisdictionId], references: [id])
+
+  @@unique([jurisdictionId, theme])
+  @@index([theme])
+  @@map("theme_improvement_map")
 }
 
 model NewsUpdate {
