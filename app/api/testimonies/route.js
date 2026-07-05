@@ -228,19 +228,20 @@ export async function GET(request) {
     ...(algorithm ? { algorithmLinks: { some: algorithmLinkWhere(algorithm) } } : {}),
   };
 
-  if (fields === 'excerpt') {
-    if (lens === 'government') {
-      return NextResponse.json({
-        items: [],
-        page,
-        limit,
-        total: 0,
-        scope: searchParams.get('scope') || (algorithm ? 'algorithm' : 'corpus'),
-        fields: 'excerpt',
-        notes: ['Government lens is aggregate-only; story excerpts are not returned.'],
-      });
-    }
+  if (lens === 'government') {
+    const total = await prisma.testimony.count({ where });
+    return NextResponse.json({
+      items: [],
+      page,
+      limit,
+      total,
+      scope: searchParams.get('scope') || (algorithm ? 'algorithm' : 'corpus'),
+      fields: fields || 'list',
+      notes: ['Government lens is aggregate-only; story rows are not returned.'],
+    });
+  }
 
+  if (fields === 'excerpt') {
     const candidates = await prisma.testimony.findMany({
       where,
       orderBy: [
