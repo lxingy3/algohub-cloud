@@ -146,6 +146,11 @@ export function BriefingsClient() {
     ? algorithm
     : visibleAlgorithms[0]?.slug || algorithms[0].slug;
   const selectedAlgorithm = algorithms.find((item) => item.slug === selectedVisibleAlgorithm) || algorithms[0];
+  const liveQuery = useMemo(() => {
+    const params = new URLSearchParams();
+    if (scope === 'algorithm') params.set('algorithm', selectedVisibleAlgorithm);
+    return params.toString() ? `?${params.toString()}` : '';
+  }, [scope, selectedVisibleAlgorithm]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -175,19 +180,21 @@ export function BriefingsClient() {
 
   useEffect(() => {
     let cancelled = false;
+    setLiveSnapshot(null);
+    const getJson = (path) => fetch(`${path}${liveQuery}`).then((response) => response.json());
     Promise.all([
-      fetch('/api/explore/landscape').then((response) => response.json()),
-      fetch('/api/explore/impact').then((response) => response.json()),
-      fetch('/api/explore/cross-cutting-themes').then((response) => response.json()),
-      fetch('/api/explore/patterns').then((response) => response.json()),
-      fetch('/api/explore/coverage').then((response) => response.json()),
-      fetch('/api/explore/evidence-strength').then((response) => response.json()),
-      fetch('/api/explore/silence').then((response) => response.json()),
-      fetch('/api/explore/theme-matrix').then((response) => response.json()),
-      fetch('/api/explore/trend').then((response) => response.json()),
-      fetch('/api/explore/recognition').then((response) => response.json()),
-      fetch('/api/explore/compare').then((response) => response.json()),
-      fetch('/api/explore/claim-vs-experience').then((response) => response.json()),
+      getJson('/api/explore/landscape'),
+      getJson('/api/explore/impact'),
+      getJson('/api/explore/cross-cutting-themes'),
+      getJson('/api/explore/patterns'),
+      getJson('/api/explore/coverage'),
+      getJson('/api/explore/evidence-strength'),
+      getJson('/api/explore/silence'),
+      getJson('/api/explore/theme-matrix'),
+      getJson('/api/explore/trend'),
+      getJson('/api/explore/recognition'),
+      getJson('/api/explore/compare'),
+      getJson('/api/explore/claim-vs-experience'),
       fetch('/api/briefings').then((response) => response.json()),
     ]).then(([landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, briefings]) => {
       if (!cancelled) {
@@ -199,7 +206,7 @@ export function BriefingsClient() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [liveQuery]);
 
   return (
     <>
@@ -353,7 +360,7 @@ function BriefingBlock({ block, snapshot }) {
           </div>
           <span className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-slate-200">{block.visual}</span>
         </div>
-        <Visual type={block.visualType} />
+        <LiveVisual block={block} snapshot={snapshot} fallbackType={block.visualType} />
       </div>
       <div className="p-5">
         <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -368,6 +375,132 @@ function BriefingBlock({ block, snapshot }) {
         <LiveBlockData block={block} snapshot={snapshot} />
       </div>
     </article>
+  );
+}
+
+function LiveVisual({ block, snapshot, fallbackType }) {
+  if (!snapshot || snapshot.error) return <Visual type={fallbackType} />;
+  const api = block.api.toLowerCase();
+  if (api.includes('theme-matrix')) return <LiveHeatmap rows={snapshot.themeMatrix?.rows || []} />;
+  if (api.includes('trend')) return <LiveTrend buckets={snapshot.trend?.buckets || []} />;
+  if (api.includes('recognition') || api.includes('testimonies')) return <LiveExcerpts examples={snapshot.recognition?.examples || []} />;
+  if (api.includes('claim-vs-experience')) return <LiveTable rows={(snapshot.claimVsExperience?.rows || []).map((row) => [row.algorithmName, row.experienceCount])} />;
+  if (api.includes('patterns')) return <LiveScatter points={snapshot.patterns?.points || []} />;
+  if (api.includes('coverage')) return <LiveTable rows={Object.entries(snapshot.coverage?.whatsMissing || {})} />;
+  if (api.includes('silence')) return <LiveTable rows={(snapshot.silence?.rows || []).map((row) => [row.algorithmName, row.priority])} />;
+  if (api.includes('evidence-strength')) return <LiveBars rows={(snapshot.evidence?.findings || []).map((row) => [row.label, row.count])} />;
+  if (api.includes('compare')) return <LiveBars rows={(snapshot.compare?.groups || []).map((row) => [row.label, row.total])} />;
+  if (api.includes('impact')) return <LiveBars rows={(snapshot.impact?.aiSuggested || []).map((row) => [row.label, row.count])} />;
+  if (api.includes('themes') || api.includes('cross-cutting-themes')) return <LiveBars rows={(snapshot.themes?.themes || []).map((row) => [row.theme, row.count])} />;
+  if (api.includes('landscape') || api.includes('algorithms')) return <LiveBars rows={(snapshot.landscape?.byDomain || []).map((row) => [row.label, row.count])} />;
+  return <Visual type={fallbackType} />;
+}
+
+function LiveBars({ rows }) {
+  const topRows = rows.slice(0, 5);
+  const max = Math.max(1, ...topRows.map(([, value]) => Number(value) || 0));
+  if (!topRows.length) return <Visual type="bars" />;
+  return (
+    <div className="mt-6 space-y-3">
+      {topRows.map(([label, value]) => (
+        <div key={`${label}-${value}`} className="grid grid-cols-[90px_1fr_34px] items-center gap-2 text-xs">
+          <span className="truncate text-slate-300">{label}</span>
+          <span className="h-3 rounded bg-amber-300" style={{ width: `${Math.max(10, (Number(value) || 0) / max * 100)}%` }} />
+          <span className="text-right font-bold text-white">{value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LiveHeatmap({ rows }) {
+  const topRows = rows.slice(0, 25);
+  const max = Math.max(1, ...topRows.map((row) => row.count || 0));
+  if (!topRows.length) return <Visual type="heatmap" />;
+  return (
+    <div className="mt-6 grid grid-cols-5 gap-1.5">
+      {topRows.map((row) => (
+        <div
+          key={`${row.domain}-${row.theme}`}
+          title={`${row.domain} / ${row.theme}: ${row.count}`}
+          className="h-9 rounded border border-white/10 bg-amber-300"
+          style={{ opacity: 0.25 + ((row.count || 0) / max) * 0.75 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function LiveTrend({ buckets }) {
+  const topBuckets = buckets.slice(-8);
+  const max = Math.max(1, ...topBuckets.map((bucket) => bucket.total || 0));
+  if (!topBuckets.length) return <Visual type="trend" />;
+  return (
+    <div className="mt-6 flex h-32 items-end gap-2">
+      {topBuckets.map((bucket) => (
+        <div key={bucket.month} className="flex w-full flex-col items-center justify-end gap-1">
+          <div className="w-full rounded-t bg-amber-300" style={{ height: `${Math.max(8, (bucket.total || 0) / max * 100)}%` }} />
+          <span className="text-[10px] text-slate-400">{bucket.month.slice(5) || bucket.month}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LiveScatter({ points }) {
+  const visible = points.slice(0, 40);
+  if (!visible.length) return <Visual type="scatter" />;
+  const xs = visible.map((point) => point.umapX);
+  const ys = visible.map((point) => point.umapY);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  return (
+    <div className="relative mt-6 h-36 rounded-md border border-white/15 bg-white/5">
+      {visible.map((point) => {
+        const left = maxX === minX ? 50 : ((point.umapX - minX) / (maxX - minX)) * 88 + 6;
+        const top = maxY === minY ? 50 : ((point.umapY - minY) / (maxY - minY)) * 72 + 12;
+        return (
+          <span
+            key={point.id}
+            title={point.title || point.topicLabel || 'story'}
+            className={`absolute h-3 w-3 rounded-full ${point.isOutlier ? 'bg-white' : 'bg-amber-300'}`}
+            style={{ left: `${left}%`, top: `${top}%` }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function LiveExcerpts({ examples }) {
+  const rows = examples.slice(0, 2);
+  if (!rows.length) return <Visual type="excerpt" />;
+  return (
+    <div className="mt-6 space-y-3">
+      <MessageSquare className="h-8 w-8 text-amber-300" />
+      {rows.map((row) => (
+        <div key={row.id} className="rounded-md border border-white/15 bg-white/10 p-3 text-sm leading-6 text-slate-100">
+          {row.title}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LiveTable({ rows }) {
+  const topRows = rows.slice(0, 4);
+  if (!topRows.length) return <Visual type="table" />;
+  return (
+    <div className="mt-6 space-y-2">
+      {topRows.map(([label, value]) => (
+        <div key={`${label}-${value}`} className="grid grid-cols-[1fr_76px] gap-2 text-xs">
+          <div className="truncate rounded bg-white/10 px-2 py-2 text-slate-200">{label}</div>
+          <div className="rounded bg-amber-300/90 px-2 py-2 text-center font-bold text-slate-950">{value}</div>
+        </div>
+      ))}
+    </div>
   );
 }
 
