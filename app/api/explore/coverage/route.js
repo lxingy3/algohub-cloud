@@ -19,12 +19,13 @@ export async function GET(request) {
     language: countBy(rows, (row) => row.originalLanguage),
     domain: countBy(rows, (row) => row.affectedDomain),
     neighbourhood: countBy(rows, (row) => row.neighbourhood),
+    partnerOrganization: countBy(rows, (row) => row.partnerOrganization?.name),
     whatsMissing: {
       noNeighbourhood: rows.filter((row) => !row.neighbourhood).length,
+      noPartnerOrganization: rows.filter((row) => !row.partnerOrganization).length,
       noAlgorithmLink: rows.filter((row) => row.algorithmLinks.length === 0).length,
       noAiThemes: rows.filter((row) => !Array.isArray(row.aiThemes) || row.aiThemes.length === 0).length,
       nonEnglish: rows.filter((row) => row.originalLanguage && row.originalLanguage !== 'en').length,
     },
   });
 }
-
