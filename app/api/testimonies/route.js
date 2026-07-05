@@ -81,6 +81,127 @@ const testimonySearchSelect = {
   brief: { select: { summary: true } },
 };
 
+const testimonyExcerptSelect = {
+  id: true,
+  title: true,
+  summary: true,
+  narrativeText: true,
+  transcriptionText: true,
+  submissionMethod: true,
+  originalLanguage: true,
+  affectedDomain: true,
+  selfReportedImpact: true,
+  aiImpactClassification: true,
+  aiThemes: true,
+  aiConfidenceScore: true,
+  clusterId: true,
+  isOutlier: true,
+  topicId: true,
+  submittedAt: true,
+  corpusTopic: { select: { label: true, topKeywords: true } },
+  algorithmLinks: {
+    select: {
+      linkType: true,
+      confidence: true,
+      algorithm: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          useCase: true,
+          agencyName: true,
+        },
+      },
+    },
+  },
+  brief: { select: { summary: true } },
+};
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function algorithmLinkWhere(value) {
+  if (!value) return {};
+  return uuidPattern.test(value)
+    ? { algorithmId: value }
+    : { algorithm: { slug: value } };
+}
+
+function normalizeThemeName(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function storyHasTheme(story, theme) {
+  const target = normalizeThemeName(theme);
+  if (!target) return true;
+  const themes = Array.isArray(story.aiThemes) ? story.aiThemes : [];
+  return themes.some((item) => {
+    const name = typeof item === 'string' ? item : item?.theme || item?.label || item?.name;
+    return normalizeThemeName(name) === target;
+  });
+}
+
+function cleanExcerptText(story) {
+  const text = story.brief?.summary || story.summary || story.transcriptionText || story.narrativeText || '';
+  const clean = text.replace(/\s+/g, ' ').trim();
+  if (clean.length <= 340) return clean;
+  return `${clean.slice(0, 337).trim()}...`;
+}
+
+function pickBriefingExcerpts(stories, limit) {
+  const picked = [];
+  const seenIds = new Set();
+  const seenClusters = new Set();
+
+  const addStory = (story, whyShown) => {
+    if (!story || seenIds.has(story.id) || picked.length >= limit) return;
+    picked.push({ story, whyShown });
+    seenIds.add(story.id);
+  };
+
+  for (const story of stories) {
+    if (story.clusterId == null || seenClusters.has(story.clusterId)) continue;
+    seenClusters.add(story.clusterId);
+    addStory(story, 'Representative story from a recurring cluster.');
+  }
+
+  for (const story of stories) {
+    if (!story.isOutlier) continue;
+    addStory(story, 'Minority or outlier story kept visible by the corpus model.');
+  }
+
+  for (const story of stories) {
+    addStory(story, 'Recent approved story matching the current filters.');
+  }
+
+  return picked.map(({ story, whyShown }) => ({
+    id: story.id,
+    title: story.title || 'Untitled story',
+    excerpt: cleanExcerptText(story),
+    whyShown,
+    submittedAt: story.submittedAt,
+    submissionMethod: story.submissionMethod,
+    originalLanguage: story.originalLanguage,
+    affectedDomain: story.affectedDomain,
+    impact: story.aiImpactClassification || story.selfReportedImpact || 'UNCLEAR',
+    themes: Array.isArray(story.aiThemes) ? story.aiThemes : [],
+    confidence: story.aiConfidenceScore,
+    cluster: story.clusterId == null ? null : { id: story.clusterId, isOutlier: story.isOutlier },
+    topic: story.topicId == null ? null : {
+      id: story.topicId,
+      label: story.corpusTopic?.label || 'Suggested topic',
+      keywords: story.corpusTopic?.topKeywords || [],
+    },
+    algorithms: story.algorithmLinks.map((link) => ({
+      slug: link.algorithm.slug,
+      name: link.algorithm.name,
+      useCase: link.algorithm.useCase,
+      agencyName: link.algorithm.agencyName,
+      linkType: link.linkType,
+      confidence: link.confidence,
+    })),
+  }));
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const page = Math.max(Number(searchParams.get('page') || 1), 1);
@@ -88,16 +209,46 @@ export async function GET(request) {
   const jurisdictionId = getJurisdictionId();
   const search = searchParams.get('search') || '';
   const domain = searchParams.get('domain') || '';
+  const theme = searchParams.get('theme') || '';
   const impact = searchParams.get('impact') || '';
-  const algorithmId = searchParams.get('algorithm') || '';
+  const algorithm = searchParams.get('algorithm') || '';
+  const fields = searchParams.get('fields') || '';
 
   const where = {
     jurisdictionId,
     moderationStatus: 'APPROVED',
     ...(domain ? { affectedDomain: domain } : {}),
     ...(impact ? { selfReportedImpact: impact } : {}),
-    ...(algorithmId ? { algorithmLinks: { some: { algorithmId } } } : {}),
+    ...(algorithm ? { algorithmLinks: { some: algorithmLinkWhere(algorithm) } } : {}),
   };
+
+  if (fields === 'excerpt') {
+    const candidates = await prisma.testimony.findMany({
+      where,
+      orderBy: [
+        { isOutlier: 'desc' },
+        { submittedAt: 'desc' },
+      ],
+      take: 150,
+      select: testimonyExcerptSelect,
+    });
+    const matchingStories = candidates.filter((story) => storyHasTheme(story, theme));
+    const start = (page - 1) * limit;
+    const items = pickBriefingExcerpts(matchingStories, start + limit).slice(start, start + limit);
+
+    return NextResponse.json({
+      items,
+      page,
+      limit,
+      total: matchingStories.length,
+      scope: searchParams.get('scope') || (algorithm ? 'algorithm' : 'corpus'),
+      fields: 'excerpt',
+      notes: [
+        'Excerpts are shortened and avoid submitter contact details.',
+        'Representative rows use cluster_id; minority rows use is_outlier when available.',
+      ],
+    });
+  }
 
   if (search) {
     const candidates = await prisma.testimony.findMany({
