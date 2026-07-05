@@ -216,15 +216,23 @@ export async function GET(request) {
     ...(filters.dateFrom ? { gte: filters.dateFrom } : {}),
     ...(filters.dateTo ? { lte: filters.dateTo } : {}),
   };
+  const storyFilters = [
+    ...(domain ? [{
+      OR: [
+        { affectedDomain: domain },
+        { algorithmLinks: { some: { algorithm: { useCase: domain } } } },
+      ],
+    }] : []),
+    ...(impact ? [{ OR: [{ selfReportedImpact: impact }, { aiImpactClassification: impact }] }] : []),
+  ];
 
   const where = {
     jurisdictionId,
     moderationStatus: 'APPROVED',
-    ...(domain ? { affectedDomain: domain } : {}),
     ...(language ? { originalLanguage: language } : {}),
     ...(submissionMethod ? { submissionMethod } : {}),
     ...(Object.keys(submittedAt).length ? { submittedAt } : {}),
-    ...(impact ? { OR: [{ selfReportedImpact: impact }, { aiImpactClassification: impact }] } : {}),
+    ...(storyFilters.length ? { AND: storyFilters } : {}),
     ...(algorithm ? { algorithmLinks: { some: algorithmLinkWhere(algorithm) } } : {}),
   };
 
