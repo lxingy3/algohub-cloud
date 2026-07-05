@@ -14,6 +14,8 @@ export async function GET(request) {
     const domain = story.affectedDomain || story.algorithmLinks[0]?.algorithm.useCase || 'Unknown domain';
     storiesByDomain.set(domain, (storiesByDomain.get(domain) || 0) + 1);
   }
+  const requestedPriority = filters.silencePriority.toLowerCase();
+  const priorityFilter = ['high', 'medium', 'low'].includes(requestedPriority) ? requestedPriority : '';
   const rows = algorithms.map((algorithm) => {
     const volumeGap = algorithm.approvedTestimonyCount === 0 ? 1 : algorithm.approvedTestimonyCount < 3 ? 0.6 : algorithm.approvedTestimonyCount < 6 ? 0.3 : 0;
     const domainCount = storiesByDomain.get(algorithm.useCase) || 0;
@@ -42,7 +44,8 @@ export async function GET(request) {
           ? ['thin testimony volume']
           : [],
     };
-  }).sort((a, b) => b.silenceScore - a.silenceScore || a.algorithmName.localeCompare(b.algorithmName));
+  }).filter((row) => !priorityFilter || row.priority === priorityFilter)
+    .sort((a, b) => b.silenceScore - a.silenceScore || a.algorithmName.localeCompare(b.algorithmName));
 
   return NextResponse.json({
     label: 'suggested silence review queue',
