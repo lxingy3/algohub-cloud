@@ -104,13 +104,18 @@ function buildDraft({ algorithm = null, rows, generatedAt }) {
 
 function toBriefingWrite(draft) {
   const { generatedAt, ...data } = draft;
-  return data;
+  return {
+    ...data,
+    dateRangeStart: data.dateRangeStart ? new Date(`${data.dateRangeStart}T00:00:00.000Z`) : null,
+    dateRangeEnd: data.dateRangeEnd ? new Date(`${data.dateRangeEnd}T00:00:00.000Z`) : null,
+  };
 }
 
 async function main() {
   if (args['self-check']) {
     assert.deepEqual(topCounts(['b', 'a', 'b']), [{ label: 'b', count: 2 }, { label: 'a', count: 1 }]);
     assert.equal(labels([]), 'not enough reviewed data yet');
+    assert.equal(toBriefingWrite({ dateRangeStart: '2026-02-08', dateRangeEnd: null }).dateRangeStart.toISOString(), '2026-02-08T00:00:00.000Z');
     console.log('briefings narrative draft self-check ok');
     return;
   }
