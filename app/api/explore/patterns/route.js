@@ -16,15 +16,17 @@ export async function GET(request) {
     label: 'suggested corpus patterns',
     total: rows.length,
     topics,
-    points: rows.filter((row) => row.umapX !== null && row.umapY !== null).map((row) => ({
-      ...(filters.lens === 'government' ? {} : { id: row.id, title: row.title }),
+    points: filters.lens === 'government' ? [] : rows.filter((row) => row.umapX !== null && row.umapY !== null).map((row) => ({
+      id: row.id,
+      title: row.title,
       topicId: row.topicId,
       topicLabel: row.corpusTopic?.label || null,
       clusterId: row.clusterId,
       isOutlier: row.isOutlier,
       umapX: row.umapX,
       umapY: row.umapY,
-      ...(filters.lens === 'government' ? {} : { excerpt: anonymizedExcerpt(row) }),
+      excerpt: anonymizedExcerpt(row),
     })),
+    notes: filters.lens === 'government' ? ['Government lens is aggregate-only; story-level map points are not returned.'] : [],
   });
 }

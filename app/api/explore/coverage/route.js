@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { countBy, getApprovedBriefingCorpus, parseExploreFilters } from '../../../../lib/briefingsExplore';
+import { countBy, getApprovedBriefingCorpus, minGroupCountForLens, parseExploreFilters } from '../../../../lib/briefingsExplore';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { prisma } from '../../../../lib/prisma';
 
@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request) {
   const filters = parseExploreFilters(request);
   const rows = await getApprovedBriefingCorpus(filters);
+  const minCount = minGroupCountForLens(filters.lens);
   const briefings = await prisma.briefing.findMany({
     where: {
       jurisdictionId: getJurisdictionId(),
@@ -25,11 +26,11 @@ export async function GET(request) {
     label: 'provenance and paradata',
     total: rows.length,
     dateRange: dates.length ? { from: dates[0], to: dates[dates.length - 1] } : null,
-    submissionMethod: countBy(rows, (row) => row.submissionMethod),
-    language: countBy(rows, (row) => row.originalLanguage),
-    domain: countBy(rows, (row) => row.affectedDomain),
-    neighbourhood: countBy(rows, (row) => row.neighbourhood),
-    partnerOrganization: countBy(rows, (row) => row.partnerOrganization?.name),
+    submissionMethod: countBy(rows, (row) => row.submissionMethod, { minCount }),
+    language: countBy(rows, (row) => row.originalLanguage, { minCount }),
+    domain: countBy(rows, (row) => row.affectedDomain, { minCount }),
+    neighbourhood: countBy(rows, (row) => row.neighbourhood, { minCount }),
+    partnerOrganization: countBy(rows, (row) => row.partnerOrganization?.name, { minCount }),
     briefings: {
       total: briefings.length,
       reviewStatus: countBy(briefings, (row) => row.reviewStatus),

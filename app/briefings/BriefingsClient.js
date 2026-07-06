@@ -166,8 +166,9 @@ export function BriefingsClient() {
     params.set('scope', scope === 'algorithm' ? 'algorithm' : 'corpus');
     if (scope === 'algorithm') params.set('algorithm', selectedVisibleAlgorithm);
     if (domain !== 'All domains') params.set('domain', domain);
+    if (languageMode === 'en') params.set('language', 'en');
     return `?${params.toString()}`;
-  }, [domain, lens, scope, selectedVisibleAlgorithm]);
+  }, [domain, languageMode, lens, scope, selectedVisibleAlgorithm]);
   const excerptQuery = useMemo(() => {
     const params = new URLSearchParams();
     params.set('fields', 'excerpt');
@@ -176,8 +177,9 @@ export function BriefingsClient() {
     params.set('scope', scope === 'algorithm' ? 'algorithm' : 'corpus');
     if (scope === 'algorithm') params.set('algorithm', selectedVisibleAlgorithm);
     if (domain !== 'All domains') params.set('domain', domain);
+    if (languageMode === 'en') params.set('language', 'en');
     return `?${params.toString()}`;
-  }, [domain, lens, scope, selectedVisibleAlgorithm]);
+  }, [domain, languageMode, lens, scope, selectedVisibleAlgorithm]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

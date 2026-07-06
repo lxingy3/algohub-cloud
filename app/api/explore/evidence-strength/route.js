@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { countBy, evidenceLevel, getApprovedBriefingCorpus, parseExploreFilters } from '../../../../lib/briefingsExplore';
+import { countBy, evidenceLevel, getApprovedBriefingCorpus, minGroupCountForLens, parseExploreFilters } from '../../../../lib/briefingsExplore';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +20,9 @@ function summarizeRepresentation(items) {
 }
 
 export async function GET(request) {
-  const rows = await getApprovedBriefingCorpus(parseExploreFilters(request));
+  const filters = parseExploreFilters(request);
+  const rows = await getApprovedBriefingCorpus(filters);
+  const minCount = minGroupCountForLens(filters.lens);
   const grouped = new Map();
   for (const row of rows) {
     const key = row.corpusTopic?.label || row.affectedDomain || 'Unlabeled';
@@ -39,10 +41,11 @@ export async function GET(request) {
       outliers,
       averageConfidence: confidences.length ? Number(avg.toFixed(2)) : null,
       strength: evidenceLevel(items.length, outliers, avg),
-      impactMix: countBy(items, (item) => item.aiImpactClassification),
+      impactMix: countBy(items, (item) => item.aiImpactClassification, { minCount }),
       representation: summarizeRepresentation(items),
     };
-  }).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  }).filter((row) => row.count >= minCount)
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 
   return NextResponse.json({
     label: 'suggested evidence strength',

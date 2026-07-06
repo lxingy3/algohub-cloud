@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getApprovedBriefingCorpus, normalizeThemes, parseExploreFilters } from '../../../../lib/briefingsExplore';
+import { getApprovedBriefingCorpus, minGroupCountForLens, normalizeThemes, parseExploreFilters } from '../../../../lib/briefingsExplore';
 import { prisma } from '../../../../lib/prisma';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
-  const rows = await getApprovedBriefingCorpus(parseExploreFilters(request));
+  const filters = parseExploreFilters(request);
+  const rows = await getApprovedBriefingCorpus(filters);
+  const minCount = minGroupCountForLens(filters.lens);
   const byTheme = new Map();
   const byPair = new Map();
   for (const row of rows) {
@@ -59,12 +61,14 @@ export async function GET(request) {
       improvementDirection: direction?.improvementDirection || null,
       policyDirection: direction?.policyDirection || null,
     };
-  }).sort((a, b) => b.count - a.count || a.theme.localeCompare(b.theme));
+  }).filter((theme) => theme.count >= minCount)
+    .sort((a, b) => b.count - a.count || a.theme.localeCompare(b.theme));
 
   const coOccurrences = [...byPair.entries()].map(([key, count]) => {
     const [source, target] = key.split('|||');
     return { source, target, count };
-  }).sort((a, b) => b.count - a.count || a.source.localeCompare(b.source) || a.target.localeCompare(b.target));
+  }).filter((row) => row.count >= minCount)
+    .sort((a, b) => b.count - a.count || a.source.localeCompare(b.source) || a.target.localeCompare(b.target));
 
   return NextResponse.json({ totalStories: rows.length, themes, coOccurrences });
 }

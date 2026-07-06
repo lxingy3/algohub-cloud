@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getApprovedBriefingCorpus, normalizeThemes, parseExploreFilters } from '../../../../lib/briefingsExplore';
+import { getApprovedBriefingCorpus, minGroupCountForLens, normalizeThemes, parseExploreFilters } from '../../../../lib/briefingsExplore';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   const filters = parseExploreFilters(request);
   const rows = await getApprovedBriefingCorpus(filters);
+  const minCount = minGroupCountForLens(filters.lens);
   const cells = new Map();
   for (const row of rows) {
     const groups = filters.dimension === 'algorithm'
@@ -24,6 +25,7 @@ export async function GET(request) {
     rows: [...cells.entries()].map(([key, count]) => {
       const [group, theme] = key.split('|||');
       return { group, domain: filters.dimension === 'algorithm' ? null : group, algorithm: filters.dimension === 'algorithm' ? group : null, theme, count };
-    }).sort((a, b) => b.count - a.count || a.group.localeCompare(b.group) || a.theme.localeCompare(b.theme)),
+    }).filter((row) => row.count >= minCount)
+      .sort((a, b) => b.count - a.count || a.group.localeCompare(b.group) || a.theme.localeCompare(b.theme)),
   });
 }

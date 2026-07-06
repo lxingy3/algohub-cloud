@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAlgorithmLandscape, getApprovedBriefingCorpus, monthKey, normalizeThemes, parseExploreFilters } from '../../../../lib/briefingsExplore';
+import { getAlgorithmLandscape, getApprovedBriefingCorpus, minGroupCountForLens, monthKey, normalizeThemes, parseExploreFilters } from '../../../../lib/briefingsExplore';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +9,7 @@ export async function GET(request) {
     getApprovedBriefingCorpus(filters),
     getAlgorithmLandscape(filters),
   ]);
+  const minCount = minGroupCountForLens(filters.lens);
   const buckets = new Map();
   for (const row of rows) {
     const month = monthKey(row.submittedAt);
@@ -30,5 +31,9 @@ export async function GET(request) {
       currentVersion: algorithm.currentVersion,
     }));
 
-  return NextResponse.json({ label: 'monthly suggested pattern trend', buckets: [...buckets.values()].sort((a, b) => a.month.localeCompare(b.month)), markers });
+  return NextResponse.json({
+    label: 'monthly suggested pattern trend',
+    buckets: [...buckets.values()].filter((bucket) => bucket.total >= minCount).sort((a, b) => a.month.localeCompare(b.month)),
+    markers,
+  });
 }
