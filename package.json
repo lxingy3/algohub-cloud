@@ -25,6 +25,7 @@
     "ml:briefings:self-check": "python scripts/briefings-corpus-batch.py --self-check --output task-briefings-results/corpus-batch-self-check.json",
     "ml:briefings:apply": "node scripts/briefings-corpus-apply.mjs",
     "briefings:draft": "node scripts/briefings-narrative-draft.mjs",
+    "briefings:draft:claude": "node scripts/briefings-narrative-draft.mjs --claude",
     "briefings:draft:self-check": "node scripts/briefings-narrative-draft.mjs --self-check",
     "mobile:smoke": "node scripts/run-mobile-smoke.mjs",
     "typecheck": "tsc -p ./jsconfig.json",

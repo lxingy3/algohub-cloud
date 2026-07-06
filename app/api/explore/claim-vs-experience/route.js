@@ -8,6 +8,14 @@ export const dynamic = 'force-dynamic';
 export async function GET(request) {
   const filters = parseExploreFilters(request);
   const jurisdictionId = getJurisdictionId();
+  const cachedRows = await cachedClaimRows({ jurisdictionId, filters });
+  if (cachedRows.length) {
+    return NextResponse.json({
+      label: 'claim vs experience cache',
+      reviewStatus: 'published briefing cache',
+      rows: cachedRows,
+    });
+  }
   const algorithms = await prisma.algorithm.findMany({
     where: {
       jurisdictionId,
@@ -48,5 +56,32 @@ export async function GET(request) {
         })),
       };
     }).filter((row) => row.claims.length || row.experienceCount),
+  });
+}
+
+async function cachedClaimRows({ jurisdictionId, filters }) {
+  const briefing = await prisma.briefing.findFirst({
+    where: {
+      jurisdictionId,
+      reviewStatus: 'PUBLISHED',
+      briefingType: filters.algorithm ? 'ALGORITHM_SPECIFIC' : 'CROSS_CUTTING',
+      ...(filters.algorithm ? { targetAlgorithm: { slug: filters.algorithm } } : { targetAlgorithmId: null }),
+    },
+    orderBy: { publishedAt: 'desc' },
+    select: { claimVsExperience: true },
+  });
+  const rows = Array.isArray(briefing?.claimVsExperience) ? briefing.claimVsExperience : [];
+  return rows.map((row, index) => {
+    if (typeof row === 'string') {
+      return { algorithmSlug: null, algorithmName: `Briefing note ${index + 1}`, claims: [{ text: row }], experienceCount: null, experienceExamples: [] };
+    }
+    return {
+      algorithmSlug: row.algorithmSlug || null,
+      algorithmName: row.algorithmName || row.algorithmSlug || `Briefing note ${index + 1}`,
+      claims: Array.isArray(row.claims) ? row.claims : [],
+      experienceCount: row.experienceCount ?? null,
+      experienceExamples: Array.isArray(row.experienceExamples) ? row.experienceExamples : [],
+      discrepancy: row.discrepancy || row.summary || null,
+    };
   });
 }
