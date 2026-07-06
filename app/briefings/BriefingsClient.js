@@ -160,6 +160,8 @@ export function BriefingsClient() {
     ? algorithm
     : visibleAlgorithms[0]?.slug || algorithms[0].slug;
   const selectedAlgorithm = algorithms.find((item) => item.slug === selectedVisibleAlgorithm) || algorithms[0];
+  const privateNotesKey = `briefings-private-note:${scope}:${lens}:${scope === 'algorithm' ? selectedVisibleAlgorithm : 'corpus'}`;
+  const [privateNote, setPrivateNote] = useState('');
   const liveQuery = useMemo(() => {
     const params = new URLSearchParams();
     params.set('lens', lens);
@@ -233,6 +235,16 @@ export function BriefingsClient() {
     params.set('language', languageMode);
     window.history.replaceState(null, '', `/briefings?${params.toString()}`);
   }, [domain, languageMode, lens, paramsReady, readingLevel, scope, selectedVisibleAlgorithm]);
+
+  useEffect(() => {
+    if (lens !== 'intermediary') return;
+    setPrivateNote(window.localStorage.getItem(privateNotesKey) || '');
+  }, [lens, privateNotesKey]);
+
+  const updatePrivateNote = (value) => {
+    setPrivateNote(value);
+    window.localStorage.setItem(privateNotesKey, value);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -365,7 +377,15 @@ export function BriefingsClient() {
 
         <div className="space-y-5">
           {view.blocks.map((block) => (
-            <BriefingBlock key={block.code} block={block} snapshot={liveSnapshot} />
+            <BriefingBlock
+              key={block.code}
+              block={block}
+              snapshot={liveSnapshot}
+              readingLevel={readingLevel}
+              privateNote={privateNote}
+              onPrivateNoteChange={updatePrivateNote}
+              showPrivateNotes={lens === 'intermediary' && block.framing.includes('NOTES PRIVATE')}
+            />
           ))}
         </div>
       </section>
@@ -433,7 +453,7 @@ function ControlSelect({ label, value, options, onChange }) {
   );
 }
 
-function BriefingBlock({ block, snapshot }) {
+function BriefingBlock({ block, snapshot, readingLevel, privateNote, onPrivateNoteChange, showPrivateNotes }) {
   return (
     <article className="grid overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.25fr)]">
       <div className="border-b border-slate-200 bg-slate-950 p-5 text-white lg:border-b-0 lg:border-r">
@@ -452,13 +472,34 @@ function BriefingBlock({ block, snapshot }) {
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">No actions</span>
         </div>
         <dl className="grid gap-3">
-          <SpecRow icon={Database} label="Database" value={block.db} />
-          <SpecRow icon={Search} label="API endpoint" value={block.api} />
-          <SpecRow icon={Filter} label="ML / NLP method" value={block.ml} />
+          <SpecDetails block={block} readingLevel={readingLevel} />
         </dl>
         <LiveBlockData block={block} snapshot={snapshot} />
+        {showPrivateNotes ? (
+          <label className="mt-4 block rounded-md border border-slate-200 bg-slate-50 p-3 text-sm font-semibold text-slate-700">
+            Private notes
+            <textarea
+              value={privateNote}
+              onChange={(event) => onPrivateNoteChange(event.target.value)}
+              className="mt-2 min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 font-normal text-slate-900"
+            />
+          </label>
+        ) : null}
       </div>
     </article>
+  );
+}
+
+function SpecDetails({ block, readingLevel }) {
+  if (readingLevel === 'plain') {
+    return <SpecRow icon={Database} label="Uses" value="Approved stories, algorithm records, and review metadata." />;
+  }
+  return (
+    <>
+      <SpecRow icon={Database} label="Database" value={block.db} />
+      <SpecRow icon={Search} label="API endpoint" value={block.api} />
+      {readingLevel === 'detail' ? <SpecRow icon={Filter} label="ML / NLP method" value={block.ml} /> : null}
+    </>
   );
 }
 
@@ -486,7 +527,7 @@ function LiveVisual({ block, snapshot, fallbackType }) {
 function LiveBars({ rows }) {
   const topRows = rows.slice(0, 5);
   const max = Math.max(1, ...topRows.map(([, value]) => Number(value) || 0));
-  if (!topRows.length) return <Visual type="bars" />;
+  if (!topRows.length) return <EmptyLive />;
   return (
     <div className="mt-6 space-y-3">
       {topRows.map(([label, value]) => (
@@ -503,7 +544,7 @@ function LiveBars({ rows }) {
 function LiveHeatmap({ rows }) {
   const topRows = rows.slice(0, 25);
   const max = Math.max(1, ...topRows.map((row) => row.count || 0));
-  if (!topRows.length) return <Visual type="heatmap" />;
+  if (!topRows.length) return <EmptyLive />;
   return (
     <div className="mt-6 grid grid-cols-5 gap-1.5">
       {topRows.map((row) => (
@@ -521,7 +562,7 @@ function LiveHeatmap({ rows }) {
 function LiveTrend({ buckets }) {
   const topBuckets = buckets.slice(-8);
   const max = Math.max(1, ...topBuckets.map((bucket) => bucket.total || 0));
-  if (!topBuckets.length) return <Visual type="trend" />;
+  if (!topBuckets.length) return <EmptyLive />;
   return (
     <div className="mt-6 flex h-32 items-end gap-2">
       {topBuckets.map((bucket) => (
@@ -536,7 +577,7 @@ function LiveTrend({ buckets }) {
 
 function LiveScatter({ points }) {
   const visible = points.slice(0, 40);
-  if (!visible.length) return <Visual type="scatter" />;
+  if (!visible.length) return <EmptyLive label="No story-level points shown for this lens." />;
   const xs = visible.map((point) => point.umapX);
   const ys = visible.map((point) => point.umapY);
   const minX = Math.min(...xs);
@@ -563,7 +604,7 @@ function LiveScatter({ points }) {
 
 function LiveExcerpts({ examples }) {
   const rows = examples.slice(0, 2);
-  if (!rows.length) return <Visual type="excerpt" />;
+  if (!rows.length) return <EmptyLive label="No excerpts shown for this lens." />;
   return (
     <div className="mt-6 space-y-3">
       <MessageSquare className="h-8 w-8 text-amber-300" />
@@ -579,7 +620,7 @@ function LiveExcerpts({ examples }) {
 
 function LiveTable({ rows }) {
   const topRows = rows.slice(0, 4);
-  if (!topRows.length) return <Visual type="table" />;
+  if (!topRows.length) return <EmptyLive />;
   return (
     <div className="mt-6 space-y-2">
       {topRows.map(([label, value]) => (
@@ -597,7 +638,7 @@ function LiveLinks({ organizations, events }) {
     ...organizations.slice(0, 2).map((item) => ({ id: item.id, title: item.name, detail: item.websiteUrl || item.role || 'organization' })),
     ...events.slice(0, 2).map((item) => ({ id: item.id, title: item.title, detail: item.location || 'event' })),
   ];
-  if (!rows.length) return <Visual type="links" />;
+  if (!rows.length) return <EmptyLive />;
   return (
     <div className="mt-6 space-y-2">
       {rows.map((row) => (
@@ -612,7 +653,7 @@ function LiveLinks({ organizations, events }) {
 
 function LiveAlgorithmCards({ algorithms }) {
   const rows = algorithms.slice(0, 3);
-  if (!rows.length) return <Visual type="cards" />;
+  if (!rows.length) return <EmptyLive label="No proposed systems returned." />;
   return (
     <div className="mt-6 grid gap-3">
       {rows.map((item) => (
@@ -646,10 +687,18 @@ function LiveBlockData({ block, snapshot }) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live story excerpts" rows={(snapshot.excerpts?.items || []).slice(0, 3).map((row) => [row.title, row.whyShown])} />;
   }
   if (api.includes('claim-vs-experience')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live claim rows" rows={(snapshot.claimVsExperience?.rows || []).slice(0, 3).map((row) => [row.algorithmName, row.experienceCount])} />;
+    const rows = [
+      ...(snapshot.claimVsExperience?.reviewStatus ? [['Review status', snapshot.claimVsExperience.reviewStatus]] : []),
+      ...(snapshot.claimVsExperience?.rows || []).slice(0, 3).map((row) => [row.algorithmName, row.experienceCount]),
+    ];
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live claim rows" rows={rows} />;
   }
   if (api.includes('patterns')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live suggested topics" rows={(snapshot.patterns?.topics || []).slice(0, 4).map((row) => [row.label || `Topic ${row.topicId}`, row.size])} />;
+    const rows = [
+      ...((snapshot.patterns?.notes || []).slice(0, 1).map((note) => ['Note', note])),
+      ...(snapshot.patterns?.topics || []).slice(0, 4).map((row) => [row.label || `Topic ${row.topicId}`, row.size]),
+    ];
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live suggested topics" rows={rows} />;
   }
   if (api.includes('coverage')) {
     const missing = snapshot.coverage?.whatsMissing || {};
@@ -710,6 +759,14 @@ function MiniRows({ className, titleClass, title, rows }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function EmptyLive({ label = 'No live rows for the current filters.' }) {
+  return (
+    <div className="mt-6 rounded-md border border-white/15 bg-white/10 px-3 py-4 text-sm font-semibold text-slate-200">
+      {label}
     </div>
   );
 }
