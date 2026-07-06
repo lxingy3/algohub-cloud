@@ -106,7 +106,7 @@ function buildDraft({ algorithm = null, rows, generatedAt }) {
       `Represented domains: ${labelsWithCounts(domains)}.`,
       `${outliers} less common experiences are preserved as outlier stories in the corpus map.`,
     ],
-    patternAnalysis: `This briefing summarizes cached Task 2-5 labels and offline corpus batch fields. Topic labels are suggested patterns in approved stories, not adjudicated findings.`,
+    patternAnalysis: `This briefing is based on approved stories, reviewed algorithm records, and the offline topic map. Suggested topics should be read as patterns for review, not final findings.`,
     silenceGaps: domains.length ? [] : [{ reason: 'No domain coverage available in the approved story set.' }],
     recommendations: [
       'Review low-coverage domains before publishing.',
@@ -192,9 +192,10 @@ async function main() {
   if (apply) {
     for (const draft of drafts) {
       const data = toBriefingWrite(draft);
+      const { reviewStatus, ...updateData } = data;
       await prisma.briefing.upsert({
         where: { slug: draft.slug },
-        update: data,
+        update: updateData,
         create: { jurisdictionId, ...data },
       });
     }
