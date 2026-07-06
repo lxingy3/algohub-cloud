@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 
 
-DEFAULT_MODEL = "BAAI/bge-small-en-v1.5"
+DEFAULT_MODEL = "Qwen/Qwen3-Embedding-0.6B"
 STOPWORDS = {
     "the", "and", "for", "that", "this", "with", "from", "was", "were", "our", "your", "their", "into",
     "about", "after", "algorithm", "automated", "because", "before", "could", "have", "system", "there",
@@ -42,7 +42,7 @@ def topic_id_or_none(topic_id):
 
 
 def min_cluster_size(count):
-    return max(3, min(10, round(count * 0.08)))
+    return max(2, min(10, round(count * 0.06)))
 
 
 def read_json(path):
@@ -121,6 +121,24 @@ def build_topics(records, topic_ids, texts, topic_model=None):
             "spanAlgorithms": len(algorithm_ids),
             "spanDomains": len(domains),
         })
+    return dedupe_topic_labels(topics)
+
+
+def dedupe_topic_labels(topics):
+    counts = Counter(topic["label"] for topic in topics)
+    seen = Counter()
+    for topic in topics:
+        label = topic["label"]
+        if counts[label] == 1:
+            continue
+        seen[label] += 1
+        label_words = set(re.findall(r"[a-z][a-z'-]{2,}", label.lower()))
+        suffix_words = [
+            word for word in topic.get("topKeywords", [])
+            if not label_words.intersection(re.findall(r"[a-z][a-z'-]{2,}", str(word).lower()))
+        ]
+        suffix = clean_label(suffix_words[:2]).replace(" / ", " and ")
+        topic["label"] = f"{label}: {suffix}" if suffix != "suggested topic" else f"{label} {seen[label]}"
     return topics
 
 
@@ -186,7 +204,7 @@ def run_lightweight_self_check(output_path):
     print(json.dumps({"outputPath": output_path, "records": len(payload["records"]), "topics": len(payload["topics"])}, indent=2))
 
 
-def run_production(input_path, output_path, model_name):
+def run_production(input_path, output_path, model_name, n_neighbors_arg=None, min_cluster_size_arg=None, min_samples_arg=None):
     from bertopic import BERTopic
     from hdbscan import HDBSCAN
     from sentence_transformers import SentenceTransformer
@@ -209,12 +227,13 @@ def run_production(input_path, output_path, model_name):
     embeddings = model.encode(texts, batch_size=16, show_progress_bar=True, normalize_embeddings=True)
     embeddings = np.asarray(embeddings)
 
-    neighbors = max(2, min(15, len(records) - 1))
-    cluster_size = min_cluster_size(len(records))
+    neighbors = n_neighbors_arg or max(2, min(10, len(records) - 1))
+    cluster_size = min_cluster_size_arg or min_cluster_size(len(records))
+    min_samples = min_samples_arg or 1
     umap_model = UMAP(n_components=2, n_neighbors=neighbors, min_dist=0.0, metric="cosine", random_state=42)
     hdbscan_model = HDBSCAN(
         min_cluster_size=cluster_size,
-        min_samples=2,
+        min_samples=min_samples,
         metric="euclidean",
         cluster_selection_method="eom",
         prediction_data=True,
@@ -236,7 +255,7 @@ def run_production(input_path, output_path, model_name):
     params = {
         "embeddingModel": model_name,
         "umap": {"metric": "cosine", "randomState": 42, "nNeighbors": neighbors, "nComponents": 2},
-        "hdbscan": {"minClusterSize": cluster_size, "minSamples": 2, "metric": "euclidean", "clusterSelectionMethod": "eom"},
+        "hdbscan": {"minClusterSize": cluster_size, "minSamples": min_samples, "metric": "euclidean", "clusterSelectionMethod": "eom"},
         "bertopic": {"topicMinusOneStoredAsNull": True},
     }
     payload = make_payload(input_payload, embeddings, umap_xy, cluster_ids, topic_ids, topics, model_name, params, warnings)
@@ -249,13 +268,16 @@ def main():
     parser.add_argument("--input", default="task-briefings-results/corpus-batch-input.json")
     parser.add_argument("--output", default="task-briefings-results/corpus-batch-results.json")
     parser.add_argument("--model", default=os.environ.get("BRIEFINGS_EMBEDDING_MODEL", DEFAULT_MODEL))
+    parser.add_argument("--n-neighbors", type=int)
+    parser.add_argument("--min-cluster-size", type=int)
+    parser.add_argument("--min-samples", type=int)
     parser.add_argument("--self-check", action="store_true")
     args = parser.parse_args()
 
     if args.self_check:
         run_lightweight_self_check(args.output)
     else:
-        run_production(args.input, args.output, args.model)
+        run_production(args.input, args.output, args.model, args.n_neighbors, args.min_cluster_size, args.min_samples)
 
 
 if __name__ == "__main__":
