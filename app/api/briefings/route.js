@@ -41,7 +41,7 @@ export async function GET(request) {
       ...(generatedBy ? { generatedBy } : {}),
       ...(targetTheme ? { targetTheme } : {}),
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
     select: {
       id: true,
       title: true,
