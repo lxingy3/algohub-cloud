@@ -10,6 +10,11 @@ import numpy as np
 
 
 DEFAULT_MODEL = "BAAI/bge-small-en-v1.5"
+STOPWORDS = {
+    "the", "and", "for", "that", "this", "with", "from", "was", "were", "our", "your", "their", "into",
+    "about", "after", "algorithm", "automated", "because", "before", "could", "have", "system", "there",
+    "without", "worker", "score", "said", "pittsburgh", "allegheny", "county", "2026", "did", "office", "like",
+}
 SYNTHETIC_RECORDS = [
     ("housing-1", "Housing applicants described a waiting list score that changed without explanation and delayed placement."),
     ("housing-2", "A tenant could not see why the housing priority score dropped after submitting updated documents."),
@@ -26,9 +31,7 @@ SYNTHETIC_RECORDS = [
 def clean_label(words):
     useful = [
         word for word in words
-        if word and not word.isdigit() and word.lower() not in {
-            "the", "and", "for", "that", "this", "with", "from", "was", "were", "our", "your", "their", "into",
-        }
+        if word and not word.isdigit() and word.lower() not in STOPWORDS
     ]
     label = " / ".join(useful[:4]).strip()
     return label or "suggested topic"
@@ -58,11 +61,30 @@ def keyword_label(texts, indexes):
     for index in indexes:
         words.extend(re.findall(r"[a-z][a-z'-]{3,}", texts[index].lower()))
     stop = {
-        "about", "after", "algorithm", "automated", "because", "before", "could", "from", "have",
-        "system", "that", "their", "there", "this", "with", "without", "worker", "score", "said",
+        *STOPWORDS,
     }
     ranked = [word for word, _count in Counter(word for word in words if word not in stop).most_common(6)]
     return clean_label(ranked)
+
+
+def canonical_topic_label(records, indexes, words, texts):
+    keyword_text = " ".join(words).lower()
+    domain_counts = Counter(records[index].get("affectedDomain") or "" for index in indexes)
+    top_domain = domain_counts.most_common(1)[0][0].lower() if domain_counts else ""
+    text = f"{keyword_text} {top_domain}"
+    rules = [
+        (("family screening", "child welfare", "cps", "risk score"), "Family Screening Risk and Support"),
+        (("housing", "unhoused", "shelter", "tenant"), "Housing Access and Priority"),
+        (("benefits", "eligibility", "appeal", "review"), "Benefits Review and Eligibility"),
+        (("dispatcher", "emergency", "traffic", "transit", "safety", "inspection", "building"), "Public Safety Response and Inspection"),
+        (("job", "employment", "interview", "worker matching"), "Job Matching and Employment Access"),
+        (("language", "translation", "interpreter"), "Language Access and Service Navigation"),
+        (("student", "school", "counselor"), "Student Support and Risk Labels"),
+    ]
+    for terms, label in rules:
+        if any(term in text for term in terms):
+            return label
+    return None
 
 
 def build_topics(records, topic_ids, texts, topic_model=None):
@@ -88,13 +110,13 @@ def build_topics(records, topic_ids, texts, topic_model=None):
                 words = [word for word, _score in topic_model.get_topic(topic_id)[:8]]
             except Exception:
                 words = []
-        label = (clean_label(words) if words else None) or info.get("Name") or keyword_label(texts, indexes)
+        label = canonical_topic_label(records, indexes, words, texts) or (clean_label(words) if words else None) or info.get("Name") or keyword_label(texts, indexes)
         algorithm_ids = {algorithm_id for index in indexes for algorithm_id in records[index].get("algorithmIds", [])}
         domains = {records[index].get("affectedDomain") for index in indexes if records[index].get("affectedDomain")}
         topics.append({
             "topicId": topic_id,
             "label": label,
-            "topKeywords": words[:8] or label.split(" / "),
+            "topKeywords": [word for word in words if word and word.lower() not in STOPWORDS and not word.isdigit()][:8] or label.split(" / "),
             "size": len(indexes),
             "spanAlgorithms": len(algorithm_ids),
             "spanDomains": len(domains),

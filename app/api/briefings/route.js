@@ -25,6 +25,8 @@ export async function GET(request) {
   const briefingType = enumValue(params.get('type'), ['ALGORITHM_SPECIFIC', 'THEMATIC', 'SILENCE_REPORT', 'CROSS_CUTTING']);
   const generatedBy = params.get('generated_by') || '';
   const targetTheme = params.get('target_theme') || '';
+  const effectiveReviewStatus = reviewStatus || 'PUBLISHED';
+  const includeBody = effectiveReviewStatus === 'PUBLISHED';
   const dateFilters = [
     ...(dateFrom ? [{ OR: [{ dateRangeEnd: null }, { dateRangeEnd: { gte: dateFrom } }] }] : []),
     ...(dateTo ? [{ OR: [{ dateRangeStart: null }, { dateRangeStart: { lte: dateTo } }] }] : []),
@@ -34,7 +36,7 @@ export async function GET(request) {
       jurisdictionId,
       ...(algorithm ? { targetAlgorithm: { slug: algorithm } } : {}),
       ...(dateFilters.length ? { AND: dateFilters } : {}),
-      reviewStatus: reviewStatus || 'PUBLISHED',
+      reviewStatus: effectiveReviewStatus,
       ...(briefingType ? { briefingType } : {}),
       ...(generatedBy ? { generatedBy } : {}),
       ...(targetTheme ? { targetTheme } : {}),
@@ -50,6 +52,16 @@ export async function GET(request) {
       reviewStatus: true,
       publishedAt: true,
       generatedBy: true,
+      dateRangeStart: true,
+      dateRangeEnd: true,
+      ...(includeBody ? {
+        executiveSummary: true,
+        keyFindings: true,
+        patternAnalysis: true,
+        recommendations: true,
+        claimVsExperience: true,
+      } : {}),
+      targetAlgorithm: { select: { slug: true, name: true, useCase: true, agencyName: true } },
     },
   });
   return NextResponse.json({ items, total: items.length });

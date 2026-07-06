@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpen, Database, FileText, Filter, Landmark, MessageSquare, Search, Users } from 'lucide-react';
+import { BookOpen, Database, FileText, Filter, Landmark, MessageSquare, Search, Users, X } from 'lucide-react';
 
 const lenses = [
   { id: 'community', label: 'Community', short: 'Community Members', icon: Users },
@@ -153,6 +153,7 @@ export function BriefingsClient() {
   const [languageMode, setLanguageMode] = useState('en');
   const [paramsReady, setParamsReady] = useState(false);
   const [liveSnapshot, setLiveSnapshot] = useState(null);
+  const [activeEvidenceBlock, setActiveEvidenceBlock] = useState(null);
   const view = briefingViews[scope][lens];
   const domains = useMemo(() => ['All domains', ...new Set(algorithms.map((item) => item.domain))], [algorithms]);
   const visibleAlgorithms = domain === 'All domains' ? algorithms : algorithms.filter((item) => item.domain === domain);
@@ -182,6 +183,12 @@ export function BriefingsClient() {
     if (languageMode === 'en') params.set('language', 'en');
     return `?${params.toString()}`;
   }, [domain, languageMode, lens, scope, selectedVisibleAlgorithm]);
+  const briefingQuery = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set('type', scope === 'algorithm' ? 'ALGORITHM_SPECIFIC' : 'CROSS_CUTTING');
+    if (scope === 'algorithm') params.set('algorithm', selectedVisibleAlgorithm);
+    return `?${params.toString()}`;
+  }, [scope, selectedVisibleAlgorithm]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -267,7 +274,7 @@ export function BriefingsClient() {
       fetch('/api/organizations?role=library&limit=6').then((response) => response.json()),
       fetch('/api/events?limit=6').then((response) => response.json()),
       fetch('/api/algorithms?status=PROPOSED,UNDER_REVIEW&limit=6').then((response) => response.json()),
-      fetch('/api/briefings').then((response) => response.json()),
+      fetch(`/api/briefings${briefingQuery}`).then((response) => response.json()),
     ]).then(([landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, excerpts, organizations, events, proposedAlgorithms, briefings]) => {
       if (!cancelled) {
         setLiveSnapshot({ landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, excerpts, organizations, events, proposedAlgorithms, briefings });
@@ -278,7 +285,9 @@ export function BriefingsClient() {
     return () => {
       cancelled = true;
     };
-  }, [excerptQuery, liveQuery]);
+  }, [briefingQuery, excerptQuery, liveQuery]);
+
+  const cachedBriefing = liveSnapshot && !liveSnapshot.error ? liveSnapshot.briefings?.items?.[0] : null;
 
   return (
     <>
@@ -288,10 +297,10 @@ export function BriefingsClient() {
           <div className="mt-3 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end">
             <div>
               <h1 className="max-w-3xl text-3xl font-bold tracking-tight text-slate-950 md:text-5xl">
-                Briefing pages
+                Briefings
               </h1>
               <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-                Choose a lens, then choose Overview or Filter by Algorithm. The blocks below follow the current wireframes and now read from the first live explore API prototype.
+                Choose a lens on the left, then use Overview or Filter by Algorithm. Each section combines reviewed briefing text with live aggregate evidence.
               </p>
               <LiveSnapshot snapshot={liveSnapshot} />
             </div>
@@ -375,6 +384,8 @@ export function BriefingsClient() {
           </div>
         </div>
 
+        <NarrativePanel briefing={cachedBriefing} scope={scope} lens={lens} />
+
         <div className="space-y-5">
           {view.blocks.map((block) => (
             <BriefingBlock
@@ -384,10 +395,12 @@ export function BriefingsClient() {
               readingLevel={readingLevel}
               privateNote={privateNote}
               onPrivateNoteChange={updatePrivateNote}
+              onOpenEvidence={() => setActiveEvidenceBlock(block)}
               showPrivateNotes={lens === 'intermediary' && block.framing.includes('NOTES PRIVATE')}
             />
           ))}
         </div>
+        <EvidenceDrawer block={activeEvidenceBlock} snapshot={liveSnapshot} lens={lens} onClose={() => setActiveEvidenceBlock(null)} />
       </section>
     </>
   );
@@ -453,7 +466,60 @@ function ControlSelect({ label, value, options, onChange }) {
   );
 }
 
-function BriefingBlock({ block, snapshot, readingLevel, privateNote, onPrivateNoteChange, showPrivateNotes }) {
+function NarrativePanel({ briefing, scope, lens }) {
+  const findings = listJson(briefing?.keyFindings);
+  const recommendations = listJson(briefing?.recommendations);
+  const claims = listJson(briefing?.claimVsExperience);
+  return (
+    <div className="mb-6 rounded-lg border border-slate-200 bg-white p-5">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
+            {scope === 'algorithm' ? 'Algorithm briefing' : 'Corpus briefing'} / {lens}
+          </p>
+          <h3 className="mt-2 text-xl font-bold text-slate-950">{briefing?.title || 'No published narrative yet'}</h3>
+          <p className="mt-3 text-base leading-7 text-slate-700">
+            {briefing?.executiveSummary || 'Live evidence is available below. A reviewed narrative will appear here after the draft is published.'}
+          </p>
+          {briefing?.patternAnalysis ? (
+            <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950">{briefing.patternAnalysis}</p>
+          ) : null}
+        </div>
+        <div className="grid gap-3">
+          <NarrativeList title="Key findings" rows={findings} empty="Pending review." />
+          <NarrativeList title="Recommendations" rows={recommendations} empty="Pending review." />
+          {claims.length ? <NarrativeList title="Claim vs. experience" rows={claims} empty="" /> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NarrativeList({ title, rows, empty }) {
+  return (
+    <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{title}</p>
+      <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-800">
+        {(rows.length ? rows : [empty]).filter(Boolean).map((row) => (
+          <li key={row}>- {row}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function listJson(value) {
+  if (!value) return [];
+  const rows = Array.isArray(value) ? value : [value];
+  return rows.map((item) => {
+    if (typeof item === 'string') return item;
+    if (item?.text) return item.text;
+    if (item?.claim) return `${item.algorithmName || item.algorithmSlug || 'Claim'}: ${item.claim}`;
+    return Object.values(item || {}).filter((part) => typeof part === 'string' || typeof part === 'number').join(' - ');
+  }).filter(Boolean);
+}
+
+function BriefingBlock({ block, snapshot, readingLevel, privateNote, onPrivateNoteChange, onOpenEvidence, showPrivateNotes }) {
   return (
     <article className="grid overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.25fr)]">
       <div className="border-b border-slate-200 bg-slate-950 p-5 text-white lg:border-b-0 lg:border-r">
@@ -467,9 +533,14 @@ function BriefingBlock({ block, snapshot, readingLevel, privateNote, onPrivateNo
         <LiveVisual block={block} snapshot={snapshot} fallbackType={block.visualType} />
       </div>
       <div className="p-5">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">{block.framing}</span>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">No actions</span>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">{block.framing}</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Read only</span>
+          </div>
+          <button type="button" onClick={onOpenEvidence} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50">
+            View evidence
+          </button>
         </div>
         <dl className="grid gap-3">
           <SpecDetails block={block} readingLevel={readingLevel} />
@@ -490,6 +561,75 @@ function BriefingBlock({ block, snapshot, readingLevel, privateNote, onPrivateNo
   );
 }
 
+function EvidenceDrawer({ block, snapshot, lens, onClose }) {
+  if (!block) return null;
+  const rows = evidenceRows(block, snapshot, lens);
+  const visibleRows = rows.length ? rows : [{ title: 'No rows for the current filters', value: '', detail: 'Try another domain, lens, or algorithm.' }];
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950/35" role="dialog" aria-modal="true">
+      <div className="ml-auto flex h-full w-full max-w-xl flex-col bg-white shadow-2xl">
+        <div className="border-b border-slate-200 p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-700">Evidence</p>
+              <h3 className="mt-2 text-xl font-bold text-slate-950">{block.code} {block.title}</h3>
+              <p className="mt-1 text-sm text-slate-600">{block.api}</p>
+            </div>
+            <button type="button" onClick={onClose} className="rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" aria-label="Close evidence">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-5">
+          <div className="space-y-3">
+            {visibleRows.map((row) => (
+              <div key={`${row.title}-${row.value}-${row.detail}`} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-semibold text-slate-950">{row.title}</p>
+                  {row.value ? <span className="shrink-0 rounded bg-white px-2 py-1 text-xs font-bold text-slate-800">{row.value}</span> : null}
+                </div>
+                {row.detail ? <p className="mt-2 text-sm leading-6 text-slate-700">{row.detail}</p> : null}
+              </div>
+            ))}
+          </div>
+          {lens === 'government' ? (
+            <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+              Government view keeps story-level excerpts hidden and shows aggregate evidence only.
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function evidenceRows(block, snapshot, lens) {
+  if (!snapshot) return [{ title: 'Live evidence loading', value: '', detail: 'The supporting API rows are still loading.' }];
+  if (snapshot.error) return [{ title: 'Live evidence unavailable', value: '', detail: 'The page could not load the supporting API rows.' }];
+  const api = block.api.toLowerCase();
+  if (api.includes('theme-matrix')) return (snapshot.themeMatrix?.rows || []).slice(0, 8).map((row) => ({ title: `${row.domain} / ${displayBriefingLabel(row.theme)}`, value: row.count, detail: 'Approved story count in this domain-theme cell.' }));
+  if (api.includes('trend')) return (snapshot.trend?.buckets || []).slice(-8).map((row) => ({ title: row.month, value: row.total, detail: 'Approved stories in this time bucket.' }));
+  if (api.includes('patterns')) return (snapshot.patterns?.topics || []).slice(0, 8).map((row) => ({ title: row.label || `Topic ${row.topicId}`, value: row.size, detail: `Suggested corpus topic. Keywords: ${(row.keywords || []).join(', ') || 'none listed'}.` }));
+  if (api.includes('claim-vs-experience')) return (snapshot.claimVsExperience?.rows || []).slice(0, 8).map((row) => ({ title: row.algorithmName, value: row.experienceCount, detail: (row.claims || []).map((claim) => claim.text).join(' ') || 'No formal claim text listed.' }));
+  if (api.includes('coverage')) return Object.entries(snapshot.coverage?.whatsMissing || {}).map(([title, value]) => ({ title, value, detail: 'Coverage/paradata gap for the current filters.' }));
+  if (api.includes('silence')) return (snapshot.silence?.rows || []).slice(0, 8).map((row) => ({ title: row.algorithmName, value: row.priority, detail: `Volume ${row.factors?.volumeGap ?? 0}; semantic ${row.factors?.semanticGap ?? 0}; domain ${row.factors?.domainGap ?? 0}.` }));
+  if (api.includes('testimonies') || api.includes('recognition')) {
+    if (lens === 'government') return [{ title: 'Aggregate-only lens', value: '', detail: 'Story rows are intentionally suppressed for government users.' }];
+    const rows = api.includes('recognition') ? snapshot.recognition?.examples : snapshot.excerpts?.items;
+    return (rows || []).slice(0, 8).map((row) => ({ title: row.title, value: row.impact || row.matchBasis || row.whyShown, detail: row.excerpt || row.whyShown }));
+  }
+  if (api.includes('evidence-strength')) return (snapshot.evidence?.findings || []).slice(0, 8).map((row) => ({ title: row.label, value: row.strength, detail: `${row.count} stories; minority ${row.representation?.minorityCount || 0}; dissent ${row.representation?.dissentCount || 0}.` }));
+  if (api.includes('compare')) return (snapshot.compare?.groups || []).slice(0, 8).map((row) => ({ title: row.label, value: row.total, detail: `Positive ${row.impacts?.POSITIVE || 0}; negative ${row.impacts?.NEGATIVE || 0}; mixed ${row.impacts?.MIXED || 0}.` }));
+  if (api.includes('impact')) return (snapshot.impact?.aiSuggested || []).map((row) => ({ title: row.label, value: row.count, detail: 'AI-suggested impact classification count.' }));
+  if (api.includes('themes') || api.includes('cross-cutting-themes')) return (snapshot.themes?.themes || []).slice(0, 8).map((row) => ({ title: displayBriefingLabel(row.theme), value: row.count, detail: row.policyDirection || row.improvementDirection || 'Suggested theme from approved stories.' }));
+  if (api.includes('organizations') || api.includes('events')) return [
+    ...(snapshot.organizations?.items || []).map((row) => ({ title: row.name, value: row.role, detail: row.websiteUrl || 'Library/community resource.' })),
+    ...(snapshot.events?.items || []).map((row) => ({ title: row.title, value: row.location, detail: row.startsAt || 'Community event.' })),
+  ].slice(0, 8);
+  if (api.includes('status=proposed')) return (snapshot.proposedAlgorithms?.items || []).slice(0, 8).map((row) => ({ title: row.name, value: row.status, detail: row.useCase || row.agencyName }));
+  return (snapshot.landscape?.byDomain || []).slice(0, 8).map((row) => ({ title: row.label, value: row.count, detail: 'Algorithms grouped by domain.' }));
+}
+
 function SpecDetails({ block, readingLevel }) {
   if (readingLevel === 'plain') {
     return <SpecRow icon={Database} label="Uses" value="Approved stories, algorithm records, and review metadata." />;
@@ -501,6 +641,21 @@ function SpecDetails({ block, readingLevel }) {
       {readingLevel === 'detail' ? <SpecRow icon={Filter} label="ML / NLP method" value={block.ml} /> : null}
     </>
   );
+}
+
+function displayBriefingLabel(value) {
+  const text = String(value || '').trim();
+  const known = {
+    data_accuracy: 'Data accuracy',
+    arbitrary_outcome: 'Arbitrary outcomes',
+    positive_experience: 'Positive experiences',
+    opacity: 'Lack of explanation',
+    delayed_outcome: 'Delays',
+    loss_of_dignity: 'Dignity concerns',
+    lack_of_recourse: 'Appeals and recourse',
+    process_confusion: 'Process confusion',
+  };
+  return known[text] || text.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function LiveVisual({ block, snapshot, fallbackType }) {
@@ -519,7 +674,7 @@ function LiveVisual({ block, snapshot, fallbackType }) {
   if (api.includes('evidence-strength')) return <LiveBars rows={(snapshot.evidence?.findings || []).map((row) => [row.label, row.count])} />;
   if (api.includes('compare')) return <LiveBars rows={(snapshot.compare?.groups || []).map((row) => [row.label, row.total])} />;
   if (api.includes('impact')) return <LiveBars rows={(snapshot.impact?.aiSuggested || []).map((row) => [row.label, row.count])} />;
-  if (api.includes('themes') || api.includes('cross-cutting-themes')) return <LiveBars rows={(snapshot.themes?.themes || []).map((row) => [row.theme, row.count])} />;
+  if (api.includes('themes') || api.includes('cross-cutting-themes')) return <LiveBars rows={(snapshot.themes?.themes || []).map((row) => [displayBriefingLabel(row.theme), row.count])} />;
   if (api.includes('landscape') || api.includes('algorithms')) return <LiveBars rows={(snapshot.landscape?.byDomain || []).map((row) => [row.label, row.count])} />;
   return <Visual type={fallbackType} />;
 }
@@ -550,7 +705,7 @@ function LiveHeatmap({ rows }) {
       {topRows.map((row) => (
         <div
           key={`${row.domain}-${row.theme}`}
-          title={`${row.domain} / ${row.theme}: ${row.count}`}
+          title={`${row.domain} / ${displayBriefingLabel(row.theme)}: ${row.count}`}
           className="h-9 rounded border border-white/10 bg-amber-300"
           style={{ opacity: 0.25 + ((row.count || 0) / max) * 0.75 }}
         />
@@ -673,7 +828,7 @@ function LiveBlockData({ block, snapshot }) {
   const boxClass = 'mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3';
 
   if (api.includes('theme-matrix')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live theme matrix" rows={(snapshot.themeMatrix?.rows || []).slice(0, 4).map((row) => [`${row.domain} / ${row.theme}`, row.count])} />;
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live theme matrix" rows={(snapshot.themeMatrix?.rows || []).slice(0, 4).map((row) => [`${row.domain} / ${displayBriefingLabel(row.theme)}`, row.count])} />;
   }
   if (api.includes('trend')) {
     const bucketRows = (snapshot.trend?.buckets || []).slice(-2).map((row) => [row.month, row.total]);
@@ -732,13 +887,13 @@ function LiveBlockData({ block, snapshot }) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live impact split" rows={(snapshot.impact?.aiSuggested || []).slice(0, 4).map((row) => [row.label, row.count])} />;
   }
   if (block.title.toLowerCase().includes('improvement') || block.title.toLowerCase().includes('policy direction')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live improvement map" rows={(snapshot.themes?.themes || []).slice(0, 4).map((row) => [row.theme, row.policyDirection || row.improvementDirection || 'needs mapping'])} />;
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live improvement map" rows={(snapshot.themes?.themes || []).slice(0, 4).map((row) => [displayBriefingLabel(row.theme), row.policyDirection || row.improvementDirection || 'needs mapping'])} />;
   }
   if (block.title.toLowerCase().includes('co-occurrence')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live co-occurrence" rows={(snapshot.themes?.coOccurrences || []).slice(0, 4).map((row) => [`${row.source} + ${row.target}`, row.count])} />;
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live co-occurrence" rows={(snapshot.themes?.coOccurrences || []).slice(0, 4).map((row) => [`${displayBriefingLabel(row.source)} + ${displayBriefingLabel(row.target)}`, row.count])} />;
   }
   if (api.includes('themes') || api.includes('cross-cutting-themes')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live suggested themes" rows={(snapshot.themes?.themes || []).slice(0, 4).map((row) => [row.theme, row.count])} />;
+    return <MiniRows className={boxClass} titleClass={titleClass} title="Live suggested themes" rows={(snapshot.themes?.themes || []).slice(0, 4).map((row) => [displayBriefingLabel(row.theme), row.count])} />;
   }
   if (api.includes('landscape') || api.includes('algorithms')) {
     return <MiniRows className={boxClass} titleClass={titleClass} title="Live landscape" rows={(snapshot.landscape?.byDomain || []).slice(0, 4).map((row) => [row.label, row.count])} />;

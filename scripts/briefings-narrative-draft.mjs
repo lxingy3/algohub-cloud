@@ -46,7 +46,7 @@ function normalizeThemes(value) {
 
 function topCounts(items, limit = 5) {
   const counts = new Map();
-  for (const item of items.filter(Boolean)) counts.set(item, (counts.get(item) || 0) + 1);
+  for (const item of items.filter(Boolean).map(displayLabel)) counts.set(item, (counts.get(item) || 0) + 1);
   return [...counts.entries()]
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
@@ -57,12 +57,36 @@ function labels(rows) {
   return rows.length ? rows.map((row) => row.label).join(', ') : 'not enough reviewed data yet';
 }
 
+function labelsWithCounts(rows) {
+  return rows.length ? rows.map((row) => `${row.label} (${row.count})`).join(', ') : 'not enough reviewed data yet';
+}
+
+function displayLabel(value) {
+  const text = String(value || '').trim();
+  const known = {
+    data_accuracy: 'Data accuracy',
+    arbitrary_outcome: 'Arbitrary outcomes',
+    positive_experience: 'Positive experiences',
+    opacity: 'Lack of explanation',
+    delayed_outcome: 'Delays',
+    loss_of_dignity: 'Dignity concerns',
+    lack_of_recourse: 'Appeals and recourse',
+    process_confusion: 'Process confusion',
+    NEGATIVE: 'Negative',
+    POSITIVE: 'Positive',
+    MIXED: 'Mixed',
+    UNCLEAR: 'Unclear',
+  };
+  if (known[text]) return known[text];
+  return text.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 function buildDraft({ algorithm = null, rows, generatedAt }) {
   const themes = topCounts(rows.flatMap((row) => normalizeThemes(row.aiThemes)));
   const impacts = topCounts(rows.map((row) => row.aiImpactClassification || row.selfReportedImpact || 'UNCLEAR'));
   const domains = topCounts(rows.map((row) => row.affectedDomain || row.algorithmLinks[0]?.algorithm.useCase || 'Unknown domain'));
   const outliers = rows.filter((row) => row.isOutlier).length;
-  const title = algorithm ? `${algorithm.name} briefing draft` : 'Cross-cutting briefing draft';
+  const title = algorithm ? `${algorithm.name} briefing` : 'Cross-cutting briefing';
   const slug = algorithm ? `local-draft-${algorithm.slug}` : 'local-draft-cross-cutting';
   const dateValues = rows.map((row) => row.submittedAt).filter(Boolean).sort((a, b) => a - b);
 
@@ -77,12 +101,12 @@ function buildDraft({ algorithm = null, rows, generatedAt }) {
     testimonyCount: rows.length,
     executiveSummary: `${rows.length} approved stories are included in this draft. The strongest suggested themes are ${labels(themes)}; the main domains represented are ${labels(domains)}.`,
     keyFindings: [
-      { label: 'Suggested themes', items: themes },
-      { label: 'Impact mix', items: impacts },
-      { label: 'Represented domains', items: domains },
-      { label: 'Less common experiences', count: outliers },
+      `Most common suggested themes: ${labelsWithCounts(themes)}.`,
+      `Impact mix: ${labelsWithCounts(impacts)}.`,
+      `Represented domains: ${labelsWithCounts(domains)}.`,
+      `${outliers} less common experiences are preserved as outlier stories in the corpus map.`,
     ],
-    patternAnalysis: `This is a local rule-based draft generated from cached Task 2-5 labels and corpus batch fields. It is meant for review, not publication as an adjudicated finding.`,
+    patternAnalysis: `This briefing summarizes cached Task 2-5 labels and offline corpus batch fields. Topic labels are suggested patterns in approved stories, not adjudicated findings.`,
     silenceGaps: domains.length ? [] : [{ reason: 'No domain coverage available in the approved story set.' }],
     recommendations: [
       'Review low-coverage domains before publishing.',
@@ -113,7 +137,7 @@ function toBriefingWrite(draft) {
 
 async function main() {
   if (args['self-check']) {
-    assert.deepEqual(topCounts(['b', 'a', 'b']), [{ label: 'b', count: 2 }, { label: 'a', count: 1 }]);
+    assert.deepEqual(topCounts(['b', 'a', 'b']), [{ label: 'B', count: 2 }, { label: 'A', count: 1 }]);
     assert.equal(labels([]), 'not enough reviewed data yet');
     assert.equal(toBriefingWrite({ dateRangeStart: '2026-02-08', dateRangeEnd: null }).dateRangeStart.toISOString(), '2026-02-08T00:00:00.000Z');
     console.log('briefings narrative draft self-check ok');
