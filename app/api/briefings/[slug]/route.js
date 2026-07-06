@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(_request, { params }) {
   const jurisdictionId = getJurisdictionId();
   const briefing = await prisma.briefing.findFirst({
-    where: { jurisdictionId, slug: params.slug },
+    where: { jurisdictionId, slug: params.slug, reviewStatus: 'PUBLISHED' },
     include: {
       targetAlgorithm: { select: { slug: true, name: true, useCase: true, agencyName: true } },
       reviewedBy: { select: { name: true, email: true } },
@@ -16,4 +16,3 @@ export async function GET(_request, { params }) {
   if (!briefing) return NextResponse.json({ error: 'Briefing not found' }, { status: 404 });
   return NextResponse.json(briefing);
 }
-

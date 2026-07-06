@@ -34,7 +34,7 @@ export async function GET(request) {
       jurisdictionId,
       ...(algorithm ? { targetAlgorithm: { slug: algorithm } } : {}),
       ...(dateFilters.length ? { AND: dateFilters } : {}),
-      ...(reviewStatus ? { reviewStatus } : {}),
+      reviewStatus: reviewStatus || 'PUBLISHED',
       ...(briefingType ? { briefingType } : {}),
       ...(generatedBy ? { generatedBy } : {}),
       ...(targetTheme ? { targetTheme } : {}),
