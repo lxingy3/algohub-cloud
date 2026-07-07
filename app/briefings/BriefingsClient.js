@@ -270,14 +270,15 @@ export function BriefingsClient() {
       getJson('/api/explore/recognition'),
       getJson('/api/explore/compare'),
       getJson('/api/explore/claim-vs-experience'),
+      getJson('/api/explore/cross-jurisdiction'),
       getJson('/api/testimonies', excerptQuery),
       fetch('/api/organizations?role=library&limit=6').then((response) => response.json()),
       fetch('/api/events?limit=6').then((response) => response.json()),
       fetch('/api/algorithms?status=PROPOSED,UNDER_REVIEW&limit=6').then((response) => response.json()),
       fetch(`/api/briefings${briefingQuery}`).then((response) => response.json()),
-    ]).then(([landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, excerpts, organizations, events, proposedAlgorithms, briefings]) => {
+    ]).then(([landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, crossJurisdiction, excerpts, organizations, events, proposedAlgorithms, briefings]) => {
       if (!cancelled) {
-        setLiveSnapshot({ landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, excerpts, organizations, events, proposedAlgorithms, briefings });
+        setLiveSnapshot({ landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, crossJurisdiction, excerpts, organizations, events, proposedAlgorithms, briefings });
       }
     }).catch(() => {
       if (!cancelled) setLiveSnapshot({ error: true });
@@ -611,6 +612,10 @@ function evidenceRows(block, snapshot, lens) {
   if (api.includes('trend')) return (snapshot.trend?.buckets || []).slice(-8).map((row) => ({ title: row.month, value: row.total, detail: 'Approved stories in this time bucket.' }));
   if (api.includes('patterns')) return (snapshot.patterns?.topics || []).slice(0, 8).map((row) => ({ title: row.label || `Topic ${row.topicId}`, value: row.size, detail: `Suggested corpus topic. Keywords: ${(row.keywords || []).join(', ') || 'none listed'}.` }));
   if (api.includes('claim-vs-experience')) return (snapshot.claimVsExperience?.rows || []).slice(0, 8).map((row) => ({ title: row.algorithmName, value: row.experienceCount, detail: (row.claims || []).map((claim) => claim.text).join(' ') || 'No formal claim text listed.' }));
+  if (api.includes('cross-jurisdiction')) return (snapshot.crossJurisdiction?.rows || []).map((row) => {
+    const [title, value] = crossJurisdictionRow(row);
+    return { title, value, detail: row.summary || row.detail || snapshot.crossJurisdiction?.reviewStatus || 'Approved peer-jurisdiction aggregate.' };
+  });
   if (api.includes('coverage')) return Object.entries(snapshot.coverage?.whatsMissing || {}).map(([title, value]) => ({ title, value, detail: 'Coverage/paradata gap for the current filters.' }));
   if (api.includes('silence')) return (snapshot.silence?.rows || []).slice(0, 8).map((row) => ({ title: row.algorithmName, value: row.priority, detail: `Volume ${row.factors?.volumeGap ?? 0}; semantic ${row.factors?.semanticGap ?? 0}; domain ${row.factors?.domainGap ?? 0}.` }));
   if (api.includes('testimonies') || api.includes('recognition')) {
@@ -670,6 +675,7 @@ function LiveVisual({ block, snapshot }) {
   if (api.includes('testimonies')) return <LiveExcerpts examples={snapshot.excerpts?.items || []} />;
   if (api.includes('recognition')) return <LiveExcerpts examples={snapshot.recognition?.examples || []} />;
   if (api.includes('claim-vs-experience')) return <LiveTable rows={(snapshot.claimVsExperience?.rows || []).map((row) => [row.algorithmName, row.experienceCount])} />;
+  if (api.includes('cross-jurisdiction')) return <LiveTable rows={(snapshot.crossJurisdiction?.rows || []).map(crossJurisdictionRow)} emptyLabel={snapshot.crossJurisdiction?.reviewStatus || 'Waiting for approved peer-jurisdiction data.'} />;
   if (api.includes('patterns')) return <LiveScatter points={snapshot.patterns?.points || []} />;
   if (api.includes('silence')) return <LiveSilenceHeatmap rows={snapshot.silence?.rows || []} />;
   if (api.includes('coverage')) return <LiveCoveragePanel coverage={snapshot.coverage} />;
@@ -984,9 +990,13 @@ function LiveExcerpts({ examples }) {
   );
 }
 
-function LiveTable({ rows }) {
+function crossJurisdictionRow(row) {
+  return [row.label || row.jurisdiction || row.city || 'Peer benchmark', row.value || row.count || row.summary || 'approved'];
+}
+
+function LiveTable({ rows, emptyLabel }) {
   const topRows = rows.slice(0, 4);
-  if (!topRows.length) return <EmptyLive />;
+  if (!topRows.length) return <EmptyLive label={emptyLabel} />;
   return (
     <div className="mt-6 space-y-2">
       {topRows.map(([label, value]) => (
