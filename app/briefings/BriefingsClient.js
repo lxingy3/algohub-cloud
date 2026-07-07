@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { BookOpen, Database, FileText, Filter, Landmark, MessageSquare, Search, Users, X } from 'lucide-react';
 
 const lenses = [
@@ -530,7 +530,7 @@ function BriefingBlock({ block, snapshot, readingLevel, privateNote, onPrivateNo
           </div>
           <span className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-slate-200">{block.visual}</span>
         </div>
-        <LiveVisual block={block} snapshot={snapshot} fallbackType={block.visualType} />
+        <LiveVisual block={block} snapshot={snapshot} />
       </div>
       <div className="p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -619,7 +619,10 @@ function evidenceRows(block, snapshot, lens) {
     return (rows || []).slice(0, 8).map((row) => ({ title: row.title, value: row.impact || row.matchBasis || row.whyShown, detail: row.excerpt || row.whyShown }));
   }
   if (api.includes('evidence-strength')) return (snapshot.evidence?.findings || []).slice(0, 8).map((row) => ({ title: row.label, value: row.strength, detail: `${row.count} stories; minority ${row.representation?.minorityCount || 0}; dissent ${row.representation?.dissentCount || 0}.` }));
-  if (api.includes('compare')) return (snapshot.compare?.groups || []).slice(0, 8).map((row) => ({ title: row.label, value: row.total, detail: `Positive ${row.impacts?.POSITIVE || 0}; negative ${row.impacts?.NEGATIVE || 0}; mixed ${row.impacts?.MIXED || 0}.` }));
+  if (api.includes('compare')) return (snapshot.compare?.groups || []).slice(0, 8).map((row) => {
+    const impacts = Object.fromEntries(countRows(row.impact));
+    return { title: row.label, value: row.total, detail: `Positive ${impacts.POSITIVE || 0}; negative ${impacts.NEGATIVE || 0}; mixed ${impacts.MIXED || 0}.` };
+  });
   if (api.includes('impact')) return (snapshot.impact?.aiSuggested || []).map((row) => ({ title: row.label, value: row.count, detail: 'AI-suggested impact classification count.' }));
   if (api.includes('themes') || api.includes('cross-cutting-themes')) return (snapshot.themes?.themes || []).slice(0, 8).map((row) => ({ title: displayBriefingLabel(row.theme), value: row.count, detail: row.policyDirection || row.improvementDirection || 'Suggested theme from approved stories.' }));
   if (api.includes('organizations') || api.includes('events')) return [
@@ -658,8 +661,9 @@ function displayBriefingLabel(value) {
   return known[text] || text.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function LiveVisual({ block, snapshot, fallbackType }) {
-  if (!snapshot || snapshot.error) return <Visual type={fallbackType} />;
+function LiveVisual({ block, snapshot }) {
+  if (!snapshot) return <EmptyLive label="Loading live data for this chart..." />;
+  if (snapshot.error) return <EmptyLive label="Live chart data is unavailable." />;
   const api = block.api.toLowerCase();
   if (api.includes('theme-matrix')) return <LiveHeatmap rows={snapshot.themeMatrix?.rows || []} />;
   if (api.includes('trend')) return <LiveTrend buckets={snapshot.trend?.buckets || []} />;
@@ -667,16 +671,19 @@ function LiveVisual({ block, snapshot, fallbackType }) {
   if (api.includes('recognition')) return <LiveExcerpts examples={snapshot.recognition?.examples || []} />;
   if (api.includes('claim-vs-experience')) return <LiveTable rows={(snapshot.claimVsExperience?.rows || []).map((row) => [row.algorithmName, row.experienceCount])} />;
   if (api.includes('patterns')) return <LiveScatter points={snapshot.patterns?.points || []} />;
-  if (api.includes('coverage')) return <LiveTable rows={Object.entries(snapshot.coverage?.whatsMissing || {})} />;
-  if (api.includes('silence')) return <LiveTable rows={(snapshot.silence?.rows || []).map((row) => [row.algorithmName, row.priority])} />;
+  if (api.includes('silence')) return <LiveSilenceHeatmap rows={snapshot.silence?.rows || []} />;
+  if (api.includes('coverage')) return <LiveCoveragePanel coverage={snapshot.coverage} />;
   if (api.includes('organizations') || api.includes('events')) return <LiveLinks organizations={snapshot.organizations?.items || []} events={snapshot.events?.items || []} />;
   if (api.includes('status=proposed')) return <LiveAlgorithmCards algorithms={snapshot.proposedAlgorithms?.items || []} />;
   if (api.includes('evidence-strength')) return <LiveBars rows={(snapshot.evidence?.findings || []).map((row) => [row.label, row.count])} />;
-  if (api.includes('compare')) return <LiveBars rows={(snapshot.compare?.groups || []).map((row) => [row.label, row.total])} />;
+  if (api.includes('compare')) return <LiveCompareMultiples groups={snapshot.compare?.groups || []} />;
   if (api.includes('impact')) return <LiveBars rows={(snapshot.impact?.aiSuggested || []).map((row) => [row.label, row.count])} />;
-  if (api.includes('themes') || api.includes('cross-cutting-themes')) return <LiveBars rows={(snapshot.themes?.themes || []).map((row) => [displayBriefingLabel(row.theme), row.count])} />;
+  if (api.includes('themes') || api.includes('cross-cutting-themes')) {
+    if (block.visualType === 'heatmap' || block.visualType === 'network') return <LiveCoOccurrenceMatrix rows={snapshot.themes?.coOccurrences || []} themes={snapshot.themes?.themes || []} />;
+    return <LiveBars rows={(snapshot.themes?.themes || []).map((row) => [displayBriefingLabel(row.theme), row.count])} />;
+  }
   if (api.includes('landscape') || api.includes('algorithms')) return <LiveBars rows={(snapshot.landscape?.byDomain || []).map((row) => [row.label, row.count])} />;
-  return <Visual type={fallbackType} />;
+  return <EmptyLive label="No live chart data returned for this block." />;
 }
 
 function LiveBars({ rows }) {
@@ -684,14 +691,20 @@ function LiveBars({ rows }) {
   const max = Math.max(1, ...topRows.map(([, value]) => Number(value) || 0));
   if (!topRows.length) return <EmptyLive />;
   return (
-    <div className="mt-6 space-y-3">
-      {topRows.map(([label, value]) => (
-        <div key={`${label}-${value}`} className="grid grid-cols-[90px_1fr_34px] items-center gap-2 text-xs">
-          <span className="truncate text-slate-300">{label}</span>
-          <span className="h-3 rounded bg-amber-300" style={{ width: `${Math.max(10, (Number(value) || 0) / max * 100)}%` }} />
-          <span className="text-right font-bold text-white">{value}</span>
-        </div>
-      ))}
+    <div className="mt-5">
+      <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+        <span>Y: category</span>
+        <span>X: count</span>
+      </div>
+      <div className="space-y-3 border-b border-l border-white/15 pb-2 pl-2">
+        {topRows.map(([label, value]) => (
+          <div key={`${label}-${value}`} className="grid grid-cols-[90px_1fr_34px] items-center gap-2 text-xs">
+            <span className="truncate text-slate-300">{label}</span>
+            <span className="h-3 rounded bg-amber-300" style={{ width: `${Math.max(10, (Number(value) || 0) / max * 100)}%` }} />
+            <span className="text-right font-bold text-white">{value}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -700,16 +713,179 @@ function LiveHeatmap({ rows }) {
   const topRows = rows.slice(0, 25);
   const max = Math.max(1, ...topRows.map((row) => row.count || 0));
   if (!topRows.length) return <EmptyLive />;
+  const domains = Array.from(new Set(topRows.map((row) => row.domain))).slice(0, 5);
+  const themes = Array.from(new Set(topRows.map((row) => displayBriefingLabel(row.theme)))).slice(0, 5);
+  const countByCell = new Map(topRows.map((row) => [`${row.domain}|${displayBriefingLabel(row.theme)}`, row.count || 0]));
   return (
-    <div className="mt-6 grid grid-cols-5 gap-1.5">
-      {topRows.map((row) => (
-        <div
-          key={`${row.domain}-${row.theme}`}
-          title={`${row.domain} / ${displayBriefingLabel(row.theme)}: ${row.count}`}
-          className="h-9 rounded border border-white/10 bg-amber-300"
-          style={{ opacity: 0.25 + ((row.count || 0) / max) * 0.75 }}
-        />
-      ))}
+    <div className="mt-5">
+      <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+        <span>Y: affected domain</span>
+        <span>X: theme</span>
+      </div>
+      <div className="grid gap-1" style={{ gridTemplateColumns: `76px repeat(${themes.length}, minmax(0, 1fr))` }}>
+        <div />
+        {themes.map((theme) => (
+          <div key={theme} title={theme} className="truncate text-center text-[10px] text-slate-400">{theme}</div>
+        ))}
+        {domains.map((domain) => (
+          <Fragment key={domain}>
+            <div title={domain} className="truncate pr-1 text-right text-[10px] text-slate-400">{domain}</div>
+            {themes.map((theme) => {
+              const count = countByCell.get(`${domain}|${theme}`) || 0;
+              return (
+                <div
+                  key={`${domain}-${theme}`}
+                  title={`${domain} / ${theme}: ${count}`}
+                  className="h-6 rounded border border-white/10 bg-amber-300"
+                  style={{ opacity: count ? 0.25 + (count / max) * 0.75 : 0.08 }}
+                />
+              );
+            })}
+          </Fragment>
+        ))}
+      </div>
+      <div className="mt-2 flex justify-between text-[10px] text-slate-400">
+        <span>Color = story count</span>
+        <span>Max cell: {max}</span>
+      </div>
+    </div>
+  );
+}
+
+function LiveCoOccurrenceMatrix({ rows, themes }) {
+  const topPairs = rows.slice(0, 25);
+  const max = Math.max(1, ...topPairs.map((row) => row.count || 0));
+  const labels = Array.from(new Set([
+    ...topPairs.flatMap((row) => [displayBriefingLabel(row.source), displayBriefingLabel(row.target)]),
+    ...themes.slice(0, 5).map((row) => displayBriefingLabel(row.theme)),
+  ])).slice(0, 5);
+  if (!labels.length) return <LiveBars rows={(themes || []).map((row) => [displayBriefingLabel(row.theme), row.count])} />;
+  const countByPair = new Map(topPairs.flatMap((row) => {
+    const source = displayBriefingLabel(row.source);
+    const target = displayBriefingLabel(row.target);
+    return [[`${source}|${target}`, row.count || 0], [`${target}|${source}`, row.count || 0]];
+  }));
+  return (
+    <div className="mt-5">
+      <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+        <span>Y: theme</span>
+        <span>X: co-occurring theme</span>
+      </div>
+      <div className="grid gap-1" style={{ gridTemplateColumns: `76px repeat(${labels.length}, minmax(0, 1fr))` }}>
+        <div />
+        {labels.map((label) => <div key={label} title={label} className="truncate text-center text-[10px] text-slate-400">{label}</div>)}
+        {labels.map((source) => (
+          <Fragment key={source}>
+            <div title={source} className="truncate pr-1 text-right text-[10px] text-slate-400">{source}</div>
+            {labels.map((target) => {
+              const count = source === target ? 0 : countByPair.get(`${source}|${target}`) || 0;
+              return (
+                <div
+                  key={`${source}-${target}`}
+                  title={`${source} + ${target}: ${count}`}
+                  className="h-6 rounded border border-white/10 bg-amber-300"
+                  style={{ opacity: count ? 0.25 + (count / max) * 0.75 : 0.08 }}
+                />
+              );
+            })}
+          </Fragment>
+        ))}
+      </div>
+      <div className="mt-2 flex justify-between text-[10px] text-slate-400">
+        <span>Color = co-occurrence count</span>
+        <span>Max pair: {max}</span>
+      </div>
+    </div>
+  );
+}
+
+function LiveSilenceHeatmap({ rows }) {
+  const topRows = rows.slice(0, 5);
+  if (!topRows.length) return <EmptyLive />;
+  const columns = [
+    ['volumeGap', 'Volume'],
+    ['semanticGap', 'Semantic'],
+    ['domainGap', 'Domain'],
+  ];
+  const max = Math.max(1, ...topRows.flatMap((row) => columns.map(([key]) => row.factors?.[key] || 0)));
+  return (
+    <div className="mt-5">
+      <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+        <span>Y: algorithm</span>
+        <span>X: silence factor</span>
+      </div>
+      <div className="grid gap-1" style={{ gridTemplateColumns: `96px repeat(${columns.length}, minmax(0, 1fr)) 42px` }}>
+        <div />
+        {columns.map(([, label]) => <div key={label} className="text-center text-[10px] text-slate-400">{label}</div>)}
+        <div className="text-center text-[10px] text-slate-400">Priority</div>
+        {topRows.map((row) => (
+          <Fragment key={row.algorithmId || row.algorithmName}>
+            <div title={row.algorithmName} className="truncate pr-1 text-right text-[10px] text-slate-400">{row.algorithmName}</div>
+            {columns.map(([key, label]) => {
+              const value = row.factors?.[key] || 0;
+              return (
+                <div
+                  key={`${row.algorithmName}-${key}`}
+                  title={`${row.algorithmName} / ${label}: ${value}`}
+                  className="h-6 rounded border border-white/10 bg-amber-300"
+                  style={{ opacity: value ? 0.25 + (value / max) * 0.75 : 0.08 }}
+                />
+              );
+            })}
+            <div className="rounded bg-white/10 px-1 text-center text-[10px] font-bold text-slate-200">{row.priority}</div>
+          </Fragment>
+        ))}
+      </div>
+      <p className="mt-2 text-[10px] text-slate-400">Color = gap score from `/api/explore/silence`.</p>
+    </div>
+  );
+}
+
+function LiveCoveragePanel({ coverage }) {
+  const rows = [
+    ...countRows(coverage?.language).map(([label, value]) => [`Language: ${label}`, value]),
+    ...countRows(coverage?.submissionMethod).map(([label, value]) => [`Method: ${label}`, value]),
+    ...Object.entries(coverage?.whatsMissing || {}).map(([label, value]) => [`Missing: ${label}`, value]),
+  ].slice(0, 5);
+  return <LiveBars rows={rows} />;
+}
+
+function countRows(rows) {
+  return Array.isArray(rows) ? rows.map((row) => [row.label, row.count]) : Object.entries(rows || {});
+}
+
+function LiveCompareMultiples({ groups }) {
+  const topGroups = groups.slice(0, 4);
+  if (!topGroups.length) return <EmptyLive />;
+  const max = Math.max(1, ...topGroups.map((row) => row.total || 0));
+  return (
+    <div className="mt-5">
+      <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+        <span>Y: domain / agency</span>
+        <span>X: impact mix</span>
+      </div>
+      <div className="space-y-3 border-b border-l border-white/15 pb-2 pl-2">
+        {topGroups.map((group) => {
+          const impacts = Object.fromEntries(countRows(group.impact));
+          const positive = impacts.POSITIVE || 0;
+          const negative = impacts.NEGATIVE || 0;
+          const mixed = impacts.MIXED || 0;
+          const unknown = Math.max(0, (group.total || 0) - positive - negative - mixed);
+          return (
+            <div key={group.label} className="grid grid-cols-[90px_1fr_34px] items-center gap-2 text-xs">
+              <span title={group.label} className="truncate text-slate-300">{group.label}</span>
+              <div className="flex h-3 overflow-hidden rounded bg-white/10" style={{ width: `${Math.max(10, (group.total || 0) / max * 100)}%` }}>
+                <span title={`Positive: ${positive}`} className="bg-emerald-300" style={{ width: `${positive / Math.max(1, group.total || 0) * 100}%` }} />
+                <span title={`Negative: ${negative}`} className="bg-rose-300" style={{ width: `${negative / Math.max(1, group.total || 0) * 100}%` }} />
+                <span title={`Mixed: ${mixed}`} className="bg-amber-300" style={{ width: `${mixed / Math.max(1, group.total || 0) * 100}%` }} />
+                <span title={`Other: ${unknown}`} className="bg-slate-300" style={{ width: `${unknown / Math.max(1, group.total || 0) * 100}%` }} />
+              </div>
+              <span className="text-right font-bold text-white">{group.total}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[10px] text-slate-400">Green positive, red negative, yellow mixed, gray other.</p>
     </div>
   );
 }
@@ -719,13 +895,26 @@ function LiveTrend({ buckets }) {
   const max = Math.max(1, ...topBuckets.map((bucket) => bucket.total || 0));
   if (!topBuckets.length) return <EmptyLive />;
   return (
-    <div className="mt-6 flex h-32 items-end gap-2">
-      {topBuckets.map((bucket) => (
-        <div key={bucket.month} className="flex w-full flex-col items-center justify-end gap-1">
-          <div className="w-full rounded-t bg-amber-300" style={{ height: `${Math.max(8, (bucket.total || 0) / max * 100)}%` }} />
-          <span className="text-[10px] text-slate-400">{bucket.month.slice(5) || bucket.month}</span>
+    <div className="mt-5">
+      <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+        <span>Y: story count</span>
+        <span>X: submitted month</span>
+      </div>
+      <div className="grid grid-cols-[24px_1fr] gap-2">
+        <div className="flex flex-col justify-between text-right text-[10px] text-slate-400">
+          <span>{max}</span>
+          <span>0</span>
         </div>
-      ))}
+        <div className="flex h-32 items-end gap-2 border-b border-l border-white/15 pl-2">
+          {topBuckets.map((bucket) => (
+            <div key={bucket.month} className="flex w-full flex-col items-center justify-end gap-1">
+              <span className="text-[10px] font-bold text-slate-200">{bucket.total}</span>
+              <div className="w-full rounded-t bg-amber-300" style={{ height: `${Math.max(8, (bucket.total || 0) / max * 100)}%` }} />
+              <span className="text-[10px] text-slate-400">{bucket.month.slice(5) || bucket.month}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -740,19 +929,41 @@ function LiveScatter({ points }) {
   const minY = Math.min(...ys);
   const maxY = Math.max(...ys);
   return (
-    <div className="relative mt-6 h-36 rounded-md border border-white/15 bg-white/5">
-      {visible.map((point) => {
-        const left = maxX === minX ? 50 : ((point.umapX - minX) / (maxX - minX)) * 88 + 6;
-        const top = maxY === minY ? 50 : ((point.umapY - minY) / (maxY - minY)) * 72 + 12;
-        return (
-          <span
-            key={point.id}
-            title={point.title || point.topicLabel || 'story'}
-            className={`absolute h-3 w-3 rounded-full ${point.isOutlier ? 'bg-white' : 'bg-amber-300'}`}
-            style={{ left: `${left}%`, top: `${top}%` }}
-          />
-        );
-      })}
+    <div className="mt-5">
+      <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+        <span>Y: UMAP-2</span>
+        <span>X: UMAP-1</span>
+      </div>
+      <div className="grid grid-cols-[34px_1fr] gap-2">
+        <div className="flex flex-col justify-between text-right text-[10px] text-slate-400">
+          <span>{maxY.toFixed(1)}</span>
+          <span>{minY.toFixed(1)}</span>
+        </div>
+        <div>
+          <div className="relative h-36 rounded-md border border-white/15 bg-white/5">
+            {visible.map((point) => {
+              const left = maxX === minX ? 50 : ((point.umapX - minX) / (maxX - minX)) * 88 + 6;
+              const top = maxY === minY ? 50 : ((maxY - point.umapY) / (maxY - minY)) * 72 + 12;
+              return (
+                <span
+                  key={point.id}
+                  title={`${point.title || point.topicLabel || 'story'} (${point.umapX?.toFixed?.(2)}, ${point.umapY?.toFixed?.(2)})`}
+                  className={`absolute h-3 w-3 rounded-full ${point.isOutlier ? 'bg-white' : 'bg-amber-300'}`}
+                  style={{ left: `${left}%`, top: `${top}%` }}
+                />
+              );
+            })}
+          </div>
+          <div className="mt-1 flex justify-between text-[10px] text-slate-400">
+            <span>{minX.toFixed(1)}</span>
+            <span>{maxX.toFixed(1)}</span>
+          </div>
+        </div>
+      </div>
+      <div className="mt-2 flex gap-3 text-[10px] text-slate-400">
+        <span><span className="inline-block h-2 w-2 rounded-full bg-amber-300" /> clustered story</span>
+        <span><span className="inline-block h-2 w-2 rounded-full bg-white" /> outlier</span>
+      </div>
     </div>
   );
 }
@@ -934,151 +1145,6 @@ function SpecRow({ icon: Icon, label, value }) {
         {label}
       </dt>
       <dd className="text-sm leading-6 text-slate-800">{value}</dd>
-    </div>
-  );
-}
-
-function Visual({ type }) {
-  if (type === 'heatmap') return <Heatmap />;
-  if (type === 'trend') return <Trend />;
-  if (type === 'excerpt') return <Excerpt />;
-  if (type === 'network') return <NetworkVisual />;
-  if (type === 'scatter') return <Scatter />;
-  if (type === 'table') return <TableVisual />;
-  if (type === 'coverage') return <Coverage />;
-  if (type === 'links') return <LinksVisual />;
-  if (type === 'multiples') return <Multiples />;
-  if (type === 'cards') return <CardsVisual />;
-  return <Bars />;
-}
-
-function Bars() {
-  return (
-    <div className="mt-6 space-y-3">
-      {[74, 52, 38, 28].map((width, index) => (
-        <div key={width} className="flex items-center gap-3">
-          <div className="h-3 w-20 rounded bg-white/10" />
-          <div className="h-3 rounded bg-amber-300" style={{ width: `${width}%` }} />
-          <span className="text-xs text-slate-300">{index + 1}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Heatmap() {
-  return (
-    <div className="mt-6 grid grid-cols-5 gap-1.5">
-      {Array.from({ length: 25 }).map((_, index) => (
-        <div key={index} className={['h-9 rounded', 'bg-amber-200', 'bg-amber-300', 'bg-amber-500', 'bg-white/15'][index % 4]} />
-      ))}
-    </div>
-  );
-}
-
-function Trend() {
-  return (
-    <div className="mt-6 flex h-32 items-end gap-2">
-      {[32, 46, 38, 70, 58, 82, 66, 90].map((height) => (
-        <div key={height} className="w-full rounded-t bg-amber-300" style={{ height: `${height}%` }} />
-      ))}
-    </div>
-  );
-}
-
-function Excerpt() {
-  return (
-    <div className="mt-6 space-y-3">
-      <MessageSquare className="h-8 w-8 text-amber-300" />
-      <div className="rounded-md border border-white/15 bg-white/10 p-3 text-sm leading-6 text-slate-100">
-        "Representative and minority excerpts go here."
-      </div>
-    </div>
-  );
-}
-
-function NetworkVisual() {
-  return (
-    <div className="mt-6 grid grid-cols-3 gap-4">
-      {[1, 2, 3, 4, 5, 6].map((item) => (
-        <div key={item} className="flex h-14 items-center justify-center rounded-full border border-amber-300/50 bg-white/10 text-sm font-bold text-amber-200">
-          {item}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Scatter() {
-  return (
-    <div className="relative mt-6 h-36 rounded-md border border-white/15 bg-white/5">
-      {[12, 28, 43, 58, 76, 90, 34, 66].map((left, index) => (
-        <span key={left} className="absolute h-3 w-3 rounded-full bg-amber-300" style={{ left: `${left}%`, top: `${20 + ((index * 17) % 62)}%` }} />
-      ))}
-    </div>
-  );
-}
-
-function TableVisual() {
-  return (
-    <div className="mt-6 space-y-2">
-      {[1, 2, 3, 4].map((item) => (
-        <div key={item} className="grid grid-cols-[1fr_70px] gap-2">
-          <div className="h-8 rounded bg-white/10" />
-          <div className="h-8 rounded bg-amber-300/80" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Coverage() {
-  return (
-    <div className="mt-6 grid grid-cols-2 gap-3">
-      <div className="rounded-md bg-white/10 p-3">
-        <p className="text-xs text-slate-300">Covered</p>
-        <p className="mt-2 text-3xl font-bold text-amber-300">68%</p>
-      </div>
-      <div className="rounded-md bg-white/10 p-3">
-        <p className="text-xs text-slate-300">Missing</p>
-        <p className="mt-2 text-3xl font-bold text-white">32%</p>
-      </div>
-    </div>
-  );
-}
-
-function LinksVisual() {
-  return (
-    <div className="mt-6 space-y-2">
-      {['Library partner', 'Community event', 'Help resource'].map((item) => (
-        <div key={item} className="rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm text-slate-100">{item}</div>
-      ))}
-    </div>
-  );
-}
-
-function Multiples() {
-  return (
-    <div className="mt-6 grid grid-cols-3 gap-2">
-      {[42, 64, 28, 72, 50, 38].map((height) => (
-        <div key={height} className="flex h-24 items-end rounded bg-white/5 p-2">
-          <div className="w-full rounded-t bg-amber-300" style={{ height: `${height}%` }} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function CardsVisual() {
-  return (
-    <div className="mt-6 grid gap-3">
-      {[1, 2, 3].map((item) => (
-        <div key={item} className="rounded-md border border-white/15 bg-white/10 p-3">
-          <div className="h-3 w-1/2 rounded bg-amber-300" />
-          <div className="mt-3 h-2 w-full rounded bg-white/20" />
-          <div className="mt-2 h-2 w-3/4 rounded bg-white/20" />
-        </div>
-      ))}
     </div>
   );
 }
