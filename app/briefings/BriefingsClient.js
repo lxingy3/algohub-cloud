@@ -44,7 +44,7 @@ const briefingViews = {
         b('CC2', 'Find systems relevant to you', 'domain filter + cards', 'RECOGNITION', 'algorithms.use_case, location; shared_taxonomy', 'GET /api/explore/landscape?domain=', 'optional sBERT similar systems', 'cards'),
         b('CC3', 'Cross-cutting patterns', 'theme bars / chips', 'SUGGESTED', 'testimonies.ai_themes (corpus)', 'GET /api/explore/cross-cutting-themes', 'multi-label BART-MNLI aggregation; optional BERTopic', 'bars'),
         b('CC4', 'Where harms concentrate', 'domain x theme heatmap', 'INTERPRETATION', 'testimonies.affected_domain, ai_themes; algorithms.use_case', 'GET /api/explore/theme-matrix', 'aggregation of stored themes', 'heatmap'),
-        b('CC5', 'Over time', 'streamgraph', 'INTERPRETATION', 'testimonies.submitted_at, ai_themes, ai_impact_classification', 'GET /api/explore/trend?scope=corpus', 'time aggregation', 'trend'),
+        b('CC5', 'Over time', 'monthly trend', 'INTERPRETATION', 'testimonies.submitted_at, ai_themes, ai_impact_classification', 'GET /api/explore/trend?scope=corpus', 'time aggregation', 'trend'),
         b('CC6', "In people's words across systems", 'excerpts', 'ARTICULATION', 'testimonies.narrative_text, ai_summary, cluster_id, is_outlier', 'GET /api/testimonies?scope=corpus', 'spaCy NER; sBERT + HDBSCAN; KeyBERT', 'excerpt'),
         b('CC7', "How this was made / what's missing", 'coverage panel', 'PARADATA', 'testimonies.submission_method, original_language, moderation_status', 'GET /api/explore/coverage?scope=corpus', 'none (metadata)', 'coverage'),
         b('CC8', 'Where to learn more / who can help', 'links', 'READ-ONLY INFO', 'organizations(role=library), community_events', 'GET /api/organizations, GET /api/events', 'none', 'links'),
@@ -900,6 +900,13 @@ function LiveTrend({ buckets }) {
   const topBuckets = buckets.slice(-8);
   const max = Math.max(1, ...topBuckets.map((bucket) => bucket.total || 0));
   if (!topBuckets.length) return <EmptyLive />;
+  const chartPoints = topBuckets.map((bucket, index) => {
+    const x = topBuckets.length === 1 ? 50 : 4 + (index / (topBuckets.length - 1)) * 92;
+    const y = 100 - ((bucket.total || 0) / max) * 86;
+    return { ...bucket, x, y };
+  });
+  const linePath = chartPoints.map((point, index) => `${index ? 'L' : 'M'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ');
+  const areaPath = `${linePath} L ${chartPoints[chartPoints.length - 1].x.toFixed(2)} 100 L ${chartPoints[0].x.toFixed(2)} 100 Z`;
   return (
     <div className="mt-5">
       <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
@@ -911,14 +918,37 @@ function LiveTrend({ buckets }) {
           <span>{max}</span>
           <span>0</span>
         </div>
-        <div className="flex h-32 items-end gap-2 border-b border-l border-white/15 pl-2">
-          {topBuckets.map((bucket) => (
-            <div key={bucket.month} className="flex w-full flex-col items-center justify-end gap-1">
-              <span className="text-[10px] font-bold text-slate-200">{bucket.total}</span>
-              <div className="w-full rounded-t bg-amber-300" style={{ height: `${Math.max(8, (bucket.total || 0) / max * 100)}%` }} />
-              <span className="text-[10px] text-slate-400">{bucket.month.slice(5) || bucket.month}</span>
-            </div>
-          ))}
+        <div>
+          <div className="relative h-36 border-b border-l border-white/15">
+            <svg aria-label="Monthly story trend" className="h-full w-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 100">
+              <defs>
+                <linearGradient id="trendFill" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor="#facc15" stopOpacity="0.38" />
+                  <stop offset="100%" stopColor="#facc15" stopOpacity="0.04" />
+                </linearGradient>
+              </defs>
+              <line x1="0" x2="100" y1="57" y2="57" stroke="rgba(255,255,255,0.08)" strokeWidth="0.8" />
+              <path d={areaPath} fill="url(#trendFill)" />
+              <path d={linePath} fill="none" stroke="#facc15" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.8" vectorEffect="non-scaling-stroke" />
+            </svg>
+            {chartPoints.map((point) => (
+              <div
+                key={point.month}
+                className="absolute -translate-x-1/2 -translate-y-1/2"
+                style={{ left: `${point.x}%`, top: `${point.y}%` }}
+              >
+                <span className="absolute left-1/2 top-[-18px] -translate-x-1/2 text-[11px] font-bold leading-none text-slate-50">
+                  {point.total}
+                </span>
+                <span className="block h-2.5 w-5 rounded-full bg-yellow-50 shadow-[0_0_10px_rgba(250,204,21,0.45)]" />
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 grid text-center text-[10px] text-slate-400" style={{ gridTemplateColumns: `repeat(${topBuckets.length}, minmax(0, 1fr))` }}>
+            {topBuckets.map((bucket) => (
+              <span key={bucket.month}>{bucket.month.slice(5) || bucket.month}</span>
+            ))}
+          </div>
         </div>
       </div>
     </div>
