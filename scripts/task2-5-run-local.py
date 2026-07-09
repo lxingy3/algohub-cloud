@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -9,8 +10,8 @@ from keybert import KeyBERT
 from transformers import pipeline
 
 
-TASK2_MODEL = "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33"
-TASK3_MODEL = "facebook/bart-large-mnli"
+TASK2_MODEL = os.environ.get("TASK2_IMPACT_MODEL", "facebook/bart-large-mnli")
+TASK3_MODEL = os.environ.get("TASK3_THEME_MODEL", "facebook/bart-large-mnli")
 TASK5_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 IMPACT_LABELS = {
@@ -957,7 +958,7 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     records = load_records(input_path)
 
-    print("Loading DeBERTa-v3 impact classifier...")
+    print(f"Loading impact classifier: {TASK2_MODEL}...")
     impact_classifier = pipeline("zero-shot-classification", model=TASK2_MODEL, tokenizer=TASK2_MODEL, device=-1)
     print("Loading BART theme detector...")
     theme_classifier = pipeline("zero-shot-classification", model=TASK3_MODEL, tokenizer=TASK3_MODEL, device=-1)
@@ -1006,7 +1007,7 @@ def main() -> None:
     outputs = {
         "task2-impact-classification-results.json": {
             "task": "Task 2: Impact Classification",
-            "tool": "DeBERTa-v3 zero-shot classifier",
+            "tool": "BART-MNLI zero-shot classifier" if "bart" in TASK2_MODEL.lower() else "zero-shot impact classifier",
             "model": TASK2_MODEL,
             "inputField": "narrativeText",
             "outputFields": ["aiImpactClassification", "aiConfidenceScore"],

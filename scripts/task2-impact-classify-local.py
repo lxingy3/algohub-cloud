@@ -1,12 +1,13 @@
 import argparse
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
 from transformers import pipeline
 
 
-DEFAULT_MODEL = "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33"
+DEFAULT_MODEL = os.environ.get("TASK2_IMPACT_MODEL", "facebook/bart-large-mnli")
 
 LABELS = {
     "NEGATIVE": "The story says an automated system harmed, disadvantaged, delayed, denied, wrongly flagged, or unfairly treated the person.",
@@ -100,7 +101,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run ML Task 2 impact classification on narrative text.")
     parser.add_argument("--input", default="task2-results/sample-narratives.json", help="JSON list of narrative records.")
     parser.add_argument("--output", default="task2-results/task2-impact-classification-results.json", help="Output JSON path.")
-    parser.add_argument("--model", default=DEFAULT_MODEL, help="DeBERTa-v3 zero-shot classifier model.")
+    parser.add_argument("--model", default=DEFAULT_MODEL, help="Zero-shot impact classifier model.")
     parser.add_argument("--threshold", type=float, default=0.85, help="Confidence threshold for auto-assignment.")
     args = parser.parse_args()
 

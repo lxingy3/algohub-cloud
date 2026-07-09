@@ -779,19 +779,19 @@ function currentMethod(block) {
   const evidenceBlocks = new Set(['L6', 'IC6']);
   const claimBlocks = new Set(['C7', 'L7', 'G4', 'IC7', 'GC3']);
   const comparableBlocks = new Set(['CC2', 'G7', 'GC7']);
-  if (impactBlocks.has(code)) return 'Stored Task 2 impact labels from the current local DeBERTa pipeline are aggregated. Teacher spec names BART; this is the main model mismatch to confirm.';
-  if (themeBlocks.has(code)) return 'Stored Task 3 BART-MNLI theme labels are aggregated. BERTopic is not layered into this specific view yet.';
-  if (excerptBlocks.has(code)) return 'Stored spaCy entities support anonymized excerpts; cached corpus cluster/outlier fields choose representative/minority stories; KeyBERT keywords are stored but not highlighted here.';
-  if (claimBlocks.has(code)) return 'Published briefing cache or local rule draft is used. Claude is optional per meeting notes and is not active in the current published data.';
-  if (silenceBlocks.has(code)) return 'Rule-based volume/domain score uses cached topic/cluster coverage. It is not running live sentence-transformer cosine on request.';
-  if (evidenceBlocks.has(code)) return 'Derived stats use counts, confidence, impact mix, and cached HDBSCAN outlier flags.';
-  if (comparableBlocks.has(code)) return 'Domain/status aggregation is active. Similar-system/comparable sentence-transformer matching is not active yet.';
-  if (code === 'C1' || code === 'G1') return 'Curated algorithm records only; optional Claude simplification/summary is not connected.';
-  if (code === 'C2') return 'Curated algorithm fields only; KeyBERT tag suggestions are not active in this view.';
-  if (code === 'C6') return 'Cached topic/cluster/theme matching from the offline corpus batch is active; no live nearest-neighbour search runs on request.';
-  if (code === 'IC4') return 'Complete as offline corpus batch: Qwen embeddings, UMAP, HDBSCAN, BERTopic, and KeyBERT labels are read from DB cache.';
-  if (code === 'G8' || code === 'GC8') return 'No model runs here; peer-jurisdiction endpoint currently waits for approved peer insight data.';
-  return block.ml?.toLowerCase().includes('none') ? 'No model is used here; the route groups reviewed records or metadata.' : 'Current route reads stored fields and aggregates them; no model runs live on this page.';
+  if (impactBlocks.has(code)) return 'Impact labels are read from the story records. New runs use BART-MNLI; older rows may need a refresh.';
+  if (themeBlocks.has(code)) return 'Theme labels are read from the story records and counted here. Emergent topics are handled in the story-map view.';
+  if (excerptBlocks.has(code)) return 'Excerpts use stored redactions and the saved cluster/outlier fields to include both common and less common stories.';
+  if (claimBlocks.has(code)) return 'Reviewed claim rows are shown first. If none exist, the page falls back to a local draft. Claude is not wired in yet.';
+  if (silenceBlocks.has(code)) return 'The score is calculated from story volume, domain coverage, and saved topic/cluster coverage.';
+  if (evidenceBlocks.has(code)) return 'The strength labels come from counts, confidence, impact mix, and saved outlier flags.';
+  if (comparableBlocks.has(code)) return 'The list is filtered from reviewed system records. Similar-system matching is not wired in yet.';
+  if (code === 'C1' || code === 'G1') return 'This section uses the reviewed algorithm record. Summary rewriting is not wired in yet.';
+  if (code === 'C2') return 'This section uses reviewed algorithm fields. Keyword tags are not wired in yet.';
+  if (code === 'C6') return 'Matches come from saved topics, clusters, and themes. It does not run a live nearest-neighbour search.';
+  if (code === 'IC4') return 'The story map reads the saved batch output: Qwen embeddings, UMAP, HDBSCAN, BERTopic, and KeyBERT labels.';
+  if (code === 'G8' || code === 'GC8') return 'This waits on approved peer-jurisdiction records.';
+  return block.ml?.toLowerCase().includes('none') ? 'This section groups reviewed records or metadata.' : 'This section reads saved fields and counts them for the current filters.';
 }
 
 function EvidenceRowsList({ rows, onPreview }) {
@@ -1256,7 +1256,7 @@ function evidenceRows(block, snapshot, lens) {
       drilldown: groupStoriesByDomain(snapshot, row.label, lens, row.total),
     };
   });
-  if (api.includes('impact')) return (snapshot.impact?.aiSuggested || []).map((row) => ({ title: row.label, value: row.count, detail: 'AI-suggested impact classification count.' }));
+  if (api.includes('impact')) return (snapshot.impact?.aiSuggested || []).map((row) => ({ title: row.label, value: row.count, detail: 'Stored impact label count.' }));
   if (api.includes('themes') || api.includes('cross-cutting-themes')) return (snapshot.themes?.themes || []).map((row) => ({
     title: displayBriefingLabel(row.theme),
     value: row.count,
