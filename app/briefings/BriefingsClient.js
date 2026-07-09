@@ -24,12 +24,6 @@ const fallbackAlgorithms = [
   { slug: 'student-risk-assessment', name: 'Student Risk Assessment', domain: 'Student Services' },
 ];
 
-const readingLevels = [
-  { id: 'plain', label: 'Plain' },
-  { id: 'standard', label: 'Standard' },
-  { id: 'detail', label: 'Detailed' },
-];
-
 const languageModes = [
   { id: 'en', label: 'English' },
   { id: 'original', label: 'Original' },
@@ -152,7 +146,6 @@ export function BriefingsClient() {
   const [domain, setDomain] = useState('All domains');
   const [algorithm, setAlgorithm] = useState(fallbackAlgorithms[0].slug);
   const [algorithms, setAlgorithms] = useState(fallbackAlgorithms);
-  const [readingLevel, setReadingLevel] = useState('standard');
   const [languageMode, setLanguageMode] = useState('en');
   const [paramsReady, setParamsReady] = useState(false);
   const [liveSnapshot, setLiveSnapshot] = useState(null);
@@ -199,14 +192,12 @@ export function BriefingsClient() {
     const nextScope = params.get('scope');
     const nextDomain = params.get('domain');
     const nextAlgorithm = params.get('algorithm');
-    const nextReading = params.get('reading');
     const nextLanguage = params.get('language');
 
     if (lenses.some((item) => item.id === nextLens)) setLens(nextLens);
     if (scopes.some((item) => item.id === nextScope)) setScope(nextScope);
     if (domains.includes(nextDomain)) setDomain(nextDomain);
     if (algorithms.some((item) => item.slug === nextAlgorithm)) setAlgorithm(nextAlgorithm);
-    if (readingLevels.some((item) => item.id === nextReading)) setReadingLevel(nextReading);
     if (languageModes.some((item) => item.id === nextLanguage)) setLanguageMode(nextLanguage);
     setParamsReady(true);
   }, [domains]);
@@ -249,11 +240,10 @@ export function BriefingsClient() {
     if (scope === 'algorithm') {
       params.set('algorithm', selectedVisibleAlgorithm);
     }
-    params.set('reading', readingLevel);
     params.set('language', languageMode);
     if (activeEvidenceBlock) params.set('evidence', activeEvidenceBlock.code);
     window.history.replaceState(null, '', `/briefings?${params.toString()}`);
-  }, [activeEvidenceBlock, domain, languageMode, lens, paramsReady, readingLevel, scope, selectedVisibleAlgorithm]);
+  }, [activeEvidenceBlock, domain, languageMode, lens, paramsReady, scope, selectedVisibleAlgorithm]);
 
   useEffect(() => {
     if (lens !== 'intermediary') return;
@@ -329,39 +319,17 @@ export function BriefingsClient() {
         </svg>
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
           <p className="relative text-sm font-semibold uppercase tracking-[0.18em] text-amber-200">Briefing Page</p>
-          <div className="mt-3 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end">
-            <div className="relative">
-              <h1 className="max-w-3xl text-3xl font-bold tracking-tight text-white md:text-5xl">
-                Briefings
-              </h1>
-              <p className="mt-4 max-w-3xl text-base leading-7 text-amber-50/80">
-                Switch between the six briefing views, then open the evidence behind each chart.
-              </p>
-              <LiveSnapshot snapshot={liveSnapshot} lens={lens} />
-            </div>
-            <div className="relative rounded-lg border border-white/15 bg-white/10 p-4 shadow-xl backdrop-blur">
-              <div className="grid grid-cols-3 gap-2">
-                {lenses.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                      <button key={item.id} type="button" onClick={() => setLens(item.id)} className={buttonClass(lens === item.id)}>
-                      <Icon className="h-4 w-4" />
-                      {item.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {scopes.map((item) => (
-                  <button key={item.id} type="button" onClick={() => setScope(item.id)} className={buttonClass(scope === item.id)}>
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="relative mt-3">
+            <h1 className="max-w-3xl text-3xl font-bold tracking-tight text-white md:text-5xl">
+              Briefings
+            </h1>
+            <p className="mt-4 max-w-3xl text-base leading-7 text-amber-50/80">
+              Switch between the six briefing views, then open the evidence behind each chart.
+            </p>
+            <LiveSnapshot snapshot={liveSnapshot} lens={lens} />
           </div>
           {scope === 'algorithm' ? (
-            <div className="relative mt-5 grid gap-3 rounded-lg border border-white/15 bg-white/95 p-4 text-slate-950 shadow-xl md:grid-cols-2 lg:grid-cols-4">
+            <div className="relative mt-5 grid gap-3 rounded-lg border border-white/15 bg-white/95 p-4 text-slate-950 shadow-xl md:grid-cols-3">
               <label className="text-sm font-semibold text-slate-700">
                 Domain
                 <select
@@ -383,18 +351,16 @@ export function BriefingsClient() {
                   {visibleAlgorithms.map((item) => <option key={item.slug} value={item.slug}>{item.name}</option>)}
                 </select>
               </label>
-              <ControlSelect label="Reading level" value={readingLevel} options={readingLevels} onChange={setReadingLevel} />
               <ControlSelect label="Language" value={languageMode} options={languageModes} onChange={setLanguageMode} />
             </div>
           ) : (
-            <div className="relative mt-5 grid gap-3 rounded-lg border border-white/15 bg-white/95 p-4 text-slate-950 shadow-xl md:grid-cols-3">
+            <div className="relative mt-5 grid gap-3 rounded-lg border border-white/15 bg-white/95 p-4 text-slate-950 shadow-xl md:grid-cols-2">
               <label className="text-sm font-semibold text-slate-700">
                 Domain
                 <select value={domain} onChange={(event) => setDomain(event.target.value)} className="mt-1 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900">
                   {domains.map((item) => <option key={item}>{item}</option>)}
                 </select>
               </label>
-              <ControlSelect label="Reading level" value={readingLevel} options={readingLevels} onChange={setReadingLevel} />
               <ControlSelect label="Language" value={languageMode} options={languageModes} onChange={setLanguageMode} />
             </div>
           )}
@@ -419,7 +385,13 @@ export function BriefingsClient() {
           </div>
         </div>
 
-        <NarrativePanel briefing={cachedBriefing} scope={scope} lens={lens} />
+        <NarrativePanel
+          briefing={cachedBriefing}
+          scope={scope}
+          lens={lens}
+          onLensChange={setLens}
+          onScopeChange={setScope}
+        />
 
         <div className="space-y-5">
           {view.blocks.map((block) => (
@@ -427,7 +399,6 @@ export function BriefingsClient() {
               key={block.code}
               block={block}
               snapshot={liveSnapshot}
-              readingLevel={readingLevel}
               lens={lens}
               privateNote={privateNote}
               onPrivateNoteChange={updatePrivateNote}
@@ -488,8 +459,8 @@ function LiveSnapshot({ snapshot, lens }) {
 
 function buttonClass(active) {
   return active
-    ? 'inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white'
-    : 'inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100';
+    ? 'inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700'
+    : 'inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200';
 }
 
 function ControlSelect({ label, value, options, onChange }) {
@@ -503,7 +474,7 @@ function ControlSelect({ label, value, options, onChange }) {
   );
 }
 
-function NarrativePanel({ briefing, scope, lens }) {
+function NarrativePanel({ briefing, scope, lens, onLensChange, onScopeChange }) {
   const findings = listJson(briefing?.keyFindings);
   const recommendations = listJson(briefing?.recommendations);
   const claims = listJson(briefing?.claimVsExperience);
@@ -523,10 +494,36 @@ function NarrativePanel({ briefing, scope, lens }) {
           ) : null}
         </div>
         <div className="grid gap-3">
+          <BriefingViewControls lens={lens} scope={scope} onLensChange={onLensChange} onScopeChange={onScopeChange} />
           <NarrativeList title="Key findings" rows={findings} empty="Pending review." />
           <NarrativeList title="Recommendations" rows={recommendations} empty="Pending review." />
           {claims.length ? <NarrativeList title="Claim vs. experience" rows={claims} empty="" /> : null}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function BriefingViewControls({ lens, scope, onLensChange, onScopeChange }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <div className="grid grid-cols-3 gap-2">
+        {lenses.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button key={item.id} type="button" onClick={() => onLensChange(item.id)} className={buttonClass(lens === item.id)}>
+              <Icon className="h-4 w-4" />
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {scopes.map((item) => (
+          <button key={item.id} type="button" onClick={() => onScopeChange(item.id)} className={buttonClass(scope === item.id)}>
+            {item.label}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -556,7 +553,7 @@ function listJson(value) {
   }).filter(Boolean);
 }
 
-function BriefingBlock({ block, snapshot, readingLevel, lens, privateNote, onPrivateNoteChange, onOpenEvidence, showPrivateNotes }) {
+function BriefingBlock({ block, snapshot, lens, privateNote, onPrivateNoteChange, onOpenEvidence, showPrivateNotes }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <article className="grid overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:grid-cols-[minmax(420px,1.15fr)_minmax(360px,0.85fr)]">
@@ -581,18 +578,17 @@ function BriefingBlock({ block, snapshot, readingLevel, lens, privateNote, onPri
         <LiveVisual block={block} snapshot={snapshot} />
       </div>
       <div className="p-5">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">{block.framing}</span>
           </div>
-          <button type="button" onClick={onOpenEvidence} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50">
+        </div>
+        <BlockExplanation block={block} />
+        <div className="mt-5 flex justify-center">
+          <button type="button" onClick={onOpenEvidence} className="rounded-md bg-emerald-600 px-5 py-3 text-sm font-black uppercase tracking-wide text-white shadow-sm hover:bg-emerald-700">
             View evidence
           </button>
         </div>
-        <dl className="grid gap-3">
-          <SpecDetails block={block} readingLevel={readingLevel} />
-        </dl>
-        <LiveBlockData block={block} snapshot={snapshot} readingLevel={readingLevel} />
         {showPrivateNotes ? (
           <label className="mt-4 block rounded-md border border-slate-200 bg-slate-50 p-3 text-sm font-semibold text-slate-700">
             Private notes
@@ -652,7 +648,7 @@ function ChartExpandDialog({ block, snapshot, lens, open, onClose }) {
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Full expanded view</span>
               </div>
               <dl className="grid gap-3">
-                <SpecDetails block={block} readingLevel="standard" />
+                <SpecDetails block={block} />
               </dl>
               <div className="mt-5 border-t border-slate-200 pt-4">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Evidence rows</p>
@@ -718,6 +714,60 @@ function evidenceRowsWithFallback(block, snapshot, lens) {
   return [lens === 'government'
     ? { title: 'No aggregate rows available', value: '', detail: 'The current filters either do not meet the aggregate privacy threshold or are waiting for approved peer data.' }
     : { title: 'No rows for the current filters', value: '', detail: 'Try another domain, lens, or algorithm.' }];
+}
+
+function BlockExplanation({ block }) {
+  const explanation = explainBlock(block);
+  return (
+    <div className="grid gap-3">
+      <PlainInfo title="Summary" text={explanation.summary} />
+      <PlainInfo title="Data used" text={explanation.data} />
+      <PlainInfo title="ML/NLP method" text={explanation.method} />
+    </div>
+  );
+}
+
+function PlainInfo({ title, text }) {
+  return (
+    <section className="rounded-md border border-slate-200 bg-slate-50 p-3">
+      <h4 className="text-xs font-black uppercase tracking-wide text-slate-500">{title}</h4>
+      <p className="mt-1 text-sm leading-6 text-slate-800">{text}</p>
+    </section>
+  );
+}
+
+function explainBlock(block) {
+  const api = block.api.toLowerCase();
+  const summary = (() => {
+    if (block.visualType === 'treemap') return 'Shows which public-service areas have the most algorithm records or story evidence.';
+    if (block.visualType === 'heatmap') return 'Shows where two categories overlap, so stronger cells point to areas worth reviewing first.';
+    if (block.visualType === 'network') return 'Shows themes or stories that often appear together across the current briefing.';
+    if (block.visualType === 'excerpt') return 'Shows selected story excerpts that help explain what the chart is counting.';
+    if (block.visualType === 'coverage') return 'Shows what is present in the evidence base and what is still missing.';
+    if (block.visualType === 'table') return 'Turns the current evidence into rows that are easier to compare.';
+    if (api.includes('trend')) return 'Shows how story volume or themes change month by month.';
+    if (api.includes('patterns')) return 'Places stories with similar language near each other and labels the main topic groups.';
+    return 'Summarizes the current briefing evidence in a chart that can be checked through the evidence panel.';
+  })();
+  const data = (() => {
+    if (api.includes('organizations') || api.includes('events')) return 'Library partners, community events, and public resource links.';
+    if (api.includes('status=proposed')) return 'Proposed or under-review algorithm cards plus comparable public records.';
+    if (api.includes('claim-vs-experience')) return 'Published algorithm claims and approved stories that mention related experiences.';
+    if (api.includes('coverage')) return 'Submission method, language, moderation status, dates, and other review metadata.';
+    if (api.includes('testimonies') || api.includes('recognition')) return 'Approved stories, summaries, themes, and linked algorithm records.';
+    if (api.includes('landscape') || api.includes('algorithms')) return 'Reviewed algorithm cards, domains, agencies, status, and approved-story counts.';
+    return 'Approved stories, stored theme labels, impact labels, dates, and algorithm records.';
+  })();
+  const method = (() => {
+    if (!block.ml || block.ml.toLowerCase().includes('none')) return 'No model is used here; the view groups and counts reviewed records.';
+    if (block.ml.includes('Claude')) return 'Cached claim-review text is used when available; nothing is generated live on this page.';
+    if (block.ml.includes('spaCy') || block.ml.includes('KeyBERT')) return 'Local NLP extracts entities, keywords, and similar story groups for review.';
+    if (block.ml.includes('BERTopic') || block.ml.includes('HDBSCAN') || block.ml.includes('UMAP')) return 'Offline local embeddings group similar stories and suggest topic labels.';
+    if (block.ml.includes('BART')) return 'Stored local theme or impact labels are aggregated for this view.';
+    if (block.ml.includes('sBERT') || block.ml.includes('sentence-transformers')) return 'Local sentence embeddings compare similar stories, systems, or gaps.';
+    return block.ml;
+  })();
+  return { summary, data, method };
 }
 
 function EvidenceRowsList({ rows, onPreview }) {
@@ -953,10 +1003,7 @@ function externalAction(href, label = 'Open') {
   return href ? { type: 'external', href, label } : null;
 }
 
-function SpecDetails({ block, readingLevel }) {
-  if (readingLevel === 'plain') {
-    return <SpecRow icon={Database} label="Uses" value="Approved stories, algorithm records, and review metadata." />;
-  }
+function SpecDetails({ block }) {
   return (
     <>
       <SpecRow icon={Database} label="Database" value={block.db} />
@@ -1181,12 +1228,9 @@ function TreemapCell({ row, color, expanded, onHover, onLeave }) {
     >
       <span
         role="img"
-        tabIndex={0}
         aria-label={`${row.label}: ${row.value}`}
         onMouseEnter={() => onHover(row)}
         onMouseLeave={onLeave}
-        onFocus={() => onHover(row)}
-        onBlur={onLeave}
         className={`flex h-full w-full cursor-help overflow-hidden rounded-sm border border-slate-950/20 text-slate-950 shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-white/80 ${showLabel ? 'flex-col justify-between px-2 py-1' : 'items-center justify-center'}`}
         style={{ backgroundColor: color }}
       >
@@ -1267,10 +1311,10 @@ function LiveBars({ rows, expanded = false }) {
         <span>X: count</span>
       </div>
       <div className="space-y-3 border-b border-l border-white/15 pb-2 pl-2">
-        {topRows.map(([label, value]) => (
+        {topRows.map(([label, value], index) => (
           <div key={`${label}-${value}`} className={`grid items-center gap-2 text-xs ${expanded ? 'grid-cols-[180px_1fr_44px]' : 'grid-cols-[90px_1fr_34px]'}`}>
             <TruncatedTooltip label={label} className="text-slate-300" full={expanded} />
-            <InfoTooltip label={String(value)} className="h-3" block style={{ width: `${Math.max(10, (Number(value) || 0) / max * 100)}%` }}>
+            <InfoTooltip label={String(value)} side={index === 0 ? 'bottom' : 'top'} className="h-3" block style={{ width: `${Math.max(10, (Number(value) || 0) / max * 100)}%` }}>
               <span className="block h-full w-full rounded bg-amber-300" />
             </InfoTooltip>
             <span className="text-right font-bold text-white">{value}</span>
@@ -1299,7 +1343,7 @@ function LiveHeatmap({ rows, expanded = false }) {
         {themes.map((theme) => (
           <TruncatedTooltip key={theme} label={theme} className="justify-center text-center text-[10px] text-slate-400" full={expanded} />
         ))}
-        {domains.map((domain) => (
+        {domains.map((domain, domainIndex) => (
           <Fragment key={domain}>
             <TruncatedTooltip label={domain} className="justify-end pr-1 text-right text-[10px] text-slate-400" full={expanded} />
             {themes.map((theme) => {
@@ -1308,6 +1352,7 @@ function LiveHeatmap({ rows, expanded = false }) {
                 <InfoTooltip
                   key={`${domain}-${theme}`}
                   label={String(count)}
+                  side={domainIndex === 0 ? 'bottom' : 'top'}
                   className="h-6"
                   block
                 >
@@ -1351,7 +1396,7 @@ function LiveCoOccurrenceMatrix({ rows, themes, expanded = false }) {
       <div className="grid gap-1 overflow-x-auto" style={{ gridTemplateColumns: `${expanded ? 150 : 76}px repeat(${labels.length}, minmax(${expanded ? 120 : 0}px, 1fr))` }}>
         <div />
         {labels.map((label) => <TruncatedTooltip key={label} label={label} className="justify-center text-center text-[10px] text-slate-400" full={expanded} />)}
-        {labels.map((source) => (
+        {labels.map((source, sourceIndex) => (
           <Fragment key={source}>
             <TruncatedTooltip label={source} className="justify-end pr-1 text-right text-[10px] text-slate-400" full={expanded} />
             {labels.map((target) => {
@@ -1360,6 +1405,7 @@ function LiveCoOccurrenceMatrix({ rows, themes, expanded = false }) {
                 <InfoTooltip
                   key={`${source}-${target}`}
                   label={String(count)}
+                  side={sourceIndex === 0 ? 'bottom' : 'top'}
                   className="h-6"
                   block
                 >
@@ -1382,9 +1428,11 @@ function LiveCoOccurrenceMatrix({ rows, themes, expanded = false }) {
 }
 
 function LiveThemeNetwork({ rows, themes, expanded = false }) {
+  const [hoveredNode, setHoveredNode] = useState(null);
   const topPairs = expanded ? rows : rows.slice(0, 12);
   const topThemes = (expanded ? themes || [] : (themes || []).slice(0, 4)).map((row) => [displayBriefingLabel(row.theme), row.count]);
   const themeMax = Math.max(1, ...topThemes.map(([, count]) => Number(count) || 0));
+  const countByTheme = new Map((themes || []).map((row) => [displayBriefingLabel(row.theme), row.count]));
   const labels = Array.from(new Set([
     ...topPairs.flatMap((row) => [displayBriefingLabel(row.source), displayBriefingLabel(row.target)]),
     ...(expanded ? themes || [] : themes.slice(0, 5)).map((row) => displayBriefingLabel(row.theme)),
@@ -1408,10 +1456,10 @@ function LiveThemeNetwork({ rows, themes, expanded = false }) {
       </div>
       {topThemes.length ? (
         <div className="mb-3 space-y-1.5 border-b border-white/15 pb-3">
-          {topThemes.map(([label, count]) => (
+          {topThemes.map(([label, count], index) => (
             <div key={label} className={`grid items-center gap-2 text-[10px] ${expanded ? 'grid-cols-[180px_1fr_34px]' : 'grid-cols-[86px_1fr_28px]'}`}>
               <TruncatedTooltip label={label} className="text-slate-300" full={expanded} />
-              <InfoTooltip label={String(count)} className="h-2" block style={{ width: `${Math.max(8, (Number(count) || 0) / themeMax * 100)}%` }}>
+              <InfoTooltip label={String(count)} side={index === 0 ? 'bottom' : 'top'} className="h-2" block style={{ width: `${Math.max(8, (Number(count) || 0) / themeMax * 100)}%` }}>
                 <span className="block h-full w-full rounded bg-amber-300" />
               </InfoTooltip>
               <span className="text-right font-bold text-white">{count}</span>
@@ -1419,34 +1467,45 @@ function LiveThemeNetwork({ rows, themes, expanded = false }) {
           ))}
         </div>
       ) : null}
-      <svg aria-label="Theme co-occurrence network" className={`${expanded ? 'h-80' : 'h-40'} w-full rounded-md border border-white/15 bg-white/5`} viewBox="0 0 100 100">
-        {topPairs.map((row) => {
-          const source = nodeByLabel.get(displayBriefingLabel(row.source));
-          const target = nodeByLabel.get(displayBriefingLabel(row.target));
-          if (!source || !target) return null;
-          return (
-            <line
-              key={`${row.source}-${row.target}`}
-              x1={source.x}
-              y1={source.y}
-              x2={target.x}
-              y2={target.y}
-              stroke="#facc15"
-              strokeOpacity={0.25 + ((row.count || 0) / max) * 0.55}
-              strokeWidth={0.8 + ((row.count || 0) / max) * 2.8}
-              vectorEffect="non-scaling-stroke"
-            />
-          );
-        })}
-        {nodes.map((node) => (
-          <g key={node.label}>
-            <circle cx={node.x} cy={node.y} r="5" fill="#fde047" stroke="#020617" strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
-            <text x={node.x} y={node.y + 10} textAnchor="middle" className={`${expanded ? 'text-[3.3px]' : 'text-[4px]'} fill-slate-200 font-bold`}>
-              {expanded ? node.label : node.label.length > 13 ? `${node.label.slice(0, 12)}...` : node.label}
-            </text>
-          </g>
-        ))}
-      </svg>
+      <div className="relative">
+        <svg aria-label="Theme co-occurrence network" className={`${expanded ? 'h-80' : 'h-40'} w-full rounded-md border border-white/15 bg-white/5`} viewBox="0 0 100 100">
+          {topPairs.map((row) => {
+            const source = nodeByLabel.get(displayBriefingLabel(row.source));
+            const target = nodeByLabel.get(displayBriefingLabel(row.target));
+            if (!source || !target) return null;
+            return (
+              <line
+                key={`${row.source}-${row.target}`}
+                x1={source.x}
+                y1={source.y}
+                x2={target.x}
+                y2={target.y}
+                stroke="#facc15"
+                strokeOpacity={0.25 + ((row.count || 0) / max) * 0.55}
+                strokeWidth={0.8 + ((row.count || 0) / max) * 2.8}
+                vectorEffect="non-scaling-stroke"
+              />
+            );
+          })}
+          {nodes.map((node) => (
+            <g key={node.label} onMouseEnter={() => setHoveredNode({ ...node, count: countByTheme.get(node.label) })} onMouseLeave={() => setHoveredNode(null)}>
+              <circle cx={node.x} cy={node.y} r="5" fill="#fde047" stroke="#020617" strokeWidth="1.2" vectorEffect="non-scaling-stroke" className="cursor-help" />
+              <text x={node.x} y={node.y + 10} textAnchor="middle" className={`${expanded ? 'text-[3.3px]' : 'text-[4px]'} fill-slate-200 font-bold`}>
+                {expanded ? node.label : node.label.length > 13 ? `${node.label.slice(0, 12)}...` : node.label}
+              </text>
+            </g>
+          ))}
+        </svg>
+        {hoveredNode ? (
+          <div
+            role="tooltip"
+            className="pointer-events-none absolute z-[120] -translate-x-1/2 rounded-md border border-white/15 bg-slate-950 px-3 py-2 text-xs font-medium leading-5 text-white shadow-xl"
+            style={{ left: `${hoveredNode.x}%`, top: `${Math.min(86, hoveredNode.y + 8)}%` }}
+          >
+            {hoveredNode.count ?? hoveredNode.label}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -1470,7 +1529,7 @@ function LiveSilenceHeatmap({ rows, expanded = false }) {
         <div />
         {columns.map(([, label]) => <div key={label} className="text-center text-[10px] text-slate-400">{label}</div>)}
         <div className="text-center text-[10px] text-slate-400">Priority</div>
-        {topRows.map((row) => (
+        {topRows.map((row, rowIndex) => (
           <Fragment key={row.algorithmId || row.algorithmName}>
             <TruncatedTooltip label={row.algorithmName} className="justify-end pr-1 text-right text-[10px] text-slate-400" full={expanded} />
             {columns.map(([key]) => {
@@ -1479,6 +1538,7 @@ function LiveSilenceHeatmap({ rows, expanded = false }) {
                 <InfoTooltip
                   key={`${row.algorithmName}-${key}`}
                   label={String(value)}
+                  side={rowIndex === 0 ? 'bottom' : 'top'}
                   className="h-6"
                   block
                 >
@@ -1522,7 +1582,7 @@ function LiveCompareMultiples({ groups, expanded = false }) {
         <span>X: impact mix</span>
       </div>
       <div className="space-y-3 border-b border-l border-white/15 pb-2 pl-2">
-        {topGroups.map((group) => {
+        {topGroups.map((group, groupIndex) => {
           const impacts = Object.fromEntries(countRows(group.impact));
           const positive = impacts.POSITIVE || 0;
           const negative = impacts.NEGATIVE || 0;
@@ -1532,10 +1592,10 @@ function LiveCompareMultiples({ groups, expanded = false }) {
             <div key={group.label} className={`grid items-center gap-2 text-xs ${expanded ? 'grid-cols-[180px_1fr_44px]' : 'grid-cols-[90px_1fr_34px]'}`}>
               <TruncatedTooltip label={group.label} className="text-slate-300" full={expanded} />
               <div className="flex h-3 rounded bg-white/10" style={{ width: `${Math.max(10, (group.total || 0) / max * 100)}%` }}>
-                <InfoTooltip label={String(positive)} className="h-full" block style={{ width: `${positive / Math.max(1, group.total || 0) * 100}%` }}><span className="block h-full w-full bg-emerald-300" /></InfoTooltip>
-                <InfoTooltip label={String(negative)} className="h-full" block style={{ width: `${negative / Math.max(1, group.total || 0) * 100}%` }}><span className="block h-full w-full bg-rose-300" /></InfoTooltip>
-                <InfoTooltip label={String(mixed)} className="h-full" block style={{ width: `${mixed / Math.max(1, group.total || 0) * 100}%` }}><span className="block h-full w-full bg-amber-300" /></InfoTooltip>
-                <InfoTooltip label={String(unknown)} className="h-full" block style={{ width: `${unknown / Math.max(1, group.total || 0) * 100}%` }}><span className="block h-full w-full bg-slate-300" /></InfoTooltip>
+                <InfoTooltip label={String(positive)} side={groupIndex === 0 ? 'bottom' : 'top'} className="h-full" block style={{ width: `${positive / Math.max(1, group.total || 0) * 100}%` }}><span className="block h-full w-full bg-emerald-300" /></InfoTooltip>
+                <InfoTooltip label={String(negative)} side={groupIndex === 0 ? 'bottom' : 'top'} className="h-full" block style={{ width: `${negative / Math.max(1, group.total || 0) * 100}%` }}><span className="block h-full w-full bg-rose-300" /></InfoTooltip>
+                <InfoTooltip label={String(mixed)} side={groupIndex === 0 ? 'bottom' : 'top'} className="h-full" block style={{ width: `${mixed / Math.max(1, group.total || 0) * 100}%` }}><span className="block h-full w-full bg-amber-300" /></InfoTooltip>
+                <InfoTooltip label={String(unknown)} side={groupIndex === 0 ? 'bottom' : 'top'} className="h-full" block style={{ width: `${unknown / Math.max(1, group.total || 0) * 100}%` }}><span className="block h-full w-full bg-slate-300" /></InfoTooltip>
               </div>
               <span className="text-right font-bold text-white">{group.total}</span>
             </div>
@@ -1548,6 +1608,7 @@ function LiveCompareMultiples({ groups, expanded = false }) {
 }
 
 function LiveTrend({ buckets, expanded = false }) {
+  const [hoveredSeries, setHoveredSeries] = useState(null);
   const topBuckets = expanded ? buckets : buckets.slice(-8);
   if (!topBuckets.length) return <EmptyLive />;
   const themeTotals = new Map();
@@ -1569,12 +1630,14 @@ function LiveTrend({ buckets, expanded = false }) {
   const paths = series.map((label, seriesIndex) => {
     const top = [];
     const bottom = [];
+    let seriesTotal = 0;
     for (const point of values) {
       const scale = 70 / maxTotal;
       const totalHeight = point.total * scale;
       const baseline = 50 - totalHeight / 2;
       const lower = baseline + point.rows.slice(0, seriesIndex).reduce((sum, value) => sum + value * scale, 0);
       const upper = lower + point.rows[seriesIndex] * scale;
+      seriesTotal += point.rows[seriesIndex];
       bottom.push([point.x, lower]);
       top.push([point.x, upper]);
     }
@@ -1583,8 +1646,29 @@ function LiveTrend({ buckets, expanded = false }) {
       ...bottom.slice().reverse().map(([x, y]) => `L ${x.toFixed(2)} ${y.toFixed(2)}`),
       'Z',
     ].join(' ');
-    return { label, d, color: colors[seriesIndex % colors.length] };
+    return { label, d, color: colors[seriesIndex % colors.length], total: seriesTotal };
   });
+  const handleTrendHover = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const xPct = ((event.clientX - rect.left) / rect.width) * 100;
+    const yPct = ((event.clientY - rect.top) / rect.height) * 100;
+    const point = values.reduce((nearest, candidate) => (
+      Math.abs(candidate.x - xPct) < Math.abs(nearest.x - xPct) ? candidate : nearest
+    ), values[0]);
+    const scale = 70 / maxTotal;
+    const totalHeight = point.total * scale;
+    const baseline = 50 - totalHeight / 2;
+    let lower = baseline;
+    for (let index = 0; index < point.rows.length; index += 1) {
+      const upper = lower + point.rows[index] * scale;
+      if (point.rows[index] > 0 && yPct >= lower && yPct <= upper) {
+        setHoveredSeries({ label: displayBriefingLabel(series[index]), total: point.rows[index], x: xPct, y: yPct });
+        return;
+      }
+      lower = upper;
+    }
+    setHoveredSeries(null);
+  };
   return (
     <div className="mt-5">
       <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
@@ -1598,25 +1682,31 @@ function LiveTrend({ buckets, expanded = false }) {
         </div>
         <div>
           <div className={`${expanded ? 'h-64' : 'h-36'} relative border-b border-l border-white/15`}>
-            <svg aria-label="Monthly streamgraph" className="h-full w-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 100">
+            <svg aria-label="Monthly streamgraph" onMouseMove={handleTrendHover} onMouseLeave={() => setHoveredSeries(null)} className="h-full w-full cursor-help overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 100">
               <line x1="0" x2="100" y1="50" y2="50" stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" />
               {paths.map((path) => (
-                <path key={path.label} d={path.d} fill={path.color} fillOpacity="0.76" stroke="#020617" strokeWidth="0.45" vectorEffect="non-scaling-stroke" />
+                <path
+                  key={path.label}
+                  d={path.d}
+                  fill={path.color}
+                  fillOpacity="0.76"
+                  stroke="#020617"
+                  strokeWidth="0.45"
+                  vectorEffect="non-scaling-stroke"
+                />
               ))}
             </svg>
-            {values.map((point) => (
-              <InfoTooltip
-                key={point.bucket.month}
-                label={String(point.total)}
-                className="absolute -translate-x-1/2 -translate-y-1/2"
-                block
-                style={{ left: `${point.x}%`, top: '50%' }}
+            {hoveredSeries ? (
+              <div
+                role="tooltip"
+                className="pointer-events-none absolute z-[120] -translate-x-1/2 rounded-md border border-white/15 bg-slate-950 px-3 py-2 text-xs font-medium text-white shadow-xl"
+                style={{ left: `${hoveredSeries.x}%`, top: `${Math.min(86, hoveredSeries.y + 7)}%` }}
               >
-                <span className="absolute left-1/2 top-[-22px] -translate-x-1/2 text-[10px] font-bold leading-none text-slate-50">
-                  {point.total}
-                </span>
-                <span className="block h-full min-h-28 border-l border-white/10" />
-              </InfoTooltip>
+                {hoveredSeries.label}: {hoveredSeries.total}
+              </div>
+            ) : null}
+            {values.map((point) => (
+              <span key={point.bucket.month} className="pointer-events-none absolute top-0 h-full border-l border-white/10" style={{ left: `${point.x}%` }} />
             ))}
           </div>
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-300">
@@ -1675,8 +1765,6 @@ function LiveScatter({ points, expanded = false }) {
                 aria-label={point.tooltip}
                 onMouseEnter={() => setHoveredPoint(point)}
                 onMouseLeave={() => setHoveredPoint(null)}
-                onFocus={() => setHoveredPoint(point)}
-                onBlur={() => setHoveredPoint(null)}
                 className={`${expanded ? 'h-4 w-4' : 'h-3 w-3'} absolute -translate-x-1/2 -translate-y-1/2 rounded-full outline-none ring-offset-2 ring-offset-slate-950 focus-visible:ring-2 focus-visible:ring-yellow-400 ${point.isOutlier ? 'bg-white' : 'bg-amber-300'}`}
                 style={{ left: `${point.left}%`, top: `${point.top}%` }}
               />
@@ -1733,9 +1821,7 @@ function LiveTable({ rows, emptyLabel, expanded = false }) {
       {topRows.map(([label, value]) => (
         <div key={`${label}-${value}`} className="grid grid-cols-[1fr_76px] gap-2 text-xs">
           <TruncatedTooltip label={label} className="rounded bg-white/10 px-2 py-2 text-slate-200" full={expanded} />
-          <InfoTooltip label={String(value)} className="rounded bg-amber-300/90 px-2 py-2 text-center font-bold text-slate-950" block>
-            <span className="block w-full">{value}</span>
-          </InfoTooltip>
+          <span className="rounded bg-amber-300/90 px-2 py-2 text-center font-bold text-slate-950">{value}</span>
         </div>
       ))}
     </div>
@@ -1772,103 +1858,6 @@ function LiveAlgorithmCards({ algorithms, emptyLabel = 'No systems returned.', e
           {Number.isFinite(Number(item.approvedTestimonyCount)) ? <p className="mt-1 text-xs text-slate-300">{item.approvedTestimonyCount} approved stories</p> : null}
         </div>
       ))}
-    </div>
-  );
-}
-
-function LiveBlockData({ block, snapshot, readingLevel }) {
-  if (readingLevel !== 'detail' || !snapshot || snapshot.error) return null;
-  const api = block.api.toLowerCase();
-  const titleClass = 'text-xs font-bold uppercase tracking-wide text-emerald-700';
-  const boxClass = 'mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3';
-
-  if (api.includes('theme-matrix')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live theme matrix" rows={(snapshot.themeMatrix?.rows || []).slice(0, 4).map((row) => [`${row.domain} / ${displayBriefingLabel(row.theme)}`, row.count])} />;
-  }
-  if (api.includes('trend')) {
-    const bucketRows = (snapshot.trend?.buckets || []).slice(-2).map((row) => [row.month, row.total]);
-    const markerRows = (snapshot.trend?.markers || []).slice(0, 2).map((row) => [row.algorithmName, row.currentVersion || row.yearDeployed || 'marker']);
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live trend markers" rows={[...bucketRows, ...markerRows]} />;
-  }
-  if (api.includes('recognition')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live similar-story examples" rows={(snapshot.recognition?.examples || []).slice(0, 3).map((row) => [row.title, row.isLessCommonExperience ? 'less common' : 'representative'])} />;
-  }
-  if (api.includes('testimonies')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live story excerpts" rows={(snapshot.excerpts?.items || []).slice(0, 3).map((row) => [row.title, row.whyShown])} />;
-  }
-  if (api.includes('claim-vs-experience')) {
-    const rows = [
-      ...(snapshot.claimVsExperience?.reviewStatus ? [['Review status', snapshot.claimVsExperience.reviewStatus]] : []),
-      ...(snapshot.claimVsExperience?.rows || []).slice(0, 3).map((row) => [row.algorithmName, row.experienceCount]),
-    ];
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live claim rows" rows={rows} />;
-  }
-  if (api.includes('patterns')) {
-    const rows = [
-      ...((snapshot.patterns?.notes || []).slice(0, 1).map((note) => ['Note', note])),
-      ...(snapshot.patterns?.topics || []).slice(0, 4).map((row) => [row.label || `Topic ${row.topicId}`, row.size]),
-    ];
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live suggested topics" rows={rows} />;
-  }
-  if (api.includes('coverage')) {
-    const missing = snapshot.coverage?.whatsMissing || {};
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live coverage gaps" rows={Object.entries(missing).slice(0, 4)} />;
-  }
-  if (api.includes('silence')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live silence review" rows={(snapshot.silence?.rows || []).slice(0, 4).map((row) => [
-      row.algorithmName,
-      `${row.priority}; vol ${row.factors?.volumeGap ?? 0}, sem ${row.factors?.semanticGap ?? 0}, dom ${row.factors?.domainGap ?? 0}`,
-    ])} />;
-  }
-  if (api.includes('status=proposed')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live proposed systems" rows={(snapshot.proposedAlgorithms?.items || []).slice(0, 4).map((row) => [row.name, row.status])} />;
-  }
-  if (api.includes('organizations') || api.includes('events')) {
-    const orgRows = (snapshot.organizations?.items || []).slice(0, 2).map((row) => [row.name, row.role || 'organization']);
-    const eventRows = (snapshot.events?.items || []).slice(0, 2).map((row) => [row.title, row.location || 'event']);
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live help links" rows={[...orgRows, ...eventRows]} />;
-  }
-  if (api.includes('evidence-strength')) {
-    const evidenceRows = (snapshot.evidence?.findings || []).slice(0, 3).map((row) => [
-      row.label,
-      `${row.strength}; positive ${row.representation?.positiveCount || 0}, minority ${row.representation?.minorityCount || 0}, dissent ${row.representation?.dissentCount || 0}`,
-    ]);
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live evidence strength" rows={evidenceRows} />;
-  }
-  if (api.includes('compare')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live comparison" rows={(snapshot.compare?.groups || []).slice(0, 4).map((row) => [row.label, row.total])} />;
-  }
-  if (api.includes('impact')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live impact split" rows={(snapshot.impact?.aiSuggested || []).slice(0, 4).map((row) => [row.label, row.count])} />;
-  }
-  if (block.title.toLowerCase().includes('improvement') || block.title.toLowerCase().includes('policy direction')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live improvement map" rows={(snapshot.themes?.themes || []).slice(0, 4).map((row) => [displayBriefingLabel(row.theme), row.policyDirection || row.improvementDirection || 'needs mapping'])} />;
-  }
-  if (block.title.toLowerCase().includes('co-occurrence')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live co-occurrence" rows={(snapshot.themes?.coOccurrences || []).slice(0, 4).map((row) => [`${displayBriefingLabel(row.source)} + ${displayBriefingLabel(row.target)}`, row.count])} />;
-  }
-  if (api.includes('themes') || api.includes('cross-cutting-themes')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live suggested themes" rows={(snapshot.themes?.themes || []).slice(0, 4).map((row) => [displayBriefingLabel(row.theme), row.count])} />;
-  }
-  if (api.includes('landscape') || api.includes('algorithms')) {
-    return <MiniRows className={boxClass} titleClass={titleClass} title="Live landscape" rows={(snapshot.landscape?.byDomain || []).slice(0, 4).map((row) => [row.label, row.count])} />;
-  }
-  return null;
-}
-
-function MiniRows({ className, titleClass, title, rows }) {
-  if (!rows?.length) return null;
-  return (
-    <div className={className}>
-      <p className={titleClass}>{title}</p>
-      <div className="mt-2 grid gap-2">
-        {rows.map(([label, value]) => (
-          <div key={`${label}-${value}`} className="flex items-center justify-between gap-3 text-sm">
-            <TruncatedTooltip label={label} className="text-slate-800" />
-            <span className="shrink-0 rounded bg-white px-2 py-1 text-xs font-bold text-slate-900">{value}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
