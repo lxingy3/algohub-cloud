@@ -421,6 +421,7 @@ export function BriefingsClient() {
               block={block}
               snapshot={liveSnapshot}
               readingLevel={readingLevel}
+              lens={lens}
               privateNote={privateNote}
               onPrivateNoteChange={updatePrivateNote}
               onOpenEvidence={() => openEvidence(block)}
@@ -548,7 +549,7 @@ function listJson(value) {
   }).filter(Boolean);
 }
 
-function BriefingBlock({ block, snapshot, readingLevel, privateNote, onPrivateNoteChange, onOpenEvidence, showPrivateNotes }) {
+function BriefingBlock({ block, snapshot, readingLevel, lens, privateNote, onPrivateNoteChange, onOpenEvidence, showPrivateNotes }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <article className="grid overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:grid-cols-[minmax(420px,1.15fr)_minmax(360px,0.85fr)]">
@@ -596,38 +597,58 @@ function BriefingBlock({ block, snapshot, readingLevel, privateNote, onPrivateNo
           </label>
         ) : null}
       </div>
-      <ChartExpandDialog block={block} snapshot={snapshot} open={expanded} onClose={() => setExpanded(false)} />
+      <ChartExpandDialog block={block} snapshot={snapshot} lens={lens} open={expanded} onClose={() => setExpanded(false)} />
     </article>
   );
 }
 
-function ChartExpandDialog({ block, snapshot, open, onClose }) {
+function ChartExpandDialog({ block, snapshot, lens, open, onClose }) {
+  const { preview, previewItem, setPreview, closePreview } = useEvidencePreview();
   if (!open) return null;
+  const rows = evidenceRowsWithFallback(block, snapshot, lens);
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 sm:p-4"
-      role="dialog"
-      aria-modal="true"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div className="flex max-h-[94vh] w-full max-w-[min(96vw,1280px)] flex-col overflow-hidden rounded-lg bg-slate-950 text-white shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4">
-          <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-amber-300">{block.code}</p>
-            <h3 className="mt-1 text-2xl font-black">{block.title}</h3>
-            <p className="mt-1 text-sm text-slate-300">{block.visual}</p>
+    <>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 sm:p-4"
+        role="dialog"
+        aria-modal="true"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) onClose();
+        }}
+      >
+        <div className="flex max-h-[94vh] w-full max-w-[min(96vw,1500px)] flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
+          <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-slate-950 px-5 py-4 text-white">
+            <div>
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-amber-300">{block.code}</p>
+              <h3 className="mt-1 text-2xl font-black">{block.title}</h3>
+              <p className="mt-1 text-sm text-slate-300">{block.visual}</p>
+            </div>
+            <button type="button" onClick={onClose} className="rounded-md border border-white/20 p-2 text-white hover:bg-white/10" aria-label="Close expanded chart">
+              <X className="h-5 w-5" />
+            </button>
           </div>
-          <button type="button" onClick={onClose} className="rounded-md border border-white/20 p-2 text-white hover:bg-white/10" aria-label="Close expanded chart">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="min-h-0 overflow-auto p-5">
-          <LiveVisual block={block} snapshot={snapshot} expanded />
+          <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
+            <section className="min-h-0 overflow-auto bg-slate-950 p-5 text-white">
+              <LiveVisual block={block} snapshot={snapshot} expanded />
+            </section>
+            <aside className="min-h-0 overflow-y-auto border-t border-slate-200 bg-white p-5 lg:border-l lg:border-t-0">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">{block.framing}</span>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Full expanded view</span>
+              </div>
+              <dl className="grid gap-3">
+                <SpecDetails block={block} readingLevel="standard" />
+              </dl>
+              <div className="mt-5 border-t border-slate-200 pt-4">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Evidence rows</p>
+                <EvidenceRowsList rows={rows} onPreview={setPreview} />
+              </div>
+            </aside>
+          </div>
         </div>
       </div>
-    </div>
+      <EvidencePreviewModal preview={preview} item={previewItem} onClose={closePreview} />
+    </>
   );
 }
 
@@ -1089,6 +1110,7 @@ function LivePolicyTable({ themes, expanded = false }) {
 }
 
 function LiveTreemap({ rows, expanded = false }) {
+  const [hoveredCell, setHoveredCell] = useState(null);
   const cleanRows = rows
     .map(([label, value]) => ({ label, value: Number(value) || 0 }))
     .filter((row) => row.value > 0)
@@ -1103,36 +1125,77 @@ function LiveTreemap({ rows, expanded = false }) {
         <span>Area: domain</span>
         <span>Size: count</span>
       </div>
-      <div className={`relative overflow-hidden rounded-md border border-white/15 bg-white/5 p-1 ${expanded ? 'h-[min(70vh,720px)]' : 'h-72'}`}>
-        {rects.map((row, index) => (
-          <TreemapCell key={row.label} row={row} index={index} color={colors[index % colors.length]} expanded={expanded} />
-        ))}
+      <div className="relative">
+        <div className={`relative overflow-hidden rounded-md border border-white/15 bg-white/5 p-1 ${expanded ? 'h-[min(70vh,720px)]' : 'h-72'}`}>
+          {rects.map((row, index) => (
+            <TreemapCell
+              key={`${row.label}-${index}`}
+              row={row}
+              color={colors[index % colors.length]}
+              expanded={expanded}
+              onHover={setHoveredCell}
+              onLeave={() => setHoveredCell(null)}
+            />
+          ))}
+        </div>
+        {hoveredCell ? <TreemapTooltip cell={hoveredCell} /> : null}
       </div>
     </div>
   );
 }
 
-function TreemapCell({ row, index, color, expanded }) {
-  const area = row.w * row.h;
-  const showLabel = expanded || index < 6 || area >= 700;
+function TreemapCell({ row, color, expanded, onHover, onLeave }) {
+  const showLabel = expanded || (row.w >= 10 && row.h >= 7);
+  const labelStyle = expanded
+    ? undefined
+    : {
+        display: '-webkit-box',
+        WebkitLineClamp: row.h >= 18 ? 3 : 2,
+        WebkitBoxOrient: 'vertical',
+      };
   return (
     <div
       className="absolute p-0.5"
       style={{ left: `${row.x}%`, top: `${row.y}%`, width: `${row.w}%`, height: `${row.h}%` }}
     >
-      <InfoTooltip label={`${row.label}: ${row.value}`} className="h-full w-full" block>
-        <span
-          className={`flex h-full w-full overflow-hidden rounded-sm border border-slate-950/20 text-slate-950 shadow-sm ${showLabel ? 'flex-col justify-between px-2 py-1' : 'items-center justify-center'}`}
-          style={{ backgroundColor: color }}
-        >
-          {showLabel ? (
-            <>
-              <span className={`block min-w-0 font-black leading-tight ${expanded ? 'whitespace-normal break-words text-sm' : 'truncate whitespace-nowrap text-[10px]'}`}>{row.label}</span>
-              <span className={`w-fit shrink-0 rounded bg-slate-950/15 px-1.5 py-0.5 font-black leading-none ${expanded ? 'text-xs' : 'text-[10px]'}`}>{row.value}</span>
-            </>
-          ) : null}
-        </span>
-      </InfoTooltip>
+      <span
+        role="img"
+        tabIndex={0}
+        aria-label={`${row.label}: ${row.value}`}
+        onMouseEnter={() => onHover(row)}
+        onMouseLeave={onLeave}
+        onFocus={() => onHover(row)}
+        onBlur={onLeave}
+        className={`flex h-full w-full cursor-help overflow-hidden rounded-sm border border-slate-950/20 text-slate-950 shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-white/80 ${showLabel ? 'flex-col justify-between px-2 py-1' : 'items-center justify-center'}`}
+        style={{ backgroundColor: color }}
+      >
+        {showLabel ? (
+          <>
+            <span className={`block min-w-0 overflow-hidden font-black leading-tight ${expanded ? 'whitespace-normal break-words text-sm' : 'text-[10px]'}`} style={labelStyle}>{row.label}</span>
+            <span className={`w-fit shrink-0 rounded bg-slate-950/15 px-1.5 py-0.5 font-black leading-none ${expanded ? 'text-xs' : 'text-[10px]'}`}>{row.value}</span>
+          </>
+        ) : null}
+      </span>
+    </div>
+  );
+}
+
+function TreemapTooltip({ cell }) {
+  const left = Math.min(88, Math.max(12, cell.x + cell.w / 2));
+  const showBelow = cell.y < 16;
+  const top = showBelow ? cell.y + cell.h : cell.y;
+  return (
+    <div
+      role="tooltip"
+      className="pointer-events-none absolute z-[90] max-w-[260px] rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold leading-snug text-white shadow-xl ring-1 ring-white/20"
+      style={{
+        left: `${left}%`,
+        top: `${top}%`,
+        transform: showBelow ? 'translate(-50%, 8px)' : 'translate(-50%, calc(-100% - 8px))',
+      }}
+    >
+      <span className="block break-words">{cell.label}</span>
+      <span className="mt-1 block text-[11px] font-bold text-amber-200">Count: {cell.value}</span>
     </div>
   );
 }
