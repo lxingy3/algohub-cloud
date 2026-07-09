@@ -67,6 +67,27 @@ def keyword_label(texts, indexes):
     return clean_label(ranked)
 
 
+def keybert_keywords(keyword_model, texts, indexes):
+    if keyword_model is None:
+        return []
+    topic_text = " ".join(texts[index] for index in indexes)
+    try:
+        rows = keyword_model.extract_keywords(
+            topic_text,
+            keyphrase_ngram_range=(1, 3),
+            stop_words="english",
+            use_mmr=True,
+            diversity=0.45,
+            top_n=10,
+        )
+    except Exception:
+        return []
+    return [
+        keyword for keyword, _score in rows
+        if keyword and keyword.lower() not in STOPWORDS and not keyword.isdigit()
+    ][:8]
+
+
 def canonical_topic_label(records, indexes, words, texts):
     keyword_text = " ".join(words).lower()
     domain_counts = Counter(records[index].get("affectedDomain") or "" for index in indexes)
@@ -87,7 +108,7 @@ def canonical_topic_label(records, indexes, words, texts):
     return None
 
 
-def build_topics(records, topic_ids, texts, topic_model=None):
+def build_topics(records, topic_ids, texts, topic_model=None, keyword_model=None):
     grouped = defaultdict(list)
     for index, topic_id in enumerate(topic_ids):
         if topic_id_or_none(topic_id) is not None:
@@ -110,13 +131,15 @@ def build_topics(records, topic_ids, texts, topic_model=None):
                 words = [word for word, _score in topic_model.get_topic(topic_id)[:8]]
             except Exception:
                 words = []
-        label = canonical_topic_label(records, indexes, words, texts) or (clean_label(words) if words else None) or info.get("Name") or keyword_label(texts, indexes)
+        keybert_words = keybert_keywords(keyword_model, texts, indexes)
+        label_words = keybert_words or words
+        label = canonical_topic_label(records, indexes, label_words, texts) or (clean_label(label_words) if label_words else None) or info.get("Name") or keyword_label(texts, indexes)
         algorithm_ids = {algorithm_id for index in indexes for algorithm_id in records[index].get("algorithmIds", [])}
         domains = {records[index].get("affectedDomain") for index in indexes if records[index].get("affectedDomain")}
         topics.append({
             "topicId": topic_id,
             "label": label,
-            "topKeywords": [word for word in words if word and word.lower() not in STOPWORDS and not word.isdigit()][:8] or label.split(" / "),
+            "topKeywords": keybert_words or [word for word in words if word and word.lower() not in STOPWORDS and not word.isdigit()][:8] or label.split(" / "),
             "size": len(indexes),
             "spanAlgorithms": len(algorithm_ids),
             "spanDomains": len(domains),
@@ -207,6 +230,7 @@ def run_lightweight_self_check(output_path):
 def run_production(input_path, output_path, model_name, n_neighbors_arg=None, min_cluster_size_arg=None, min_samples_arg=None):
     from bertopic import BERTopic
     from hdbscan import HDBSCAN
+    from keybert import KeyBERT
     from sentence_transformers import SentenceTransformer
     from sklearn.feature_extraction.text import CountVectorizer
     from umap import UMAP
@@ -224,6 +248,7 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
         return
 
     model = SentenceTransformer(model_name)
+    keyword_model = KeyBERT(model=model)
     embeddings = model.encode(texts, batch_size=16, show_progress_bar=True, normalize_embeddings=True)
     embeddings = np.asarray(embeddings)
 
@@ -251,12 +276,13 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
     topic_ids, _probabilities = topic_model.fit_transform(texts, embeddings)
     umap_xy = topic_model.umap_model.embedding_
     cluster_ids = topic_model.hdbscan_model.labels_
-    topics = build_topics(records, topic_ids, texts, topic_model)
+    topics = build_topics(records, topic_ids, texts, topic_model, keyword_model)
     params = {
         "embeddingModel": model_name,
         "umap": {"metric": "cosine", "randomState": 42, "nNeighbors": neighbors, "nComponents": 2},
         "hdbscan": {"minClusterSize": cluster_size, "minSamples": min_samples, "metric": "euclidean", "clusterSelectionMethod": "eom"},
         "bertopic": {"topicMinusOneStoredAsNull": True},
+        "keybert": {"keywordNgramRange": [1, 3], "topN": 10, "useMmr": True, "diversity": 0.45},
     }
     payload = make_payload(input_payload, embeddings, umap_xy, cluster_ids, topic_ids, topics, model_name, params, warnings)
     write_json(output_path, payload)
