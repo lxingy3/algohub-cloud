@@ -22,10 +22,16 @@ export async function GET(request) {
         location: true,
         isVirtual: true,
         registrationUrl: true,
+        imageUrl: true,
         organizer: { select: { name: true, slug: true } },
       },
     } : { include: { organizer: true } }),
   });
 
-  return NextResponse.json({ items: events, total: events.length });
+  return NextResponse.json({ items: events.map((event) => ({ ...event, imageUrl: imageUrlForEvent(event) })), total: events.length });
+}
+
+function imageUrlForEvent(event) {
+  if (!event.imageUrl) return null;
+  return event.imageUrl.startsWith('gcs://') ? `/api/events/${event.id}/image` : event.imageUrl;
 }
