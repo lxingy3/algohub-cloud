@@ -611,6 +611,14 @@ function BriefingBlock({ block, snapshot, readingLevel, lens, privateNote, onPri
 
 function ChartExpandDialog({ block, snapshot, lens, open, onClose }) {
   const { preview, previewItem, setPreview, closePreview } = useEvidencePreview();
+  useEffect(() => {
+    if (!open) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
   if (!open) return null;
   const rows = evidenceRowsWithFallback(block, snapshot, lens);
   return (
@@ -672,8 +680,11 @@ function EvidenceDrawer({ block, snapshot, lens, onClose }) {
         onClick={(event) => {
           if (event.target === event.currentTarget) onClose();
         }}
+        onWheel={(event) => {
+          if (event.target === event.currentTarget) window.scrollBy({ left: event.deltaX, top: event.deltaY });
+        }}
       >
-        <div className="ml-auto flex h-full w-full max-w-xl flex-col bg-white shadow-2xl">
+        <div className="ml-auto flex h-full w-full max-w-xl flex-col overscroll-contain bg-white shadow-2xl" onWheel={(event) => event.stopPropagation()}>
           <div className="border-b border-slate-200 p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -686,7 +697,7 @@ function EvidenceDrawer({ block, snapshot, lens, onClose }) {
               </button>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-5">
+          <div className="flex-1 overflow-y-auto overscroll-contain p-5">
             <EvidenceRowsList rows={visibleRows} onPreview={setPreview} />
             {lens === 'government' ? (
               <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
@@ -1052,14 +1063,17 @@ function LiveImpactSplit({ rows, compact = false }) {
         <span>Segment: impact</span>
         <span>Total: {total}</span>
       </div>
-      <div className="flex h-7 overflow-hidden rounded border border-white/15 bg-white/10">
+      <div className="flex h-7 rounded border border-white/15 bg-white/10">
         {cleanRows.map((row) => (
-          <span
+          <InfoTooltip
             key={row.label}
-            aria-label={`${row.label}: ${row.count}`}
-            className={`block h-full ${colors[row.label] || 'bg-slate-300'}`}
+            label={String(row.count)}
+            className="h-full"
+            block
             style={{ width: `${(row.count / total) * 100}%` }}
-          />
+          >
+            <span className={`block h-full w-full ${colors[row.label] || 'bg-slate-300'}`} />
+          </InfoTooltip>
         ))}
       </div>
       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-300">
@@ -1201,8 +1215,7 @@ function TreemapTooltip({ cell }) {
         transform: showBelow ? 'translate(-50%, 8px)' : 'translate(-50%, calc(-100% - 8px))',
       }}
     >
-      <span className="block break-words">{cell.label}</span>
-      <span className="mt-1 block text-[11px] font-bold text-amber-200">Count: {cell.value}</span>
+      <span className="block text-sm font-black text-amber-200">{cell.value}</span>
     </div>
   );
 }
@@ -1257,7 +1270,9 @@ function LiveBars({ rows, expanded = false }) {
         {topRows.map(([label, value]) => (
           <div key={`${label}-${value}`} className={`grid items-center gap-2 text-xs ${expanded ? 'grid-cols-[180px_1fr_44px]' : 'grid-cols-[90px_1fr_34px]'}`}>
             <TruncatedTooltip label={label} className="text-slate-300" full={expanded} />
-            <span className="h-3 rounded bg-amber-300" style={{ width: `${Math.max(10, (Number(value) || 0) / max * 100)}%` }} />
+            <InfoTooltip label={String(value)} className="h-3" block style={{ width: `${Math.max(10, (Number(value) || 0) / max * 100)}%` }}>
+              <span className="block h-full w-full rounded bg-amber-300" />
+            </InfoTooltip>
             <span className="text-right font-bold text-white">{value}</span>
           </div>
         ))}
@@ -1290,12 +1305,17 @@ function LiveHeatmap({ rows, expanded = false }) {
             {themes.map((theme) => {
               const count = countByCell.get(`${domain}|${theme}`) || 0;
               return (
-                <div
+                <InfoTooltip
                   key={`${domain}-${theme}`}
-                  aria-label={`${domain} / ${theme}: ${count}`}
-                  className="h-6 rounded border border-white/10 bg-amber-300"
-                  style={{ opacity: count ? 0.25 + (count / max) * 0.75 : 0.08 }}
-                />
+                  label={String(count)}
+                  className="h-6"
+                  block
+                >
+                  <span
+                    className="block h-full w-full rounded border border-white/10 bg-amber-300"
+                    style={{ opacity: count ? 0.25 + (count / max) * 0.75 : 0.08 }}
+                  />
+                </InfoTooltip>
               );
             })}
           </Fragment>
@@ -1337,12 +1357,17 @@ function LiveCoOccurrenceMatrix({ rows, themes, expanded = false }) {
             {labels.map((target) => {
               const count = source === target ? 0 : countByPair.get(`${source}|${target}`) || 0;
               return (
-                <div
+                <InfoTooltip
                   key={`${source}-${target}`}
-                  aria-label={`${source} + ${target}: ${count}`}
-                  className="h-6 rounded border border-white/10 bg-amber-300"
-                  style={{ opacity: count ? 0.25 + (count / max) * 0.75 : 0.08 }}
-                />
+                  label={String(count)}
+                  className="h-6"
+                  block
+                >
+                  <span
+                    className="block h-full w-full rounded border border-white/10 bg-amber-300"
+                    style={{ opacity: count ? 0.25 + (count / max) * 0.75 : 0.08 }}
+                  />
+                </InfoTooltip>
               );
             })}
           </Fragment>
@@ -1386,7 +1411,9 @@ function LiveThemeNetwork({ rows, themes, expanded = false }) {
           {topThemes.map(([label, count]) => (
             <div key={label} className={`grid items-center gap-2 text-[10px] ${expanded ? 'grid-cols-[180px_1fr_34px]' : 'grid-cols-[86px_1fr_28px]'}`}>
               <TruncatedTooltip label={label} className="text-slate-300" full={expanded} />
-              <span className="h-2 rounded bg-amber-300" style={{ width: `${Math.max(8, (Number(count) || 0) / themeMax * 100)}%` }} />
+              <InfoTooltip label={String(count)} className="h-2" block style={{ width: `${Math.max(8, (Number(count) || 0) / themeMax * 100)}%` }}>
+                <span className="block h-full w-full rounded bg-amber-300" />
+              </InfoTooltip>
               <span className="text-right font-bold text-white">{count}</span>
             </div>
           ))}
@@ -1446,15 +1473,20 @@ function LiveSilenceHeatmap({ rows, expanded = false }) {
         {topRows.map((row) => (
           <Fragment key={row.algorithmId || row.algorithmName}>
             <TruncatedTooltip label={row.algorithmName} className="justify-end pr-1 text-right text-[10px] text-slate-400" full={expanded} />
-            {columns.map(([key, label]) => {
+            {columns.map(([key]) => {
               const value = row.factors?.[key] || 0;
               return (
-                <div
+                <InfoTooltip
                   key={`${row.algorithmName}-${key}`}
-                  aria-label={`${row.algorithmName} / ${label}: ${value}`}
-                  className="h-6 rounded border border-white/10 bg-amber-300"
-                  style={{ opacity: value ? 0.25 + (value / max) * 0.75 : 0.08 }}
-                />
+                  label={String(value)}
+                  className="h-6"
+                  block
+                >
+                  <span
+                    className="block h-full w-full rounded border border-white/10 bg-amber-300"
+                    style={{ opacity: value ? 0.25 + (value / max) * 0.75 : 0.08 }}
+                  />
+                </InfoTooltip>
               );
             })}
             <div className="rounded bg-white/10 px-1 text-center text-[10px] font-bold text-slate-200">{row.priority}</div>
@@ -1499,11 +1531,11 @@ function LiveCompareMultiples({ groups, expanded = false }) {
           return (
             <div key={group.label} className={`grid items-center gap-2 text-xs ${expanded ? 'grid-cols-[180px_1fr_44px]' : 'grid-cols-[90px_1fr_34px]'}`}>
               <TruncatedTooltip label={group.label} className="text-slate-300" full={expanded} />
-              <div className="flex h-3 overflow-hidden rounded bg-white/10" style={{ width: `${Math.max(10, (group.total || 0) / max * 100)}%` }}>
-                <span aria-label={`Positive: ${positive}`} className="bg-emerald-300" style={{ width: `${positive / Math.max(1, group.total || 0) * 100}%` }} />
-                <span aria-label={`Negative: ${negative}`} className="bg-rose-300" style={{ width: `${negative / Math.max(1, group.total || 0) * 100}%` }} />
-                <span aria-label={`Mixed: ${mixed}`} className="bg-amber-300" style={{ width: `${mixed / Math.max(1, group.total || 0) * 100}%` }} />
-                <span aria-label={`Other: ${unknown}`} className="bg-slate-300" style={{ width: `${unknown / Math.max(1, group.total || 0) * 100}%` }} />
+              <div className="flex h-3 rounded bg-white/10" style={{ width: `${Math.max(10, (group.total || 0) / max * 100)}%` }}>
+                <InfoTooltip label={String(positive)} className="h-full" block style={{ width: `${positive / Math.max(1, group.total || 0) * 100}%` }}><span className="block h-full w-full bg-emerald-300" /></InfoTooltip>
+                <InfoTooltip label={String(negative)} className="h-full" block style={{ width: `${negative / Math.max(1, group.total || 0) * 100}%` }}><span className="block h-full w-full bg-rose-300" /></InfoTooltip>
+                <InfoTooltip label={String(mixed)} className="h-full" block style={{ width: `${mixed / Math.max(1, group.total || 0) * 100}%` }}><span className="block h-full w-full bg-amber-300" /></InfoTooltip>
+                <InfoTooltip label={String(unknown)} className="h-full" block style={{ width: `${unknown / Math.max(1, group.total || 0) * 100}%` }}><span className="block h-full w-full bg-slate-300" /></InfoTooltip>
               </div>
               <span className="text-right font-bold text-white">{group.total}</span>
             </div>
@@ -1573,16 +1605,18 @@ function LiveTrend({ buckets, expanded = false }) {
               ))}
             </svg>
             {values.map((point) => (
-              <div
+              <InfoTooltip
                 key={point.bucket.month}
+                label={String(point.total)}
                 className="absolute -translate-x-1/2 -translate-y-1/2"
+                block
                 style={{ left: `${point.x}%`, top: '50%' }}
               >
                 <span className="absolute left-1/2 top-[-22px] -translate-x-1/2 text-[10px] font-bold leading-none text-slate-50">
                   {point.total}
                 </span>
                 <span className="block h-full min-h-28 border-l border-white/10" />
-              </div>
+              </InfoTooltip>
             ))}
           </div>
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-300">
@@ -1699,7 +1733,9 @@ function LiveTable({ rows, emptyLabel, expanded = false }) {
       {topRows.map(([label, value]) => (
         <div key={`${label}-${value}`} className="grid grid-cols-[1fr_76px] gap-2 text-xs">
           <TruncatedTooltip label={label} className="rounded bg-white/10 px-2 py-2 text-slate-200" full={expanded} />
-          <div className="rounded bg-amber-300/90 px-2 py-2 text-center font-bold text-slate-950">{value}</div>
+          <InfoTooltip label={String(value)} className="rounded bg-amber-300/90 px-2 py-2 text-center font-bold text-slate-950" block>
+            <span className="block w-full">{value}</span>
+          </InfoTooltip>
         </div>
       ))}
     </div>

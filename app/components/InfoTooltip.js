@@ -1,6 +1,6 @@
 'use client';
 
-export function InfoTooltip({ label, children, className = '', side = 'top', block = false }) {
+export function InfoTooltip({ label, children, className = '', side = 'top', block = false, style }) {
   const TriggerElement = block ? 'div' : 'span';
   const textClass = /\btext-/.test(className) ? '' : 'text-yellow-600';
   const positionClass = side === 'bottom'
@@ -15,6 +15,7 @@ export function InfoTooltip({ label, children, className = '', side = 'top', blo
       className={`group/tooltip relative ${block ? 'flex' : 'inline-flex'} cursor-help items-center ${textClass} outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 ${className}`}
       aria-label={label}
       tabIndex={0}
+      style={style}
     >
       {children}
       <span
