@@ -171,7 +171,7 @@ export function BriefingsClient() {
   const excerptQuery = useMemo(() => {
     const params = new URLSearchParams();
     params.set('fields', 'excerpt');
-    params.set('limit', '6');
+    params.set('limit', '50');
     params.set('lens', lens);
     params.set('scope', scope === 'algorithm' ? 'algorithm' : 'corpus');
     if (scope === 'algorithm') params.set('algorithm', selectedVisibleAlgorithm);
@@ -414,6 +414,8 @@ export function BriefingsClient() {
 }
 
 function LiveSnapshot({ snapshot, lens }) {
+  const [drilldown, setDrilldown] = useState(null);
+  const { preview, previewItem, setPreview, closePreview } = useEvidencePreview();
   if (!snapshot) {
     return <div className="mt-5 text-sm font-semibold text-amber-50/70">Loading live corpus snapshot...</div>;
   }
@@ -423,36 +425,42 @@ function LiveSnapshot({ snapshot, lens }) {
   const points = snapshot.patterns?.points || [];
   const outliers = points.filter((point) => point.isOutlier).length;
   const aggregateOnly = lens === 'government';
+  const stories = briefingStories(snapshot);
   const stats = [
-    ['Approved stories', snapshot.landscape?.totalApprovedStories ?? 0],
-    ['Algorithms', snapshot.landscape?.totalAlgorithms ?? 0],
-    ['Suggested topics', snapshot.patterns?.topics?.length ?? 0],
-    ['Less common stories', aggregateOnly ? 'Aggregate only' : outliers],
+    ['Approved stories', snapshot.landscape?.totalApprovedStories ?? 0, storyDrilldown('Approved stories', stories, lens)],
+    ['Algorithms', snapshot.landscape?.totalAlgorithms ?? 0, algorithmDrilldown('Algorithms', snapshot.landscape?.algorithms || [])],
+    ['Suggested topics', snapshot.patterns?.topics?.length ?? 0, metaDrilldown('Suggested topics', snapshot.patterns?.topics || [], 'Topic')],
+    ['Less common stories', aggregateOnly ? 'Aggregate only' : outliers, storyDrilldown('Less common stories', stories.filter((story) => story.cluster?.isOutlier), lens, outliers)],
   ];
   const pipelines = [
-    ['Theme matrix', snapshot.themeMatrix?.rows?.length ?? 0],
-    ['Trend buckets', snapshot.trend?.buckets?.length ?? 0],
-    ['Story excerpts', aggregateOnly ? 'Hidden' : snapshot.excerpts?.items?.length ?? 0],
-    ['Claim rows', snapshot.claimVsExperience?.rows?.length ?? 0],
+    ['Theme matrix', snapshot.themeMatrix?.rows?.length ?? 0, metaDrilldown('Theme matrix cells', snapshot.themeMatrix?.rows || [], 'Cell')],
+    ['Trend buckets', snapshot.trend?.buckets?.length ?? 0, metaDrilldown('Trend buckets', snapshot.trend?.buckets || [], 'Month')],
+    ['Story excerpts', aggregateOnly ? 'Hidden' : snapshot.excerpts?.items?.length ?? 0, storyDrilldown('Story excerpts', stories, lens)],
+    ['Claim rows', snapshot.claimVsExperience?.rows?.length ?? 0, metaDrilldown('Claim rows', snapshot.claimVsExperience?.rows || [], 'Claim row')],
   ];
+  const cardClass = 'rounded-md border px-3 py-2 text-left transition';
+  const topCardClass = `${cardClass} border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50`;
+  const pipelineCardClass = `${cardClass} border-emerald-200 bg-emerald-50 hover:border-emerald-400 hover:bg-emerald-100`;
   return (
     <div className="mt-5 max-w-5xl">
       <div className="grid gap-2 sm:grid-cols-4">
-        {stats.map(([label, value]) => (
-          <div key={label} className="rounded-md border border-slate-200 bg-white px-3 py-2">
+        {stats.map(([label, value, drill]) => (
+          <button key={label} type="button" onClick={() => drill && setDrilldown(drill)} className={topCardClass}>
             <div className="text-xl font-bold text-slate-950">{value}</div>
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
-          </div>
+          </button>
         ))}
       </div>
       <div className="mt-2 grid gap-2 sm:grid-cols-4">
-        {pipelines.map(([label, value]) => (
-          <div key={label} className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2">
+        {pipelines.map(([label, value, drill]) => (
+          <button key={label} type="button" onClick={() => drill && setDrilldown(drill)} className={pipelineCardClass}>
             <div className="text-lg font-bold text-emerald-900">{value}</div>
             <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">{label}</div>
-          </div>
+          </button>
         ))}
       </div>
+      <DrilldownModal drilldown={drilldown} onClose={() => setDrilldown(null)} onPreview={setPreview} />
+      <EvidencePreviewModal preview={preview} item={previewItem} onClose={closePreview} />
     </div>
   );
 }
@@ -771,15 +779,35 @@ function explainBlock(block) {
 }
 
 function EvidenceRowsList({ rows, onPreview }) {
+  const [drilldown, setDrilldown] = useState(null);
   return (
-    <div className="mt-3 space-y-3">
-      {rows.map((row, index) => {
-        const actions = normalizeEvidenceActions(row);
-        return (
-          <div key={evidenceRowKey(row, index)} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+    <>
+      <div className="mt-3 space-y-3">
+        {rows.map((row, index) => {
+          const actions = normalizeEvidenceActions(row);
+          const canDrill = Boolean(row.drilldown);
+          return (
+          <div
+            key={evidenceRowKey(row, index)}
+            role={canDrill ? 'button' : undefined}
+            tabIndex={canDrill ? 0 : undefined}
+            onClick={() => canDrill && setDrilldown(row.drilldown)}
+            onKeyDown={(event) => {
+              if (canDrill && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault();
+                setDrilldown(row.drilldown);
+              }
+            }}
+            className={`rounded-md border border-slate-200 bg-slate-50 p-3 ${canDrill ? 'cursor-pointer hover:border-amber-300 hover:bg-amber-50' : ''}`}
+          >
             <div className="flex items-start justify-between gap-3">
               <p className="font-semibold text-slate-950">{row.title}</p>
-              <div className="flex shrink-0 flex-wrap justify-end gap-2">
+              <div className="flex shrink-0 flex-wrap justify-end gap-2" onClick={(event) => event.stopPropagation()}>
+                {canDrill ? (
+                  <button type="button" onClick={() => setDrilldown(row.drilldown)} className="rounded border border-amber-200 bg-white px-2 py-1 text-xs font-bold text-amber-800 hover:bg-amber-50">
+                    Details
+                  </button>
+                ) : null}
                 {actions.map((action, actionIndex) => (
                   <EvidenceActionButton key={`${action.type}-${action.href || action.slug || action.id || actionIndex}`} action={action} onPreview={onPreview} />
                 ))}
@@ -788,9 +816,11 @@ function EvidenceRowsList({ rows, onPreview }) {
             </div>
             {row.detail ? <p className="mt-2 text-sm leading-6 text-slate-700">{row.detail}</p> : null}
           </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+      <DrilldownModal drilldown={drilldown} onClose={() => setDrilldown(null)} onPreview={onPreview} />
+    </>
   );
 }
 
@@ -874,6 +904,105 @@ function EvidencePreviewModal({ preview, item, onClose }) {
   );
 }
 
+function DrilldownModal({ drilldown, onClose, onPreview }) {
+  useEffect(() => {
+    if (!drilldown) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [drilldown]);
+
+  if (!drilldown) return null;
+  const stories = drilldown.stories || [];
+  const algorithms = drilldown.algorithms || [];
+  const metaRows = drilldown.metaRows || [];
+  const hasDetails = stories.length || algorithms.length || metaRows.length;
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 p-3 sm:p-4" role="dialog" aria-modal="true" onClick={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Count details</p>
+            <h3 className="mt-2 text-xl font-black text-slate-950">{drilldown.title}</h3>
+            <p className="mt-1 text-sm text-slate-600">Counted total: <span className="font-bold text-slate-900">{drilldown.count ?? stories.length + algorithms.length + metaRows.length}</span></p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" aria-label="Close count details">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">
+          {!hasDetails ? (
+            <p className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-700">Detailed rows are not available for this aggregate yet.</p>
+          ) : null}
+          {metaRows.length ? <DrilldownSection title="Breakdown" rows={metaRows} /> : null}
+          {algorithms.length ? (
+            <section className="mt-4">
+              <h4 className="text-xs font-black uppercase tracking-wide text-slate-500">Algorithms</h4>
+              <div className="mt-2 grid gap-2">
+                {algorithms.map((algorithm, index) => (
+                  <div key={algorithm.slug || `${algorithm.name}-${index}`} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-bold text-slate-950">{algorithm.name}</p>
+                        <p className="mt-1 text-sm text-slate-600">{algorithm.useCase || algorithm.domain || 'Uncategorized'}{algorithm.approvedTestimonyCount !== undefined ? `; ${algorithm.approvedTestimonyCount} approved stories` : ''}</p>
+                      </div>
+                      {algorithm.slug ? (
+                        <button type="button" onClick={() => onPreview?.(algorithmAction(algorithm.slug, algorithm, 'System'))} className="rounded border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100">
+                          Open
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+          {stories.length ? (
+            <section className="mt-4">
+              <h4 className="text-xs font-black uppercase tracking-wide text-slate-500">Stories</h4>
+              <div className="mt-2 grid max-h-[45vh] gap-2 overflow-y-auto pr-1">
+                {stories.map((story) => (
+                  <div key={story.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-bold text-slate-950">{story.title}</p>
+                        <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{story.affectedDomain || story.topicLabel || 'Story'}{story.submittedAt ? ` / ${monthKey(story.submittedAt)}` : ''}{story.impact ? ` / ${story.impact}` : ''}</p>
+                      </div>
+                      {story.id ? <a href={`/stories/${story.id}`} className="rounded border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100">Open story</a> : null}
+                    </div>
+                    {story.excerpt ? <p className="mt-2 text-sm leading-6 text-slate-700">{story.excerpt}</p> : null}
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DrilldownSection({ title, rows }) {
+  return (
+    <section>
+      <h4 className="text-xs font-black uppercase tracking-wide text-slate-500">{title}</h4>
+      <div className="mt-2 grid gap-2">
+        {rows.map((row, index) => (
+          <div key={`${row.title || row.label}-${index}`} className="flex items-start justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <div>
+              <p className="font-bold text-slate-950">{row.title || row.label}</p>
+              {row.detail ? <p className="mt-1 text-sm text-slate-600">{row.detail}</p> : null}
+            </div>
+            {row.value !== undefined && row.value !== '' ? <span className="rounded bg-white px-2 py-1 text-xs font-bold text-slate-800">{row.value}</span> : null}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function normalizeAlgorithmForModal(algorithm) {
   const testimonyLinks = Array.isArray(algorithm.testimonyLinks) ? algorithm.testimonyLinks : [];
   const relatedStories = Array.isArray(algorithm.relatedStories)
@@ -890,13 +1019,143 @@ function normalizeAlgorithmForModal(algorithm) {
   };
 }
 
+function briefingStories(snapshot) {
+  return snapshot?.excerpts?.items || [];
+}
+
+function monthKey(value) {
+  return String(value || '').slice(0, 7);
+}
+
+function storyHasTheme(story, theme) {
+  return (story.themes || []).some((item) => item.theme === theme);
+}
+
+function storyAlgorithms(stories) {
+  const bySlug = new Map();
+  for (const story of stories) {
+    for (const algorithm of story.algorithms || []) {
+      const key = algorithm.slug || algorithm.name;
+      if (key && !bySlug.has(key)) bySlug.set(key, algorithm);
+    }
+  }
+  return [...bySlug.values()];
+}
+
+function algorithmDrilldown(title, algorithms) {
+  return { kind: 'algorithms', title, count: algorithms.length, algorithms };
+}
+
+function storyDrilldown(title, stories, lens, count = stories.length) {
+  return {
+    kind: 'stories',
+    title,
+    count,
+    stories: lens === 'government' ? [] : stories,
+    algorithms: storyAlgorithms(stories),
+    metaRows: lens === 'government' ? [{ title: 'Aggregate-only view', value: count, detail: 'Story-level details are hidden for this lens.' }] : [],
+  };
+}
+
+function metaDrilldown(title, rows, label = 'Row') {
+  return {
+    kind: 'topics',
+    title,
+    count: rows.length,
+    metaRows: rows.map((row, index) => ({
+      title: row.label || row.title || row.month || row.algorithmName || `${label} ${index + 1}`,
+      value: row.count ?? row.total ?? row.size ?? row.value ?? row.experienceCount ?? '',
+      detail: row.detail || row.policyDirection || row.improvementDirection || row.reviewStatus || keywordDetail(row) || '',
+    })),
+  };
+}
+
+function keywordDetail(row) {
+  const keywords = row.keywords || row.topKeywords;
+  return Array.isArray(keywords) && keywords.length ? `Keywords: ${keywords.join(', ')}.` : '';
+}
+
+function groupStoriesByTheme(snapshot, theme, lens, count) {
+  const stories = briefingStories(snapshot).filter((story) => storyHasTheme(story, theme));
+  return storyDrilldown(`${displayBriefingLabel(theme)} - ${count} stories`, stories, lens, count);
+}
+
+function groupStoriesByDomainTheme(snapshot, row, lens) {
+  const stories = briefingStories(snapshot).filter((story) => story.affectedDomain === row.domain && storyHasTheme(story, row.theme));
+  return storyDrilldown(`${row.domain} / ${displayBriefingLabel(row.theme)} - ${row.count} stories`, stories, lens, row.count);
+}
+
+function groupStoriesByMonth(snapshot, row, lens) {
+  const stories = briefingStories(snapshot).filter((story) => monthKey(story.submittedAt) === row.month);
+  return storyDrilldown(`${row.month} - ${row.total} stories`, stories, lens, row.total);
+}
+
+function groupStoriesByTopic(snapshot, row, lens) {
+  const topicPoints = (snapshot.patterns?.points || []).filter((point) => point.topicId === row.topicId || point.topicLabel === row.label);
+  const byId = new Map(briefingStories(snapshot).map((story) => [story.id, story]));
+  const stories = topicPoints.map((point) => ({ ...point, ...(byId.get(point.id) || {}) }));
+  return storyDrilldown(`${row.label || `Topic ${row.topicId}`} - ${row.size} stories`, stories, lens, row.size);
+}
+
+function groupStoriesByDomain(snapshot, label, lens, count) {
+  const stories = briefingStories(snapshot).filter((story) => story.affectedDomain === label);
+  return storyDrilldown(`${label} - ${count} stories`, stories, lens, count);
+}
+
+function coverageStories(snapshot, key) {
+  const stories = briefingStories(snapshot);
+  if (key === 'noAlgorithmLink') return stories.filter((story) => !(story.algorithms || []).length);
+  if (key === 'noAiThemes') return stories.filter((story) => !(story.themes || []).length);
+  if (key === 'nonEnglish') return stories.filter((story) => story.originalLanguage && story.originalLanguage !== 'en');
+  return [];
+}
+
+function coverageDrilldown(snapshot, key, value, lens) {
+  const stories = coverageStories(snapshot, key);
+  if (stories.length) return storyDrilldown(`${key} - ${value}`, stories, lens, value);
+  return metaDrilldown(`${key} - ${value}`, [{
+    label: key,
+    count: value,
+    detail: coverageGapDetail(key),
+  }]);
+}
+
+function coverageGapDetail(key) {
+  const details = {
+    noNeighbourhood: 'The current story schema does not capture a neighbourhood field.',
+    noPartnerOrganization: 'This aggregate counts stories without a stored partner organization.',
+    noAlgorithmLink: 'Stories in this group have no linked algorithm record.',
+    noAiThemes: 'Stories in this group do not have stored theme labels.',
+    nonEnglish: 'Stories in this group were submitted in a language other than English.',
+  };
+  return details[key] || 'Coverage/paradata gap for the current filters.';
+}
+
+function groupStoriesByFinding(snapshot, row, lens) {
+  const label = row.label;
+  const byTopic = briefingStories(snapshot).filter((story) => story.topic?.label === label || story.topicLabel === label);
+  const byDomain = briefingStories(snapshot).filter((story) => story.affectedDomain === label);
+  const stories = byTopic.length ? byTopic : byDomain;
+  return storyDrilldown(`${label} - ${row.count} stories`, stories, lens, row.count);
+}
+
 function evidenceRows(block, snapshot, lens) {
   if (!snapshot) return [{ title: 'Live evidence loading', value: '', detail: 'The supporting API rows are still loading.' }];
   if (snapshot.error) return [{ title: 'Live evidence unavailable', value: '', detail: 'The page could not load the supporting API rows.' }];
   const api = block.api.toLowerCase();
-  if (api.includes('theme-matrix')) return (snapshot.themeMatrix?.rows || []).map((row) => ({ title: `${row.domain} / ${displayBriefingLabel(row.theme)}`, value: row.count, detail: 'Approved story count in this domain-theme cell.' }));
+  if (api.includes('theme-matrix')) return (snapshot.themeMatrix?.rows || []).map((row) => ({
+    title: `${row.domain} / ${displayBriefingLabel(row.theme)}`,
+    value: row.count,
+    detail: 'Approved story count in this domain-theme cell.',
+    drilldown: groupStoriesByDomainTheme(snapshot, row, lens),
+  }));
   if (api.includes('trend')) return [
-    ...(snapshot.trend?.buckets || []).map((row) => ({ title: row.month, value: row.total, detail: 'Approved stories in this time bucket.' })),
+    ...(snapshot.trend?.buckets || []).map((row) => ({
+      title: row.month,
+      value: row.total,
+      detail: 'Approved stories in this time bucket.',
+      drilldown: groupStoriesByMonth(snapshot, row, lens),
+    })),
     ...(snapshot.trend?.markers || []).map((row) => ({
       title: row.algorithmName,
       value: row.currentVersion || row.yearDeployed || '',
@@ -905,7 +1164,12 @@ function evidenceRows(block, snapshot, lens) {
     })),
   ];
   if (api.includes('patterns')) return [
-    ...(snapshot.patterns?.topics || []).map((row) => ({ title: row.label || `Topic ${row.topicId}`, value: row.size, detail: `Suggested corpus topic. Keywords: ${(row.keywords || []).join(', ') || 'none listed'}.` })),
+    ...(snapshot.patterns?.topics || []).map((row) => ({
+      title: row.label || `Topic ${row.topicId}`,
+      value: row.size,
+      detail: `Suggested corpus topic. Keywords: ${(row.keywords || row.topKeywords || []).join(', ') || 'none listed'}.`,
+      drilldown: groupStoriesByTopic(snapshot, row, lens),
+    })),
     ...(lens === 'government' ? [] : (snapshot.patterns?.points || []).map((row) => ({
       title: row.title || 'Story point',
       value: row.topicLabel || (row.isOutlier ? 'outlier' : `cluster ${row.clusterId ?? 'n/a'}`),
@@ -929,12 +1193,24 @@ function evidenceRows(block, snapshot, lens) {
     const [title, value] = crossJurisdictionRow(row);
     return { title, value, detail: row.summary || row.detail || snapshot.crossJurisdiction?.reviewStatus || 'Approved peer-jurisdiction aggregate.' };
   });
-  if (api.includes('coverage')) return Object.entries(snapshot.coverage?.whatsMissing || {}).map(([title, value]) => ({ title, value, detail: 'Coverage/paradata gap for the current filters.' }));
+  if (api.includes('coverage')) return Object.entries(snapshot.coverage?.whatsMissing || {}).map(([title, value]) => {
+    return {
+      title,
+      value,
+      detail: 'Coverage/paradata gap for the current filters.',
+      drilldown: coverageDrilldown(snapshot, title, value, lens),
+    };
+  });
   if (api.includes('silence')) return (snapshot.silence?.rows || []).map((row) => ({
     title: row.algorithmName,
     value: row.priority,
     detail: `Volume ${row.factors?.volumeGap ?? 0}; semantic ${row.factors?.semanticGap ?? 0}; domain ${row.factors?.domainGap ?? 0}.`,
     actions: [algorithmAction(row.algorithmSlug)],
+    drilldown: metaDrilldown(`${row.algorithmName} silence factors`, [
+      { label: 'Volume gap', count: row.factors?.volumeGap ?? 0, detail: 'How thin the linked story volume is.' },
+      { label: 'Semantic gap', count: row.factors?.semanticGap ?? 0, detail: 'How little cached topic/cluster coverage exists.' },
+      { label: 'Domain gap', count: row.factors?.domainGap ?? 0, detail: 'How thin the domain-level story volume is.' },
+    ]),
   }));
   if (api.includes('testimonies') || api.includes('recognition')) {
     if (lens === 'government') return [{ title: 'Aggregate-only lens', value: '', detail: 'Story rows are intentionally suppressed for government users.' }];
@@ -949,13 +1225,28 @@ function evidenceRows(block, snapshot, lens) {
       ],
     }));
   }
-  if (api.includes('evidence-strength')) return (snapshot.evidence?.findings || []).map((row) => ({ title: row.label, value: row.strength, detail: `${row.count} stories; minority ${row.representation?.minorityCount || 0}; dissent ${row.representation?.dissentCount || 0}.` }));
+  if (api.includes('evidence-strength')) return (snapshot.evidence?.findings || []).map((row) => ({
+    title: row.label,
+    value: row.strength,
+    detail: `${row.count} stories; minority ${row.representation?.minorityCount || 0}; dissent ${row.representation?.dissentCount || 0}.`,
+    drilldown: groupStoriesByFinding(snapshot, row, lens),
+  }));
   if (api.includes('compare')) return (snapshot.compare?.groups || []).map((row) => {
     const impacts = Object.fromEntries(countRows(row.impact));
-    return { title: row.label, value: row.total, detail: `Positive ${impacts.POSITIVE || 0}; negative ${impacts.NEGATIVE || 0}; mixed ${impacts.MIXED || 0}.` };
+    return {
+      title: row.label,
+      value: row.total,
+      detail: `Positive ${impacts.POSITIVE || 0}; negative ${impacts.NEGATIVE || 0}; mixed ${impacts.MIXED || 0}.`,
+      drilldown: groupStoriesByDomain(snapshot, row.label, lens, row.total),
+    };
   });
   if (api.includes('impact')) return (snapshot.impact?.aiSuggested || []).map((row) => ({ title: row.label, value: row.count, detail: 'AI-suggested impact classification count.' }));
-  if (api.includes('themes') || api.includes('cross-cutting-themes')) return (snapshot.themes?.themes || []).map((row) => ({ title: displayBriefingLabel(row.theme), value: row.count, detail: row.policyDirection || row.improvementDirection || 'Suggested theme from approved stories.' }));
+  if (api.includes('themes') || api.includes('cross-cutting-themes')) return (snapshot.themes?.themes || []).map((row) => ({
+    title: displayBriefingLabel(row.theme),
+    value: row.count,
+    detail: row.policyDirection || row.improvementDirection || 'Suggested theme from approved stories.',
+    drilldown: groupStoriesByTheme(snapshot, row.theme, lens, row.count),
+  }));
   if (api.includes('organizations') || api.includes('events')) return [
     ...(snapshot.organizations?.items || []).map((row) => ({
       title: row.name,
@@ -975,14 +1266,21 @@ function evidenceRows(block, snapshot, lens) {
     value: row.useCase || 'Uncategorized',
     detail: `${row.agencyName || 'Unknown agency'}; ${row.status || 'unknown status'}; ${row.approvedTestimonyCount || 0} approved stories.`,
     actions: [algorithmAction(row.slug, row)],
+    drilldown: algorithmDrilldown(row.name, [row]),
   }));
   return [
-    ...(snapshot.landscape?.byDomain || []).map((row) => ({ title: row.label, value: row.count, detail: 'Algorithms grouped by domain.' })),
+    ...(snapshot.landscape?.byDomain || []).map((row) => ({
+      title: row.label,
+      value: row.count,
+      detail: 'Algorithms grouped by domain.',
+      drilldown: algorithmDrilldown(`${row.label} - ${row.count} algorithms`, (snapshot.landscape?.algorithms || []).filter((algorithm) => algorithm.useCase === row.label)),
+    })),
     ...(snapshot.landscape?.algorithms || []).map((row) => ({
       title: row.name,
       value: row.useCase || row.status || '',
       detail: `${row.agencyName || 'Unknown agency'}; ${row.approvedTestimonyCount || 0} approved stories.`,
       actions: [algorithmAction(row.slug, row, 'System')],
+      drilldown: algorithmDrilldown(row.name, [row]),
     })),
   ];
 }
