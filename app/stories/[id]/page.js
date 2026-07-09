@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Calendar, CheckCircle2, Eye, FileText, Heart, MessageCircle, Quote } from 'lucide-react';
+import { Calendar, CheckCircle2, Eye, FileText, Heart, MessageCircle, Quote } from 'lucide-react';
 import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../lib/auth';
 import { buildStorySummary } from '../../../lib/storySummary';
 import { SiteNav } from '../../components/SiteNav';
 import { formatDate } from '../../components/Formatters';
+import { BackButton } from './BackButton';
 import { StoryShareMenu } from './StoryShareMenu';
 
 export const dynamic = 'force-dynamic';
@@ -71,10 +72,7 @@ export default async function StoryPage({ params }) {
       <SiteNav currentUser={user} />
 
       <article className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
-        <Link href="/stories" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Stories
-        </Link>
+        <BackButton />
         <nav className="mt-2 flex items-center gap-2 text-sm text-gray-500" aria-label="Breadcrumb">
           <Link href="/" className="inline-flex min-h-11 items-center hover:text-gray-900">Home</Link>
           <span>/</span>

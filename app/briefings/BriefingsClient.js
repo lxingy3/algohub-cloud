@@ -1,8 +1,10 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { BookOpen, Database, FileText, Filter, Landmark, Maximize2, MessageSquare, Search, Users, X } from 'lucide-react';
+import { BookOpen, Database, ExternalLink, FileText, Filter, Landmark, Maximize2, MessageSquare, Search, Users, X } from 'lucide-react';
+import { AlgorithmModal } from '../components/AlgorithmsRegistry';
 import { InfoTooltip } from '../components/InfoTooltip';
+import { EventModal } from '../events/EventsClient';
 
 const lenses = [
   { id: 'community', label: 'Community', short: 'Community Members', icon: Users },
@@ -210,6 +212,14 @@ export function BriefingsClient() {
   }, [domains]);
 
   useEffect(() => {
+    if (!paramsReady || activeEvidenceBlock) return;
+    const evidenceCode = new URLSearchParams(window.location.search).get('evidence');
+    if (!evidenceCode) return;
+    const nextBlock = view.blocks.find((block) => block.code === evidenceCode);
+    if (nextBlock) setActiveEvidenceBlock(nextBlock);
+  }, [activeEvidenceBlock, paramsReady, view]);
+
+  useEffect(() => {
     let cancelled = false;
     fetch('/api/algorithms?limit=50')
       .then((response) => response.json())
@@ -241,8 +251,9 @@ export function BriefingsClient() {
     }
     params.set('reading', readingLevel);
     params.set('language', languageMode);
+    if (activeEvidenceBlock) params.set('evidence', activeEvidenceBlock.code);
     window.history.replaceState(null, '', `/briefings?${params.toString()}`);
-  }, [domain, languageMode, lens, paramsReady, readingLevel, scope, selectedVisibleAlgorithm]);
+  }, [activeEvidenceBlock, domain, languageMode, lens, paramsReady, readingLevel, scope, selectedVisibleAlgorithm]);
 
   useEffect(() => {
     if (lens !== 'intermediary') return;
@@ -252,6 +263,20 @@ export function BriefingsClient() {
   const updatePrivateNote = (value) => {
     setPrivateNote(value);
     window.localStorage.setItem(privateNotesKey, value);
+  };
+
+  const openEvidence = (block) => {
+    setActiveEvidenceBlock(block);
+    const params = new URLSearchParams(window.location.search);
+    params.set('evidence', block.code);
+    window.history.pushState(null, '', `/briefings?${params.toString()}`);
+  };
+
+  const closeEvidence = () => {
+    setActiveEvidenceBlock(null);
+    const params = new URLSearchParams(window.location.search);
+    params.delete('evidence');
+    window.history.replaceState(null, '', `/briefings?${params.toString()}`);
   };
 
   useEffect(() => {
@@ -396,14 +421,15 @@ export function BriefingsClient() {
               block={block}
               snapshot={liveSnapshot}
               readingLevel={readingLevel}
+              lens={lens}
               privateNote={privateNote}
               onPrivateNoteChange={updatePrivateNote}
-              onOpenEvidence={() => setActiveEvidenceBlock(block)}
+              onOpenEvidence={() => openEvidence(block)}
               showPrivateNotes={lens === 'intermediary' && block.framing.includes('NOTES PRIVATE')}
             />
           ))}
         </div>
-        <EvidenceDrawer block={activeEvidenceBlock} snapshot={liveSnapshot} lens={lens} onClose={() => setActiveEvidenceBlock(null)} />
+        <EvidenceDrawer block={activeEvidenceBlock} snapshot={liveSnapshot} lens={lens} onClose={closeEvidence} />
       </section>
     </>
   );
@@ -523,7 +549,7 @@ function listJson(value) {
   }).filter(Boolean);
 }
 
-function BriefingBlock({ block, snapshot, readingLevel, privateNote, onPrivateNoteChange, onOpenEvidence, showPrivateNotes }) {
+function BriefingBlock({ block, snapshot, readingLevel, lens, privateNote, onPrivateNoteChange, onOpenEvidence, showPrivateNotes }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <article className="grid overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:grid-cols-[minmax(420px,1.15fr)_minmax(360px,0.85fr)]">
@@ -571,96 +597,229 @@ function BriefingBlock({ block, snapshot, readingLevel, privateNote, onPrivateNo
           </label>
         ) : null}
       </div>
-      <ChartExpandDialog block={block} snapshot={snapshot} open={expanded} onClose={() => setExpanded(false)} />
+      <ChartExpandDialog block={block} snapshot={snapshot} lens={lens} open={expanded} onClose={() => setExpanded(false)} />
     </article>
   );
 }
 
-function ChartExpandDialog({ block, snapshot, open, onClose }) {
+function ChartExpandDialog({ block, snapshot, lens, open, onClose }) {
+  const { preview, previewItem, setPreview, closePreview } = useEvidencePreview();
   if (!open) return null;
+  const rows = evidenceRowsWithFallback(block, snapshot, lens);
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4"
-      role="dialog"
-      aria-modal="true"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-lg bg-slate-950 text-white shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4">
-          <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-amber-300">{block.code}</p>
-            <h3 className="mt-1 text-2xl font-black">{block.title}</h3>
+    <>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 sm:p-4"
+        role="dialog"
+        aria-modal="true"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) onClose();
+        }}
+      >
+        <div className="flex max-h-[94vh] w-full max-w-[min(96vw,1500px)] flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
+          <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-slate-950 px-5 py-4 text-white">
+            <div>
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-amber-300">{block.code}</p>
+              <h3 className="mt-1 text-2xl font-black">{block.title}</h3>
+              <p className="mt-1 text-sm text-slate-300">{block.visual}</p>
+            </div>
+            <button type="button" onClick={onClose} className="rounded-md border border-white/20 p-2 text-white hover:bg-white/10" aria-label="Close expanded chart">
+              <X className="h-5 w-5" />
+            </button>
           </div>
-          <button type="button" onClick={onClose} className="rounded-md border border-white/20 p-2 text-white hover:bg-white/10" aria-label="Close expanded chart">
-            <X className="h-5 w-5" />
-          </button>
+          <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
+            <section className="min-h-0 overflow-auto bg-slate-950 p-5 text-white">
+              <LiveVisual block={block} snapshot={snapshot} expanded />
+            </section>
+            <aside className="min-h-0 overflow-y-auto border-t border-slate-200 bg-white p-5 lg:border-l lg:border-t-0">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">{block.framing}</span>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Full expanded view</span>
+              </div>
+              <dl className="grid gap-3">
+                <SpecDetails block={block} readingLevel="standard" />
+              </dl>
+              <div className="mt-5 border-t border-slate-200 pt-4">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Evidence rows</p>
+                <EvidenceRowsList rows={rows} onPreview={setPreview} />
+              </div>
+            </aside>
+          </div>
         </div>
-        <div className="overflow-auto p-5">
-          <LiveVisual block={block} snapshot={snapshot} expanded />
+      </div>
+      <EvidencePreviewModal preview={preview} item={previewItem} onClose={closePreview} />
+    </>
+  );
+}
+
+function EvidenceDrawer({ block, snapshot, lens, onClose }) {
+  const { preview, previewItem, setPreview, closePreview } = useEvidencePreview();
+  if (!block) return null;
+  const visibleRows = evidenceRowsWithFallback(block, snapshot, lens);
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-50 bg-slate-950/35"
+        role="dialog"
+        aria-modal="true"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) onClose();
+        }}
+      >
+        <div className="ml-auto flex h-full w-full max-w-xl flex-col bg-white shadow-2xl">
+          <div className="border-b border-slate-200 p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-700">Evidence</p>
+                <h3 className="mt-2 text-xl font-bold text-slate-950">{block.code} {block.title}</h3>
+                <p className="mt-1 text-sm text-slate-600">{block.api}</p>
+              </div>
+              <button type="button" onClick={onClose} className="rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" aria-label="Close evidence">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-5">
+            <EvidenceRowsList rows={visibleRows} onPreview={setPreview} />
+            {lens === 'government' ? (
+              <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+                Government view keeps story-level excerpts hidden and shows aggregate evidence only.
+              </p>
+            ) : null}
+          </div>
         </div>
+      </div>
+      <EvidencePreviewModal preview={preview} item={previewItem} onClose={closePreview} />
+    </>
+  );
+}
+
+function evidenceRowsWithFallback(block, snapshot, lens) {
+  const rows = evidenceRows(block, snapshot, lens);
+  if (rows.length) return rows;
+  return [lens === 'government'
+    ? { title: 'No aggregate rows available', value: '', detail: 'The current filters either do not meet the aggregate privacy threshold or are waiting for approved peer data.' }
+    : { title: 'No rows for the current filters', value: '', detail: 'Try another domain, lens, or algorithm.' }];
+}
+
+function EvidenceRowsList({ rows, onPreview }) {
+  return (
+    <div className="mt-3 space-y-3">
+      {rows.map((row, index) => {
+        const actions = normalizeEvidenceActions(row);
+        return (
+          <div key={evidenceRowKey(row, index)} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+            <div className="flex items-start justify-between gap-3">
+              <p className="font-semibold text-slate-950">{row.title}</p>
+              <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                {actions.map((action, actionIndex) => (
+                  <EvidenceActionButton key={`${action.type}-${action.href || action.slug || action.id || actionIndex}`} action={action} onPreview={onPreview} />
+                ))}
+                {row.value ? <span className="rounded bg-white px-2 py-1 text-xs font-bold text-slate-800">{row.value}</span> : null}
+              </div>
+            </div>
+            {row.detail ? <p className="mt-2 text-sm leading-6 text-slate-700">{row.detail}</p> : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function EvidenceActionButton({ action, onPreview }) {
+  const className = 'inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100';
+  if (action.type === 'algorithm' || action.type === 'event') {
+    return (
+      <button type="button" onClick={() => onPreview(action)} className={className}>
+        {action.label || 'Open'}
+      </button>
+    );
+  }
+  if (action.type === 'external') {
+    return (
+      <a href={action.href} target="_blank" rel="noreferrer" className={className}>
+        {action.label || 'Open'}
+        <ExternalLink className="h-3 w-3" />
+      </a>
+    );
+  }
+  return action.href ? <a href={action.href} className={className}>{action.label || 'Open'}</a> : null;
+}
+
+function normalizeEvidenceActions(row) {
+  if (Array.isArray(row.actions)) return row.actions.filter(Boolean);
+  if (row.action) return [row.action];
+  if (row.href) return [{ type: row.href.startsWith('http') ? 'external' : 'story', href: row.href, label: 'Open' }];
+  return [];
+}
+
+function evidenceRowKey(row, index) {
+  return `${row.title || 'row'}-${row.value || ''}-${row.detail || ''}-${index}`;
+}
+
+function useEvidencePreview() {
+  const [preview, setPreview] = useState(null);
+  const [previewItem, setPreviewItem] = useState(null);
+
+  useEffect(() => {
+    if (!preview) {
+      setPreviewItem(null);
+      return undefined;
+    }
+    if (preview.type === 'event') {
+      setPreviewItem(preview.item || null);
+      return undefined;
+    }
+    if (preview.type !== 'algorithm') return undefined;
+    let cancelled = false;
+    setPreviewItem(preview.item ? normalizeAlgorithmForModal(preview.item) : null);
+    if (!preview.slug) return undefined;
+    fetch(`/api/algorithms/${encodeURIComponent(preview.slug)}`)
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload) => {
+        if (!cancelled && payload) setPreviewItem(normalizeAlgorithmForModal(payload));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [preview]);
+
+  return {
+    preview,
+    previewItem,
+    setPreview,
+    closePreview: () => setPreview(null),
+  };
+}
+
+function EvidencePreviewModal({ preview, item, onClose }) {
+  if (!preview) return null;
+  if (preview.type === 'algorithm' && item) return <AlgorithmModal algorithm={item} onClose={onClose} />;
+  if (preview.type === 'event' && item) return <EventModal event={item} onClose={onClose} />;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 px-4">
+      <div className="rounded-lg bg-white p-5 text-sm font-semibold text-slate-700 shadow-2xl">
+        Loading details...
       </div>
     </div>
   );
 }
 
-function EvidenceDrawer({ block, snapshot, lens, onClose }) {
-  if (!block) return null;
-  const rows = evidenceRows(block, snapshot, lens);
-  const visibleRows = rows.length ? rows : [lens === 'government'
-    ? { title: 'No aggregate rows available', value: '', detail: 'The current filters either do not meet the aggregate privacy threshold or are waiting for approved peer data.' }
-    : { title: 'No rows for the current filters', value: '', detail: 'Try another domain, lens, or algorithm.' }];
-  return (
-    <div
-      className="fixed inset-0 z-50 bg-slate-950/35"
-      role="dialog"
-      aria-modal="true"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div className="ml-auto flex h-full w-full max-w-xl flex-col bg-white shadow-2xl">
-        <div className="border-b border-slate-200 p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-700">Evidence</p>
-              <h3 className="mt-2 text-xl font-bold text-slate-950">{block.code} {block.title}</h3>
-              <p className="mt-1 text-sm text-slate-600">{block.api}</p>
-            </div>
-            <button type="button" onClick={onClose} className="rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" aria-label="Close evidence">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-        <div className="flex-1 overflow-y-auto p-5">
-          <div className="space-y-3">
-            {visibleRows.map((row) => (
-              <div key={`${row.title}-${row.value}-${row.detail}`} className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <p className="font-semibold text-slate-950">{row.title}</p>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {row.href ? (
-                      <a href={row.href} className="rounded border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100">
-                        Open
-                      </a>
-                    ) : null}
-                    {row.value ? <span className="rounded bg-white px-2 py-1 text-xs font-bold text-slate-800">{row.value}</span> : null}
-                  </div>
-                </div>
-                {row.detail ? <p className="mt-2 text-sm leading-6 text-slate-700">{row.detail}</p> : null}
-              </div>
-            ))}
-          </div>
-          {lens === 'government' ? (
-            <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
-              Government view keeps story-level excerpts hidden and shows aggregate evidence only.
-            </p>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
+function normalizeAlgorithmForModal(algorithm) {
+  const testimonyLinks = Array.isArray(algorithm.testimonyLinks) ? algorithm.testimonyLinks : [];
+  const relatedStories = Array.isArray(algorithm.relatedStories)
+    ? algorithm.relatedStories
+    : testimonyLinks
+      .map((link) => link.testimony)
+      .filter((story) => story && (!story.moderationStatus || story.moderationStatus === 'APPROVED'));
+  return {
+    ...algorithm,
+    documents: Array.isArray(algorithm.documents) ? algorithm.documents : [],
+    claims: Array.isArray(algorithm.claims) ? algorithm.claims : [],
+    relatedStories,
+    storyCount: algorithm.storyCount ?? relatedStories.length,
+  };
 }
 
 function evidenceRows(block, snapshot, lens) {
@@ -668,15 +827,36 @@ function evidenceRows(block, snapshot, lens) {
   if (snapshot.error) return [{ title: 'Live evidence unavailable', value: '', detail: 'The page could not load the supporting API rows.' }];
   const api = block.api.toLowerCase();
   if (api.includes('theme-matrix')) return (snapshot.themeMatrix?.rows || []).map((row) => ({ title: `${row.domain} / ${displayBriefingLabel(row.theme)}`, value: row.count, detail: 'Approved story count in this domain-theme cell.' }));
-  if (api.includes('trend')) return (snapshot.trend?.buckets || []).map((row) => ({ title: row.month, value: row.total, detail: 'Approved stories in this time bucket.' }));
-  if (api.includes('patterns')) return (snapshot.patterns?.topics || []).map((row) => ({ title: row.label || `Topic ${row.topicId}`, value: row.size, detail: `Suggested corpus topic. Keywords: ${(row.keywords || []).join(', ') || 'none listed'}.` }));
+  if (api.includes('trend')) return [
+    ...(snapshot.trend?.buckets || []).map((row) => ({ title: row.month, value: row.total, detail: 'Approved stories in this time bucket.' })),
+    ...(snapshot.trend?.markers || []).map((row) => ({
+      title: row.algorithmName,
+      value: row.currentVersion || row.yearDeployed || '',
+      detail: 'Algorithm deployment/version marker shown against the monthly trend.',
+      actions: [algorithmAction(row.algorithmSlug, undefined, 'System')],
+    })),
+  ];
+  if (api.includes('patterns')) return [
+    ...(snapshot.patterns?.topics || []).map((row) => ({ title: row.label || `Topic ${row.topicId}`, value: row.size, detail: `Suggested corpus topic. Keywords: ${(row.keywords || []).join(', ') || 'none listed'}.` })),
+    ...(lens === 'government' ? [] : (snapshot.patterns?.points || []).map((row) => ({
+      title: row.title || 'Story point',
+      value: row.topicLabel || (row.isOutlier ? 'outlier' : `cluster ${row.clusterId ?? 'n/a'}`),
+      detail: `UMAP (${Number(row.umapX).toFixed(2)}, ${Number(row.umapY).toFixed(2)}). ${row.excerpt || ''}`,
+      actions: [storyAction(row.id, 'Story')],
+    }))),
+  ];
   if (api.includes('claim-vs-experience')) return (snapshot.claimVsExperience?.rows || []).map((row) => ({
     title: row.algorithmName,
     value: row.experienceCount,
     detail: (row.claims || []).map((claim) => claim.text).join(' ') || 'No formal claim text listed.',
-    href: row.algorithmSlug ? `/algorithms/${row.algorithmSlug}` : '',
+    actions: [algorithmAction(row.algorithmSlug)],
   }));
-  if (api.includes('status=proposed')) return (snapshot.proposedAlgorithms?.items || []).map((row) => ({ title: row.name, value: row.status, detail: row.useCase || row.agencyName, href: row.slug ? `/algorithms/${row.slug}` : '' }));
+  if (api.includes('status=proposed')) return (snapshot.proposedAlgorithms?.items || []).map((row) => ({
+    title: row.name,
+    value: row.status,
+    detail: row.useCase || row.agencyName,
+    actions: [algorithmAction(row.slug, row)],
+  }));
   if (api.includes('cross-jurisdiction')) return (snapshot.crossJurisdiction?.rows || []).map((row) => {
     const [title, value] = crossJurisdictionRow(row);
     return { title, value, detail: row.summary || row.detail || snapshot.crossJurisdiction?.reviewStatus || 'Approved peer-jurisdiction aggregate.' };
@@ -686,7 +866,7 @@ function evidenceRows(block, snapshot, lens) {
     title: row.algorithmName,
     value: row.priority,
     detail: `Volume ${row.factors?.volumeGap ?? 0}; semantic ${row.factors?.semanticGap ?? 0}; domain ${row.factors?.domainGap ?? 0}.`,
-    href: row.algorithmSlug ? `/algorithms/${row.algorithmSlug}` : '',
+    actions: [algorithmAction(row.algorithmSlug)],
   }));
   if (api.includes('testimonies') || api.includes('recognition')) {
     if (lens === 'government') return [{ title: 'Aggregate-only lens', value: '', detail: 'Story rows are intentionally suppressed for government users.' }];
@@ -695,7 +875,10 @@ function evidenceRows(block, snapshot, lens) {
       title: row.title,
       value: row.impact || row.matchBasis || row.whyShown,
       detail: row.excerpt || row.whyShown,
-      href: row.id ? `/stories/${row.id}` : '',
+      actions: [
+        storyAction(row.id),
+        ...(row.algorithms || []).slice(0, 2).map((algorithm) => algorithmAction(algorithm.slug, algorithm, 'System')),
+      ],
     }));
   }
   if (api.includes('evidence-strength')) return (snapshot.evidence?.findings || []).map((row) => ({ title: row.label, value: row.strength, detail: `${row.count} stories; minority ${row.representation?.minorityCount || 0}; dissent ${row.representation?.dissentCount || 0}.` }));
@@ -706,11 +889,50 @@ function evidenceRows(block, snapshot, lens) {
   if (api.includes('impact')) return (snapshot.impact?.aiSuggested || []).map((row) => ({ title: row.label, value: row.count, detail: 'AI-suggested impact classification count.' }));
   if (api.includes('themes') || api.includes('cross-cutting-themes')) return (snapshot.themes?.themes || []).map((row) => ({ title: displayBriefingLabel(row.theme), value: row.count, detail: row.policyDirection || row.improvementDirection || 'Suggested theme from approved stories.' }));
   if (api.includes('organizations') || api.includes('events')) return [
-    ...(snapshot.organizations?.items || []).map((row) => ({ title: row.name, value: row.role, detail: row.websiteUrl || 'Library/community resource.', href: row.websiteUrl || '' })),
-    ...(snapshot.events?.items || []).map((row) => ({ title: row.title, value: row.location, detail: row.startsAt || 'Community event.' })),
+    ...(snapshot.organizations?.items || []).map((row) => ({
+      title: row.name,
+      value: row.role,
+      detail: row.description || row.websiteUrl || 'Library/community resource.',
+      actions: [externalAction(row.websiteUrl, 'Website')],
+    })),
+    ...(snapshot.events?.items || []).map((row) => ({
+      title: row.title,
+      value: row.location || (row.isVirtual ? 'Virtual' : ''),
+      detail: row.date || 'Community event.',
+      actions: [eventAction(row, 'Event'), externalAction(row.registrationUrl, 'Register')],
+    })),
   ];
-  if (block.code === 'CC2') return (snapshot.landscape?.algorithms || []).map((row) => ({ title: row.name, value: row.useCase || 'Uncategorized', detail: `${row.agencyName || 'Unknown agency'}; ${row.status || 'unknown status'}; ${row.approvedTestimonyCount || 0} approved stories.`, href: row.slug ? `/algorithms/${row.slug}` : '' }));
-  return (snapshot.landscape?.byDomain || []).map((row) => ({ title: row.label, value: row.count, detail: 'Algorithms grouped by domain.' }));
+  if (block.code === 'CC2') return (snapshot.landscape?.algorithms || []).map((row) => ({
+    title: row.name,
+    value: row.useCase || 'Uncategorized',
+    detail: `${row.agencyName || 'Unknown agency'}; ${row.status || 'unknown status'}; ${row.approvedTestimonyCount || 0} approved stories.`,
+    actions: [algorithmAction(row.slug, row)],
+  }));
+  return [
+    ...(snapshot.landscape?.byDomain || []).map((row) => ({ title: row.label, value: row.count, detail: 'Algorithms grouped by domain.' })),
+    ...(snapshot.landscape?.algorithms || []).map((row) => ({
+      title: row.name,
+      value: row.useCase || row.status || '',
+      detail: `${row.agencyName || 'Unknown agency'}; ${row.approvedTestimonyCount || 0} approved stories.`,
+      actions: [algorithmAction(row.slug, row, 'System')],
+    })),
+  ];
+}
+
+function algorithmAction(slug, item, label = 'Open') {
+  return slug ? { type: 'algorithm', slug, item, label } : null;
+}
+
+function storyAction(id, label = 'Open') {
+  return id ? { type: 'story', href: `/stories/${id}`, label } : null;
+}
+
+function eventAction(item, label = 'Open') {
+  return item?.id ? { type: 'event', id: item.id, item, label } : null;
+}
+
+function externalAction(href, label = 'Open') {
+  return href ? { type: 'external', href, label } : null;
 }
 
 function SpecDetails({ block, readingLevel }) {
@@ -864,8 +1086,27 @@ function LiveThemeBarsMatrix({ themes, matrix, expanded = false }) {
 }
 
 function LivePolicyTable({ themes, expanded = false }) {
-  const rows = (expanded ? themes || [] : (themes || []).slice(0, 5)).map((row) => [displayBriefingLabel(row.theme), row.policyDirection || row.improvementDirection || 'needs mapping']);
-  return <LiveTable rows={rows} emptyLabel="No policy-direction rows returned." expanded={expanded} />;
+  const rows = (expanded ? themes || [] : (themes || []).slice(0, 5)).map((row) => ({
+    theme: displayBriefingLabel(row.theme),
+    direction: row.policyDirection || row.improvementDirection || 'Needs mapping',
+  }));
+  if (!rows.length) return <EmptyLive label="No policy-direction rows returned." />;
+  return (
+    <div className="mt-6">
+      <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+        <span>Y: theme</span>
+        <span>X: policy direction</span>
+      </div>
+      <div className="space-y-2">
+        {rows.map((row) => (
+          <div key={`${row.theme}-${row.direction}`} className={`grid gap-2 rounded-md border border-white/15 bg-white/10 p-2 text-xs ${expanded ? 'grid-cols-[minmax(180px,0.42fr)_minmax(0,0.58fr)]' : 'grid-cols-[minmax(96px,0.44fr)_minmax(0,0.56fr)]'}`}>
+            <TruncatedTooltip label={row.theme} className="font-bold text-amber-100" full={expanded} />
+            <TruncatedTooltip label={row.direction} className="text-slate-100" full={expanded} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function LiveTreemap({ rows, expanded = false }) {
@@ -1310,6 +1551,7 @@ function LiveTrend({ buckets, expanded = false }) {
 }
 
 function LiveScatter({ points, expanded = false }) {
+  const [hoveredPoint, setHoveredPoint] = useState(null);
   const visible = expanded ? points : points.slice(0, 40);
   if (!visible.length) return <EmptyLive label="No story-level points shown for this lens." />;
   const xs = visible.map((point) => point.umapX);
@@ -1318,6 +1560,18 @@ function LiveScatter({ points, expanded = false }) {
   const maxX = Math.max(...xs);
   const minY = Math.min(...ys);
   const maxY = Math.max(...ys);
+  const plottedPoints = visible.map((point) => {
+    const left = maxX === minX ? 50 : ((point.umapX - minX) / (maxX - minX)) * 88 + 6;
+    const top = maxY === minY ? 50 : ((maxY - point.umapY) / (maxY - minY)) * 72 + 12;
+    const tooltip = [
+      point.title || 'Story point',
+      point.topicLabel ? `Topic: ${point.topicLabel}` : null,
+      point.clusterId != null ? `Cluster: ${point.clusterId}` : null,
+      point.isOutlier ? 'Outlier story' : 'Clustered story',
+      `UMAP: ${Number(point.umapX).toFixed(2)}, ${Number(point.umapY).toFixed(2)}`,
+    ].filter(Boolean).join(' | ');
+    return { ...point, left, top, tooltip };
+  });
   return (
     <div className="mt-5">
       <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
@@ -1331,18 +1585,28 @@ function LiveScatter({ points, expanded = false }) {
         </div>
         <div>
           <div className={`${expanded ? 'h-96' : 'h-36'} relative rounded-md border border-white/15 bg-white/5`}>
-            {visible.map((point) => {
-              const left = maxX === minX ? 50 : ((point.umapX - minX) / (maxX - minX)) * 88 + 6;
-              const top = maxY === minY ? 50 : ((maxY - point.umapY) / (maxY - minY)) * 72 + 12;
-              return (
-                <span
-                  key={point.id}
-                  aria-label={`${point.title || point.topicLabel || 'story'} (${point.umapX?.toFixed?.(2)}, ${point.umapY?.toFixed?.(2)})`}
-                  className={`absolute h-3 w-3 rounded-full ${point.isOutlier ? 'bg-white' : 'bg-amber-300'}`}
-                  style={{ left: `${left}%`, top: `${top}%` }}
-                />
-              );
-            })}
+            {plottedPoints.map((point) => (
+              <button
+                key={point.id}
+                type="button"
+                aria-label={point.tooltip}
+                onMouseEnter={() => setHoveredPoint(point)}
+                onMouseLeave={() => setHoveredPoint(null)}
+                onFocus={() => setHoveredPoint(point)}
+                onBlur={() => setHoveredPoint(null)}
+                className={`${expanded ? 'h-4 w-4' : 'h-3 w-3'} absolute -translate-x-1/2 -translate-y-1/2 rounded-full outline-none ring-offset-2 ring-offset-slate-950 focus-visible:ring-2 focus-visible:ring-yellow-400 ${point.isOutlier ? 'bg-white' : 'bg-amber-300'}`}
+                style={{ left: `${point.left}%`, top: `${point.top}%` }}
+              />
+            ))}
+            {hoveredPoint ? (
+              <div
+                role="tooltip"
+                className="pointer-events-none absolute z-[120] max-w-[280px] -translate-x-1/2 rounded-md border border-white/15 bg-slate-950 px-3 py-2 text-xs font-medium leading-5 text-white shadow-xl"
+                style={{ left: `${hoveredPoint.left}%`, top: `${Math.max(3, hoveredPoint.top - 10)}%` }}
+              >
+                {hoveredPoint.tooltip}
+              </div>
+            ) : null}
           </div>
           <div className="mt-1 flex justify-between text-[10px] text-slate-400">
             <span>{minX.toFixed(1)}</span>
