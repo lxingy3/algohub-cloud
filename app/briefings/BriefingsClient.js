@@ -320,6 +320,13 @@ export function BriefingsClient() {
     <>
       <section className="relative overflow-hidden border-b border-white/15 bg-gradient-to-r from-[#201805] via-[#4b3508] to-[#0a0a0a] text-white">
         <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(rgba(255,255,255,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:38px_38px]" />
+        <svg aria-hidden="true" viewBox="0 0 1200 220" preserveAspectRatio="none" className="absolute inset-0 h-full w-full opacity-[0.24]">
+          <g fill="none" stroke="rgba(255,255,255,.18)" strokeWidth="1.1">
+            <path d="M0 170 L120 130 L240 160 L350 118 L470 146 L590 108 L720 136 L860 96 L980 130 L1200 84" />
+            <path d="M0 210 L130 176 L250 204 L375 166 L505 194 L635 158 L770 188 L900 152 L1040 178 L1200 138" />
+            <path d="M120 130 L130 176 M240 160 L250 204 M350 118 L375 166 M470 146 L505 194 M590 108 L635 158 M720 136 L770 188 M860 96 L900 152 M980 130 L1040 178" />
+          </g>
+        </svg>
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
           <p className="relative text-sm font-semibold uppercase tracking-[0.18em] text-amber-200">Briefing Page</p>
           <div className="mt-3 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end">
@@ -328,7 +335,7 @@ export function BriefingsClient() {
                 Briefings
               </h1>
               <p className="mt-4 max-w-3xl text-base leading-7 text-amber-50/80">
-                Choose a lens on the left, then use Overview or Filter by Algorithm. Each section combines reviewed briefing text with live aggregate evidence.
+                Switch between the six briefing views, then open the evidence behind each chart.
               </p>
               <LiveSnapshot snapshot={liveSnapshot} lens={lens} />
             </div>
