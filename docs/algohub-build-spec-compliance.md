@@ -8,7 +8,7 @@ This note compares the current implemented scope against the teacher-facing sour
 2. `AlgoHub_Build_Specification.md` is the second priority and is treated as the baseline architecture/design guide.
 3. Big-spec features not requested by the current weekly assignment or meeting notes stay deferred.
 
-## Current scope: Task 1-5
+## Current scope: Task 1-5 and Week 9 briefings
 
 | Area | Big-spec expectation | Current decision |
 | --- | --- | --- |
@@ -22,6 +22,10 @@ This note compares the current implemented scope against the teacher-facing sour
 | Fine-tuning | Train periodically from facilitator corrections, admin moderation decisions, and manually labeled seed data. | Deferred. The required labeled review workflow is not in the current weekly scope. |
 | Quick Test text limit | Demo limit is 12,000 characters for analysis. | Longer input is accepted and truncated for Task 2-5 analysis instead of failing with a query-length error. |
 | Video upload | Use the audio track for transcription. | Supported through the Task 1 media path. |
+| Week 9 corpus batch ML | Run corpus embeddings -> UMAP -> HDBSCAN -> BERTopic locally/offline, then write cached fields for the Briefings page. | Compliant. `scripts/briefings-corpus-batch.py` uses SentenceTransformers, UMAP, HDBSCAN, BERTopic, and KeyBERT. Current benchmarked default is `Qwen/Qwen3-Embedding-0.6B`; BGE/MiniLM remain override options. |
+| Briefings schema additions | Store `cluster_id`, `is_outlier`, `topic_id`, `umap_x`, `umap_y`, and `corpus_topics`. | Compliant in Prisma schema and production read APIs. Live endpoints read these cached fields rather than running heavy models per request. |
+| Briefings claim/narrative prose | Claude-style synthesis is cached and human-reviewed, not treated as live factual judgment. | Implemented as draft tooling only. Public claim-vs-experience API marks rows as `needs human review`; the page labels model outputs as interpretive/suggested. |
+| Silence and recognition views | Use rule-based plus cached embedding/topic/cluster coverage for silence and similar-story retrieval. | Compliant for the current v1. `/api/explore/silence-map` exposes factor scores; `/api/explore/recognition` uses cached `topic_id`/`cluster_id` match basis. |
 
 ## Current scope: UI/design
 
@@ -33,4 +37,4 @@ This note compares the current implemented scope against the teacher-facing sour
 
 ## Deferred from the big spec
 
-Task 6 algorithm linking, Task 7 summarization, silence detection, briefings, and full facilitator review/fine-tune workflows remain deferred until a weekly assignment or meeting note explicitly brings them back into scope.
+Task 6 algorithm linking and Task 7 summarization are deferred because they were rolled back after Week 8. Full facilitator correction/fine-tune workflows remain deferred until labeled review data and a weekly assignment bring them back into scope. Week 9 briefings and silence/recognition exploration are now in scope.
