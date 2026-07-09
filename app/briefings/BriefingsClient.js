@@ -746,36 +746,36 @@ function LiveVisual({ block, snapshot, expanded = false }) {
   if (snapshot.error) return <EmptyLive label="Live chart data is unavailable." />;
   const api = block.api.toLowerCase();
   if (block.code === 'GC1') return <LivePortfolioDashboard snapshot={snapshot} expanded={expanded} />;
-  if (block.code === 'G2') return <LiveImpactTrend impact={snapshot.impact} buckets={snapshot.trend?.buckets || []} />;
-  if (block.code === 'IC3') return <LiveSilenceCoverage silence={snapshot.silence} coverage={snapshot.coverage} />;
-  if (block.code === 'GC2') return <LiveThemeBarsMatrix themes={snapshot.themes?.themes || []} matrix={snapshot.themes?.coOccurrences || []} />;
-  if (block.code === 'GC6' || block.code === 'G6') return <LivePolicyTable themes={snapshot.themes?.themes || []} />;
-  if (api.includes('theme-matrix')) return <LiveHeatmap rows={snapshot.themeMatrix?.rows || []} />;
-  if (api.includes('trend')) return <LiveTrend buckets={snapshot.trend?.buckets || []} />;
-  if (api.includes('testimonies')) return <LiveExcerpts examples={snapshot.excerpts?.items || []} />;
-  if (api.includes('recognition')) return <LiveExcerpts examples={snapshot.recognition?.examples || []} />;
-  if (api.includes('claim-vs-experience')) return <LiveTable rows={(snapshot.claimVsExperience?.rows || []).map((row) => [row.algorithmName, row.experienceCount])} />;
-  if (api.includes('status=proposed')) return <LiveAlgorithmCards algorithms={snapshot.proposedAlgorithms?.items || []} emptyLabel="No proposed systems returned." />;
-  if (api.includes('cross-jurisdiction')) return <LiveTable rows={(snapshot.crossJurisdiction?.rows || []).map(crossJurisdictionRow)} emptyLabel={snapshot.crossJurisdiction?.reviewStatus || 'Waiting for approved peer-jurisdiction data.'} />;
-  if (api.includes('patterns')) return <LiveScatter points={snapshot.patterns?.points || []} />;
-  if (api.includes('silence')) return <LiveSilenceHeatmap rows={snapshot.silence?.rows || []} />;
-  if (api.includes('coverage')) return <LiveCoveragePanel coverage={snapshot.coverage} />;
-  if (api.includes('organizations') || api.includes('events')) return <LiveLinks organizations={snapshot.organizations?.items || []} events={snapshot.events?.items || []} />;
-  if (api.includes('evidence-strength')) return <LiveBars rows={(snapshot.evidence?.findings || []).map((row) => [row.label, row.count])} />;
-  if (api.includes('compare')) return <LiveCompareMultiples groups={snapshot.compare?.groups || []} />;
+  if (block.code === 'G2') return <LiveImpactTrend impact={snapshot.impact} buckets={snapshot.trend?.buckets || []} expanded={expanded} />;
+  if (block.code === 'IC3') return <LiveSilenceCoverage silence={snapshot.silence} coverage={snapshot.coverage} expanded={expanded} />;
+  if (block.code === 'GC2') return <LiveThemeBarsMatrix themes={snapshot.themes?.themes || []} matrix={snapshot.themes?.coOccurrences || []} expanded={expanded} />;
+  if (block.code === 'GC6' || block.code === 'G6') return <LivePolicyTable themes={snapshot.themes?.themes || []} expanded={expanded} />;
+  if (api.includes('theme-matrix')) return <LiveHeatmap rows={snapshot.themeMatrix?.rows || []} expanded={expanded} />;
+  if (api.includes('trend')) return <LiveTrend buckets={snapshot.trend?.buckets || []} expanded={expanded} />;
+  if (api.includes('testimonies')) return <LiveExcerpts examples={snapshot.excerpts?.items || []} expanded={expanded} />;
+  if (api.includes('recognition')) return <LiveExcerpts examples={snapshot.recognition?.examples || []} expanded={expanded} />;
+  if (api.includes('claim-vs-experience')) return <LiveTable rows={(snapshot.claimVsExperience?.rows || []).map((row) => [row.algorithmName, row.experienceCount])} expanded={expanded} />;
+  if (api.includes('status=proposed')) return <LiveAlgorithmCards algorithms={snapshot.proposedAlgorithms?.items || []} emptyLabel="No proposed systems returned." expanded={expanded} />;
+  if (api.includes('cross-jurisdiction')) return <LiveTable rows={(snapshot.crossJurisdiction?.rows || []).map(crossJurisdictionRow)} emptyLabel={snapshot.crossJurisdiction?.reviewStatus || 'Waiting for approved peer-jurisdiction data.'} expanded={expanded} />;
+  if (api.includes('patterns')) return <LiveScatter points={snapshot.patterns?.points || []} expanded={expanded} />;
+  if (api.includes('silence')) return <LiveSilenceHeatmap rows={snapshot.silence?.rows || []} expanded={expanded} />;
+  if (api.includes('coverage')) return <LiveCoveragePanel coverage={snapshot.coverage} expanded={expanded} />;
+  if (api.includes('organizations') || api.includes('events')) return <LiveLinks organizations={snapshot.organizations?.items || []} events={snapshot.events?.items || []} expanded={expanded} />;
+  if (api.includes('evidence-strength')) return <LiveBars rows={(snapshot.evidence?.findings || []).map((row) => [row.label, row.count])} expanded={expanded} />;
+  if (api.includes('compare')) return <LiveCompareMultiples groups={snapshot.compare?.groups || []} expanded={expanded} />;
   if (api.includes('impact')) return <LiveImpactSplit rows={snapshot.impact?.aiSuggested || []} />;
   if (api.includes('themes') || api.includes('cross-cutting-themes')) {
-    if (block.visualType === 'network') return <LiveThemeNetwork rows={snapshot.themes?.coOccurrences || []} themes={snapshot.themes?.themes || []} />;
-    if (block.visualType === 'heatmap') return <LiveCoOccurrenceMatrix rows={snapshot.themes?.coOccurrences || []} themes={snapshot.themes?.themes || []} />;
-    return <LiveBars rows={(snapshot.themes?.themes || []).map((row) => [displayBriefingLabel(row.theme), row.count])} />;
+    if (block.visualType === 'network') return <LiveThemeNetwork rows={snapshot.themes?.coOccurrences || []} themes={snapshot.themes?.themes || []} expanded={expanded} />;
+    if (block.visualType === 'heatmap') return <LiveCoOccurrenceMatrix rows={snapshot.themes?.coOccurrences || []} themes={snapshot.themes?.themes || []} expanded={expanded} />;
+    return <LiveBars rows={(snapshot.themes?.themes || []).map((row) => [displayBriefingLabel(row.theme), row.count])} expanded={expanded} />;
   }
-  if (block.code === 'CC2') return <LiveAlgorithmCards algorithms={snapshot.landscape?.algorithms || []} emptyLabel="No systems returned for the current domain." />;
+  if (block.code === 'CC2') return <LiveAlgorithmCards algorithms={snapshot.landscape?.algorithms || []} emptyLabel="No systems returned for the current domain." expanded={expanded} />;
   if (block.visualType === 'treemap') return <LiveTreemap rows={(snapshot.landscape?.byDomain || []).map((row) => [row.label, row.count])} expanded={expanded} />;
-  if (block.visualType === 'cards') return <LiveAlgorithmCards algorithms={snapshot.landscape?.algorithms || []} />;
+  if (block.visualType === 'cards') return <LiveAlgorithmCards algorithms={snapshot.landscape?.algorithms || []} expanded={expanded} />;
   if (block.visualType === 'table' && (api.includes('landscape') || api.includes('algorithms'))) {
-    return <LiveTable rows={(snapshot.landscape?.algorithms || []).map((row) => [row.name, row.approvedTestimonyCount])} />;
+    return <LiveTable rows={(snapshot.landscape?.algorithms || []).map((row) => [row.name, row.approvedTestimonyCount])} expanded={expanded} />;
   }
-  if (api.includes('landscape') || api.includes('algorithms')) return <LiveBars rows={(snapshot.landscape?.byDomain || []).map((row) => [row.label, row.count])} />;
+  if (api.includes('landscape') || api.includes('algorithms')) return <LiveBars rows={(snapshot.landscape?.byDomain || []).map((row) => [row.label, row.count])} expanded={expanded} />;
   return <EmptyLive label="No live chart data returned for this block." />;
 }
 
@@ -798,11 +798,11 @@ function LivePortfolioDashboard({ snapshot, expanded = false }) {
   );
 }
 
-function LiveImpactTrend({ impact, buckets }) {
+function LiveImpactTrend({ impact, buckets, expanded = false }) {
   return (
     <div className="mt-5 space-y-4">
       <LiveImpactSplit rows={impact?.aiSuggested || []} compact />
-      <LiveTrend buckets={buckets} />
+      <LiveTrend buckets={buckets} expanded={expanded} />
     </div>
   );
 }
@@ -845,27 +845,27 @@ function LiveImpactSplit({ rows, compact = false }) {
   );
 }
 
-function LiveSilenceCoverage({ silence, coverage }) {
+function LiveSilenceCoverage({ silence, coverage, expanded = false }) {
   return (
     <div className="mt-5 space-y-4">
-      <LiveSilenceHeatmap rows={silence?.rows || []} />
-      <LiveCoveragePanel coverage={coverage} />
+      <LiveSilenceHeatmap rows={silence?.rows || []} expanded={expanded} />
+      <LiveCoveragePanel coverage={coverage} expanded={expanded} />
     </div>
   );
 }
 
-function LiveThemeBarsMatrix({ themes, matrix }) {
+function LiveThemeBarsMatrix({ themes, matrix, expanded = false }) {
   return (
     <div className="mt-5 space-y-4">
-      <LiveBars rows={(themes || []).map((row) => [displayBriefingLabel(row.theme), row.count])} />
-      <LiveCoOccurrenceMatrix rows={matrix || []} themes={themes || []} />
+      <LiveBars rows={(themes || []).map((row) => [displayBriefingLabel(row.theme), row.count])} expanded={expanded} />
+      <LiveCoOccurrenceMatrix rows={matrix || []} themes={themes || []} expanded={expanded} />
     </div>
   );
 }
 
-function LivePolicyTable({ themes }) {
-  const rows = (themes || []).slice(0, 5).map((row) => [displayBriefingLabel(row.theme), row.policyDirection || row.improvementDirection || 'needs mapping']);
-  return <LiveTable rows={rows} emptyLabel="No policy-direction rows returned." />;
+function LivePolicyTable({ themes, expanded = false }) {
+  const rows = (expanded ? themes || [] : (themes || []).slice(0, 5)).map((row) => [displayBriefingLabel(row.theme), row.policyDirection || row.improvementDirection || 'needs mapping']);
+  return <LiveTable rows={rows} emptyLabel="No policy-direction rows returned." expanded={expanded} />;
 }
 
 function LiveTreemap({ rows, expanded = false }) {
@@ -907,7 +907,7 @@ function TreemapCell({ row, index, color, expanded }) {
         >
           {showLabel ? (
             <>
-              <span className={`block min-w-0 truncate whitespace-nowrap font-black leading-tight ${expanded ? 'text-sm' : 'text-[10px]'}`}>{row.label}</span>
+              <span className={`block min-w-0 font-black leading-tight ${expanded ? 'whitespace-normal break-words text-sm' : 'truncate whitespace-nowrap text-[10px]'}`}>{row.label}</span>
               <span className={`w-fit shrink-0 rounded bg-slate-950/15 px-1.5 py-0.5 font-black leading-none ${expanded ? 'text-xs' : 'text-[10px]'}`}>{row.value}</span>
             </>
           ) : null}
@@ -953,8 +953,8 @@ function binaryTreemap(items, bounds) {
   ];
 }
 
-function LiveBars({ rows }) {
-  const topRows = rows.slice(0, 5);
+function LiveBars({ rows, expanded = false }) {
+  const topRows = expanded ? rows : rows.slice(0, 5);
   const max = Math.max(1, ...topRows.map(([, value]) => Number(value) || 0));
   if (!topRows.length) return <EmptyLive />;
   return (
@@ -965,8 +965,8 @@ function LiveBars({ rows }) {
       </div>
       <div className="space-y-3 border-b border-l border-white/15 pb-2 pl-2">
         {topRows.map(([label, value]) => (
-          <div key={`${label}-${value}`} className="grid grid-cols-[90px_1fr_34px] items-center gap-2 text-xs">
-            <TruncatedTooltip label={label} className="text-slate-300" />
+          <div key={`${label}-${value}`} className={`grid items-center gap-2 text-xs ${expanded ? 'grid-cols-[180px_1fr_44px]' : 'grid-cols-[90px_1fr_34px]'}`}>
+            <TruncatedTooltip label={label} className="text-slate-300" full={expanded} />
             <span className="h-3 rounded bg-amber-300" style={{ width: `${Math.max(10, (Number(value) || 0) / max * 100)}%` }} />
             <span className="text-right font-bold text-white">{value}</span>
           </div>
@@ -976,12 +976,12 @@ function LiveBars({ rows }) {
   );
 }
 
-function LiveHeatmap({ rows }) {
-  const topRows = rows.slice(0, 25);
+function LiveHeatmap({ rows, expanded = false }) {
+  const topRows = expanded ? rows : rows.slice(0, 25);
   const max = Math.max(1, ...topRows.map((row) => row.count || 0));
   if (!topRows.length) return <EmptyLive />;
-  const domains = Array.from(new Set(topRows.map((row) => row.domain))).slice(0, 5);
-  const themes = Array.from(new Set(topRows.map((row) => displayBriefingLabel(row.theme)))).slice(0, 5);
+  const domains = (expanded ? Array.from(new Set(topRows.map((row) => row.domain))) : Array.from(new Set(topRows.map((row) => row.domain))).slice(0, 5));
+  const themes = (expanded ? Array.from(new Set(topRows.map((row) => displayBriefingLabel(row.theme)))) : Array.from(new Set(topRows.map((row) => displayBriefingLabel(row.theme)))).slice(0, 5));
   const countByCell = new Map(topRows.map((row) => [`${row.domain}|${displayBriefingLabel(row.theme)}`, row.count || 0]));
   return (
     <div className="mt-5">
@@ -989,14 +989,14 @@ function LiveHeatmap({ rows }) {
         <span>Y: affected domain</span>
         <span>X: theme</span>
       </div>
-      <div className="grid gap-1" style={{ gridTemplateColumns: `76px repeat(${themes.length}, minmax(0, 1fr))` }}>
+      <div className="grid gap-1 overflow-x-auto" style={{ gridTemplateColumns: `${expanded ? 150 : 76}px repeat(${themes.length}, minmax(${expanded ? 120 : 0}px, 1fr))` }}>
         <div />
         {themes.map((theme) => (
-          <TruncatedTooltip key={theme} label={theme} className="justify-center text-center text-[10px] text-slate-400" />
+          <TruncatedTooltip key={theme} label={theme} className="justify-center text-center text-[10px] text-slate-400" full={expanded} />
         ))}
         {domains.map((domain) => (
           <Fragment key={domain}>
-            <TruncatedTooltip label={domain} className="justify-end pr-1 text-right text-[10px] text-slate-400" />
+            <TruncatedTooltip label={domain} className="justify-end pr-1 text-right text-[10px] text-slate-400" full={expanded} />
             {themes.map((theme) => {
               const count = countByCell.get(`${domain}|${theme}`) || 0;
               return (
@@ -1019,14 +1019,14 @@ function LiveHeatmap({ rows }) {
   );
 }
 
-function LiveCoOccurrenceMatrix({ rows, themes }) {
-  const topPairs = rows.slice(0, 25);
+function LiveCoOccurrenceMatrix({ rows, themes, expanded = false }) {
+  const topPairs = expanded ? rows : rows.slice(0, 25);
   const max = Math.max(1, ...topPairs.map((row) => row.count || 0));
   const labels = Array.from(new Set([
     ...topPairs.flatMap((row) => [displayBriefingLabel(row.source), displayBriefingLabel(row.target)]),
-    ...themes.slice(0, 5).map((row) => displayBriefingLabel(row.theme)),
-  ])).slice(0, 5);
-  if (!labels.length) return <LiveBars rows={(themes || []).map((row) => [displayBriefingLabel(row.theme), row.count])} />;
+    ...(expanded ? themes || [] : themes.slice(0, 5)).map((row) => displayBriefingLabel(row.theme)),
+  ])).slice(0, expanded ? undefined : 5);
+  if (!labels.length) return <LiveBars rows={(themes || []).map((row) => [displayBriefingLabel(row.theme), row.count])} expanded={expanded} />;
   const countByPair = new Map(topPairs.flatMap((row) => {
     const source = displayBriefingLabel(row.source);
     const target = displayBriefingLabel(row.target);
@@ -1038,12 +1038,12 @@ function LiveCoOccurrenceMatrix({ rows, themes }) {
         <span>Y: theme</span>
         <span>X: co-occurring theme</span>
       </div>
-      <div className="grid gap-1" style={{ gridTemplateColumns: `76px repeat(${labels.length}, minmax(0, 1fr))` }}>
+      <div className="grid gap-1 overflow-x-auto" style={{ gridTemplateColumns: `${expanded ? 150 : 76}px repeat(${labels.length}, minmax(${expanded ? 120 : 0}px, 1fr))` }}>
         <div />
-        {labels.map((label) => <TruncatedTooltip key={label} label={label} className="justify-center text-center text-[10px] text-slate-400" />)}
+        {labels.map((label) => <TruncatedTooltip key={label} label={label} className="justify-center text-center text-[10px] text-slate-400" full={expanded} />)}
         {labels.map((source) => (
           <Fragment key={source}>
-            <TruncatedTooltip label={source} className="justify-end pr-1 text-right text-[10px] text-slate-400" />
+            <TruncatedTooltip label={source} className="justify-end pr-1 text-right text-[10px] text-slate-400" full={expanded} />
             {labels.map((target) => {
               const count = source === target ? 0 : countByPair.get(`${source}|${target}`) || 0;
               return (
@@ -1066,15 +1066,15 @@ function LiveCoOccurrenceMatrix({ rows, themes }) {
   );
 }
 
-function LiveThemeNetwork({ rows, themes }) {
-  const topPairs = rows.slice(0, 12);
-  const topThemes = (themes || []).slice(0, 4).map((row) => [displayBriefingLabel(row.theme), row.count]);
+function LiveThemeNetwork({ rows, themes, expanded = false }) {
+  const topPairs = expanded ? rows : rows.slice(0, 12);
+  const topThemes = (expanded ? themes || [] : (themes || []).slice(0, 4)).map((row) => [displayBriefingLabel(row.theme), row.count]);
   const themeMax = Math.max(1, ...topThemes.map(([, count]) => Number(count) || 0));
   const labels = Array.from(new Set([
     ...topPairs.flatMap((row) => [displayBriefingLabel(row.source), displayBriefingLabel(row.target)]),
-    ...themes.slice(0, 5).map((row) => displayBriefingLabel(row.theme)),
-  ])).slice(0, 7);
-  if (!labels.length) return <LiveBars rows={(themes || []).map((row) => [displayBriefingLabel(row.theme), row.count])} />;
+    ...(expanded ? themes || [] : themes.slice(0, 5)).map((row) => displayBriefingLabel(row.theme)),
+  ])).slice(0, expanded ? undefined : 7);
+  if (!labels.length) return <LiveBars rows={(themes || []).map((row) => [displayBriefingLabel(row.theme), row.count])} expanded={expanded} />;
   const max = Math.max(1, ...topPairs.map((row) => row.count || 0));
   const nodes = labels.map((label, index) => {
     const angle = (Math.PI * 2 * index) / labels.length - Math.PI / 2;
@@ -1094,15 +1094,15 @@ function LiveThemeNetwork({ rows, themes }) {
       {topThemes.length ? (
         <div className="mb-3 space-y-1.5 border-b border-white/15 pb-3">
           {topThemes.map(([label, count]) => (
-            <div key={label} className="grid grid-cols-[86px_1fr_28px] items-center gap-2 text-[10px]">
-              <TruncatedTooltip label={label} className="text-slate-300" />
+            <div key={label} className={`grid items-center gap-2 text-[10px] ${expanded ? 'grid-cols-[180px_1fr_34px]' : 'grid-cols-[86px_1fr_28px]'}`}>
+              <TruncatedTooltip label={label} className="text-slate-300" full={expanded} />
               <span className="h-2 rounded bg-amber-300" style={{ width: `${Math.max(8, (Number(count) || 0) / themeMax * 100)}%` }} />
               <span className="text-right font-bold text-white">{count}</span>
             </div>
           ))}
         </div>
       ) : null}
-      <svg aria-label="Theme co-occurrence network" className="h-40 w-full rounded-md border border-white/15 bg-white/5" viewBox="0 0 100 100">
+      <svg aria-label="Theme co-occurrence network" className={`${expanded ? 'h-80' : 'h-40'} w-full rounded-md border border-white/15 bg-white/5`} viewBox="0 0 100 100">
         {topPairs.map((row) => {
           const source = nodeByLabel.get(displayBriefingLabel(row.source));
           const target = nodeByLabel.get(displayBriefingLabel(row.target));
@@ -1124,8 +1124,8 @@ function LiveThemeNetwork({ rows, themes }) {
         {nodes.map((node) => (
           <g key={node.label}>
             <circle cx={node.x} cy={node.y} r="5" fill="#fde047" stroke="#020617" strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
-            <text x={node.x} y={node.y + 10} textAnchor="middle" className="fill-slate-200 text-[4px] font-bold">
-              {node.label.length > 13 ? `${node.label.slice(0, 12)}...` : node.label}
+            <text x={node.x} y={node.y + 10} textAnchor="middle" className={`${expanded ? 'text-[3.3px]' : 'text-[4px]'} fill-slate-200 font-bold`}>
+              {expanded ? node.label : node.label.length > 13 ? `${node.label.slice(0, 12)}...` : node.label}
             </text>
           </g>
         ))}
@@ -1134,8 +1134,8 @@ function LiveThemeNetwork({ rows, themes }) {
   );
 }
 
-function LiveSilenceHeatmap({ rows }) {
-  const topRows = rows.slice(0, 5);
+function LiveSilenceHeatmap({ rows, expanded = false }) {
+  const topRows = expanded ? rows : rows.slice(0, 5);
   if (!topRows.length) return <EmptyLive />;
   const columns = [
     ['volumeGap', 'Volume'],
@@ -1149,13 +1149,13 @@ function LiveSilenceHeatmap({ rows }) {
         <span>Y: algorithm</span>
         <span>X: silence factor</span>
       </div>
-      <div className="grid gap-1" style={{ gridTemplateColumns: `96px repeat(${columns.length}, minmax(0, 1fr)) 42px` }}>
+      <div className="grid gap-1" style={{ gridTemplateColumns: `${expanded ? 180 : 96}px repeat(${columns.length}, minmax(0, 1fr)) 42px` }}>
         <div />
         {columns.map(([, label]) => <div key={label} className="text-center text-[10px] text-slate-400">{label}</div>)}
         <div className="text-center text-[10px] text-slate-400">Priority</div>
         {topRows.map((row) => (
           <Fragment key={row.algorithmId || row.algorithmName}>
-            <TruncatedTooltip label={row.algorithmName} className="justify-end pr-1 text-right text-[10px] text-slate-400" />
+            <TruncatedTooltip label={row.algorithmName} className="justify-end pr-1 text-right text-[10px] text-slate-400" full={expanded} />
             {columns.map(([key, label]) => {
               const value = row.factors?.[key] || 0;
               return (
@@ -1176,21 +1176,21 @@ function LiveSilenceHeatmap({ rows }) {
   );
 }
 
-function LiveCoveragePanel({ coverage }) {
+function LiveCoveragePanel({ coverage, expanded = false }) {
   const rows = [
     ...countRows(coverage?.language).map(([label, value]) => [`Language: ${label}`, value]),
     ...countRows(coverage?.submissionMethod).map(([label, value]) => [`Method: ${label}`, value]),
     ...Object.entries(coverage?.whatsMissing || {}).map(([label, value]) => [`Missing: ${label}`, value]),
-  ].slice(0, 5);
-  return <LiveBars rows={rows} />;
+  ];
+  return <LiveBars rows={expanded ? rows : rows.slice(0, 5)} expanded={expanded} />;
 }
 
 function countRows(rows) {
   return Array.isArray(rows) ? rows.map((row) => [row.label, row.count]) : Object.entries(rows || {});
 }
 
-function LiveCompareMultiples({ groups }) {
-  const topGroups = groups.slice(0, 4);
+function LiveCompareMultiples({ groups, expanded = false }) {
+  const topGroups = expanded ? groups : groups.slice(0, 4);
   if (!topGroups.length) return <EmptyLive />;
   const max = Math.max(1, ...topGroups.map((row) => row.total || 0));
   return (
@@ -1207,8 +1207,8 @@ function LiveCompareMultiples({ groups }) {
           const mixed = impacts.MIXED || 0;
           const unknown = Math.max(0, (group.total || 0) - positive - negative - mixed);
           return (
-            <div key={group.label} className="grid grid-cols-[90px_1fr_34px] items-center gap-2 text-xs">
-              <TruncatedTooltip label={group.label} className="text-slate-300" />
+            <div key={group.label} className={`grid items-center gap-2 text-xs ${expanded ? 'grid-cols-[180px_1fr_44px]' : 'grid-cols-[90px_1fr_34px]'}`}>
+              <TruncatedTooltip label={group.label} className="text-slate-300" full={expanded} />
               <div className="flex h-3 overflow-hidden rounded bg-white/10" style={{ width: `${Math.max(10, (group.total || 0) / max * 100)}%` }}>
                 <span aria-label={`Positive: ${positive}`} className="bg-emerald-300" style={{ width: `${positive / Math.max(1, group.total || 0) * 100}%` }} />
                 <span aria-label={`Negative: ${negative}`} className="bg-rose-300" style={{ width: `${negative / Math.max(1, group.total || 0) * 100}%` }} />
@@ -1225,8 +1225,8 @@ function LiveCompareMultiples({ groups }) {
   );
 }
 
-function LiveTrend({ buckets }) {
-  const topBuckets = buckets.slice(-8);
+function LiveTrend({ buckets, expanded = false }) {
+  const topBuckets = expanded ? buckets : buckets.slice(-8);
   if (!topBuckets.length) return <EmptyLive />;
   const themeTotals = new Map();
   for (const bucket of topBuckets) {
@@ -1234,7 +1234,7 @@ function LiveTrend({ buckets }) {
       themeTotals.set(theme, (themeTotals.get(theme) || 0) + count);
     }
   }
-  const labels = [...themeTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([label]) => label);
+  const labels = [...themeTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, expanded ? undefined : 4).map(([label]) => label);
   const series = labels.length ? labels : ['POSITIVE', 'NEGATIVE', 'MIXED', 'UNCLEAR'];
   const values = topBuckets.map((bucket, index) => {
     const x = topBuckets.length === 1 ? 50 : 4 + (index / (topBuckets.length - 1)) * 92;
@@ -1275,7 +1275,7 @@ function LiveTrend({ buckets }) {
           <span>0</span>
         </div>
         <div>
-          <div className="relative h-36 border-b border-l border-white/15">
+          <div className={`${expanded ? 'h-64' : 'h-36'} relative border-b border-l border-white/15`}>
             <svg aria-label="Monthly streamgraph" className="h-full w-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 100">
               <line x1="0" x2="100" y1="50" y2="50" stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" />
               {paths.map((path) => (
@@ -1309,8 +1309,8 @@ function LiveTrend({ buckets }) {
   );
 }
 
-function LiveScatter({ points }) {
-  const visible = points.slice(0, 40);
+function LiveScatter({ points, expanded = false }) {
+  const visible = expanded ? points : points.slice(0, 40);
   if (!visible.length) return <EmptyLive label="No story-level points shown for this lens." />;
   const xs = visible.map((point) => point.umapX);
   const ys = visible.map((point) => point.umapY);
@@ -1330,7 +1330,7 @@ function LiveScatter({ points }) {
           <span>{minY.toFixed(1)}</span>
         </div>
         <div>
-          <div className="relative h-36 rounded-md border border-white/15 bg-white/5">
+          <div className={`${expanded ? 'h-96' : 'h-36'} relative rounded-md border border-white/15 bg-white/5`}>
             {visible.map((point) => {
               const left = maxX === minX ? 50 : ((point.umapX - minX) / (maxX - minX)) * 88 + 6;
               const top = maxY === minY ? 50 : ((maxY - point.umapY) / (maxY - minY)) * 72 + 12;
@@ -1358,8 +1358,8 @@ function LiveScatter({ points }) {
   );
 }
 
-function LiveExcerpts({ examples }) {
-  const rows = examples.slice(0, 2);
+function LiveExcerpts({ examples, expanded = false }) {
+  const rows = expanded ? examples : examples.slice(0, 2);
   if (!rows.length) return <EmptyLive label="No excerpts shown for this lens." />;
   return (
     <div className="mt-6 space-y-3">
@@ -1367,7 +1367,7 @@ function LiveExcerpts({ examples }) {
       {rows.map((row) => (
         <div key={row.id} className="rounded-md border border-white/15 bg-white/10 p-3 text-sm leading-6 text-slate-100">
           <p className="font-semibold text-amber-100">{row.title}</p>
-          <p className="mt-1 line-clamp-3 text-slate-100">{row.excerpt || row.title}</p>
+          <p className={`mt-1 text-slate-100 ${expanded ? '' : 'line-clamp-3'}`}>{row.excerpt || row.title}</p>
         </div>
       ))}
     </div>
@@ -1378,14 +1378,14 @@ function crossJurisdictionRow(row) {
   return [row.label || row.jurisdiction || row.city || 'Peer benchmark', row.value || row.count || row.summary || 'approved'];
 }
 
-function LiveTable({ rows, emptyLabel }) {
-  const topRows = rows.slice(0, 4);
+function LiveTable({ rows, emptyLabel, expanded = false }) {
+  const topRows = expanded ? rows : rows.slice(0, 4);
   if (!topRows.length) return <EmptyLive label={emptyLabel} />;
   return (
     <div className="mt-6 space-y-2">
       {topRows.map(([label, value]) => (
         <div key={`${label}-${value}`} className="grid grid-cols-[1fr_76px] gap-2 text-xs">
-          <TruncatedTooltip label={label} className="rounded bg-white/10 px-2 py-2 text-slate-200" />
+          <TruncatedTooltip label={label} className="rounded bg-white/10 px-2 py-2 text-slate-200" full={expanded} />
           <div className="rounded bg-amber-300/90 px-2 py-2 text-center font-bold text-slate-950">{value}</div>
         </div>
       ))}
@@ -1393,10 +1393,10 @@ function LiveTable({ rows, emptyLabel }) {
   );
 }
 
-function LiveLinks({ organizations, events }) {
+function LiveLinks({ organizations, events, expanded = false }) {
   const rows = [
-    ...organizations.slice(0, 2).map((item) => ({ id: item.id, title: item.name, detail: item.websiteUrl || item.role || 'organization' })),
-    ...events.slice(0, 2).map((item) => ({ id: item.id, title: item.title, detail: item.location || 'event' })),
+    ...(expanded ? organizations : organizations.slice(0, 2)).map((item) => ({ id: item.id, title: item.name, detail: item.websiteUrl || item.role || 'organization' })),
+    ...(expanded ? events : events.slice(0, 2)).map((item) => ({ id: item.id, title: item.title, detail: item.location || 'event' })),
   ];
   if (!rows.length) return <EmptyLive />;
   return (
@@ -1404,18 +1404,18 @@ function LiveLinks({ organizations, events }) {
       {rows.map((row) => (
         <div key={row.id} className="rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm text-slate-100">
           <p className="font-semibold text-amber-100">{row.title}</p>
-          <TruncatedTooltip label={row.detail} className="mt-1 text-xs text-slate-300" />
+          <TruncatedTooltip label={row.detail} className="mt-1 text-xs text-slate-300" full={expanded} />
         </div>
       ))}
     </div>
   );
 }
 
-function LiveAlgorithmCards({ algorithms, emptyLabel = 'No systems returned.' }) {
-  const rows = algorithms.slice(0, 3);
+function LiveAlgorithmCards({ algorithms, emptyLabel = 'No systems returned.', expanded = false }) {
+  const rows = expanded ? algorithms : algorithms.slice(0, 3);
   if (!rows.length) return <EmptyLive label={emptyLabel} />;
   return (
-    <div className="mt-6 grid gap-3">
+    <div className={`mt-6 grid gap-3 ${expanded ? 'md:grid-cols-2' : ''}`}>
       {rows.map((item) => (
         <div key={item.id} className="rounded-md border border-white/15 bg-white/10 p-3 text-sm text-slate-100">
           <p className="font-semibold text-amber-100">{item.name}</p>
@@ -1524,8 +1524,11 @@ function MiniRows({ className, titleClass, title, rows }) {
   );
 }
 
-function TruncatedTooltip({ label, className = '' }) {
+function TruncatedTooltip({ label, className = '', full = false }) {
   const text = String(label || '');
+  if (full) {
+    return <span className={`min-w-0 whitespace-normal break-words ${className}`}>{text}</span>;
+  }
   return (
     <InfoTooltip label={text} className={`min-w-0 ${className}`} block>
       <span className="block min-w-0 truncate">{text}</span>
