@@ -38,11 +38,11 @@ const briefingViews = {
       subtitle: 'All algorithms and stories, shown for community readers.',
       blocks: [
         b('CC1', 'Landscape overview', 'treemap / cards by domain', 'REVEALS INVISIBLE PORTFOLIO', 'algorithms.use_case, agency_name, status, impact_level; counts', 'GET /api/explore/landscape', 'none (aggregation)', 'treemap'),
-        b('CC2', 'Find systems relevant to you', 'domain filter + cards', 'RECOGNITION', 'algorithms.use_case, location; shared_taxonomy', 'GET /api/explore/landscape?domain=', 'optional sBERT similar systems', 'cards'),
+        b('CC2', 'Find systems relevant to you', 'domain filter + cards', 'RECOGNITION', 'algorithms.use_case, location; shared_taxonomy', 'GET /api/explore/landscape?domain=', 'optional sentence-transformers similar systems', 'cards'),
         b('CC3', 'Cross-cutting patterns', 'theme bars / chips', 'SUGGESTED', 'testimonies.ai_themes (corpus)', 'GET /api/explore/cross-cutting-themes', 'multi-label BART-MNLI aggregation; optional BERTopic', 'bars'),
         b('CC4', 'Where harms concentrate', 'domain x theme heatmap', 'INTERPRETATION', 'testimonies.affected_domain, ai_themes; algorithms.use_case', 'GET /api/explore/theme-matrix', 'aggregation of stored themes', 'heatmap'),
         b('CC5', 'Over time', 'monthly trend', 'INTERPRETATION', 'testimonies.submitted_at, ai_themes, ai_impact_classification', 'GET /api/explore/trend?scope=corpus', 'time aggregation', 'trend'),
-        b('CC6', "In people's words across systems", 'excerpts', 'ARTICULATION', 'testimonies.narrative_text, ai_summary, cluster_id, is_outlier', 'GET /api/testimonies?scope=corpus', 'spaCy NER; sBERT + HDBSCAN; KeyBERT', 'excerpt'),
+        b('CC6', "In people's words across systems", 'excerpts', 'ARTICULATION', 'testimonies.narrative_text, ai_summary, cluster_id, is_outlier', 'GET /api/testimonies?scope=corpus', 'spaCy NER; sentence-transformers + HDBSCAN; KeyBERT', 'excerpt'),
         b('CC7', "How this was made / what's missing", 'coverage panel', 'PARADATA', 'testimonies.submission_method, original_language, moderation_status', 'GET /api/explore/coverage?scope=corpus', 'none (metadata)', 'coverage'),
         b('CC8', 'Where to learn more / who can help', 'links', 'READ-ONLY INFO', 'organizations(role=library), community_events', 'GET /api/organizations, GET /api/events', 'none', 'links'),
       ],
@@ -55,12 +55,12 @@ const briefingViews = {
       blocks: [
         b('IC1', 'Portfolio overview', 'sortable table / treemap', 'REFERENCE', 'algorithms.*; counts; ai_confidence_score', 'GET /api/explore/landscape', 'derived stats', 'table'),
         b('IC2', 'Cross-cutting themes + co-occurrence', 'bars + network', 'SUGGESTED', 'testimonies.ai_themes', 'GET /api/explore/cross-cutting-themes', 'multi-label BART-MNLI aggregation; optional BERTopic', 'network'),
-        b('IC3', 'Silence & coverage map (corpus)', 'silence matrix + coverage', 'PARADATA + ABSENCE', 'algorithms.impact_level, use_case; testimonies.affected_domain, original_language', 'GET /api/explore/silence-map + /coverage', 'rule-based + sBERT across all algorithms', 'heatmap'),
-        b('IC4', 'Corpus story map / emergent topics', 'UMAP scatter + topic labels', 'INTERPRETATION', 'testimonies.topic_id, umap_x, umap_y, cluster_id; corpus_topics', 'GET /api/explore/patterns', 'BERTopic + UMAP + HDBSCAN over corpus', 'scatter'),
+        b('IC3', 'Silence & coverage map (corpus)', 'silence matrix + coverage', 'PARADATA + ABSENCE', 'algorithms.impact_level, use_case; testimonies.affected_domain, original_language', 'GET /api/explore/silence-map + /coverage', 'rule-based + sentence-transformers four-factor silence detector', 'heatmap'),
+        b('IC4', 'Corpus story map / emergent topics', 'UMAP scatter + topic labels', 'INTERPRETATION', 'testimonies.topic_id, umap_x, umap_y, cluster_id; corpus_topics', 'GET /api/explore/patterns', 'BERTopic + UMAP + HDBSCAN over corpus embeddings; KeyBERT labels', 'scatter'),
         b('IC5', 'Compare across domains / agencies', 'small multiples', 'INTERPRETATION', 'algorithms.use_case, agency_name; testimonies.ai_themes, ai_impact_classification', 'GET /api/explore/compare?dimension=', 'aggregation', 'multiples'),
-        b('IC6', 'Evidence strength + representation', 'strength bars + distribution', 'HUMILITY', 'testimony counts, ai_confidence_score, ai_themes distribution, is_outlier', 'GET /api/explore/evidence-strength?scope=corpus', 'derived stats; sBERT / HDBSCAN outliers', 'bars'),
-        b('IC7', 'Systemic claim-vs-experience', 'table / scatter', 'NOT ADJUDICATED', 'algorithm_claims.*; briefings.claim_vs_experience', 'GET /api/explore/claim-vs-experience?scope=corpus', 'Claude cache; human review before publish', 'table'),
-        b('IC8', "In people's words across systems", 'excerpts', 'ARTICULATION', 'testimonies.narrative_text, ai_summary, cluster_id, is_outlier', 'GET /api/testimonies?scope=corpus', 'spaCy NER; sBERT + HDBSCAN; KeyBERT', 'excerpt'),
+        b('IC6', 'Evidence strength + representation', 'strength bars + distribution', 'HUMILITY', 'testimony counts, ai_confidence_score, ai_themes distribution, is_outlier', 'GET /api/explore/evidence-strength?scope=corpus', 'derived stats; sentence-transformers / HDBSCAN outliers', 'bars'),
+        b('IC7', 'Systemic claim-vs-experience', 'table / scatter', 'NOT ADJUDICATED', 'algorithm_claims.*; briefings.claim_vs_experience', 'GET /api/explore/claim-vs-experience?scope=corpus', 'Claude API synthesis', 'table'),
+        b('IC8', "In people's words across systems", 'excerpts', 'ARTICULATION', 'testimonies.narrative_text, ai_summary, cluster_id, is_outlier', 'GET /api/testimonies?scope=corpus', 'spaCy NER; sentence-transformers + HDBSCAN; KeyBERT', 'excerpt'),
         b('IC9', 'Provenance / custody (corpus) + notes', 'panel + private notes', 'PARADATA; NOTES PRIVATE', 'testimonies.* (paradata); briefings.review_status, reviewed_by', 'GET /api/explore/coverage?scope=corpus', 'none', 'coverage'),
       ],
     },
@@ -72,11 +72,11 @@ const briefingViews = {
       blocks: [
         b('GC1', 'Portfolio dashboard', 'treemap + bars + counts', 'PORTFOLIO / GLOBAL', 'algorithms.status, use_case, agency_name, impact_level; testimony aggregates', 'GET /api/explore/landscape', 'aggregation', 'treemap'),
         b('GC2', 'Cross-cutting theme profile', 'bars + matrix', 'SUGGESTED', 'testimonies.ai_themes', 'GET /api/explore/cross-cutting-themes', 'multi-label BART-MNLI aggregation; BERTopic', 'bars'),
-        b('GC3', 'Intent vs. reality across systems', 'ranked divergence + table', 'SDM/PDM GAP', 'algorithm_claims.*; briefings.claim_vs_experience; testimonies.ai_extracted_experiences', 'GET /api/explore/claim-vs-experience?scope=corpus', 'Claude cache + sentence-transformers candidate retrieval', 'table'),
-        b('GC4', 'Silence map = accountability gaps', 'ranked silence matrix', 'ABSENCE != SAFETY', 'algorithms.impact_level, use_case; testimonies.affected_domain; briefings.silence_gaps', 'GET /api/explore/silence-map', 'rule-based + sBERT', 'heatmap'),
+        b('GC3', 'Intent vs. reality across systems', 'ranked divergence + table', 'SDM/PDM GAP', 'algorithm_claims.*; briefings.claim_vs_experience; testimonies.ai_extracted_experiences', 'GET /api/explore/claim-vs-experience?scope=corpus', 'Claude API synthesis; sentence-transformers candidate retrieval', 'table'),
+        b('GC4', 'Silence map = accountability gaps', 'ranked silence matrix', 'ABSENCE != SAFETY', 'algorithms.impact_level, use_case; testimonies.affected_domain; briefings.silence_gaps', 'GET /api/explore/silence-map', 'rule-based + sentence-transformers four-factor silence detector', 'heatmap'),
         b('GC5', 'Compare agencies / domains', 'small multiples / ranked', 'INTERPRETATION', 'algorithms.agency_name, agency_type, use_case; testimonies.ai_themes', 'GET /api/explore/compare?dimension=', 'aggregation', 'multiples'),
         b('GC6', 'Systemic improvement & policy directions', 'theme -> policy table', 'REFERENCE', 'testimonies.ai_themes aggregation + theme_improvement_map.policy_direction', 'GET /api/explore/cross-cutting-themes + map', 'none (reference map)', 'table'),
-        b('GC7', 'Procurement policy (all Proposed)', 'proposed list + evidence + terms', 'READ BEFORE PURCHASE', 'algorithms.status, use_case; cross_jurisdiction_insights; shared_taxonomy', 'GET /api/algorithms?status=Proposed + /cross-jurisdiction', 'sBERT similarity; aggregation', 'cards'),
+        b('GC7', 'Procurement policy (all Proposed)', 'proposed list + evidence + terms', 'READ BEFORE PURCHASE', 'algorithms.status, use_case; cross_jurisdiction_insights; shared_taxonomy', 'GET /api/algorithms?status=Proposed + /cross-jurisdiction', 'sentence-transformers similarity for comparable systems; aggregation', 'cards'),
         b('GC8', 'Peer-jurisdiction portfolio benchmark', 'benchmark bars', 'AGGREGATE ONLY', 'cross_jurisdiction_insights (approved)', 'GET /api/explore/cross-jurisdiction?scope=portfolio', 'none (pre-aggregated)', 'bars'),
         b('GC9', 'Provenance & paradata (corpus)', 'aggregate-only panel', 'PARADATA', 'testimonies.* (paradata); briefings.review_status, reviewed_by, generated_by', 'GET /api/explore/coverage?scope=corpus', 'none', 'coverage'),
       ],
@@ -89,13 +89,13 @@ const briefingViews = {
       title: 'Community Members',
       subtitle: 'One algorithm, shown for community readers.',
       blocks: [
-        b('C1', 'System explainer - context first', '4-category, 3 levels', 'NORMATIVE', 'algorithms.* + algorithm_claims.*', 'GET /api/algorithms/:slug', 'none for v1; optional reading-level model later', 'cards'),
-        b('C2', 'What it decides about you', 'data / system / usage', 'NOVICE-NEED', 'algorithms.data_used, decision_type, use_case', 'GET /api/algorithms/:slug', 'optional KeyBERT tags', 'table'),
-        b('C3', 'Impact overview', 'segmented bar', 'INTERPRETATION', 'testimonies.ai_impact_classification, self_reported_impact, ai_confidence_score', 'GET /api/explore/impact', 'zero-shot BART-large-MNLI', 'bars'),
+        b('C1', 'System explainer - context first', '4-category, 3 levels', 'NORMATIVE', 'algorithms.* + algorithm_claims.*', 'GET /api/algorithms/:slug', 'none; optional Claude reading-level simplification', 'cards'),
+        b('C2', 'What it decides about you', 'data / system / usage', 'NOVICE-NEED', 'algorithms.data_used, decision_type, use_case', 'GET /api/algorithms/:slug', 'optional KeyBERT tag suggestions', 'table'),
+        b('C3', 'Impact overview', 'segmented bar', 'INTERPRETATION', 'testimonies.ai_impact_classification, self_reported_impact, ai_confidence_score', 'GET /api/explore/impact', 'zero-shot BART-large-MNLI impact classifier', 'bars'),
         b('C4', 'Theme profile + co-occurrence', 'chips + matrix', 'SUGGESTED', 'testimonies.ai_themes (JSONB)', 'GET /api/explore/themes', 'multi-label BART-MNLI; optional BERTopic', 'heatmap'),
-        b('C5', "In people's words", 'excerpts', 'ARTICULATION', 'testimonies.narrative_text, ai_summary, cluster_id, is_outlier', 'GET /api/testimonies?fields=excerpt', 'spaCy NER; sBERT + HDBSCAN; KeyBERT', 'excerpt'),
-        b('C6', 'Recognition - others like me?', 'prevalence + similar stories', 'RECOGNITION', 'testimonies.ai_themes + embeddings', 'GET /api/explore/recognition', 'sentence-transformers kNN', 'network'),
-        b('C7', 'Promised vs. reported', 'side-by-side table', 'NOT ADJUDICATED', 'algorithm_claims.*; briefings.claim_vs_experience', 'GET /api/explore/claim-vs-experience', 'Claude cache; human review before publish', 'table'),
+        b('C5', "In people's words", 'excerpts', 'ARTICULATION', 'testimonies.narrative_text, ai_summary, cluster_id, is_outlier', 'GET /api/testimonies?fields=excerpt', 'spaCy NER; sentence-transformers + HDBSCAN; KeyBERT', 'excerpt'),
+        b('C6', 'Recognition - others like me?', 'prevalence + similar stories', 'RECOGNITION', 'testimonies.ai_themes + embeddings', 'GET /api/explore/recognition', 'sentence-transformers nearest-neighbour', 'network'),
+        b('C7', 'Promised vs. reported', 'side-by-side table', 'NOT ADJUDICATED', 'algorithm_claims.*; briefings.claim_vs_experience', 'GET /api/explore/claim-vs-experience', 'Claude API synthesis; sentence-transformers candidate retrieval', 'table'),
         b('C8', 'How this was made', 'provenance panel', 'PARADATA', 'testimonies.submission_method, original_language, moderation_status, submitted_at', 'GET /api/explore/coverage + /api/briefings/:slug', 'none (metadata)', 'coverage'),
         b('C9', 'Where to learn more / who can help', 'links', 'READ-ONLY INFO', 'organizations(role=library), community_events', 'GET /api/organizations, GET /api/events', 'none', 'links'),
       ],
@@ -107,12 +107,12 @@ const briefingViews = {
       subtitle: 'One algorithm, shown for library and intermediary review.',
       blocks: [
         b('L1', 'System explainer (reference)', '4-category', 'REFERENCE', 'algorithms.* + algorithm_claims.*', 'GET /api/algorithms/:slug', 'none', 'cards'),
-        b('L2', 'Impact overview', 'segmented bar', 'INTERPRETATION', 'testimonies.ai_impact_classification, self_reported_impact, ai_confidence_score', 'GET /api/explore/impact', 'zero-shot BART-MNLI', 'bars'),
+        b('L2', 'Impact overview', 'segmented bar', 'INTERPRETATION', 'testimonies.ai_impact_classification, self_reported_impact, ai_confidence_score', 'GET /api/explore/impact', 'zero-shot BART-MNLI impact classifier', 'bars'),
         b('L3', 'Theme profile + co-occurrence', 'chips + matrix', 'SUGGESTED', 'testimonies.ai_themes', 'GET /api/explore/themes', 'multi-label BART-MNLI; optional BERTopic', 'heatmap'),
-        b('L4', "In people's words", 'representative + minority excerpts', 'ARTICULATION', 'testimonies.narrative_text, ai_summary, cluster_id, is_outlier', 'GET /api/testimonies?fields=excerpt', 'spaCy NER; sBERT + HDBSCAN; KeyBERT', 'excerpt'),
-        b('L5', 'Coverage & silence (prominent)', "ranked + who's missing", 'PARADATA + ABSENCE', 'algorithms.impact_level, use_case; testimonies.affected_domain, original_language, submission_method', 'GET /api/explore/silence + /coverage', 'rule-based + sBERT', 'heatmap'),
-        b('L6', 'Evidence strength + representation', 'thin to robust; minority / positive / dissent', 'HUMILITY', 'testimony counts, ai_confidence_score, ai_themes distribution, is_outlier', 'GET /api/explore/evidence-strength', 'derived stats; sBERT / HDBSCAN outliers', 'bars'),
-        b('L7', 'Claim vs. experience', 'table', 'NOT ADJUDICATED', 'algorithm_claims.*; briefings.claim_vs_experience', 'GET /api/explore/claim-vs-experience', 'Claude cache; human review before publish', 'table'),
+        b('L4', "In people's words", 'representative + minority excerpts', 'ARTICULATION', 'testimonies.narrative_text, ai_summary, cluster_id, is_outlier', 'GET /api/testimonies?fields=excerpt', 'spaCy NER; sentence-transformers + HDBSCAN; KeyBERT', 'excerpt'),
+        b('L5', 'Coverage & silence (prominent)', "ranked + who's missing", 'PARADATA + ABSENCE', 'algorithms.impact_level, use_case; testimonies.affected_domain, original_language, submission_method', 'GET /api/explore/silence + /coverage', 'rule-based + sentence-transformers four-factor silence detector', 'heatmap'),
+        b('L6', 'Evidence strength + representation', 'thin to robust; minority / positive / dissent', 'HUMILITY', 'testimony counts, ai_confidence_score, ai_themes distribution, is_outlier', 'GET /api/explore/evidence-strength', 'derived stats; sentence-transformers / HDBSCAN outliers', 'bars'),
+        b('L7', 'Claim vs. experience', 'table', 'NOT ADJUDICATED', 'algorithm_claims.*; briefings.claim_vs_experience', 'GET /api/explore/claim-vs-experience', 'Claude API synthesis', 'table'),
         b('L8', 'Provenance + custody + notes', 'panel + notes', 'PARADATA; NOTES PRIVATE', 'testimonies.* (paradata); briefings.review_status, reviewed_by', 'GET /api/explore/coverage + /api/briefings/:slug', 'none', 'coverage'),
       ],
     },
@@ -122,13 +122,13 @@ const briefingViews = {
       title: 'Local Government',
       subtitle: 'One algorithm, shown for government review.',
       blocks: [
-        b('G1', 'Justifiability / global explanation', 'rationale + claims', 'GLOBAL EXPLANATION', 'algorithms.* (purpose, decision_type, data_used, agency_*, status); algorithm_claims.*', 'GET /api/algorithms/:slug', 'optional summary model, not connected', 'cards'),
-        b('G2', 'Impact dashboard', 'split + trend', 'INTERPRETATION', 'testimonies.ai_impact_classification, submitted_at; algorithms.current_version, year_deployed', 'GET /api/explore/impact + /trend', 'zero-shot BART-MNLI; time aggregation', 'trend'),
+        b('G1', 'Justifiability / global explanation', 'rationale + claims', 'GLOBAL EXPLANATION', 'algorithms.* (purpose, decision_type, data_used, agency_*, status); algorithm_claims.*', 'GET /api/algorithms/:slug', 'optional Claude summary', 'cards'),
+        b('G2', 'Impact dashboard', 'split + trend', 'INTERPRETATION', 'testimonies.ai_impact_classification, submitted_at; algorithms.current_version, year_deployed', 'GET /api/explore/impact + /trend', 'zero-shot BART-MNLI impact classifier; time aggregation', 'trend'),
         b('G3', 'Theme profile + co-occurrence', 'chips + matrix', 'SUGGESTED', 'testimonies.ai_themes', 'GET /api/explore/themes', 'multi-label BART-MNLI; optional BERTopic', 'heatmap'),
-        b('G4', 'Intent vs. reality (SDM vs PDM)', 'table + flag', 'SDM/PDM GAP', 'algorithm_claims.*; briefings.claim_vs_experience; testimonies.ai_extracted_experiences', 'GET /api/explore/claim-vs-experience', 'Claude cache + sentence-transformers candidate retrieval', 'table'),
-        b('G5', 'Coverage & silence = accountability gap', 'ranked flags', 'ABSENCE != SAFETY', 'algorithms.impact_level, use_case; testimonies.affected_domain; briefings.silence_gaps', 'GET /api/explore/silence', 'rule-based + sBERT', 'heatmap'),
+        b('G4', 'Intent vs. reality (SDM vs PDM)', 'table + flag', 'SDM/PDM GAP', 'algorithm_claims.*; briefings.claim_vs_experience; testimonies.ai_extracted_experiences', 'GET /api/explore/claim-vs-experience', 'Claude API synthesis; sentence-transformers candidate retrieval', 'table'),
+        b('G5', 'Coverage & silence = accountability gap', 'ranked flags', 'ABSENCE != SAFETY', 'algorithms.impact_level, use_case; testimonies.affected_domain; briefings.silence_gaps', 'GET /api/explore/silence', 'rule-based + sentence-transformers four-factor silence detector', 'heatmap'),
         b('G6', 'Improvement directions', 'theme -> direction table', 'REFERENCE', 'testimonies.ai_themes aggregation + theme_improvement_map', 'GET /api/explore/themes + static map', 'none (reference map)', 'table'),
-        b('G7', 'Procurement / future systems', 'filter Proposed; comparables', 'READ BEFORE PURCHASE', 'algorithms.status, use_case; cross_jurisdiction_insights; shared_taxonomy', 'GET /api/algorithms?status=Proposed + /cross-jurisdiction', 'sBERT similarity; aggregation', 'cards'),
+        b('G7', 'Procurement / future systems', 'filter Proposed; comparables', 'READ BEFORE PURCHASE', 'algorithms.status, use_case; cross_jurisdiction_insights; shared_taxonomy', 'GET /api/algorithms?status=Proposed + /cross-jurisdiction', 'sentence-transformers similarity for comparable systems; aggregation', 'cards'),
         b('G8', 'Peer-jurisdiction benchmark', 'aggregate compare', 'AGGREGATE ONLY', 'cross_jurisdiction_insights (approved)', 'GET /api/explore/cross-jurisdiction', 'none (pre-aggregated)', 'bars'),
         b('G9', 'Provenance & paradata', 'aggregate-only panel', 'PARADATA', 'testimonies.* (paradata); briefings.review_status, reviewed_by, generated_by', 'GET /api/explore/coverage + /api/briefings/:slug', 'none', 'coverage'),
       ],
@@ -731,6 +731,7 @@ function BlockExplanation({ block }) {
       <PlainInfo title="Summary" text={explanation.summary} />
       <PlainInfo title="Data used" text={explanation.data} />
       <PlainInfo title="ML/NLP method" text={explanation.method} />
+      <PlainInfo title="Now" text={explanation.now} />
     </div>
   );
 }
@@ -766,16 +767,31 @@ function explainBlock(block) {
     if (api.includes('landscape') || api.includes('algorithms')) return 'Reviewed algorithm cards, domains, agencies, status, and approved-story counts.';
     return 'Approved stories, stored theme labels, impact labels, dates, and algorithm records.';
   })();
-  const method = (() => {
-    if (!block.ml || block.ml.toLowerCase().includes('none')) return 'No model is used here; the view groups and counts reviewed records.';
-    if (block.ml.includes('Claude')) return 'Cached claim-review text is used when available; nothing is generated live on this page.';
-    if (block.ml.includes('spaCy') || block.ml.includes('KeyBERT')) return 'Local NLP extracts entities, keywords, and similar story groups for review.';
-    if (block.ml.includes('BERTopic') || block.ml.includes('HDBSCAN') || block.ml.includes('UMAP')) return 'Offline local embeddings group similar stories and suggest topic labels.';
-    if (block.ml.includes('BART')) return 'Stored local theme or impact labels are aggregated for this view.';
-    if (block.ml.includes('sBERT') || block.ml.includes('sentence-transformers')) return 'Local sentence embeddings compare similar stories, systems, or gaps.';
-    return block.ml;
-  })();
-  return { summary, data, method };
+  return { summary, data, method: block.ml || 'none', now: currentMethod(block) };
+}
+
+function currentMethod(block) {
+  const code = block.code;
+  const excerptBlocks = new Set(['C5', 'L4', 'CC6', 'IC8']);
+  const impactBlocks = new Set(['C3', 'L2', 'G2']);
+  const themeBlocks = new Set(['C4', 'L3', 'G3', 'CC3', 'IC2', 'GC2']);
+  const silenceBlocks = new Set(['L5', 'G5', 'IC3', 'GC4']);
+  const evidenceBlocks = new Set(['L6', 'IC6']);
+  const claimBlocks = new Set(['C7', 'L7', 'G4', 'IC7', 'GC3']);
+  const comparableBlocks = new Set(['CC2', 'G7', 'GC7']);
+  if (impactBlocks.has(code)) return 'Stored Task 2 impact labels from the current local DeBERTa pipeline are aggregated. Teacher spec names BART; this is the main model mismatch to confirm.';
+  if (themeBlocks.has(code)) return 'Stored Task 3 BART-MNLI theme labels are aggregated. BERTopic is not layered into this specific view yet.';
+  if (excerptBlocks.has(code)) return 'Stored spaCy entities support anonymized excerpts; cached corpus cluster/outlier fields choose representative/minority stories; KeyBERT keywords are stored but not highlighted here.';
+  if (claimBlocks.has(code)) return 'Published briefing cache or local rule draft is used. Claude is optional per meeting notes and is not active in the current published data.';
+  if (silenceBlocks.has(code)) return 'Rule-based volume/domain score uses cached topic/cluster coverage. It is not running live sentence-transformer cosine on request.';
+  if (evidenceBlocks.has(code)) return 'Derived stats use counts, confidence, impact mix, and cached HDBSCAN outlier flags.';
+  if (comparableBlocks.has(code)) return 'Domain/status aggregation is active. Similar-system/comparable sentence-transformer matching is not active yet.';
+  if (code === 'C1' || code === 'G1') return 'Curated algorithm records only; optional Claude simplification/summary is not connected.';
+  if (code === 'C2') return 'Curated algorithm fields only; KeyBERT tag suggestions are not active in this view.';
+  if (code === 'C6') return 'Cached topic/cluster/theme matching from the offline corpus batch is active; no live nearest-neighbour search runs on request.';
+  if (code === 'IC4') return 'Complete as offline corpus batch: Qwen embeddings, UMAP, HDBSCAN, BERTopic, and KeyBERT labels are read from DB cache.';
+  if (code === 'G8' || code === 'GC8') return 'No model runs here; peer-jurisdiction endpoint currently waits for approved peer insight data.';
+  return block.ml?.toLowerCase().includes('none') ? 'No model is used here; the route groups reviewed records or metadata.' : 'Current route reads stored fields and aggregates them; no model runs live on this page.';
 }
 
 function EvidenceRowsList({ rows, onPreview }) {
@@ -1307,6 +1323,7 @@ function SpecDetails({ block }) {
       <SpecRow icon={Database} label="Database" value={block.db} />
       <SpecRow icon={Search} label="API endpoint" value={block.api} />
       <SpecRow icon={Filter} label="ML / NLP method" value={block.ml} />
+      <SpecRow icon={FileText} label="Now" value={currentMethod(block)} />
     </>
   );
 }
