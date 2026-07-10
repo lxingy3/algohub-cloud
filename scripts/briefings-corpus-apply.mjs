@@ -112,6 +112,8 @@ async function main() {
     .filter(Boolean);
   if (!payload.jurisdictionId) throw new Error('jurisdictionId is required.');
   if (!model) throw new Error('model is required when applying semantic embeddings.');
+  const semanticKeys = new Set(semanticEmbeddings.map((row) => `${row.entityType}:${row.entityId}`));
+  if (semanticKeys.size !== semanticEmbeddings.length) throw new Error('semanticEmbeddings contains duplicate entity rows.');
   const warnings = Array.isArray(payload.warnings) ? payload.warnings : [];
   if (!allowSmallCorpus && warnings.some((warning) => String(warning).includes('fewer than 5'))) {
     throw new Error('Refusing to apply a small-corpus batch. Review JSON only, or pass --allow-small-corpus intentionally.');
@@ -184,32 +186,20 @@ async function main() {
       });
     }
 
-    for (const embedding of semanticEmbeddings) {
-      await tx.semanticEmbedding.upsert({
-        where: {
-          jurisdictionId_entityType_entityId_model: {
-            jurisdictionId: payload.jurisdictionId,
-            entityType: embedding.entityType,
-            entityId: embedding.entityId,
-            model,
-          },
-        },
-        update: {
-          vector: embedding.vector,
-          contentHash: embedding.contentHash,
-          generatedAt: now,
-        },
-        create: {
-          jurisdictionId: payload.jurisdictionId,
-          entityType: embedding.entityType,
-          entityId: embedding.entityId,
-          model,
-          vector: embedding.vector,
-          contentHash: embedding.contentHash,
-          generatedAt: now,
-        },
-      });
-    }
+    const deletedEmbeddings = await tx.semanticEmbedding.deleteMany({
+      where: { jurisdictionId: payload.jurisdictionId, model },
+    });
+    await tx.semanticEmbedding.createMany({
+      data: semanticEmbeddings.map((embedding) => ({
+        jurisdictionId: payload.jurisdictionId,
+        entityType: embedding.entityType,
+        entityId: embedding.entityId,
+        model,
+        vector: embedding.vector,
+        contentHash: embedding.contentHash,
+        generatedAt: now,
+      })),
+    });
     let staleTopicsDeleted = 0;
     if (selectedRecords.length === cleanRecords.length) {
       const deleted = await tx.corpusTopic.deleteMany({
@@ -220,7 +210,7 @@ async function main() {
       });
       staleTopicsDeleted = deleted.count;
     }
-    return { staleTopicsDeleted };
+    return { staleTopicsDeleted, staleSemanticEmbeddingsDeleted: deletedEmbeddings.count };
   }, { maxWait: 10000, timeout: 120000 });
 
   const relationSample = await prisma.testimony.findFirst({
@@ -234,6 +224,7 @@ async function main() {
     recordsUpdated: selectedRecords.length,
     semanticEmbeddingsUpserted: semanticEmbeddings.length,
     staleTopicsDeleted: applyResult.staleTopicsDeleted,
+    staleSemanticEmbeddingsDeleted: applyResult.staleSemanticEmbeddingsDeleted,
     model,
     relationSample,
     warnings,

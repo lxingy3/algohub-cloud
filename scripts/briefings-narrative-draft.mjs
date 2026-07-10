@@ -3,6 +3,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import { PrismaClient } from '@prisma/client';
 import { BRIEFINGS_EMBEDDING_MODEL, cosineSimilarity, SEMANTIC_RELEVANCE_THRESHOLD } from '../lib/semanticEmbeddings.js';
+import { compatibleBriefingDomain } from '../lib/briefingDomainMatch.js';
 import { buildSilenceAnalysis } from '../lib/silenceAnalysis.js';
 
 loadEnvFile('.env.production.local');
@@ -138,7 +139,10 @@ function buildClaimRows(algorithms, testimonies, maps) {
   const claimEmbeddings = maps.get('claim') || new Map();
   return algorithms.map((algorithm) => {
     const claimVectors = algorithm.claims.map((claim) => claimEmbeddings.get(claim.id)?.vector).filter(Boolean);
-    const ranked = testimonies.map((story) => {
+    const ranked = testimonies.filter((story) => (
+      story.algorithmLinks.some((link) => link.algorithm.id === algorithm.id)
+      || compatibleBriefingDomain(story.affectedDomain, algorithm.useCase)
+    )).map((story) => {
       const storyVector = storyEmbeddings.get(story.id)?.vector;
       const scores = claimVectors.map((claimVector) => cosineSimilarity(claimVector, storyVector)).filter(Number.isFinite);
       const similarity = scores.length ? Math.max(...scores) : null;
@@ -156,7 +160,7 @@ function buildClaimRows(algorithms, testimonies, maps) {
         impact: story.aiImpactClassification,
         similarity: Number(similarity.toFixed(3)),
       })),
-      matchMethod: `sentence-transformers cosine > ${SEMANTIC_RELEVANCE_THRESHOLD} (${BRIEFINGS_EMBEDDING_MODEL})`,
+      matchMethod: `domain-scoped sentence-transformers cosine > ${SEMANTIC_RELEVANCE_THRESHOLD} (${BRIEFINGS_EMBEDDING_MODEL})`,
     };
   }).filter((row) => row.claims.length || row.experienceCount);
 }
@@ -332,10 +336,9 @@ async function main() {
   if (apply) {
     for (const draft of drafts) {
       const data = toBriefingWrite(draft);
-      const { reviewStatus, ...updateData } = data;
       await prisma.briefing.upsert({
         where: { slug: draft.slug },
-        update: useClaude ? { ...data, reviewedByUserId: null, publishedAt: null } : updateData,
+        update: { ...data, reviewedByUserId: null, publishedAt: null },
         create: { jurisdictionId, ...data },
       });
     }

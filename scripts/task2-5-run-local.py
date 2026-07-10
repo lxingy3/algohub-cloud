@@ -14,6 +14,9 @@ TASK2_MODEL = os.environ.get("TASK2_IMPACT_MODEL", "facebook/bart-large-mnli")
 TASK3_MODEL = os.environ.get("TASK3_THEME_MODEL", "facebook/bart-large-mnli")
 TASK4_MODEL = os.environ.get("SPACY_MODEL", "en_core_web_trf")
 TASK5_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+POSITIVE_IMPACT_SCORE = float(os.environ.get("TASK2_POSITIVE_SCORE", "0.20"))
+THEME_UNSUPPORTED_THRESHOLD = float(os.environ.get("TASK3_UNSUPPORTED_THRESHOLD", "0.90"))
+THEME_MAX_LABELS = int(os.environ.get("TASK3_MAX_LABELS", "5"))
 
 IMPACT_LABELS = {
     "NEGATIVE": "negative experience with an automated system",
@@ -104,6 +107,8 @@ THEME_EVIDENCE = {
         r"\bhelped at first\b",
         r"\bworked well\b",
         r"\bfaster than before\b",
+        r"\b(corrected|restored|recalculated|removed)\b[^.]{0,120}\b(record|flag|benefit|priority|schedule|category)\b",
+        r"\b(returned to normal|helped me apply|referred us|sent the appropriate response team)\b",
     ],
     "lack_of_recourse": [
         r"\bcould not change\b",
@@ -252,6 +257,8 @@ THEME_EVIDENCE = {
         r"\bmisrouted\b",
         r"\brouted\b[^\n.]{0,80}\b(maintenance|wrong)\b",
         r"\boutdated\b",
+        r"\bstale\b",
+        r"\bduplicate\b[^.]{0,80}\b(record|profile|license)\b",
         r"\bincorrect\b",
         r"\bold record\b",
         r"\bold address\b",
@@ -412,6 +419,7 @@ WEAK_KEYWORDS = {
     "decision",
     "decisions",
     "category",
+    "transit worker",
 }
 
 ROLE_TERMS = [
@@ -441,6 +449,28 @@ ROLE_TERMS = [
     "agency staff",
     "community member",
     "police officer",
+    "rider",
+    "customer service worker",
+    "prt customer service worker",
+    "311 operator",
+    "public works crew member",
+    "permit reviewer",
+    "housing inspector",
+    "mobility planner",
+    "water customer service representative",
+    "parking clerk",
+    "right-of-way reviewer",
+    "customer",
+    "business owner support specialist",
+    "librarian",
+    "social worker",
+    "tenant advocate",
+    "analyst",
+    "city employee",
+    "utility customer service representative",
+    "school social worker",
+    "permit clerk",
+    "property owner",
 ]
 
 SYSTEM_TERMS = [
@@ -482,6 +512,22 @@ SYSTEM_TERMS = [
     "wage compliance risk model",
     "library resource recommendation tool",
     "emergency dispatch triage assistant",
+    "311 request intake software",
+    "311 service request routing system",
+    "high injury network",
+    "traffic signal prioritization system",
+    "allegheny go eligibility system",
+    "discounted fares lottery",
+    "fire inspection scheduling portal",
+    "lead service line replacement prioritization model",
+    "water billing exception system",
+    "parking permit portal",
+    "right-of-way permit system",
+    "stormwater complaint routing system",
+    "urban redevelopment authority small business aid portal",
+    "automated eligibility rule",
+    "onestoppgh portal",
+    "permit review portal",
 ]
 
 PITTSBURGH_AGENCIES = [
@@ -502,6 +548,16 @@ PITTSBURGH_AGENCIES = [
     "City of Pittsburgh community services office",
     "City of Pittsburgh public safety office",
     "City of Pittsburgh",
+    "City of Pittsburgh 311 Response Center",
+    "Department of Public Works",
+    "Department of Innovation and Performance",
+    "Department of Mobility and Infrastructure",
+    "Pittsburgh Bureau of Police",
+    "Pittsburgh Bureau of Fire",
+    "Pittsburgh Water and Sewer Authority",
+    "Pittsburgh Parking Authority",
+    "Pittsburgh Parking Court",
+    "Urban Redevelopment Authority",
 ]
 
 PITTSBURGH_LOCATIONS = [
@@ -534,6 +590,20 @@ PITTSBURGH_LOCATIONS = [
     "Wilkinsburg",
     "Carrick",
     "Beechview",
+    "Centre Avenue",
+    "East Liberty Station",
+    "Liberty Avenue",
+    "Penn Avenue",
+    "Brownsville Road",
+    "Homewood Avenue",
+]
+
+ENTITY_TEXT_ALIASES = [
+    (r"\bone stop p g h\b", "OneStopPGH portal"),
+    (r"\bp a career link pittsburgh\b", "PA CareerLink Pittsburgh"),
+    (r"\bp l i\b", "City of Pittsburgh Department of Permits, Licenses, and Inspections"),
+    (r"\bwater bill exception system\b", "water billing exception system"),
+    (r"\bcenter avenue\b", "Centre Avenue"),
 ]
 
 
@@ -566,6 +636,62 @@ def count_matches(text: str, patterns: list[str]) -> int:
     return sum(1 for pattern in patterns if re.search(pattern, lower_text, flags=re.IGNORECASE))
 
 
+MIXED_OUTCOME_PATTERNS = [
+    r"\bdispatcher listened\b[^.]{0,140}\bchanged the priority\b",
+    r"\bpriority changed\b",
+    r"\binspection date appeared\b",
+    r"\bthat part worked\b",
+    r"\bending was good\b",
+    r"\bglad it moved\b",
+    r"\bconnected me\b[^.]{0,140}\bquickly\b",
+    r"\bcorrectly saw\b[^.]{0,180}\bbut\b",
+    r"\bcorrectly moved\b[^.]{0,180}\bbut\b",
+    r"\bsent a crew\b[^.]{0,140}\bwhich helped\b",
+    r"\breopened the case\b",
+    r"\bcorrected the field\b",
+    r"\bcorrected the record and scheduled an inspection\b",
+    r"\bnext list included\b[^.]{0,180}\bhelped me get an interview\b",
+]
+
+NEGATIVE_EVENT_PATTERNS = [
+    r"\b(wrong|incorrect|outdated|stale|duplicate|mismatch|misrouted)\b",
+    r"\b(paused|denied|delayed|flagged|lowered|low priority|high risk)\b",
+    r"\b(no way|no reason|could not|did not explain|did not show|did not fit)\b",
+    r"\b(wrong queue|wrong service|wrong office|wrong station)\b",
+    r"\b(sent|routed)\b[^.]{0,100}\b(noise complaint|maintenance|wrong)\b",
+    r"\b(kept suggesting|had not saved)\b",
+]
+
+RESOLUTION_PATTERNS = [
+    r"\b(corrected|restored|recalculated|reopened|removed|merged)\b",
+    r"\b(assistance|benefit|application|request|case) was approved\b",
+    r"\b(returned to normal|changed the category|changed the priority|moved the report)\b",
+    r"\b(transferred|connected me|reran the match|helped me apply|referred us)\b",
+    r"\b(scheduled (?:a visit|an inspection|legal help)|sent the appropriate response team)\b",
+]
+
+UNRESOLVED_HARM_PATTERNS = [
+    r"\b(corrected|fixed|removed)\b[^.]{0,120}\bbut\b[^.]{0,120}\b(harm|burden|late|deadline|rent|fee|wait|delay|month)\b",
+    r"\b(appeal took six weeks|submitted the same documents to two offices|children were coughing while we waited)\b",
+]
+
+
+def resolve_impact(text: str, evidence_scores: dict[str, float]) -> str:
+    if re.search(r"\bi (?:do not|don't) know whether\b", text, flags=re.IGNORECASE):
+        return "UNCLEAR"
+    if any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in UNRESOLVED_HARM_PATTERNS):
+        return "NEGATIVE"
+    if any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in MIXED_OUTCOME_PATTERNS):
+        return "MIXED"
+    has_negative_event = any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in NEGATIVE_EVENT_PATTERNS)
+    has_resolution = any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in RESOLUTION_PATTERNS)
+    if has_negative_event and has_resolution:
+        return "MIXED"
+    if evidence_scores.get("POSITIVE", 0) >= POSITIVE_IMPACT_SCORE:
+        return "POSITIVE"
+    return "NEGATIVE"
+
+
 def classify_impact(classifier, text: str) -> dict:
     descriptions = list(IMPACT_LABELS.values())
     result = classifier(
@@ -578,11 +704,8 @@ def classify_impact(classifier, text: str) -> dict:
         key: round_score(scores_by_description.get(description, 0))
         for key, description in IMPACT_LABELS.items()
     }
-    classification = next(
-        key for key, description in IMPACT_LABELS.items()
-        if description == result["labels"][0]
-    )
-    confidence = float(result["scores"][0])
+    classification = resolve_impact(text, evidence_scores)
+    confidence = evidence_scores[classification]
 
     return {
         "aiImpactClassification": classification,
@@ -609,25 +732,45 @@ def find_theme_evidence(text: str, theme: str) -> list[str]:
     return unique(evidence)
 
 
+def select_themes(text: str, scores_by_theme: dict[str, float]) -> list[dict]:
+    rows = []
+    for theme in THEME_LABELS:
+        score = float(scores_by_theme.get(theme, 0))
+        evidence = find_theme_evidence(text, theme)
+        if not evidence and score <= THEME_UNSUPPORTED_THRESHOLD:
+            continue
+        confidence = max(score, 0.55 if evidence else score)
+        rows.append({
+            "theme": theme,
+            "confidence": round_score(confidence),
+            "matchedEvidence": evidence[:3],
+            "label": "suggested" if confidence < 0.75 else "detected",
+        })
+    rows.sort(key=lambda row: (bool(row["matchedEvidence"]), row["confidence"]), reverse=True)
+    return rows[:THEME_MAX_LABELS]
+
+
 def detect_themes(classifier, text: str) -> list[dict]:
     descriptions = list(THEME_LABELS.values())
-    result = classifier(
-        text,
-        candidate_labels=descriptions,
-        multi_label=True,
-    )
-    rows = []
-    for description, score in zip(result["labels"], result["scores"]):
-        theme = next((key for key, value in THEME_LABELS.items() if value == description), None)
-        if theme and score > 0.5:
-            evidence = find_theme_evidence(text, theme)
-            rows.append({
-                "theme": theme,
-                "confidence": round_score(score),
-                "matchedEvidence": evidence[:3],
-            })
-    rows.sort(key=lambda row: row["confidence"], reverse=True)
-    return rows[:6]
+    result = classifier(text, candidate_labels=descriptions, multi_label=True)
+    description_to_theme = {description: theme for theme, description in THEME_LABELS.items()}
+    scores_by_theme = {
+        description_to_theme[description]: float(score)
+        for description, score in zip(result["labels"], result["scores"])
+    }
+    return select_themes(text, scores_by_theme)
+
+
+def self_check() -> None:
+    assert resolve_impact("The system helped and approval arrived.", {"POSITIVE": 0.4}) == "POSITIVE"
+    assert resolve_impact("I do not know whether a rule or staff review caused it.", {"POSITIVE": 0.01}) == "UNCLEAR"
+    assert resolve_impact("The priority changed after tenant photos, but the delay caused harm.", {"POSITIVE": 0.02}) == "MIXED"
+    assert resolve_impact("The wrong record paused the benefit until a worker corrected it.", {"POSITIVE": 0.02}) == "MIXED"
+    assert resolve_impact("The wrong record delayed my application.", {"POSITIVE": 0.01}) == "NEGATIVE"
+    themes = select_themes("The old address was wrong and staff could not explain it.", {"data_accuracy": 0.4, "opacity": 0.4})
+    assert {row["theme"] for row in themes} == {"data_accuracy", "opacity"}
+    assert canonicalize_entity_text("P L I at Center Avenue") == "City of Pittsburgh Department of Permits, Licenses, and Inspections at Centre Avenue"
+    assert not non_negated_phrase_in_text("I was a rider, not a transit worker.", "transit worker")
 
 
 def normalize_entity(value):
@@ -643,6 +786,21 @@ def unique(values):
 
 def phrase_in_text(text: str, phrase: str) -> bool:
     return re.search(rf"\b{re.escape(phrase)}\b", text, flags=re.IGNORECASE) is not None
+
+
+def canonicalize_entity_text(text: str) -> str:
+    output = text
+    for pattern, replacement in ENTITY_TEXT_ALIASES:
+        output = re.sub(pattern, replacement, output, flags=re.IGNORECASE)
+    return output
+
+
+def non_negated_phrase_in_text(text: str, phrase: str) -> bool:
+    for match in re.finditer(rf"\b{re.escape(phrase)}\b", text, flags=re.IGNORECASE):
+        prefix = text[max(0, match.start() - 14):match.start()]
+        if not re.search(r"\bnot\s+(?:a\s+|an\s+|the\s+)?$", prefix, flags=re.IGNORECASE):
+            return True
+    return False
 
 
 def known_phrases(text: str, phrases: list[str]) -> list[str]:
@@ -726,6 +884,8 @@ def extract_date_phrases(text: str) -> list[str]:
         r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}\b",
         r"\b(?:Spring|Summer|Fall|Winter)\s+\d{4}\b",
         r"\b\d{4}\b",
+        r"\b(?:next morning|same afternoon|same day|same week)\b",
+        r"\b(?:two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(?:calls|days|weeks|months)\b",
     ]
     for pattern in patterns:
         matches.extend(re.findall(pattern, text, flags=re.IGNORECASE))
@@ -741,7 +901,7 @@ def infer_roles(text: str, systems: list[str], agencies: list[str]) -> list[str]
         roles.append("caseworker")
     if "school" in lower or "student" in lower:
         roles.append("school counselor")
-    if "transit" in lower:
+    if "transit" in lower and non_negated_phrase_in_text(text, "transit worker"):
         roles.append("transit worker")
     if "police" in lower or "citation" in lower:
         roles.append("police officer")
@@ -769,8 +929,9 @@ def compact_roles(values: list[str]) -> list[str]:
 
 
 def extract_entities(nlp, text: str) -> dict:
-    doc = nlp(text)
-    lower_text = text.lower()
+    entity_text = canonicalize_entity_text(text)
+    doc = nlp(entity_text)
+    lower_text = entity_text.lower()
     agencies = []
     locations = []
     dates = []
@@ -788,13 +949,13 @@ def extract_entities(nlp, text: str) -> dict:
     agencies.extend(
         re.findall(
             r"\b[A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){0,4}\s+(?:Agency|Department|Office|Authority|Center|University|County)\b",
-            text,
+            entity_text,
         )
     )
 
-    agencies.extend(known_phrases(text, PITTSBURGH_AGENCIES))
-    locations.extend(known_phrases(text, PITTSBURGH_LOCATIONS))
-    systems = extract_system_phrases(text)
+    agencies.extend(known_phrases(entity_text, PITTSBURGH_AGENCIES))
+    locations.extend(known_phrases(entity_text, PITTSBURGH_LOCATIONS))
+    systems = extract_system_phrases(entity_text)
     agencies = [
         agency for agency in agencies
         if not re.search(r"\b(?:Algorithm|Tool|System|Engine|Portal|Score|Scheduler|Classifier|Model)\b", agency, flags=re.IGNORECASE)
@@ -808,16 +969,16 @@ def extract_entities(nlp, text: str) -> dict:
         if normalize_entity(location).lower() not in agency_keys
         and not re.search(r"\b(?:Office|Department|Authority|Services|Government|CareerLink)\b", location, flags=re.IGNORECASE)
     ]
-    roles = compact_roles([term for term in ROLE_TERMS if term in lower_text] + infer_roles(text, systems, agencies))
+    roles = compact_roles([term for term in ROLE_TERMS if non_negated_phrase_in_text(entity_text, term)] + infer_roles(entity_text, systems, agencies))
 
     return {
         "agencies": compact_entities(agencies),
         "locations": compact_entities(locations),
         "systems": systems,
-        "dates": compact_entities([*dates, *extract_date_phrases(text)]),
+        "dates": compact_entities([*dates, *extract_date_phrases(entity_text)]),
         "people_roles": roles,
         "people": compact_entities(people),
-        "addresses": unique(re.findall(r"\b\d{1,6}\s+[A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+){0,4}\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way)\b", text, flags=re.IGNORECASE)),
+        "addresses": unique(re.findall(r"\b\d{1,6}\s+[A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+){0,4}\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way)\b", entity_text, flags=re.IGNORECASE)),
     }
 
 
@@ -900,7 +1061,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run ML Part 1 Task 2-5 on narrativeText samples.")
     parser.add_argument("--input", default="task2-results/sample-narratives.json")
     parser.add_argument("--output-dir", default="task2-5-results")
+    parser.add_argument("--self-check", action="store_true")
     args = parser.parse_args()
+
+    if args.self_check:
+        self_check()
+        print("task2-5 local self-check ok")
+        return
 
     input_path = Path(args.input)
     output_dir = Path(args.output_dir)

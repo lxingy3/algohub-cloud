@@ -268,7 +268,7 @@ def run_lightweight_self_check(output_path):
     print(json.dumps({"outputPath": output_path, "records": len(payload["records"]), "topics": len(payload["topics"])}, indent=2))
 
 
-def run_production(input_path, output_path, model_name, n_neighbors_arg=None, min_cluster_size_arg=None, min_samples_arg=None):
+def run_production(input_path, output_path, model_name, n_neighbors_arg=None, min_cluster_size_arg=None, min_samples_arg=None, reuse_result_path=None):
     from bertopic import BERTopic
     from hdbscan import HDBSCAN
     from keybert import KeyBERT
@@ -302,11 +302,41 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
     model = SentenceTransformer(model_name)
     keyword_model = KeyBERT(model=model)
     all_texts = [*texts, *algorithm_texts, *claim_texts, *peer_texts]
-    all_embeddings = model.encode(all_texts, batch_size=16, show_progress_bar=True, normalize_embeddings=True)
-    all_embeddings = np.asarray(all_embeddings)
     record_end = len(records)
     algorithm_end = record_end + len(algorithms)
     claim_end = algorithm_end + len(claims)
+    items_by_type = [
+        *(('testimony', item) for item in records),
+        *(('algorithm', item) for item in algorithms),
+        *(('claim', item) for item in claims),
+        *(('cross_jurisdiction_insight', item) for item in peer_insights),
+    ]
+    reused_sensitive_entities = None
+    if reuse_result_path:
+        reused = read_json(reuse_result_path)
+        if reused.get('model') != model_name:
+            raise ValueError('Reused semantic cache model does not match the requested model.')
+        cached = {
+            (row.get('entityType'), str(row.get('entityId'))): row
+            for row in reused.get('semanticEmbeddings', [])
+        }
+        vectors = []
+        for entity_type, item in items_by_type:
+            row = cached.get((entity_type, str(item['id'])))
+            text = item.get('analysisText') or item.get('text') or ''
+            expected_hash = hashlib.sha256(text.encode('utf-8')).hexdigest()
+            if not row or row.get('contentHash') != expected_hash:
+                raise ValueError(f'Reused semantic cache is missing or stale for {entity_type}:{item["id"]}.')
+            vectors.append(row['vector'])
+        all_embeddings = np.asarray(vectors, dtype=float)
+        reused_sensitive_entities = {
+            str(row.get('id')): row.get('sensitiveEntities')
+            for row in reused.get('records', [])
+        }
+        spacy_model = reused.get('params', {}).get('spacy', {}).get('model', 'reused-cache')
+    else:
+        all_embeddings = model.encode(all_texts, batch_size=16, show_progress_bar=True, normalize_embeddings=True)
+        all_embeddings = np.asarray(all_embeddings)
     embeddings = all_embeddings[:record_end]
     semantic_embeddings = [
         *semantic_rows(records, embeddings, "testimony"),
@@ -314,7 +344,10 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
         *semantic_rows(claims, all_embeddings[algorithm_end:claim_end], "claim"),
         *semantic_rows(peer_insights, all_embeddings[claim_end:], "cross_jurisdiction_insight"),
     ]
-    sensitive_entity_rows, spacy_model = sensitive_entities(records, texts)
+    if reused_sensitive_entities and all(str(record['id']) in reused_sensitive_entities for record in records):
+        sensitive_entity_rows = [reused_sensitive_entities[str(record['id'])] for record in records]
+    else:
+        sensitive_entity_rows, spacy_model = sensitive_entities(records, texts)
 
     neighbors = n_neighbors_arg or max(2, min(10, len(records) - 1))
     cluster_size = min_cluster_size_arg or min_cluster_size(len(records))
@@ -353,6 +386,7 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
             "algorithms": len(algorithms),
             "claims": len(claims),
             "crossJurisdictionInsights": len(peer_insights),
+            "reusedFrom": reuse_result_path,
         },
         "spacy": {"model": spacy_model, "purpose": "public excerpt anonymization"},
     }
@@ -390,13 +424,14 @@ def main():
     parser.add_argument("--n-neighbors", type=int)
     parser.add_argument("--min-cluster-size", type=int)
     parser.add_argument("--min-samples", type=int)
+    parser.add_argument("--reuse-result")
     parser.add_argument("--self-check", action="store_true")
     args = parser.parse_args()
 
     if args.self_check:
         run_lightweight_self_check(args.output)
     else:
-        run_production(args.input, args.output, args.model, args.n_neighbors, args.min_cluster_size, args.min_samples)
+        run_production(args.input, args.output, args.model, args.n_neighbors, args.min_cluster_size, args.min_samples, args.reuse_result)
 
 
 if __name__ == "__main__":

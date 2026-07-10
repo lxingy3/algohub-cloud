@@ -63,6 +63,7 @@ async function main() {
       orderBy: { submittedAt: 'asc' },
       select: {
         id: true,
+        sourceId: true,
         title: true,
         summary: true,
         narrativeText: true,
@@ -70,6 +71,7 @@ async function main() {
         affectedDomain: true,
         originalLanguage: true,
         submittedAt: true,
+        referralSource: true,
         aiLinkedAlgorithmIds: true,
         aiExtractedExperiences: true,
         algorithmLinks: { select: { algorithmId: true } },
@@ -108,11 +110,13 @@ async function main() {
     ]);
     return {
       id: testimony.id,
+      sourceId: testimony.sourceId,
       title: testimony.title,
       narrativeText: cleanText([testimony.narrativeText, testimony.transcriptionText]).text,
       affectedDomain: testimony.affectedDomain,
       originalLanguage: testimony.originalLanguage,
       submittedAt: testimony.submittedAt?.toISOString?.() || null,
+      referralSource: testimony.referralSource,
       algorithmIds: [
         ...new Set([
           ...(testimony.aiLinkedAlgorithmIds || []),

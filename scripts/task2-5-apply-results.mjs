@@ -16,6 +16,7 @@ const THEME_LABELS = new Set([
   'opacity', 'lack_of_recourse', 'arbitrary_outcome', 'discriminatory_impact', 'data_accuracy',
   'positive_experience', 'process_confusion', 'delayed_outcome', 'lack_of_notification', 'loss_of_dignity',
 ]);
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function parseArgs(argv) {
   const parsed = {};
@@ -116,18 +117,19 @@ async function main() {
     ? { ...payload.models, generatedAt: payload.generatedAt || null }
     : null;
   const rows = (Array.isArray(payload.results) ? payload.results : []).map(cleanRow).filter((row) => row.id && row.aiImpactClassification);
+  const benchmark = evaluateRows(rows);
   if (benchmarkOnly) {
-    console.log(JSON.stringify({ inputPath, evalSetPath, benchmarkOnly: true, inputRows: rows.length, benchmark: evaluateRows(rows) }, null, 2));
+    console.log(JSON.stringify({ inputPath, evalSetPath, benchmarkOnly: true, inputRows: rows.length, benchmark }, null, 2));
     return;
   }
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
+  const databaseRows = rows.filter((row) => UUID_PATTERN.test(row.id));
   const existing = await prisma.testimony.findMany({
-    where: { jurisdictionId, moderationStatus: 'APPROVED', id: { in: rows.map((row) => row.id) } },
+    where: { jurisdictionId, moderationStatus: 'APPROVED', id: { in: databaseRows.map((row) => row.id) } },
     select: { id: true },
   });
   const allowed = new Set(existing.map((row) => row.id));
-  const selected = rows.filter((row) => allowed.has(row.id));
-  const benchmark = evaluateRows(selected);
+  const selected = databaseRows.filter((row) => allowed.has(row.id));
   if (dryRun) {
     console.log(JSON.stringify({ inputPath, dryRun, inputRows: rows.length, selectedRows: selected.length, lowConfidence: selected.filter((row) => row.aiConfidenceScore <= 0.85).length, benchmark }, null, 2));
     return;

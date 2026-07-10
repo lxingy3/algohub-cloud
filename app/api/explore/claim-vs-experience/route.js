@@ -3,6 +3,7 @@ import { anonymizedExcerpt, getApprovedBriefingCorpus, parseExploreFilters, stor
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { prisma } from '../../../../lib/prisma';
 import { BRIEFINGS_EMBEDDING_MODEL, cosineSimilarity, getSemanticEmbeddingMap, SEMANTIC_RELEVANCE_THRESHOLD } from '../../../../lib/semanticEmbeddings';
+import { compatibleBriefingDomain } from '../../../../lib/briefingDomainMatch';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +11,7 @@ export async function GET(request) {
   const filters = parseExploreFilters(request);
   const jurisdictionId = getJurisdictionId();
   const cached = await cachedClaimRows({ jurisdictionId, filters });
-  if (cached.rows.length && cached.generatedBy !== 'local_rule_draft') {
+  if (cached.rows.length && cached.generatedBy === 'assisted_draft') {
     return NextResponse.json({
       label: 'claim vs experience cache',
       method: cached.method || `reviewed briefing cache using ${BRIEFINGS_EMBEDDING_MODEL} cosine relevance before synthesis`,
@@ -34,6 +35,7 @@ export async function GET(request) {
       id: true,
       slug: true,
       name: true,
+      useCase: true,
       claims: {
         orderBy: { createdAt: 'desc' },
         take: 3,
@@ -60,21 +62,23 @@ export async function GET(request) {
   return NextResponse.json({
     label: 'claim vs experience draft',
     method: hasSemanticCache
-      ? `stored claims matched to approved stories with ${BRIEFINGS_EMBEDDING_MODEL} cosine > ${SEMANTIC_RELEVANCE_THRESHOLD}; synthesis still needs review`
+      ? `stored claims matched within linked or compatible domains using sentence-transformers ${BRIEFINGS_EMBEDDING_MODEL} cosine > ${SEMANTIC_RELEVANCE_THRESHOLD}; synthesis still needs review`
       : 'stored claims joined to approved linked stories while the sentence-transformers cache is unavailable; synthesis still needs review',
     reviewStatus: 'needs human review',
     rows: algorithms.map((algorithm) => {
-      const semanticStories = hasSemanticCache ? rankClaimStories(algorithm.claims, rows, claimEmbeddings, storyEmbeddings) : [];
+      const semanticStories = hasSemanticCache ? rankClaimStories(algorithm, rows, claimEmbeddings, storyEmbeddings) : [];
       const stories = semanticStories.length ? semanticStories : (rowsByAlgorithm.get(algorithm.id) || []);
       return {
         algorithmSlug: algorithm.slug,
         algorithmName: algorithm.name,
+        useCase: algorithm.useCase,
         claims: algorithm.claims.map((claim) => ({ text: claim.claimText, source: claim.claimSource, date: claim.claimDate })),
         experienceCount: stories.length,
         experienceExamples: filters.lens === 'government' ? [] : stories.slice(0, 3).map((story) => ({
           id: story.id,
           title: storyTitle(story),
           impact: story.aiImpactClassification,
+          affectedDomain: story.affectedDomain,
           similarity: story.similarity ?? null,
           excerpt: anonymizedExcerpt(story),
         })),
@@ -116,10 +120,13 @@ async function cachedClaimRows({ jurisdictionId, filters }) {
   };
 }
 
-function rankClaimStories(claims, stories, claimEmbeddings, storyEmbeddings) {
-  const claimVectors = claims.map((claim) => claimEmbeddings.get(claim.id)?.vector).filter(Boolean);
+function rankClaimStories(algorithm, stories, claimEmbeddings, storyEmbeddings) {
+  const claimVectors = algorithm.claims.map((claim) => claimEmbeddings.get(claim.id)?.vector).filter(Boolean);
   if (!claimVectors.length) return [];
-  return stories.map((story) => {
+  return stories.filter((story) => (
+    story.algorithmLinks.some((link) => link.algorithm.id === algorithm.id)
+    || compatibleBriefingDomain(story.affectedDomain, algorithm.useCase)
+  )).map((story) => {
     const storyVector = storyEmbeddings.get(story.id)?.vector;
     const scores = claimVectors.map((claimVector) => cosineSimilarity(claimVector, storyVector)).filter(Number.isFinite);
     const similarity = scores.length ? Math.max(...scores) : null;

@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 const args = parseArgs(process.argv.slice(2));
 const inputPath = args.input || 'task-briefings-results/corpus-batch-input.json';
 const resultPaths = (args.results || 'task-briefings-results/corpus-batch-results.json').split(',');
+const reviewPath = args.review || 'task-briefings-results/synthetic-evaluation-review.json';
 
 function parseArgs(argv) {
   const parsed = {};
@@ -38,6 +39,9 @@ function humanBucket(row) {
 
 function evaluate(input, resultPath) {
   const result = readJson(resultPath);
+  const reviewById = fs.existsSync(reviewPath)
+    ? new Map((readJson(reviewPath).records || []).map((row) => [String(row.id), row]))
+    : new Map();
   const sourceById = new Map(input.records.map((row) => [row.id, row]));
   const rows = (result.records || [])
     .map((row) => ({ ...row, source: sourceById.get(row.id), bucket: humanBucket(sourceById.get(row.id)) }))
@@ -62,6 +66,10 @@ function evaluate(input, resultPath) {
   const topicBucket = new Map(topicSummaries.map((row) => [row.topicId, row.majorityBucket]));
   const assignedCorrect = clustered.filter((row) => topicBucket.get(row.topicId) === row.bucket).length;
   const pairStats = pairwiseStats(rows);
+  const reviewedRows = rows
+    .map((row) => ({ ...row, expectedTopicGroup: reviewById.get(String(row.id))?.expectedTopicGroup }))
+    .filter((row) => row.expectedTopicGroup);
+  const reviewedPairStats = pairwiseStats(reviewedRows, 'expectedTopicGroup');
 
   return {
     path: resultPath,
@@ -73,6 +81,19 @@ function evaluate(input, resultPath) {
     pairwisePrecision: score(pairStats.precision),
     pairwiseRecall: score(pairStats.recall),
     pairwiseF1: score(pairStats.f1),
+    crossCuttingReview: {
+      reviewPath,
+      matched: reviewedRows.length,
+      pairwisePrecision: score(reviewedPairStats.precision),
+      pairwiseRecall: score(reviewedPairStats.recall),
+      pairwiseF1: score(reviewedPairStats.f1),
+      assignments: reviewedRows.map((row) => ({
+        id: row.id,
+        expectedTopicGroup: row.expectedTopicGroup,
+        topicId: row.topicId,
+        isOutlier: row.isOutlier,
+      })),
+    },
     topicSummaries,
     worstTopics: [...topicSummaries].sort((a, b) => a.purity - b.purity).slice(0, 3),
   };
@@ -87,13 +108,13 @@ function countBy(rows, keyFn) {
   return counts;
 }
 
-function pairwiseStats(rows) {
+function pairwiseStats(rows, labelKey = 'bucket') {
   let tp = 0;
   let fp = 0;
   let fn = 0;
   for (let left = 0; left < rows.length; left += 1) {
     for (let right = left + 1; right < rows.length; right += 1) {
-      const sameHuman = rows[left].bucket === rows[right].bucket;
+      const sameHuman = rows[left][labelKey] === rows[right][labelKey];
       const sameTopic = rows[left].topicId !== null && rows[left].topicId === rows[right].topicId;
       if (sameHuman && sameTopic) tp += 1;
       else if (!sameHuman && sameTopic) fp += 1;
@@ -119,6 +140,12 @@ function selfCheck() {
   ]);
   assert.equal(score(pairStats.precision), 0.33);
   assert.equal(score(pairStats.recall), 1);
+  const reviewed = pairwiseStats([
+    { expectedTopicGroup: 'routing', topicId: 1 },
+    { expectedTopicGroup: 'routing', topicId: 1 },
+    { expectedTopicGroup: 'records', topicId: 2 },
+  ], 'expectedTopicGroup');
+  assert.equal(score(reviewed.f1), 1);
   console.log('briefings human benchmark self-check ok');
 }
 

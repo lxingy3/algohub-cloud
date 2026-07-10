@@ -7,6 +7,7 @@ import { mediaStorageProvider, mediaStorageUri } from '../../../lib/mediaStorage
 import { rankStoriesForSearch } from '../../../lib/searchRanking';
 import { buildStorySummary } from '../../../lib/storySummary';
 import { anonymizedExcerpt, parseExploreFilters, storedKeywords } from '../../../lib/briefingsExplore';
+import { cosineSimilarity, getSemanticEmbeddingMap, meanEmbedding } from '../../../lib/semanticEmbeddings';
 
 export const dynamic = 'force-dynamic';
 
@@ -146,10 +147,9 @@ function cleanExcerptText(story) {
   return anonymizedExcerpt(story);
 }
 
-function pickBriefingExcerpts(stories, limit) {
+function pickBriefingExcerpts(stories, limit, embeddings) {
   const picked = [];
   const seenIds = new Set();
-  const seenClusters = new Set();
 
   const addStory = (story, whyShown) => {
     if (!story || seenIds.has(story.id) || picked.length >= limit) return;
@@ -157,10 +157,24 @@ function pickBriefingExcerpts(stories, limit) {
     seenIds.add(story.id);
   };
 
+  const clusterGroups = new Map();
   for (const story of stories) {
-    if (story.clusterId == null || seenClusters.has(story.clusterId)) continue;
-    seenClusters.add(story.clusterId);
-    addStory(story, 'Representative story from a recurring cluster.');
+    if (story.clusterId == null || story.isOutlier) continue;
+    clusterGroups.set(story.clusterId, [...(clusterGroups.get(story.clusterId) || []), story]);
+  }
+  const sortedGroups = [...clusterGroups.values()].sort((left, right) => right.length - left.length);
+  for (const group of sortedGroups) {
+    const centroid = meanEmbedding(group.map((story) => embeddings.get(story.id)?.vector));
+    const representative = centroid
+      ? [...group].sort((left, right) => {
+        const rightScore = cosineSimilarity(embeddings.get(right.id)?.vector, centroid) ?? -1;
+        const leftScore = cosineSimilarity(embeddings.get(left.id)?.vector, centroid) ?? -1;
+        return rightScore - leftScore;
+      })[0]
+      : group[0];
+    addStory(representative, centroid
+      ? 'Story nearest to the saved sentence-transformers cluster centroid.'
+      : 'Representative story from a recurring cluster.');
   }
 
   for (const story of stories) {
@@ -259,8 +273,9 @@ export async function GET(request) {
       select: testimonyExcerptSelect,
     });
     const matchingStories = candidates.filter((story) => storyHasTheme(story, theme));
+    const embeddings = await getSemanticEmbeddingMap('testimony', matchingStories.map((story) => story.id), { jurisdictionId });
     const start = (page - 1) * limit;
-    const items = pickBriefingExcerpts(matchingStories, start + limit).slice(start, start + limit);
+    const items = pickBriefingExcerpts(matchingStories, start + limit, embeddings).slice(start, start + limit);
 
     return NextResponse.json({
       items,
@@ -269,10 +284,10 @@ export async function GET(request) {
       total: matchingStories.length,
       scope: searchParams.get('scope') || (algorithm ? 'algorithm' : 'corpus'),
       fields: 'excerpt',
-      method: 'stored Task 4 entities for redaction, saved sentence-transformers/HDBSCAN cluster and outlier fields for selection, and KeyBERT keywords when available',
+      method: 'stored Task 4 entities for redaction, sentence-transformers cluster-centroid similarity plus HDBSCAN outlier fields for selection, and KeyBERT keywords when available',
       notes: [
         'Excerpts are shortened and avoid submitter contact details.',
-        'Representative rows use cluster_id; minority rows use is_outlier when available.',
+        'Representative rows are nearest the saved cluster centroid; minority rows use is_outlier when available.',
       ],
     });
   }

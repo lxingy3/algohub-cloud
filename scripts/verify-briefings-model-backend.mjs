@@ -15,15 +15,29 @@ async function get(path) {
   }
 }
 
-const impact = await get('/api/explore/impact?scope=corpus');
-const themes = await get('/api/explore/cross-cutting-themes?scope=corpus');
-const patterns = await get('/api/explore/patterns?scope=corpus');
-const silence = await get('/api/explore/silence?scope=corpus&lens=intermediary');
-const recognition = await get('/api/explore/recognition?scope=corpus&theme=data_accuracy');
-const claims = await get('/api/explore/claim-vs-experience?scope=corpus&lens=government');
-const governmentStories = await get('/api/testimonies?fields=excerpt&scope=corpus&lens=government');
-const governmentPatterns = await get('/api/explore/patterns?scope=corpus&lens=government');
-const communityStories = await get('/api/testimonies?fields=excerpt&scope=corpus&lens=community&limit=50');
+const [
+  impact,
+  themes,
+  patterns,
+  silence,
+  recognition,
+  claims,
+  intermediaryClaims,
+  governmentStories,
+  governmentPatterns,
+  communityStories,
+] = await Promise.all([
+  get('/api/explore/impact?scope=corpus'),
+  get('/api/explore/cross-cutting-themes?scope=corpus'),
+  get('/api/explore/patterns?scope=corpus'),
+  get('/api/explore/silence?scope=corpus&lens=intermediary'),
+  get('/api/explore/recognition?scope=corpus&theme=data_accuracy'),
+  get('/api/explore/claim-vs-experience?scope=corpus&lens=government'),
+  get('/api/explore/claim-vs-experience?scope=corpus&lens=intermediary'),
+  get('/api/testimonies?fields=excerpt&scope=corpus&lens=government'),
+  get('/api/explore/patterns?scope=corpus&lens=government'),
+  get('/api/testimonies?fields=excerpt&scope=corpus&lens=community&limit=50'),
+]);
 
 assert.match(impact.method, /stored impact labels/);
 assert.doesNotMatch(impact.method, /BART-MNLI/);
@@ -43,10 +57,13 @@ for (const row of silence.rows) {
   assert.ok(Math.abs(row.silenceScore - expected) <= 0.02, `${row.algorithmName} silence score drifted`);
   assert.ok(Array.isArray(row.possibleReasons) && row.possibleReasons.length > 0, `${row.algorithmName} has no silence reason`);
 }
-assert.match(recognition.method, /sentence-transformers cosine/);
+assert.match(recognition.method, /sentence-transformers.*cosine/);
 assert.equal(recognition.cachedEmbeddingCoverage.model, 'Qwen/Qwen3-Embedding-0.6B');
-assert.match(claims.method, /sentence-transformers cosine/);
+assert.match(claims.method, /sentence-transformers.*cosine/);
 assert.ok(claims.rows.every((row) => !('experienceExamples' in row) || row.experienceExamples.length === 0));
+const afstClaims = intermediaryClaims.rows.find((row) => row.algorithmSlug === 'allegheny-family-screening-tool');
+assert.ok(afstClaims?.experienceExamples?.length > 0);
+assert.ok(afstClaims.experienceExamples.every((row) => row.affectedDomain === 'Child Welfare'), 'AFST claim retrieval crossed an unrelated domain');
 assert.equal(governmentStories.items.length, 0);
 assert.match(governmentStories.notes.join(' '), /aggregate-only/);
 assert.equal(governmentPatterns.points.length, 0);
@@ -55,6 +72,8 @@ assert.ok(communityStories.items.length > 0);
 assert.ok(communityStories.items.every((row) => !('narrativeText' in row) && typeof row.excerpt === 'string'));
 assert.ok(communityStories.items.some((row) => row.excerpt.includes('[locations]')));
 assert.ok(communityStories.items.every((row) => Array.isArray(row.keywords) && row.cluster));
+assert.ok(communityStories.items.some((row) => /cluster centroid/.test(row.whyShown)), 'representative excerpts are not centroid-selected');
+assert.ok(communityStories.items.some((row) => /outlier/.test(row.whyShown)), 'outlier excerpt is missing');
 
 console.log(JSON.stringify({
   baseUrl,

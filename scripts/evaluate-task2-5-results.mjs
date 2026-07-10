@@ -2,6 +2,7 @@ import fs from 'node:fs';
 
 const resultPath = process.argv[2] || 'task345-results/tuned-all-stories-ml-output/task2-5-combined-results.json';
 const evalSetPath = process.argv[3] || 'data/task2-5-eval-set.json';
+const focus = process.argv[4] || '';
 
 const resultPayload = JSON.parse(fs.readFileSync(resultPath, 'utf8'));
 const evalSet = JSON.parse(fs.readFileSync(evalSetPath, 'utf8'));
@@ -32,6 +33,7 @@ for (const expected of expectedRecords) {
   const themeNames = new Set(themes.map((theme) => theme.theme).filter(Boolean));
   const entities = row.aiExtractedExperiences?.entities || row.task4?.entities || {};
   const keywords = row.aiExtractedExperiences?.keywords || row.task5?.keywords || [];
+  if (!keywords.length) issues.push({ id: row.id, title, type: 'no_keywords' });
 
   if (expected.title && row.title !== expected.title) {
     issues.push({ id: row.id, title, type: 'title_changed', expected: expected.title, actual: row.title });
@@ -117,18 +119,21 @@ const byImpact = rows.reduce((counts, row) => {
   return counts;
 }, {});
 
+const task45Types = new Set(['missing_entity_field', 'missing_entity_value', 'disallowed_entity_value', 'agency_location_duplicate', 'bad_system', 'weak_keyword', 'no_keywords']);
+const reportedIssues = focus === 'task4-5' ? issues.filter((issue) => task45Types.has(issue.type)) : issues;
 const report = {
   resultPath,
   evalSetPath,
   count: rows.length,
   expectedCount: expectedRecords.length,
   byImpact,
-  issueCount: issues.length,
-  issues,
+  focus: focus || null,
+  issueCount: reportedIssues.length,
+  issues: reportedIssues,
 };
 
 console.log(JSON.stringify(report, null, 2));
-process.exitCode = issues.length ? 1 : 0;
+process.exitCode = reportedIssues.length ? 1 : 0;
 
 function normalizeEntityKey(value) {
   return String(value || '').toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();

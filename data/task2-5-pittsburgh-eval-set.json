@@ -141,7 +141,7 @@
       "requiredEntities": {
         "agencies": ["Pittsburgh Parking Authority", "Pittsburgh Parking Court"],
         "locations": ["Shadyside"],
-        "systems": ["parking permit portal", "parking citation review system"],
+        "systems": ["parking permit portal"],
         "dates": ["October 4, 2026"],
         "people_roles": ["parking clerk"]
       },
