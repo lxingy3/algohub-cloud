@@ -19,6 +19,7 @@
     "ml:eval:challenge": "node scripts/evaluate-task2-5-results.mjs task345-results/challenge-ml-output/task2-5-combined-results.json data/task2-5-challenge-eval-set.json",
     "ml:eval:current": "node scripts/evaluate-task2-5-results.mjs task345-results/tuned-all-stories-ml-output/task2-5-combined-results.json data/task2-5-eval-set.json",
     "ml:task2-5:apply": "node scripts/task2-5-apply-results.mjs",
+    "ml:task2-5:review-pack": "npm run ml:briefings:export && node scripts/export-task2-5-review-pack.mjs",
     "ml:briefings:export": "node scripts/briefings-corpus-export.mjs",
     "ml:briefings:batch": "python scripts/briefings-corpus-batch.py",
     "ml:briefings:evaluate": "node scripts/evaluate-briefings-corpus.mjs",

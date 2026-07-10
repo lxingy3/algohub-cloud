@@ -8,8 +8,14 @@ const args = parseArgs(process.argv.slice(2));
 const inputPath = args.input || 'task345-results/briefings-local-spec/task2-5-combined-results.json';
 const evalSetPath = args['eval-set'] || 'data/task2-5-eval-set.json';
 const dryRun = Boolean(args['dry-run']);
+const benchmarkOnly = Boolean(args['benchmark-only']);
 const force = Boolean(args.force);
 const jurisdictionId = process.env.JURISDICTION_ID || 'pittsburgh';
+const IMPACT_LABELS = new Set(['POSITIVE', 'NEGATIVE', 'MIXED', 'UNCLEAR']);
+const THEME_LABELS = new Set([
+  'opacity', 'lack_of_recourse', 'arbitrary_outcome', 'discriminatory_impact', 'data_accuracy',
+  'positive_experience', 'process_confusion', 'delayed_outcome', 'lack_of_notification', 'loss_of_dignity',
+]);
 
 function parseArgs(argv) {
   const parsed = {};
@@ -48,7 +54,18 @@ function evaluateRows(rows) {
   const payload = JSON.parse(fs.readFileSync(evalSetPath, 'utf8'));
   const expectedRows = Array.isArray(payload) ? payload : payload.records || [];
   const curatedBy = Array.isArray(payload) ? '' : String(payload.curatedBy || '').trim();
-  const approvedForRelease = Boolean(!Array.isArray(payload) && payload.approvedForRelease === true && curatedBy && expectedRows.length >= 50);
+  const approvalRequested = Boolean(!Array.isArray(payload) && payload.approvedForRelease === true);
+  const seenIds = new Set();
+  const invalidBenchmarkRows = expectedRows.filter((row) => {
+    const id = String(row.id || '');
+    const duplicate = !id || seenIds.has(id);
+    seenIds.add(id);
+    return duplicate
+      || !IMPACT_LABELS.has(row.expectedImpact)
+      || !Array.isArray(row.expectedThemes)
+      || row.expectedThemes.some((theme) => !THEME_LABELS.has(theme));
+  });
+  const approvedForRelease = Boolean(approvalRequested && curatedBy && expectedRows.length >= 50 && !invalidBenchmarkRows.length);
   const byId = new Map(rows.map((row) => [row.id, row]));
   let matched = 0;
   let correctImpact = 0;
@@ -75,6 +92,7 @@ function evaluateRows(rows) {
     approvedForRelease,
     benchmarkSize: expectedRows.length,
     curatedBy: curatedBy || null,
+    invalidBenchmarkRows: invalidBenchmarkRows.length,
     matched,
     impactAccuracy: Number(impactAccuracy.toFixed(4)),
     themeRecall: Number(themeRecall.toFixed(4)),
@@ -82,8 +100,10 @@ function evaluateRows(rows) {
     requiredThemeRecall: 0.7,
     minimumBenchmarkSize,
     passed: approvedForRelease && enoughMatchedRows && impactAccuracy >= 0.75 && themeRecall >= 0.7,
-    reason: !approvedForRelease
+    reason: !approvalRequested || !curatedBy || expectedRows.length < minimumBenchmarkSize
       ? 'Release benchmark must be research-team approved and contain at least 50 labeled records.'
+      : invalidBenchmarkRows.length
+        ? `Release benchmark contains ${invalidBenchmarkRows.length} missing, duplicate, or invalid label rows.`
       : !enoughMatchedRows
         ? 'At least 50 approved benchmark records must match model output.'
         : null,
@@ -91,12 +111,16 @@ function evaluateRows(rows) {
 }
 
 async function main() {
-  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
   const payload = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
   const modelProvenance = payload.models && typeof payload.models === 'object'
     ? { ...payload.models, generatedAt: payload.generatedAt || null }
     : null;
   const rows = (Array.isArray(payload.results) ? payload.results : []).map(cleanRow).filter((row) => row.id && row.aiImpactClassification);
+  if (benchmarkOnly) {
+    console.log(JSON.stringify({ inputPath, evalSetPath, benchmarkOnly: true, inputRows: rows.length, benchmark: evaluateRows(rows) }, null, 2));
+    return;
+  }
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
   const existing = await prisma.testimony.findMany({
     where: { jurisdictionId, moderationStatus: 'APPROVED', id: { in: rows.map((row) => row.id) } },
     select: { id: true },
