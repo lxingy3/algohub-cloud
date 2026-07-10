@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 
 const checks = [
   {
-    name: 'live_smoke',
+    name: 'js_fallback_smoke',
     command: ['scripts/run-task2-5-live-smoke.mjs'],
   },
   {
@@ -109,6 +109,9 @@ const failedChecks = reports.filter((report) => report.status !== 'PASS').length
 
 const combined = {
   status: failedChecks === 0 && issueCount === 0 ? 'PASS' : 'FAIL',
+  scope: 'development regression only',
+  releaseEligible: false,
+  releaseReason: 'A research-team approved benchmark with at least 50 labeled records is still required.',
   issueCount,
   checks: reports,
 };

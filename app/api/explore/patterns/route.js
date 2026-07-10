@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { anonymizedExcerpt, getApprovedBriefingCorpus, parseExploreFilters } from '../../../../lib/briefingsExplore';
 import { prisma } from '../../../../lib/prisma';
+import { BRIEFINGS_EMBEDDING_MODEL } from '../../../../lib/semanticEmbeddings';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,7 @@ export async function GET(request) {
 
   return NextResponse.json({
     label: 'suggested corpus patterns',
-    method: 'saved corpus batch fields from sentence-transformers embeddings, UMAP, HDBSCAN, BERTopic, and KeyBERT topic labels',
+    method: `saved corpus batch fields from ${BRIEFINGS_EMBEDDING_MODEL} via sentence-transformers, UMAP, HDBSCAN, BERTopic, and KeyBERT topic labels`,
     total: rows.length,
     topics,
     points: filters.lens === 'government' ? [] : rows.filter((row) => row.umapX !== null && row.umapY !== null).map((row) => ({

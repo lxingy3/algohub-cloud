@@ -792,8 +792,8 @@ function currentMethod(block) {
   const evidenceBlocks = new Set(['L6', 'IC6']);
   const claimBlocks = new Set(['C7', 'L7', 'G4', 'IC7', 'GC3']);
   const comparableBlocks = new Set(['CC2', 'G7', 'GC7']);
-  if (impactBlocks.has(code)) return 'Impact labels are read from stored story records. New refresh runs use BART-MNLI, with confidence kept for review.';
-  if (themeBlocks.has(code)) return 'Theme labels are read from stored story records and counted here. Emergent topics come from the corpus batch.';
+  if (impactBlocks.has(code)) return 'Impact labels are read from stored story records. Local refresh uses BART-MNLI; results that still need review are not auto-published.';
+  if (themeBlocks.has(code)) return 'Theme labels are read from stored story records. Local refresh uses multi-label BART-MNLI; emergent topics come from the separate corpus batch.';
   if (excerptBlocks.has(code)) return 'Excerpts are anonymized, then selected from saved cluster/outlier fields so common and less common stories both appear.';
   if (claimBlocks.has(code)) return 'Stored claims are matched to approved stories with cached sentence-transformers cosine similarity. Any prose comparison remains a reviewed draft.';
   if (silenceBlocks.has(code)) return 'The score combines volume gap, sentence-transformers cosine coverage, domain gap, and impact weight.';

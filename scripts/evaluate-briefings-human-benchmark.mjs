@@ -126,5 +126,9 @@ if (args['self-check']) {
   selfCheck();
 } else {
   const input = readJson(inputPath);
-  console.log(JSON.stringify({ inputPath, results: resultPaths.map((path) => evaluate(input, path)) }, null, 2));
+  console.log(JSON.stringify({
+    inputPath,
+    benchmarkType: 'domain-bucket heuristic; not research-team labels',
+    results: resultPaths.map((path) => evaluate(input, path)),
+  }, null, 2));
 }

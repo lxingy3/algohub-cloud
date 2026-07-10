@@ -47,6 +47,8 @@ function evaluateRows(rows) {
   if (!fs.existsSync(evalSetPath)) return null;
   const payload = JSON.parse(fs.readFileSync(evalSetPath, 'utf8'));
   const expectedRows = Array.isArray(payload) ? payload : payload.records || [];
+  const curatedBy = Array.isArray(payload) ? '' : String(payload.curatedBy || '').trim();
+  const approvedForRelease = Boolean(!Array.isArray(payload) && payload.approvedForRelease === true && curatedBy && expectedRows.length >= 50);
   const byId = new Map(rows.map((row) => [row.id, row]));
   let matched = 0;
   let correctImpact = 0;
@@ -68,12 +70,16 @@ function evaluateRows(rows) {
   const themeRecall = expectedThemeCount ? foundThemeCount / expectedThemeCount : 0;
   return {
     evalSetPath,
+    approvedForRelease,
+    benchmarkSize: expectedRows.length,
+    curatedBy: curatedBy || null,
     matched,
     impactAccuracy: Number(impactAccuracy.toFixed(4)),
     themeRecall: Number(themeRecall.toFixed(4)),
     requiredImpactAccuracy: 0.75,
     requiredThemeRecall: 0.7,
-    passed: impactAccuracy >= 0.75 && themeRecall >= 0.7,
+    passed: approvedForRelease && impactAccuracy >= 0.75 && themeRecall >= 0.7,
+    reason: approvedForRelease ? null : 'Release benchmark must be research-team approved and contain at least 50 labeled records.',
   };
 }
 

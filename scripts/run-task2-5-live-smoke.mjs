@@ -1,5 +1,7 @@
 import { analyzeNarrativeTextWithModels } from '../lib/mlFullAnalysis.js';
 
+process.env.TASK25_DISABLE_LOCAL_RUNNER = 'true';
+
 const samples = [
   {
     name: 'pittsburgh_service_story',
@@ -106,6 +108,7 @@ for (const sample of samples) {
 }
 
 const report = {
+  runtime: 'js-fallback-smoke',
   status: issues.length ? 'FAIL' : 'PASS',
   issueCount: issues.length,
   issues,

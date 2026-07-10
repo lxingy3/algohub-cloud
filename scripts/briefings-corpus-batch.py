@@ -31,11 +31,20 @@ SYNTHETIC_RECORDS = [
 
 def clean_label(words):
     useful = [
-        word for word in words
+        str(word).strip() for word in words
         if word and not word.isdigit() and word.lower() not in STOPWORDS
     ]
-    label = " / ".join(useful[:4]).strip()
-    return label or "suggested topic"
+    selected = []
+    for phrase in useful:
+        overlaps = [current for current in selected if phrase.lower() in current.lower() or current.lower() in phrase.lower()]
+        if overlaps:
+            longest = max([phrase, *overlaps], key=len)
+            selected = [current for current in selected if current not in overlaps]
+            selected.append(longest)
+        elif phrase.lower() not in {current.lower() for current in selected}:
+            selected.append(phrase)
+    label = " / ".join(selected[:4]).strip()
+    return label.title() if label else "Suggested topic"
 
 
 def topic_id_or_none(topic_id):
@@ -89,33 +98,6 @@ def keybert_keywords(keyword_model, texts, indexes):
     ][:8]
 
 
-def canonical_topic_label(records, indexes, words, texts):
-    keyword_text = " ".join(words).lower()
-    domain_counts = Counter(records[index].get("affectedDomain") or "" for index in indexes)
-    top_domain = domain_counts.most_common(1)[0][0].lower() if domain_counts else ""
-    text = f"{keyword_text} {top_domain}"
-    rules = [
-        (("student", "school", "academic risk", "lunch portal"), "Student Support and Risk Labels"),
-        (("dispatcher", "dispatch triage", "emergency dispatch"), "Emergency Dispatch Triage"),
-        (("transit safety", "traffic citation", "wrong station", "maintenance"), "Transit and Traffic Report Routing"),
-        (("old address", "voucher", "shelter address"), "Housing Records and Voucher Eligibility"),
-        (("unhoused", "community voice", "nobody trusts"), "Housing Access, Trust, and Voice"),
-        (("housing inspection", "building", "utility help", "low priority"), "Housing Conditions and Service Priority"),
-        (("job workshop", "job matching", "resource recommendation"), "Employment and Service Recommendations"),
-        (("family screening", "child welfare", "cps", "risk score"), "Family Screening Risk and Support"),
-        (("housing", "unhoused", "shelter", "tenant"), "Housing Access and Priority"),
-        (("benefits", "eligibility", "appeal", "review"), "Benefits Review and Eligibility"),
-        (("dispatcher", "emergency", "traffic", "transit", "safety", "inspection", "building"), "Public Safety Response and Inspection"),
-        (("job", "employment", "interview", "worker matching"), "Job Matching and Employment Access"),
-        (("language", "translation", "interpreter"), "Language Access and Service Navigation"),
-        (("student", "school", "counselor"), "Student Support and Risk Labels"),
-    ]
-    for terms, label in rules:
-        if any(term in text for term in terms):
-            return label
-    return None
-
-
 def build_topics(records, topic_ids, texts, topic_model=None, keyword_model=None):
     grouped = defaultdict(list)
     for index, topic_id in enumerate(topic_ids):
@@ -140,8 +122,8 @@ def build_topics(records, topic_ids, texts, topic_model=None, keyword_model=None
             except Exception:
                 words = []
         keybert_words = keybert_keywords(keyword_model, texts, indexes)
-        label_words = keybert_words or words
-        label = canonical_topic_label(records, indexes, label_words, texts) or (clean_label(label_words) if label_words else None) or info.get("Name") or keyword_label(texts, indexes)
+        label_words = words or keybert_words
+        label = (clean_label(label_words) if label_words else None) or info.get("Name") or keyword_label(texts, indexes)
         algorithm_ids = {algorithm_id for index in indexes for algorithm_id in records[index].get("algorithmIds", [])}
         domains = {records[index].get("affectedDomain") for index in indexes if records[index].get("affectedDomain")}
         topics.append({
@@ -250,6 +232,9 @@ def run_lightweight_self_check(output_path):
     from sklearn.decomposition import PCA
     from sklearn.feature_extraction.text import TfidfVectorizer
 
+    if clean_label(["housing", "allocation algorithm", "allocation", "housing allocation algorithm"]) != "Housing Allocation Algorithm":
+        raise AssertionError("topic label formatting must remove redundant model terms")
+
     records = [
         {"id": item_id, "analysisText": text, "affectedDomain": text.split()[0].lower(), "algorithmIds": []}
         for item_id, text in SYNTHETIC_RECORDS
@@ -334,18 +319,10 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
     neighbors = n_neighbors_arg or max(2, min(10, len(records) - 1))
     cluster_size = min_cluster_size_arg or min_cluster_size(len(records))
     min_samples = min_samples_arg or 2
-    umap_model = UMAP(n_components=5, n_neighbors=neighbors, min_dist=0.0, metric="cosine", random_state=42)
-    cluster_model = HDBSCAN(
+    umap_model = UMAP(n_components=2, n_neighbors=neighbors, min_dist=0.0, metric="cosine", random_state=42)
+    hdbscan_model = HDBSCAN(
         min_cluster_size=cluster_size,
         min_samples=min_samples,
-        metric="euclidean",
-        cluster_selection_method="eom",
-        prediction_data=True,
-    )
-    topic_cluster_size = max(2, min(10, round(len(records) * 0.06)))
-    topic_cluster_model = HDBSCAN(
-        min_cluster_size=topic_cluster_size,
-        min_samples=1,
         metric="euclidean",
         cluster_selection_method="eom",
         prediction_data=True,
@@ -354,44 +331,21 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
     topic_model = BERTopic(
         embedding_model=None,
         umap_model=umap_model,
-        hdbscan_model=topic_cluster_model,
+        hdbscan_model=hdbscan_model,
         vectorizer_model=vectorizer_model,
         calculate_probabilities=False,
         verbose=True,
     )
 
     topic_ids, _probabilities = topic_model.fit_transform(texts, embeddings)
-    umap_xy = UMAP(
-        n_components=2,
-        n_neighbors=neighbors,
-        min_dist=0.0,
-        metric="cosine",
-        random_state=42,
-    ).fit_transform(embeddings)
-    cluster_ids = cluster_model.fit_predict(embeddings)
+    umap_xy = topic_model.umap_model.embedding_
+    cluster_ids = topic_model.hdbscan_model.labels_
     topics = build_topics(records, topic_ids, texts, topic_model, keyword_model)
     params = {
         "embeddingModel": model_name,
-        "umap": {
-            "metric": "cosine",
-            "randomState": 42,
-            "nNeighbors": neighbors,
-            "clusterComponents": 5,
-            "mapComponents": 2,
-        },
-        "hdbscan": {
-            "input": "normalized testimony embeddings",
-            "minClusterSize": cluster_size,
-            "minSamples": min_samples,
-            "metric": "euclidean",
-            "clusterSelectionMethod": "eom",
-        },
-        "bertopic": {
-            "umapComponents": 5,
-            "minClusterSize": topic_cluster_size,
-            "minSamples": 1,
-            "topicMinusOneStoredAsNull": True,
-        },
+        "umap": {"metric": "cosine", "randomState": 42, "nNeighbors": neighbors, "nComponents": 2},
+        "hdbscan": {"minClusterSize": cluster_size, "minSamples": min_samples, "metric": "euclidean", "clusterSelectionMethod": "eom"},
+        "bertopic": {"topicMinusOneStoredAsNull": True},
         "keybert": {"keywordNgramRange": [1, 3], "topN": 10, "useMmr": True, "diversity": 0.45},
         "semanticCache": {
             "dimensions": int(all_embeddings.shape[1]),

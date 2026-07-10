@@ -50,6 +50,7 @@ function purity(groups, sourceById, labelFn) {
 
 function summarize(input, resultPath) {
   const result = readJson(resultPath);
+  validateBatch(input, result);
   const sourceById = new Map(input.records.map((row) => [row.id, row]));
   const records = result.records || [];
   const topicGroups = groupBy(records.filter((row) => row.topicId !== null), (row) => row.topicId);
@@ -77,6 +78,27 @@ function summarize(input, resultPath) {
     weakestTopics: domainByTopic.details.sort((a, b) => a.purity - b.purity).slice(0, 3).map(compactDetail),
     warnings: result.warnings || [],
   };
+}
+
+function validateBatch(input, result) {
+  const records = result.records || [];
+  assert.equal(records.length, input.records.length, 'batch must return every input story');
+  assert.equal(result.params?.umap?.nComponents, 2, 'UMAP map must be 2-D');
+  assert.equal(result.params?.hdbscan?.minClusterSize, Math.max(3, Math.floor(input.records.length / 10)));
+  assert.equal(result.params?.hdbscan?.minSamples, 2);
+  assert.ok(records.every((row) => Number.isFinite(row.umapX) && Number.isFinite(row.umapY)), 'UMAP coordinates are incomplete');
+  assert.ok(records.every((row) => row.isOutlier === (row.clusterId === -1)), 'HDBSCAN noise flag is inconsistent');
+  assert.ok(records.every((row) => !row.isOutlier || row.topicId === null), 'BERTopic noise must be stored as null');
+  const topicCounts = new Map();
+  for (const row of records) {
+    if (row.topicId !== null) topicCounts.set(row.topicId, (topicCounts.get(row.topicId) || 0) + 1);
+  }
+  assert.ok((result.topics || []).every((topic) => topic.size === topicCounts.get(topic.topicId)), 'topic sizes do not match story assignments');
+  const expectedEmbeddings = input.records.length
+    + (input.algorithms || []).length
+    + (input.algorithms || []).flatMap((algorithm) => algorithm.claims || []).length
+    + (input.crossJurisdictionInsights || []).length;
+  assert.equal((result.semanticEmbeddings || []).length, expectedEmbeddings, 'semantic cache is incomplete');
 }
 
 function compactDetail(row) {
