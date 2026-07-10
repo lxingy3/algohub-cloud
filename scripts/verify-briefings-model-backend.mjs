@@ -25,8 +25,10 @@ const governmentStories = await get('/api/testimonies?fields=excerpt&scope=corpu
 const governmentPatterns = await get('/api/explore/patterns?scope=corpus&lens=government');
 const communityStories = await get('/api/testimonies?fields=excerpt&scope=corpus&lens=community&limit=50');
 
-assert.match(impact.method, /BART-MNLI/);
+assert.match(impact.method, /stored impact labels/);
+assert.doesNotMatch(impact.method, /BART-MNLI/);
 assert.equal(impact.reviewThreshold, 0.85);
+assert.match(themes.method, /stored multi-label themes/);
 assert.match(themes.method, /above 0\.5/);
 assert.ok(themes.themes.every((row) => row.label === 'suggested'));
 assert.match(patterns.method, /UMAP.*HDBSCAN.*BERTopic.*KeyBERT/);
