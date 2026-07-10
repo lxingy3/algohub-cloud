@@ -15,7 +15,7 @@ export async function GET(request) {
 
   return NextResponse.json({
     label: 'suggested impact distribution',
-    method: `stored BART-MNLI impact labels with self-reported impact comparison; confidence <= ${REVIEW_THRESHOLD} stays in review`,
+    method: `stored impact labels with self-reported impact comparison; confidence <= ${REVIEW_THRESHOLD} stays in review`,
     total: rows.length,
     selfReported: countBy(rows, (row) => row.selfReportedImpact, { minCount }),
     aiSuggested: countBy(rows, (row) => row.aiImpactClassification, { minCount }),

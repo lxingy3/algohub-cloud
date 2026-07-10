@@ -33,7 +33,7 @@ export async function GET(request) {
 
   return NextResponse.json({
     label: 'monthly suggested pattern trend',
-    method: 'time aggregation over submitted_at, stored BART-MNLI impact labels, and stored theme labels',
+    method: 'time aggregation over submitted_at, stored impact labels, and stored theme labels',
     buckets: [...buckets.values()].filter((bucket) => bucket.total >= minCount).sort((a, b) => a.month.localeCompare(b.month)),
     markers,
   });

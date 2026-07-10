@@ -49,7 +49,7 @@ export async function GET(request) {
 
   return NextResponse.json({
     label: 'suggested evidence strength',
-    method: 'derived statistics over stored story counts, BART-MNLI confidence, impact mix, and HDBSCAN outlier flags',
+    method: 'derived statistics over stored story counts, classifier confidence, impact mix, and HDBSCAN outlier flags',
     totalStories: rows.length,
     representation: summarizeRepresentation(rows),
     findings,

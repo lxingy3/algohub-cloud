@@ -12,6 +12,7 @@ from transformers import pipeline
 
 TASK2_MODEL = os.environ.get("TASK2_IMPACT_MODEL", "facebook/bart-large-mnli")
 TASK3_MODEL = os.environ.get("TASK3_THEME_MODEL", "facebook/bart-large-mnli")
+TASK4_MODEL = os.environ.get("SPACY_MODEL", "en_core_web_trf")
 TASK5_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 IMPACT_LABELS = {
@@ -591,6 +592,13 @@ def classify_impact(classifier, text: str) -> dict:
     }
 
 
+def load_spacy_model():
+    try:
+        return spacy.load(TASK4_MODEL), TASK4_MODEL
+    except OSError:
+        return spacy.load("en_core_web_sm"), "en_core_web_sm"
+
+
 def find_theme_evidence(text: str, theme: str) -> list[str]:
     evidence = []
     lower_text = text.lower()
@@ -904,7 +912,7 @@ def main() -> None:
     print("Loading BART theme detector...")
     theme_classifier = pipeline("zero-shot-classification", model=TASK3_MODEL, tokenizer=TASK3_MODEL, device=-1)
     print("Loading spaCy entity model...")
-    nlp = spacy.load("en_core_web_sm")
+    nlp, task4_model = load_spacy_model()
     print("Loading KeyBERT keyword model...")
     keyword_model = KeyBERT(model=TASK5_MODEL)
 
@@ -967,7 +975,7 @@ def main() -> None:
         "task4-entity-extraction-results.json": {
             "task": "Task 4: Entity Extraction",
             "tool": "spaCy",
-            "model": "en_core_web_sm",
+            "model": task4_model,
             "inputField": "narrativeText",
             "outputFields": ["aiExtractedExperiences.entities"],
             "generatedAt": generated_at,
@@ -986,6 +994,12 @@ def main() -> None:
         "task2-5-combined-results.json": {
             "task": "ML Part 1 Task 2-5",
             "inputField": "narrativeText",
+            "models": {
+                "task2": {"model": TASK2_MODEL, "threshold": 0.85},
+                "task3": {"model": TASK3_MODEL, "presentThreshold": 0.5, "suggestedBelow": 0.75},
+                "task4": {"model": task4_model},
+                "task5": {"model": TASK5_MODEL},
+            },
             "generatedAt": generated_at,
             "results": combined_rows,
         },

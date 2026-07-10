@@ -68,6 +68,8 @@ function evaluateRows(rows) {
   if (!matched) return null;
   const impactAccuracy = correctImpact / matched;
   const themeRecall = expectedThemeCount ? foundThemeCount / expectedThemeCount : 0;
+  const minimumBenchmarkSize = 50;
+  const enoughMatchedRows = matched >= minimumBenchmarkSize;
   return {
     evalSetPath,
     approvedForRelease,
@@ -78,14 +80,22 @@ function evaluateRows(rows) {
     themeRecall: Number(themeRecall.toFixed(4)),
     requiredImpactAccuracy: 0.75,
     requiredThemeRecall: 0.7,
-    passed: approvedForRelease && impactAccuracy >= 0.75 && themeRecall >= 0.7,
-    reason: approvedForRelease ? null : 'Release benchmark must be research-team approved and contain at least 50 labeled records.',
+    minimumBenchmarkSize,
+    passed: approvedForRelease && enoughMatchedRows && impactAccuracy >= 0.75 && themeRecall >= 0.7,
+    reason: !approvedForRelease
+      ? 'Release benchmark must be research-team approved and contain at least 50 labeled records.'
+      : !enoughMatchedRows
+        ? 'At least 50 approved benchmark records must match model output.'
+        : null,
   };
 }
 
 async function main() {
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
   const payload = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
+  const modelProvenance = payload.models && typeof payload.models === 'object'
+    ? { ...payload.models, generatedAt: payload.generatedAt || null }
+    : null;
   const rows = (Array.isArray(payload.results) ? payload.results : []).map(cleanRow).filter((row) => row.id && row.aiImpactClassification);
   const existing = await prisma.testimony.findMany({
     where: { jurisdictionId, moderationStatus: 'APPROVED', id: { in: rows.map((row) => row.id) } },
@@ -107,7 +117,9 @@ async function main() {
       aiImpactClassification: row.aiImpactClassification,
       aiConfidenceScore: row.aiConfidenceScore,
       aiThemes: row.aiThemes,
-      aiExtractedExperiences: row.aiExtractedExperiences,
+      aiExtractedExperiences: modelProvenance
+        ? { ...row.aiExtractedExperiences, modelProvenance }
+        : row.aiExtractedExperiences,
       aiProcessedAt: new Date(),
     },
   })), { maxWait: 10000, timeout: 120000 });

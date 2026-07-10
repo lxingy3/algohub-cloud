@@ -39,6 +39,7 @@ for (const row of silence.rows) {
     0.4 * row.factors.volumeGap + 0.3 * row.factors.semanticGap + 0.3 * row.factors.domainGap
   ));
   assert.ok(Math.abs(row.silenceScore - expected) <= 0.02, `${row.algorithmName} silence score drifted`);
+  assert.ok(Array.isArray(row.possibleReasons) && row.possibleReasons.length > 0, `${row.algorithmName} has no silence reason`);
 }
 assert.match(recognition.method, /sentence-transformers cosine/);
 assert.equal(recognition.cachedEmbeddingCoverage.model, 'Qwen/Qwen3-Embedding-0.6B');

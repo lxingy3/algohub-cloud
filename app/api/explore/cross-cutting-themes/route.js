@@ -73,7 +73,7 @@ export async function GET(request) {
     .sort((a, b) => b.count - a.count || a.source.localeCompare(b.source) || a.target.localeCompare(b.target));
 
   return NextResponse.json({
-    method: 'stored BART-MNLI multi-label themes above 0.5 aggregated into theme counts and co-occurrence pairs; themes below 0.75 remain suggested for review; corpus topics are shown separately in /api/explore/patterns',
+    method: 'stored multi-label themes above 0.5 aggregated into theme counts and co-occurrence pairs; themes below 0.75 remain suggested for review; corpus topics are shown separately in /api/explore/patterns',
     totalStories: rows.length,
     themes,
     coOccurrences,

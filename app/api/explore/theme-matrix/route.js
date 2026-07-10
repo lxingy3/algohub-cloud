@@ -21,7 +21,7 @@ export async function GET(request) {
   }
   return NextResponse.json({
     label: `suggested ${filters.dimension === 'algorithm' ? 'algorithm' : 'domain'}-theme matrix`,
-    method: 'matrix aggregation over stored BART-MNLI theme labels by domain or algorithm',
+    method: 'matrix aggregation over stored theme labels by domain or algorithm',
     dimension: filters.dimension === 'algorithm' ? 'algorithm' : 'domain',
     rows: [...cells.entries()].map(([key, count]) => {
       const [group, theme] = key.split('|||');
