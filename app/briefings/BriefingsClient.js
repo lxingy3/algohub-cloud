@@ -272,32 +272,39 @@ export function BriefingsClient() {
   useEffect(() => {
     let cancelled = false;
     setLiveSnapshot(null);
-    const getJson = (path, query = liveQuery) => fetch(`${path}${query}`).then((response) => response.json());
-    Promise.all([
-      getJson('/api/explore/landscape'),
-      getJson('/api/explore/impact'),
-      getJson('/api/explore/cross-cutting-themes'),
-      getJson('/api/explore/patterns'),
-      getJson('/api/explore/coverage'),
-      getJson('/api/explore/evidence-strength'),
-      getJson('/api/explore/silence'),
-      getJson('/api/explore/theme-matrix'),
-      getJson('/api/explore/trend'),
-      getJson('/api/explore/recognition'),
-      getJson('/api/explore/compare'),
-      getJson('/api/explore/claim-vs-experience'),
-      getJson('/api/explore/cross-jurisdiction'),
-      getJson('/api/testimonies', excerptQuery),
-      fetch('/api/organizations?role=library&limit=6').then((response) => response.json()),
-      fetch('/api/events?limit=6').then((response) => response.json()),
-      fetch('/api/algorithms?status=PROPOSED,UNDER_REVIEW&limit=6').then((response) => response.json()),
-      fetch(`/api/briefings${briefingQuery}`).then((response) => response.json()),
-    ]).then(([landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, crossJurisdiction, excerpts, organizations, events, proposedAlgorithms, briefings]) => {
+    const getJson = (path, query = liveQuery) => fetch(`${path}${query}`).then((response) => {
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
+    });
+    const requests = [
+      ['landscape', getJson('/api/explore/landscape')],
+      ['impact', getJson('/api/explore/impact')],
+      ['themes', getJson('/api/explore/cross-cutting-themes')],
+      ['patterns', getJson('/api/explore/patterns')],
+      ['coverage', getJson('/api/explore/coverage')],
+      ['evidence', getJson('/api/explore/evidence-strength')],
+      ['silence', getJson('/api/explore/silence')],
+      ['themeMatrix', getJson('/api/explore/theme-matrix')],
+      ['trend', getJson('/api/explore/trend')],
+      ['recognition', getJson('/api/explore/recognition')],
+      ['compare', getJson('/api/explore/compare')],
+      ['claimVsExperience', getJson('/api/explore/claim-vs-experience')],
+      ['crossJurisdiction', getJson('/api/explore/cross-jurisdiction')],
+      ['excerpts', getJson('/api/testimonies', excerptQuery)],
+      ['organizations', getJson('/api/organizations?role=library&limit=6', '')],
+      ['events', getJson('/api/events?limit=6', '')],
+      ['proposedAlgorithms', getJson('/api/algorithms?status=PROPOSED,UNDER_REVIEW&limit=6', '')],
+      ['briefings', getJson(`/api/briefings${briefingQuery}`, '')],
+    ];
+    Promise.allSettled(requests.map(([, request]) => request)).then((results) => {
       if (!cancelled) {
-        setLiveSnapshot({ landscape, impact, themes, patterns, coverage, evidence, silence, themeMatrix, trend, recognition, compare, claimVsExperience, crossJurisdiction, excerpts, organizations, events, proposedAlgorithms, briefings });
+        const snapshot = Object.fromEntries(results.map((result, index) => [
+          requests[index][0],
+          result.status === 'fulfilled' ? result.value : null,
+        ]));
+        const unavailable = results.flatMap((result, index) => result.status === 'rejected' ? [requests[index][0]] : []);
+        setLiveSnapshot({ ...snapshot, unavailable, error: unavailable.length === requests.length });
       }
-    }).catch(() => {
-      if (!cancelled) setLiveSnapshot({ error: true });
     });
     return () => {
       cancelled = true;
