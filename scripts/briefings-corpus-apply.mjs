@@ -53,8 +53,14 @@ async function assertBriefingSchemaReady() {
   const missing = ['cluster_id', 'is_outlier', 'topic_id', 'umap_x', 'umap_y'].filter((column) => !columns.has(column));
   const tableRows = await prisma.$queryRaw`SELECT to_regclass('public.corpus_topics')::text AS table_name`;
   const hasCorpusTopics = Boolean(tableRows?.[0]?.table_name);
-  if (missing.length || !hasCorpusTopics) {
-    throw new Error(`Briefings schema migration is not applied. Missing: ${[...missing, hasCorpusTopics ? null : 'corpus_topics'].filter(Boolean).join(', ')}`);
+  const embeddingRows = await prisma.$queryRaw`SELECT to_regclass('public.semantic_embeddings')::text AS table_name`;
+  const hasSemanticEmbeddings = Boolean(embeddingRows?.[0]?.table_name);
+  if (missing.length || !hasCorpusTopics || !hasSemanticEmbeddings) {
+    throw new Error(`Briefings schema migration is not applied. Missing: ${[
+      ...missing,
+      hasCorpusTopics ? null : 'corpus_topics',
+      hasSemanticEmbeddings ? null : 'semantic_embeddings',
+    ].filter(Boolean).join(', ')}`);
   }
 }
 
@@ -67,6 +73,31 @@ function cleanRecord(row, validTopicIds) {
     topicId: Number.isInteger(topicId) && validTopicIds.has(topicId) ? topicId : null,
     umapX: row.umapX === null || row.umapX === undefined ? null : Number(row.umapX),
     umapY: row.umapY === null || row.umapY === undefined ? null : Number(row.umapY),
+    sensitiveEntities: cleanSensitiveEntities(row.sensitiveEntities),
+  };
+}
+
+function cleanSensitiveEntities(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const clean = (items) => [...new Set((Array.isArray(items) ? items : []).map((item) => String(item || '').trim()).filter((item) => item.length >= 3))];
+  return { people: clean(value.people), addresses: clean(value.addresses) };
+}
+
+function mergeSensitiveEntities(current, sensitiveEntities) {
+  if (!sensitiveEntities) return undefined;
+  const base = current && typeof current === 'object' && !Array.isArray(current) ? current : {};
+  const entities = base.entities && typeof base.entities === 'object' && !Array.isArray(base.entities) ? base.entities : {};
+  return { ...base, entities: { ...entities, ...sensitiveEntities } };
+}
+
+function cleanSemanticEmbedding(row) {
+  const vector = Array.isArray(row.vector) ? row.vector.map(Number) : [];
+  if (!row.entityType || !row.entityId || !row.contentHash || !vector.length || vector.some((value) => !Number.isFinite(value))) return null;
+  return {
+    entityType: String(row.entityType),
+    entityId: String(row.entityId),
+    contentHash: String(row.contentHash),
+    vector,
   };
 }
 
@@ -75,6 +106,12 @@ async function main() {
   const payload = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
   const topics = requireArray(payload.topics, 'topics');
   const records = requireArray(payload.records, 'records');
+  const model = String(payload.model || '').trim();
+  const semanticEmbeddings = requireArray(payload.semanticEmbeddings, 'semanticEmbeddings')
+    .map(cleanSemanticEmbedding)
+    .filter(Boolean);
+  if (!payload.jurisdictionId) throw new Error('jurisdictionId is required.');
+  if (!model) throw new Error('model is required when applying semantic embeddings.');
   const warnings = Array.isArray(payload.warnings) ? payload.warnings : [];
   if (!allowSmallCorpus && warnings.some((warning) => String(warning).includes('fewer than 5'))) {
     throw new Error('Refusing to apply a small-corpus batch. Review JSON only, or pass --allow-small-corpus intentionally.');
@@ -86,6 +123,11 @@ async function main() {
   const cleanRecords = records.map((record) => cleanRecord(record, validTopicIds)).filter((record) => record.id);
   const selectedRecords = cleanRecords.slice(0, limit);
   const now = new Date();
+  const currentExperiences = await prisma.testimony.findMany({
+    where: { id: { in: selectedRecords.map((record) => record.id) } },
+    select: { id: true, aiExtractedExperiences: true },
+  });
+  const currentExperiencesById = new Map(currentExperiences.map((row) => [row.id, row.aiExtractedExperiences]));
 
   if (dryRun) {
     console.log(JSON.stringify({
@@ -94,6 +136,8 @@ async function main() {
       topics: topics.length,
       records: cleanRecords.length,
       selectedRecords: selectedRecords.length,
+      semanticEmbeddings: semanticEmbeddings.length,
+      model,
       warnings,
       sample: selectedRecords.slice(0, 3),
     }, null, 2));
@@ -135,10 +179,38 @@ async function main() {
           topicId: record.topicId,
           umapX: Number.isFinite(record.umapX) ? record.umapX : null,
           umapY: Number.isFinite(record.umapY) ? record.umapY : null,
+          ...(record.sensitiveEntities ? { aiExtractedExperiences: mergeSensitiveEntities(currentExperiencesById.get(record.id), record.sensitiveEntities) } : {}),
         },
       });
     }
-  }, { maxWait: 10000, timeout: 30000 });
+
+    for (const embedding of semanticEmbeddings) {
+      await tx.semanticEmbedding.upsert({
+        where: {
+          jurisdictionId_entityType_entityId_model: {
+            jurisdictionId: payload.jurisdictionId,
+            entityType: embedding.entityType,
+            entityId: embedding.entityId,
+            model,
+          },
+        },
+        update: {
+          vector: embedding.vector,
+          contentHash: embedding.contentHash,
+          generatedAt: now,
+        },
+        create: {
+          jurisdictionId: payload.jurisdictionId,
+          entityType: embedding.entityType,
+          entityId: embedding.entityId,
+          model,
+          vector: embedding.vector,
+          contentHash: embedding.contentHash,
+          generatedAt: now,
+        },
+      });
+    }
+  }, { maxWait: 10000, timeout: 120000 });
 
   const relationSample = await prisma.testimony.findFirst({
     where: { topicId: { not: null } },
@@ -149,6 +221,8 @@ async function main() {
     dryRun: false,
     topicsUpserted: topics.length,
     recordsUpdated: selectedRecords.length,
+    semanticEmbeddingsUpserted: semanticEmbeddings.length,
+    model,
     relationSample,
     warnings,
   }, null, 2));

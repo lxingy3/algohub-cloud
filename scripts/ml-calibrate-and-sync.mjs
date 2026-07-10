@@ -210,6 +210,11 @@ function requireEnv(name) {
   return process.env[name];
 }
 
+function requireOneEnv(names) {
+  if (names.some((name) => process.env[name])) return;
+  throw new Error(`${names.join(' or ')} is required.`);
+}
+
 function scoreMatch(expected, actual) {
   if (!actual) return false;
   if (expected === 'MIXED') return ['MIXED', 'NEGATIVE', 'POSITIVE'].includes(actual);
@@ -428,7 +433,7 @@ async function main() {
   }
 
   requireEnv('ML_WORKER_TOKEN');
-  requireEnv('ML_DEBERTA_ENDPOINT');
+  requireOneEnv(['ML_IMPACT_ENDPOINT', 'ML_BART_ENDPOINT']);
   requireEnv('ML_BART_ENDPOINT');
   requireEnv('ML_SPACY_ENDPOINT');
   requireEnv('ML_KEYBERT_ENDPOINT');
@@ -463,7 +468,7 @@ async function main() {
     generatedAt: new Date().toISOString(),
     jurisdictionId,
     tools: {
-      task2: 'MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33',
+      task2: process.env.TASK2_IMPACT_MODEL || 'facebook/bart-large-mnli',
       task3: 'facebook/bart-large-mnli',
       task4: 'spaCy',
       task5: 'KeyBERT',

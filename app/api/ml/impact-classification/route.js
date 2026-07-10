@@ -40,6 +40,8 @@ async function pendingPipelineResponse(limit = 10) {
   return NextResponse.json({
     status: 'READY_FOR_TASK2_WORKER',
     task: 'Task 2: impact classification',
+    expectedModel: process.env.TASK2_IMPACT_MODEL || 'facebook/bart-large-mnli',
+    workerEndpoint: process.env.ML_IMPACT_ENDPOINT || process.env.ML_BART_ENDPOINT || null,
     inputField: 'narrativeText',
     outputFields: ['aiImpactClassification', 'aiConfidenceScore'],
     labels: [...labels],
@@ -78,7 +80,7 @@ async function completeClassification({ testimonyId, classification, confidence 
       testimonyId,
       aiImpactClassification: normalizedClassification,
       aiConfidenceScore: numericConfidence,
-      humanReviewRequired: numericConfidence < 0.85,
+      humanReviewRequired: numericConfidence <= 0.85,
     },
   });
 }

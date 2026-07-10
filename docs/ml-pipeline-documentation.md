@@ -33,7 +33,7 @@ If the original story text was only the voice placeholder, the transcript also b
 
 ## Task 2: impact classification
 
-Task 2 classifies a story as positive, negative, mixed, or unclear. The current model path uses the open-source zero-shot classifier `MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33` through the local Python runner or a self-hosted worker. The app also includes tuned phrase rules for Pittsburgh public service stories as a degraded fallback when the local model environment is unavailable.
+Task 2 classifies a story as positive, negative, mixed, or unclear. The current model path uses `facebook/bart-large-mnli` as the local/open-source zero-shot classifier through the Python runner or a self-hosted worker. The app also includes tuned phrase rules for Pittsburgh public service stories as a degraded fallback when the local model environment is unavailable.
 
 The formal database fields are:
 
@@ -47,7 +47,7 @@ The admin page reads those stored fields first. If a stored value is missing, th
 
 Task 3 detects themes such as data accuracy, opacity, delayed outcome, arbitrary outcome, lack of recourse, loss of dignity, positive experience, and process confusion.
 
-The current model path uses `facebook/bart-large-mnli` as a zero-shot classifier through the local Python runner or a self-hosted worker. The app also has local theme rules that were tuned with Pittsburgh-style stories and the Week 7 test set. This gives the interface a useful result even when the local model environment is unavailable.
+The current model path uses `facebook/bart-large-mnli` as a multi-label zero-shot classifier through the local Python runner or a self-hosted worker. The app also has local theme rules that were tuned with Pittsburgh-style stories and the Week 7 test set. This gives the interface a useful result even when the local model environment is unavailable.
 
 The formal database field is:
 
@@ -57,7 +57,7 @@ Each theme item stores a theme label and confidence score.
 
 ## Task 4: entity extraction
 
-Task 4 extracts structured references from the story text. The current extraction combines pattern matching, public-service dictionaries, and Pittsburgh-specific names gathered during testing.
+Task 4 extracts structured references from the story text. The current extraction uses spaCy NER, then adds public-service dictionaries and Pittsburgh-specific names gathered during testing.
 
 The stored groups are:
 
@@ -75,7 +75,7 @@ Examples of the Pittsburgh-specific values include Pittsburgh Housing Authority,
 
 ## Task 5: keyword extraction
 
-Task 5 extracts short phrases that help reviewers identify what the story is about. The current implementation uses a backend keyword extraction flow tuned for public service narratives. It prefers phrases that carry meaning, such as "language access routing system" or "low priority score," instead of generic words.
+Task 5 extracts short phrases that help reviewers identify what the story is about. The current implementation uses KeyBERT with MMR through the Python runner or self-hosted worker. It prefers phrases that carry meaning, such as "language access routing system" or "low priority score," instead of generic words.
 
 The formal database field is:
 
@@ -84,6 +84,23 @@ The formal database field is:
 ## How results are stored
 
 Formal stories store Task 1 through Task 5 on the `Testimony` table and related `TranscriptionJob` table.
+
+## Briefings corpus batch
+
+The Briefings page reads stored model output rather than running heavy models inside a page request. The local batch path exports approved stories, runs sentence-transformer embeddings, UMAP, HDBSCAN, BERTopic, and KeyBERT labels, then writes:
+
+- `Testimony.clusterId`
+- `Testimony.isOutlier`
+- `Testimony.topicId`
+- `Testimony.umapX`
+- `Testimony.umapY`
+- `CorpusTopic`
+
+These fields feed the story map, emergent topics, recognition/similar-story rows, representative/minority excerpts, evidence strength, and silence coverage. The online API computes counts and filters from those saved fields.
+
+## Briefing prose and claim comparison
+
+The chart data is local/model-backed as described above. Longer briefing prose and claim-vs-experience text can be drafted offline with `scripts/briefings-narrative-draft.mjs`. By default the script writes a local rules-based draft. With `--claude` and `ANTHROPIC_API_KEY`, it can ask Claude for a draft rewrite, then store it as a briefing draft for review. The public page reads only stored briefing rows and does not call Claude during page load.
 
 For text stories, an admin can run the refresh endpoint to write Task 2 through Task 5 results:
 
@@ -109,7 +126,7 @@ The expected demo limits are now 30 minutes for audio input and 12,000 character
 
 The admin Quick Test audio path has been changed to match that approach. It uploads the audio file to media storage first, then sends the stored object key to the ML endpoint. This avoids Vercel's function payload limit, which is what caused the `FUNCTION_PAYLOAD_TOO_LARGE` error on a 29-minute audio test.
 
-Task 2 through Task 5 now prefer local open-source packages and cached models. External hosted model APIs are not part of the teacher-facing pipeline. Long audio can still produce long transcript output, so the admin page uses collapsible story details and an ML Pipeline panel.
+Task 2 through Task 5 use local open-source packages and cached models. External hosted model APIs are not part of the production pipeline. Long audio can still produce long transcript output, so the admin page uses collapsible story details and an ML Pipeline panel.
 
 ## Files and routes to know
 

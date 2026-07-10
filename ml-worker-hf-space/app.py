@@ -16,8 +16,8 @@ from transformers import pipeline
 
 app = FastAPI(title="AlgoStories ML Worker")
 
-TASK2_MODEL = "MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33"
-TASK3_MODEL = "facebook/bart-large-mnli"
+TASK2_MODEL = os.environ.get("TASK2_IMPACT_MODEL", "facebook/bart-large-mnli")
+TASK3_MODEL = os.environ.get("TASK3_THEME_MODEL", "facebook/bart-large-mnli")
 TASK1_MODEL = os.environ.get("TASK1_WHISPER_MODEL", "small")
 TASK1_LANGUAGE = os.environ.get("TASK1_WHISPER_LANGUAGE") or None
 SUPPORTED_MEDIA_EXTENSIONS = {".wav", ".mp3", ".webm", ".flac", ".ogg", ".m4a", ".mp4", ".mov", ".m4v", ".ogv"}
@@ -197,7 +197,7 @@ def get_keybert():
 
 
 @lru_cache(maxsize=1)
-def get_deberta_classifier():
+def get_impact_classifier():
     return pipeline("zero-shot-classification", model=TASK2_MODEL, device=-1)
 
 
@@ -276,10 +276,10 @@ async def transcribe_audio(file: UploadFile = File(...), authorization: str | No
     }
 
 
-@app.post("/deberta-impact")
-def deberta_impact(payload: ZeroShotRequest, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+@app.post("/impact-classification")
+def impact_classification(payload: ZeroShotRequest, authorization: str | None = Header(default=None)) -> dict[str, Any]:
     require_token(authorization)
-    return run_zero_shot(get_deberta_classifier(), payload)
+    return run_zero_shot(get_impact_classifier(), payload)
 
 
 @app.post("/bart-themes")
@@ -301,6 +301,8 @@ def spacy_entities(payload: TextRequest, authorization: str | None = Header(defa
     for ent in doc.ents:
         if ent.label_ in {"ORG"}:
             entities["agencies"].append(ent.text)
+        elif ent.label_ == "PERSON":
+            entities["people"].append(ent.text)
         elif ent.label_ in {"GPE", "LOC", "FAC"}:
             entities["locations"].append(ent.text)
         elif ent.label_ in {"DATE", "TIME"}:
@@ -312,6 +314,7 @@ def spacy_entities(payload: TextRequest, authorization: str | None = Header(defa
     entities["systems"].extend(find_phrases(text, lower, SYSTEM_PATTERNS))
     entities["dates"].extend(extract_date_phrases(text))
     entities["people_roles"].extend(find_phrases(text, lower, ROLE_PATTERNS))
+    entities["addresses"].extend(re.findall(r"\b\d{1,6}\s+[A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+){0,4}\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way)\b", text, flags=re.IGNORECASE))
 
     return {"entities": normalize_entities(entities)}
 
@@ -472,6 +475,8 @@ def empty_entities() -> dict[str, list[str]]:
         "systems": [],
         "dates": [],
         "people_roles": [],
+        "people": [],
+        "addresses": [],
     }
 
 

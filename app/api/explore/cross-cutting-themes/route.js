@@ -51,11 +51,13 @@ export async function GET(request) {
 
   const themes = [...byTheme.values()].map((theme) => {
     const direction = directionByTheme.get(theme.theme.toLowerCase());
+    const averageConfidence = theme.confidenceCount ? Number((theme.confidenceSum / theme.confidenceCount).toFixed(2)) : null;
     return {
       theme: theme.theme,
       label: 'suggested',
       count: theme.count,
-      averageConfidence: theme.confidenceCount ? Number((theme.confidenceSum / theme.confidenceCount).toFixed(2)) : null,
+      averageConfidence,
+      confidenceBand: averageConfidence !== null && averageConfidence >= 0.75 ? 'higher-confidence suggestion' : 'suggested for review',
       spanDomains: theme.domains.size,
       spanAlgorithms: theme.algorithms.size,
       improvementDirection: direction?.improvementDirection || null,
@@ -70,5 +72,10 @@ export async function GET(request) {
   }).filter((row) => row.count >= minCount)
     .sort((a, b) => b.count - a.count || a.source.localeCompare(b.source) || a.target.localeCompare(b.target));
 
-  return NextResponse.json({ totalStories: rows.length, themes, coOccurrences });
+  return NextResponse.json({
+    method: 'stored BART-MNLI multi-label themes above 0.5 aggregated into theme counts and co-occurrence pairs; themes below 0.75 remain suggested for review; corpus topics are shown separately in /api/explore/patterns',
+    totalStories: rows.length,
+    themes,
+    coOccurrences,
+  });
 }

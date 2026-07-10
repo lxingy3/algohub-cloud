@@ -485,7 +485,7 @@ function ControlSelect({ label, value, options, onChange }) {
 function NarrativePanel({ briefing, scope, lens, onLensChange, onScopeChange }) {
   const findings = listJson(briefing?.keyFindings);
   const recommendations = listJson(briefing?.recommendations);
-  const claims = listJson(briefing?.claimVsExperience);
+  const claims = claimPreviewRows(briefing?.claimVsExperience);
   return (
     <div className="mb-6 rounded-lg border border-slate-200 bg-white p-5">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
@@ -505,7 +505,7 @@ function NarrativePanel({ briefing, scope, lens, onLensChange, onScopeChange }) 
           <BriefingViewControls lens={lens} scope={scope} onLensChange={onLensChange} onScopeChange={onScopeChange} />
           <NarrativeList title="Key findings" rows={findings} empty="Pending review." />
           <NarrativeList title="Recommendations" rows={recommendations} empty="Pending review." />
-          {claims.length ? <NarrativeList title="Claim vs. experience" rows={claims} empty="" /> : null}
+          {claims.length ? <NarrativeList title="Claim vs. experience" rows={claims} empty="" limit={3} /> : null}
         </div>
       </div>
     </div>
@@ -537,17 +537,30 @@ function BriefingViewControls({ lens, scope, onLensChange, onScopeChange }) {
   );
 }
 
-function NarrativeList({ title, rows, empty }) {
+function NarrativeList({ title, rows, empty, limit = Infinity }) {
+  const visibleRows = rows.slice(0, limit);
+  const remaining = Math.max(0, rows.length - visibleRows.length);
   return (
     <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
       <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{title}</p>
       <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-800">
-        {(rows.length ? rows : [empty]).filter(Boolean).map((row) => (
+        {(visibleRows.length ? visibleRows : [empty]).filter(Boolean).map((row) => (
           <li key={row}>- {row}</li>
         ))}
       </ul>
+      {remaining ? <p className="mt-2 text-xs font-semibold text-slate-500">{remaining} more rows are available in the briefing sections below.</p> : null}
     </div>
   );
+}
+
+function claimPreviewRows(value) {
+  const rows = Array.isArray(value) ? value : value ? [value] : [];
+  return rows.map((item) => {
+    if (typeof item === 'string') return item;
+    const name = item?.algorithmName || item?.algorithmSlug || 'System claim';
+    const count = Number(item?.experienceCount);
+    return Number.isFinite(count) ? `${name}: ${count} relevant ${count === 1 ? 'story' : 'stories'}` : name;
+  }).filter(Boolean);
 }
 
 function listJson(value) {
@@ -779,16 +792,16 @@ function currentMethod(block) {
   const evidenceBlocks = new Set(['L6', 'IC6']);
   const claimBlocks = new Set(['C7', 'L7', 'G4', 'IC7', 'GC3']);
   const comparableBlocks = new Set(['CC2', 'G7', 'GC7']);
-  if (impactBlocks.has(code)) return 'Impact labels are read from the story records. New runs use BART-MNLI; older rows may need a refresh.';
-  if (themeBlocks.has(code)) return 'Theme labels are read from the story records and counted here. Emergent topics are handled in the story-map view.';
-  if (excerptBlocks.has(code)) return 'Excerpts use stored redactions and the saved cluster/outlier fields to include both common and less common stories.';
-  if (claimBlocks.has(code)) return 'Reviewed claim rows are shown first. If none exist, the page falls back to a local draft. Claude is not wired in yet.';
-  if (silenceBlocks.has(code)) return 'The score is calculated from story volume, domain coverage, and saved topic/cluster coverage.';
-  if (evidenceBlocks.has(code)) return 'The strength labels come from counts, confidence, impact mix, and saved outlier flags.';
-  if (comparableBlocks.has(code)) return 'The list is filtered from reviewed system records. Similar-system matching is not wired in yet.';
-  if (code === 'C1' || code === 'G1') return 'This section uses the reviewed algorithm record. Summary rewriting is not wired in yet.';
-  if (code === 'C2') return 'This section uses reviewed algorithm fields. Keyword tags are not wired in yet.';
-  if (code === 'C6') return 'Matches come from saved topics, clusters, and themes. It does not run a live nearest-neighbour search.';
+  if (impactBlocks.has(code)) return 'Impact labels are read from stored story records. New refresh runs use BART-MNLI, with confidence kept for review.';
+  if (themeBlocks.has(code)) return 'Theme labels are read from stored story records and counted here. Emergent topics come from the corpus batch.';
+  if (excerptBlocks.has(code)) return 'Excerpts are anonymized, then selected from saved cluster/outlier fields so common and less common stories both appear.';
+  if (claimBlocks.has(code)) return 'Stored claims are matched to approved stories with cached sentence-transformers cosine similarity. Any prose comparison remains a reviewed draft.';
+  if (silenceBlocks.has(code)) return 'The score combines volume gap, sentence-transformers cosine coverage, domain gap, and impact weight.';
+  if (evidenceBlocks.has(code)) return 'Strength labels come from story counts, confidence, impact mix, and saved outlier flags.';
+  if (comparableBlocks.has(code)) return 'Reviewed system records are filtered first. Approved peer aggregates are ranked by cached sentence-transformers similarity when peer data is available.';
+  if (code === 'C1' || code === 'G1') return 'This section uses the reviewed algorithm record. Plain-language rewrite is still a reviewed content step.';
+  if (code === 'C2') return 'This section uses reviewed algorithm fields. Keyword tags come from saved story keywords when available.';
+  if (code === 'C6') return 'Matches are ranked by cosine similarity over cached sentence-transformers vectors.';
   if (code === 'IC4') return 'The story map reads the saved batch output: Qwen embeddings, UMAP, HDBSCAN, BERTopic, and KeyBERT labels.';
   if (code === 'G8' || code === 'GC8') return 'This waits on approved peer-jurisdiction records.';
   return block.ml?.toLowerCase().includes('none') ? 'This section groups reviewed records or metadata.' : 'This section reads saved fields and counts them for the current filters.';
@@ -1220,12 +1233,14 @@ function evidenceRows(block, snapshot, lens) {
   if (api.includes('silence')) return (snapshot.silence?.rows || []).map((row) => ({
     title: row.algorithmName,
     value: row.priority,
-    detail: `Volume ${row.factors?.volumeGap ?? 0}; semantic ${row.factors?.semanticGap ?? 0}; domain ${row.factors?.domainGap ?? 0}.`,
+    detail: `Expected ${row.expectedVolume ?? 'n/a'} stories; volume ${row.factors?.volumeGap ?? 0}; semantic ${row.factors?.semanticGap ?? 0}; domain ${row.factors?.domainGap ?? 0}.`,
     actions: [algorithmAction(row.algorithmSlug)],
     drilldown: metaDrilldown(`${row.algorithmName} silence factors`, [
-      { label: 'Volume gap', count: row.factors?.volumeGap ?? 0, detail: 'How thin the linked story volume is.' },
-      { label: 'Semantic gap', count: row.factors?.semanticGap ?? 0, detail: 'How little cached topic/cluster coverage exists.' },
+      { label: 'Expected volume', count: row.expectedVolume ?? 0, detail: 'Impact, age, and domain set the expected story level.' },
+      { label: 'Volume gap', count: row.factors?.volumeGap ?? 0, detail: 'How far linked stories fall below expected volume.' },
+      { label: 'Semantic gap', count: row.factors?.semanticGap ?? 0, detail: 'How few stories exceed the sentence-transformers relevance threshold for this system.' },
       { label: 'Domain gap', count: row.factors?.domainGap ?? 0, detail: 'How thin the domain-level story volume is.' },
+      { label: 'Impact weight', count: row.factors?.impactWeight ?? 0, detail: 'Higher-impact systems raise the review priority.' },
     ]),
   }));
   if (api.includes('testimonies') || api.includes('recognition')) {
@@ -2118,6 +2133,15 @@ function LiveExcerpts({ examples, expanded = false }) {
         <div key={row.id} className="rounded-md border border-white/15 bg-white/10 p-3 text-sm leading-6 text-slate-100">
           <p className="font-semibold text-amber-100">{row.title}</p>
           <p className={`mt-1 text-slate-100 ${expanded ? '' : 'line-clamp-3'}`}>{row.excerpt || row.title}</p>
+          {Array.isArray(row.keywords) && row.keywords.length ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {row.keywords.slice(0, expanded ? 8 : 4).map((keyword) => (
+                <span key={`${row.id}-${keyword}`} className="rounded-full bg-amber-300/15 px-2 py-1 text-[10px] font-semibold text-amber-100">
+                  {keyword}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
       ))}
     </div>

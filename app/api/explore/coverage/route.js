@@ -24,6 +24,7 @@ export async function GET(request) {
 
   return NextResponse.json({
     label: 'provenance and paradata',
+    method: 'metadata coverage counts over approved stories and reviewed briefing rows',
     total: rows.length,
     dateRange: dates.length ? { from: dates[0], to: dates[dates.length - 1] } : null,
     submissionMethod: countBy(rows, (row) => row.submissionMethod, { minCount }),

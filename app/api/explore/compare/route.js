@@ -17,6 +17,7 @@ export async function GET(request) {
     groups.set(key, group);
   }
   return NextResponse.json({
+    method: 'domain or agency grouping over approved stories, stored impact labels, and HDBSCAN outlier flags',
     dimension: filters.dimension === 'agency' ? 'agency' : 'domain',
     groups: [...groups.entries()].map(([label, items]) => ({
       label,

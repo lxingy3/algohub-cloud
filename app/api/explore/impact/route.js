@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { countBy, getApprovedBriefingCorpus, minGroupCountForLens, parseExploreFilters } from '../../../../lib/briefingsExplore';
 
 export const dynamic = 'force-dynamic';
+const REVIEW_THRESHOLD = 0.85;
 
 export async function GET(request) {
   const filters = parseExploreFilters(request);
@@ -14,10 +15,13 @@ export async function GET(request) {
 
   return NextResponse.json({
     label: 'suggested impact distribution',
+    method: `stored BART-MNLI impact labels with self-reported impact comparison; confidence <= ${REVIEW_THRESHOLD} stays in review`,
     total: rows.length,
     selfReported: countBy(rows, (row) => row.selfReportedImpact, { minCount }),
     aiSuggested: countBy(rows, (row) => row.aiImpactClassification, { minCount }),
     averageConfidence,
+    reviewThreshold: REVIEW_THRESHOLD,
+    reviewRequiredCount: rows.filter((row) => !Number.isFinite(row.aiConfidenceScore) || row.aiConfidenceScore <= REVIEW_THRESHOLD).length,
     mismatchCount: rows.filter((row) => row.selfReportedImpact && row.aiImpactClassification && row.selfReportedImpact !== row.aiImpactClassification).length,
   });
 }

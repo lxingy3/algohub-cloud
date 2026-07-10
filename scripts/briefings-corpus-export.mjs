@@ -50,29 +50,54 @@ function cleanText(parts) {
 async function main() {
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
 
-  const testimonies = await prisma.testimony.findMany({
-    where: {
-      jurisdictionId,
-      moderationStatus: status,
-      OR: [
-        { narrativeText: { not: '' } },
-        { transcriptionText: { not: null } },
-      ],
-    },
-    orderBy: { submittedAt: 'asc' },
-    select: {
-      id: true,
-      title: true,
-      summary: true,
-      narrativeText: true,
-      transcriptionText: true,
-      affectedDomain: true,
-      originalLanguage: true,
-      submittedAt: true,
-      aiLinkedAlgorithmIds: true,
-      algorithmLinks: { select: { algorithmId: true } },
-    },
-  });
+  const [testimonies, algorithms, crossJurisdictionInsights] = await Promise.all([
+    prisma.testimony.findMany({
+      where: {
+        jurisdictionId,
+        moderationStatus: status,
+        OR: [
+          { narrativeText: { not: '' } },
+          { transcriptionText: { not: null } },
+        ],
+      },
+      orderBy: { submittedAt: 'asc' },
+      select: {
+        id: true,
+        title: true,
+        summary: true,
+        narrativeText: true,
+        transcriptionText: true,
+        affectedDomain: true,
+        originalLanguage: true,
+        submittedAt: true,
+        aiLinkedAlgorithmIds: true,
+        aiExtractedExperiences: true,
+        algorithmLinks: { select: { algorithmId: true } },
+      },
+    }),
+    prisma.algorithm.findMany({
+      where: { jurisdictionId },
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        purpose: true,
+        useCase: true,
+        agencyName: true,
+        dataUsed: true,
+        decisionType: true,
+        impactLevel: true,
+        yearDeployed: true,
+        claims: { select: { id: true, claimText: true, claimSource: true, claimDate: true } },
+      },
+    }),
+    prisma.crossJurisdictionInsight.findMany({
+      where: { isApproved: true },
+      select: { id: true, useCase: true, insightType: true, insightData: true },
+    }),
+  ]);
 
   const records = testimonies.map((testimony) => {
     const { text, truncated } = cleanText([
@@ -84,6 +109,7 @@ async function main() {
     return {
       id: testimony.id,
       title: testimony.title,
+      narrativeText: cleanText([testimony.narrativeText, testimony.transcriptionText]).text,
       affectedDomain: testimony.affectedDomain,
       originalLanguage: testimony.originalLanguage,
       submittedAt: testimony.submittedAt?.toISOString?.() || null,
@@ -94,19 +120,61 @@ async function main() {
         ]),
       ],
       analysisText: text,
+      knownEntityExclusions: Object.values(testimony.aiExtractedExperiences?.entities || {})
+        .flatMap((values) => Array.isArray(values) ? values : [])
+        .map((value) => String(value || '').trim())
+        .filter(Boolean),
       truncated,
     };
   }).filter((record) => record.analysisText);
 
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  const algorithmRecords = algorithms.map((algorithm) => ({
+    id: algorithm.id,
+    slug: algorithm.slug,
+    name: algorithm.name,
+    useCase: algorithm.useCase,
+    impactLevel: algorithm.impactLevel,
+    yearDeployed: algorithm.yearDeployed,
+    analysisText: cleanText([
+      algorithm.name,
+      algorithm.description,
+      algorithm.purpose,
+      algorithm.useCase,
+      algorithm.agencyName,
+      algorithm.dataUsed,
+      algorithm.decisionType,
+    ]).text,
+    claims: algorithm.claims.map((claim) => ({
+      id: claim.id,
+      text: claim.claimText,
+      source: claim.claimSource,
+      date: claim.claimDate?.toISOString?.().slice(0, 10) || null,
+    })),
+  }));
+
   fs.writeFileSync(outputPath, `${JSON.stringify({
     generatedAt: new Date().toISOString(),
     jurisdictionId,
     moderationStatus: status,
     records,
+    algorithms: algorithmRecords,
+    crossJurisdictionInsights: crossJurisdictionInsights.map((insight) => ({
+      id: insight.id,
+      useCase: insight.useCase,
+      analysisText: cleanText([insight.useCase, insight.insightType, JSON.stringify(insight.insightData)]).text,
+    })),
   }, null, 2)}\n`);
 
-  console.log(JSON.stringify({ outputPath, jurisdictionId, status, records: records.length }, null, 2));
+  console.log(JSON.stringify({
+    outputPath,
+    jurisdictionId,
+    status,
+    records: records.length,
+    algorithms: algorithmRecords.length,
+    claims: algorithmRecords.reduce((sum, algorithm) => sum + algorithm.claims.length, 0),
+    crossJurisdictionInsights: crossJurisdictionInsights.length,
+  }, null, 2));
 }
 
 main().finally(async () => {

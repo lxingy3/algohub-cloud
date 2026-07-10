@@ -7,6 +7,7 @@ export async function GET(request) {
   const filters = parseExploreFilters(request);
   const [algorithms, testimonies] = await Promise.all([getAlgorithmLandscape(filters), getApprovedBriefingCorpus(filters)]);
   return NextResponse.json({
+    method: 'database aggregation over reviewed algorithm cards and approved story counts',
     totalAlgorithms: algorithms.length,
     totalApprovedStories: testimonies.length,
     algorithms,

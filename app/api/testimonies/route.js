@@ -6,7 +6,7 @@ import { getCurrentUser } from '../../../lib/auth';
 import { mediaStorageProvider, mediaStorageUri } from '../../../lib/mediaStorage';
 import { rankStoriesForSearch } from '../../../lib/searchRanking';
 import { buildStorySummary } from '../../../lib/storySummary';
-import { parseExploreFilters } from '../../../lib/briefingsExplore';
+import { anonymizedExcerpt, parseExploreFilters, storedKeywords } from '../../../lib/briefingsExplore';
 
 export const dynamic = 'force-dynamic';
 
@@ -94,6 +94,7 @@ const testimonyExcerptSelect = {
   selfReportedImpact: true,
   aiImpactClassification: true,
   aiThemes: true,
+  aiExtractedExperiences: true,
   aiConfidenceScore: true,
   clusterId: true,
   isOutlier: true,
@@ -142,10 +143,7 @@ function storyHasTheme(story, theme) {
 }
 
 function cleanExcerptText(story) {
-  const text = story.brief?.summary || story.summary || story.transcriptionText || story.narrativeText || '';
-  const clean = text.replace(/\s+/g, ' ').trim();
-  if (clean.length <= 340) return clean;
-  return `${clean.slice(0, 337).trim()}...`;
+  return anonymizedExcerpt(story);
 }
 
 function pickBriefingExcerpts(stories, limit) {
@@ -190,8 +188,9 @@ function pickBriefingExcerpts(stories, limit) {
     topic: story.topicId == null ? null : {
       id: story.topicId,
       label: story.corpusTopic?.label || 'Suggested topic',
-      keywords: story.corpusTopic?.topKeywords || [],
+      keywords: storedKeywords(story),
     },
+    keywords: storedKeywords(story),
     algorithms: story.algorithmLinks.map((link) => ({
       slug: link.algorithm.slug,
       name: link.algorithm.name,
@@ -270,6 +269,7 @@ export async function GET(request) {
       total: matchingStories.length,
       scope: searchParams.get('scope') || (algorithm ? 'algorithm' : 'corpus'),
       fields: 'excerpt',
+      method: 'stored Task 4 entities for redaction, saved sentence-transformers/HDBSCAN cluster and outlier fields for selection, and KeyBERT keywords when available',
       notes: [
         'Excerpts are shortened and avoid submitter contact details.',
         'Representative rows use cluster_id; minority rows use is_outlier when available.',

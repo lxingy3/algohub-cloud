@@ -2,18 +2,23 @@ import { NextResponse } from 'next/server';
 import { anonymizedExcerpt, getApprovedBriefingCorpus, parseExploreFilters, storyTitle } from '../../../../lib/briefingsExplore';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { prisma } from '../../../../lib/prisma';
+import { BRIEFINGS_EMBEDDING_MODEL, cosineSimilarity, getSemanticEmbeddingMap, SEMANTIC_RELEVANCE_THRESHOLD } from '../../../../lib/semanticEmbeddings';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   const filters = parseExploreFilters(request);
   const jurisdictionId = getJurisdictionId();
-  const cachedRows = await cachedClaimRows({ jurisdictionId, filters });
-  if (cachedRows.length) {
+  const cached = await cachedClaimRows({ jurisdictionId, filters });
+  if (cached.rows.length && cached.generatedBy !== 'local_rule_draft') {
     return NextResponse.json({
       label: 'claim vs experience cache',
-      reviewStatus: 'published briefing cache',
-      rows: cachedRows,
+      method: cached.method || `reviewed briefing cache using ${BRIEFINGS_EMBEDDING_MODEL} cosine relevance before synthesis`,
+      reviewStatus: cached.reviewStatus,
+      generatedBy: cached.generatedBy,
+      rows: filters.lens === 'government'
+        ? cached.rows.map((row) => ({ ...row, experienceExamples: [] }))
+        : cached.rows,
     });
   }
   const algorithms = await prisma.algorithm.findMany({
@@ -25,10 +30,24 @@ export async function GET(request) {
       ...(filters.impactLevel ? { impactLevel: filters.impactLevel } : {}),
       ...(filters.status?.length ? { status: { in: filters.status } } : {}),
     },
-    select: { id: true, slug: true, name: true, claims: { orderBy: { createdAt: 'desc' }, take: 3 } },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      claims: {
+        orderBy: { createdAt: 'desc' },
+        take: 3,
+        select: { id: true, claimText: true, claimSource: true, claimDate: true },
+      },
+    },
     orderBy: { name: 'asc' },
   });
   const rows = await getApprovedBriefingCorpus(filters);
+  const [storyEmbeddings, claimEmbeddings] = await Promise.all([
+    getSemanticEmbeddingMap('testimony', rows.map((row) => row.id), { jurisdictionId }),
+    getSemanticEmbeddingMap('claim', algorithms.flatMap((algorithm) => algorithm.claims.map((claim) => claim.id)), { jurisdictionId }),
+  ]);
+  const hasSemanticCache = storyEmbeddings.size > 0 && claimEmbeddings.size > 0;
   const rowsByAlgorithm = new Map();
   for (const row of rows) {
     for (const link of row.algorithmLinks) {
@@ -40,9 +59,13 @@ export async function GET(request) {
 
   return NextResponse.json({
     label: 'claim vs experience draft',
+    method: hasSemanticCache
+      ? `stored claims matched to approved stories with ${BRIEFINGS_EMBEDDING_MODEL} cosine > ${SEMANTIC_RELEVANCE_THRESHOLD}; synthesis still needs review`
+      : 'stored claims joined to approved linked stories while the sentence-transformers cache is unavailable; synthesis still needs review',
     reviewStatus: 'needs human review',
     rows: algorithms.map((algorithm) => {
-      const stories = rowsByAlgorithm.get(algorithm.id) || [];
+      const semanticStories = hasSemanticCache ? rankClaimStories(algorithm.claims, rows, claimEmbeddings, storyEmbeddings) : [];
+      const stories = semanticStories.length ? semanticStories : (rowsByAlgorithm.get(algorithm.id) || []);
       return {
         algorithmSlug: algorithm.slug,
         algorithmName: algorithm.name,
@@ -52,6 +75,7 @@ export async function GET(request) {
           id: story.id,
           title: storyTitle(story),
           impact: story.aiImpactClassification,
+          similarity: story.similarity ?? null,
           excerpt: anonymizedExcerpt(story),
         })),
       };
@@ -68,10 +92,14 @@ async function cachedClaimRows({ jurisdictionId, filters }) {
       ...(filters.algorithm ? { targetAlgorithm: { slug: filters.algorithm } } : { targetAlgorithmId: null }),
     },
     orderBy: { publishedAt: 'desc' },
-    select: { claimVsExperience: true },
+    select: { claimVsExperience: true, generatedBy: true, reviewStatus: true },
   });
   const rows = Array.isArray(briefing?.claimVsExperience) ? briefing.claimVsExperience : [];
-  return rows.map((row, index) => {
+  return {
+    generatedBy: briefing?.generatedBy || null,
+    reviewStatus: briefing?.reviewStatus || 'PUBLISHED',
+    method: rows.find((row) => row && typeof row === 'object' && row.matchMethod)?.matchMethod || null,
+    rows: rows.map((row, index) => {
     if (typeof row === 'string') {
       return { algorithmSlug: null, algorithmName: `Briefing note ${index + 1}`, claims: [{ text: row }], experienceCount: null, experienceExamples: [] };
     }
@@ -82,6 +110,20 @@ async function cachedClaimRows({ jurisdictionId, filters }) {
       experienceCount: row.experienceCount ?? null,
       experienceExamples: Array.isArray(row.experienceExamples) ? row.experienceExamples : [],
       discrepancy: row.discrepancy || row.summary || null,
+      matchMethod: row.matchMethod || null,
     };
-  });
+    }),
+  };
+}
+
+function rankClaimStories(claims, stories, claimEmbeddings, storyEmbeddings) {
+  const claimVectors = claims.map((claim) => claimEmbeddings.get(claim.id)?.vector).filter(Boolean);
+  if (!claimVectors.length) return [];
+  return stories.map((story) => {
+    const storyVector = storyEmbeddings.get(story.id)?.vector;
+    const scores = claimVectors.map((claimVector) => cosineSimilarity(claimVector, storyVector)).filter(Number.isFinite);
+    const similarity = scores.length ? Math.max(...scores) : null;
+    return { ...story, similarity: Number.isFinite(similarity) ? Number(similarity.toFixed(3)) : null };
+  }).filter((story) => Number.isFinite(story.similarity) && story.similarity > SEMANTIC_RELEVANCE_THRESHOLD)
+    .sort((a, b) => b.similarity - a.similarity);
 }

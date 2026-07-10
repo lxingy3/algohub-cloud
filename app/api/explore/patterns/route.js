@@ -14,6 +14,7 @@ export async function GET(request) {
 
   return NextResponse.json({
     label: 'suggested corpus patterns',
+    method: 'saved corpus batch fields from sentence-transformers embeddings, UMAP, HDBSCAN, BERTopic, and KeyBERT topic labels',
     total: rows.length,
     topics,
     points: filters.lens === 'government' ? [] : rows.filter((row) => row.umapX !== null && row.umapY !== null).map((row) => ({

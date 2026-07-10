@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -94,6 +95,13 @@ def canonical_topic_label(records, indexes, words, texts):
     top_domain = domain_counts.most_common(1)[0][0].lower() if domain_counts else ""
     text = f"{keyword_text} {top_domain}"
     rules = [
+        (("student", "school", "academic risk", "lunch portal"), "Student Support and Risk Labels"),
+        (("dispatcher", "dispatch triage", "emergency dispatch"), "Emergency Dispatch Triage"),
+        (("transit safety", "traffic citation", "wrong station", "maintenance"), "Transit and Traffic Report Routing"),
+        (("old address", "voucher", "shelter address"), "Housing Records and Voucher Eligibility"),
+        (("unhoused", "community voice", "nobody trusts"), "Housing Access, Trust, and Voice"),
+        (("housing inspection", "building", "utility help", "low priority"), "Housing Conditions and Service Priority"),
+        (("job workshop", "job matching", "resource recommendation"), "Employment and Service Recommendations"),
         (("family screening", "child welfare", "cps", "risk score"), "Family Screening Risk and Support"),
         (("housing", "unhoused", "shelter", "tenant"), "Housing Access and Priority"),
         (("benefits", "eligibility", "appeal", "review"), "Benefits Review and Eligibility"),
@@ -165,7 +173,50 @@ def dedupe_topic_labels(topics):
     return topics
 
 
-def make_payload(input_payload, embeddings, umap_xy, cluster_ids, topic_ids, topics, model_name, params, warnings):
+def semantic_rows(items, embeddings, entity_type):
+    rows = []
+    for item, vector in zip(items, embeddings):
+        text = item.get("analysisText") or item.get("text") or ""
+        rows.append({
+            "entityType": entity_type,
+            "entityId": item["id"],
+            "contentHash": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            "vector": np.asarray(vector, dtype=float).round(8).tolist(),
+        })
+    return rows
+
+
+def sensitive_entities(records, texts):
+    import spacy
+
+    requested_model = os.environ.get("SPACY_MODEL", "en_core_web_trf")
+    try:
+        nlp = spacy.load(requested_model)
+        loaded_model = requested_model
+    except OSError:
+        nlp = spacy.load("en_core_web_sm")
+        loaded_model = "en_core_web_sm"
+    rows = []
+    address_pattern = re.compile(r"\b\d{1,6}\s+[A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+){0,4}\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way)\b", re.I)
+    for record, doc, text in zip(records, nlp.pipe(texts, batch_size=16), texts):
+        exclusions = [str(value).strip().lower() for value in record.get("knownEntityExclusions", []) if str(value).strip()]
+        people = []
+        for ent in doc.ents:
+            value = ent.text.strip()
+            lowered = value.lower()
+            if ent.label_ != "PERSON" or len(value) < 3:
+                continue
+            if any(lowered in exclusion or exclusion in lowered for exclusion in exclusions):
+                continue
+            people.append(value)
+        rows.append({
+            "people": list(dict.fromkeys(people)),
+            "addresses": list(dict.fromkeys(address_pattern.findall(text))),
+        })
+    return rows, loaded_model
+
+
+def make_payload(input_payload, embeddings, umap_xy, cluster_ids, topic_ids, topics, model_name, params, warnings, semantic_embeddings=None, sensitive_entity_rows=None):
     records = input_payload.get("records", [])
     output_records = []
     for index, record in enumerate(records):
@@ -178,6 +229,7 @@ def make_payload(input_payload, embeddings, umap_xy, cluster_ids, topic_ids, top
             "topicId": topic_id,
             "umapX": float(umap_xy[index][0]) if umap_xy is not None else None,
             "umapY": float(umap_xy[index][1]) if umap_xy is not None else None,
+            "sensitiveEntities": sensitive_entity_rows[index] if sensitive_entity_rows else None,
         })
 
     return {
@@ -188,6 +240,7 @@ def make_payload(input_payload, embeddings, umap_xy, cluster_ids, topic_ids, top
         "params": params,
         "topics": topics,
         "records": output_records,
+        "semanticEmbeddings": semantic_embeddings or [],
         "warnings": warnings,
     }
 
@@ -223,6 +276,9 @@ def run_lightweight_self_check(output_path):
         raise AssertionError("self-check expected housing records to cluster together enough to catch broken output logic")
     if any(row["topicId"] is not None and row["topicId"] < 0 for row in payload["records"]):
         raise AssertionError("negative topic ids must be converted to null")
+    cached = semantic_rows(records[:1], embeddings[:1], "testimony")[0]
+    if len(cached["contentHash"]) != 64 or len(cached["vector"]) != embeddings.shape[1]:
+        raise AssertionError("semantic embedding cache row is incomplete")
     write_json(output_path, payload)
     print(json.dumps({"outputPath": output_path, "records": len(payload["records"]), "topics": len(payload["topics"])}, indent=2))
 
@@ -237,7 +293,18 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
 
     input_payload = read_json(input_path)
     records = input_payload.get("records") or []
+    algorithms = input_payload.get("algorithms") or []
+    peer_insights = input_payload.get("crossJurisdictionInsights") or []
+    claims = [
+        {**claim, "algorithmId": algorithm["id"]}
+        for algorithm in algorithms
+        for claim in algorithm.get("claims", [])
+        if claim.get("id") and claim.get("text")
+    ]
     texts = [record.get("analysisText", "").strip() for record in records]
+    algorithm_texts = [algorithm.get("analysisText", "").strip() for algorithm in algorithms]
+    claim_texts = [claim.get("text", "").strip() for claim in claims]
+    peer_texts = [insight.get("analysisText", "").strip() for insight in peer_insights]
     warnings = []
 
     if len(records) < 5:
@@ -249,8 +316,20 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
 
     model = SentenceTransformer(model_name)
     keyword_model = KeyBERT(model=model)
-    embeddings = model.encode(texts, batch_size=16, show_progress_bar=True, normalize_embeddings=True)
-    embeddings = np.asarray(embeddings)
+    all_texts = [*texts, *algorithm_texts, *claim_texts, *peer_texts]
+    all_embeddings = model.encode(all_texts, batch_size=16, show_progress_bar=True, normalize_embeddings=True)
+    all_embeddings = np.asarray(all_embeddings)
+    record_end = len(records)
+    algorithm_end = record_end + len(algorithms)
+    claim_end = algorithm_end + len(claims)
+    embeddings = all_embeddings[:record_end]
+    semantic_embeddings = [
+        *semantic_rows(records, embeddings, "testimony"),
+        *semantic_rows(algorithms, all_embeddings[record_end:algorithm_end], "algorithm"),
+        *semantic_rows(claims, all_embeddings[algorithm_end:claim_end], "claim"),
+        *semantic_rows(peer_insights, all_embeddings[claim_end:], "cross_jurisdiction_insight"),
+    ]
+    sensitive_entity_rows, spacy_model = sensitive_entities(records, texts)
 
     neighbors = n_neighbors_arg or max(2, min(10, len(records) - 1))
     cluster_size = min_cluster_size_arg or min_cluster_size(len(records))
@@ -283,10 +362,39 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
         "hdbscan": {"minClusterSize": cluster_size, "minSamples": min_samples, "metric": "euclidean", "clusterSelectionMethod": "eom"},
         "bertopic": {"topicMinusOneStoredAsNull": True},
         "keybert": {"keywordNgramRange": [1, 3], "topN": 10, "useMmr": True, "diversity": 0.45},
+        "semanticCache": {
+            "dimensions": int(all_embeddings.shape[1]),
+            "testimonies": len(records),
+            "algorithms": len(algorithms),
+            "claims": len(claims),
+            "crossJurisdictionInsights": len(peer_insights),
+        },
+        "spacy": {"model": spacy_model, "purpose": "public excerpt anonymization"},
     }
-    payload = make_payload(input_payload, embeddings, umap_xy, cluster_ids, topic_ids, topics, model_name, params, warnings)
+    payload = make_payload(
+        input_payload,
+        embeddings,
+        umap_xy,
+        cluster_ids,
+        topic_ids,
+        topics,
+        model_name,
+        params,
+        warnings,
+        semantic_embeddings,
+        sensitive_entity_rows,
+    )
     write_json(output_path, payload)
-    print(json.dumps({"outputPath": output_path, "records": len(records), "topics": len(topics), "warnings": warnings}, indent=2))
+    print(json.dumps({
+        "outputPath": output_path,
+        "records": len(records),
+        "algorithms": len(algorithms),
+        "claims": len(claims),
+        "crossJurisdictionInsights": len(peer_insights),
+        "topics": len(topics),
+        "semanticEmbeddings": len(semantic_embeddings),
+        "warnings": warnings,
+    }, indent=2))
 
 
 def main():

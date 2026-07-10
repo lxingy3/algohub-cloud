@@ -15,23 +15,23 @@ TASK3_MODEL = os.environ.get("TASK3_THEME_MODEL", "facebook/bart-large-mnli")
 TASK5_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 IMPACT_LABELS = {
-    "NEGATIVE": "The story says an automated system harmed, disadvantaged, delayed, denied, wrongly flagged, or unfairly treated the person.",
-    "POSITIVE": "The story says an automated system worked well, helped the person, improved access, or led to a good outcome.",
-    "MIXED": "The story says an automated system had both helpful and harmful effects.",
-    "UNCLEAR": "The story does not make the impact clear enough to determine whether it was positive or negative.",
+    "NEGATIVE": "negative experience with an automated system",
+    "POSITIVE": "positive experience with an automated system",
+    "MIXED": "mixed experience with an automated system",
+    "UNCLEAR": "unclear or neutral experience",
 }
 
 THEME_LABELS = {
-    "opacity": "Person did not understand how or why a decision was made.",
-    "positive_experience": "System worked well or led to a good outcome.",
-    "lack_of_recourse": "No way to challenge or appeal the automated decision.",
-    "process_confusion": "Person was confused about the overall process.",
-    "arbitrary_outcome": "Decision seemed random or inconsistent.",
-    "delayed_outcome": "Process took unreasonably long.",
-    "discriminatory_impact": "Suspected racial, economic, or demographic bias.",
-    "lack_of_notification": "Person was not told that an algorithm was involved.",
-    "data_accuracy": "System used incorrect or outdated information.",
-    "loss_of_dignity": "Person felt dehumanized by the process.",
+    "opacity": "The person did not understand how or why a decision was made about them by a computer system",
+    "lack_of_recourse": "The person had no way to challenge, appeal, or contest an automated decision",
+    "arbitrary_outcome": "The outcome seemed random, inconsistent, or did not match the person's situation",
+    "discriminatory_impact": "The person experienced or suspects racial, economic, or other demographic bias in the system",
+    "data_accuracy": "The automated system used incorrect, outdated, or incomplete information about the person",
+    "positive_experience": "The automated system worked well and the person had a good outcome",
+    "process_confusion": "The person was confused about the overall process or how the system fits in",
+    "delayed_outcome": "The decision or process took unreasonably long",
+    "lack_of_notification": "The person was not told that an algorithm or automated system was involved in decisions about them",
+    "loss_of_dignity": "The person felt dehumanized or reduced to a number by the automated process",
 }
 
 THEME_EVIDENCE = {
@@ -570,72 +570,23 @@ def classify_impact(classifier, text: str) -> dict:
         text,
         candidate_labels=descriptions,
         hypothesis_template="This public service story has this impact: {}",
-        multi_label=True,
+        multi_label=False,
     )
     scores_by_description = dict(zip(result["labels"], result["scores"]))
     evidence_scores = {
         key: round_score(scores_by_description.get(description, 0))
         for key, description in IMPACT_LABELS.items()
     }
-    negative = evidence_scores["NEGATIVE"]
-    positive = evidence_scores["POSITIVE"]
-    unclear = evidence_scores["UNCLEAR"]
-    mixed = evidence_scores["MIXED"]
-    positive_cues = count_matches(text, POSITIVE_CUES)
-    negative_cues = count_matches(text, NEGATIVE_CUES)
-    positive_resolution = re.search(
-        r"\b(priority changed|inspection date appeared|the fix helped|corrected|fixed the category|apologized|right unit|same day|same week|same afternoon|reopened the case|paused the shutoff|approval came)\b",
-        text,
-        flags=re.IGNORECASE,
+    classification = next(
+        key for key, description in IMPACT_LABELS.items()
+        if description == result["labels"][0]
     )
-
-    if positive_cues >= 2 and negative_cues == 0:
-        classification = "POSITIVE"
-        confidence = max(positive, 0.9)
-    elif negative_cues >= 2 and positive_cues == 0:
-        classification = "NEGATIVE"
-        confidence = max(negative, 0.9)
-    elif positive_resolution and negative_cues >= 2:
-        classification = "MIXED"
-        confidence = max(mixed, 0.88)
-    elif positive_cues >= 1 and negative_cues == 0 and positive >= 0.85:
-        classification = "POSITIVE"
-        confidence = max(positive, 0.86)
-    elif negative_cues >= 1 and positive_cues == 0 and negative >= 0.85:
-        classification = "NEGATIVE"
-        confidence = max(negative, 0.86)
-    elif negative_cues >= 2 and positive_cues <= 1:
-        classification = "NEGATIVE"
-        confidence = max(negative, 0.88)
-    elif positive_cues >= 2 and negative_cues <= 1 and positive >= 0.75:
-        classification = "POSITIVE"
-        confidence = max(positive, 0.88)
-    elif positive_cues >= 2 and negative_cues >= 2:
-        classification = "MIXED"
-        confidence = max(mixed, min(positive, negative), 0.85)
-    elif unclear >= 0.9 and unclear >= max(negative, positive, mixed):
-        classification = "UNCLEAR"
-        confidence = unclear
-    elif positive >= 0.65 and negative >= 0.65:
-        classification = "MIXED"
-        confidence = max(mixed, min(positive, negative))
-    elif unclear >= 0.65 and max(negative, positive) < 0.5:
-        classification = "UNCLEAR"
-        confidence = unclear
-    elif negative >= positive and negative >= unclear:
-        classification = "NEGATIVE"
-        confidence = negative
-    elif positive >= negative and positive >= unclear:
-        classification = "POSITIVE"
-        confidence = positive
-    else:
-        classification = "UNCLEAR"
-        confidence = unclear
+    confidence = float(result["scores"][0])
 
     return {
         "aiImpactClassification": classification,
         "aiConfidenceScore": round_score(confidence),
-        "humanReviewRequired": confidence < 0.85,
+        "humanReviewRequired": confidence <= 0.85,
         "evidenceScores": evidence_scores,
     }
 
@@ -659,31 +610,17 @@ def detect_themes(classifier, text: str) -> list[dict]:
         multi_label=True,
     )
     rows = []
-    fallback_rows = []
     for description, score in zip(result["labels"], result["scores"]):
         theme = next((key for key, value in THEME_LABELS.items() if value == description), None)
-        if theme:
+        if theme and score > 0.5:
             evidence = find_theme_evidence(text, theme)
-            fallback_rows.append(
-                {
-                    "theme": theme,
-                    "confidence": round_score(score),
-                    "matchedEvidence": evidence[:3],
-                }
-            )
-            if evidence and (score >= 0.5 or len(evidence) >= 2):
-                rows.append(
-                    {
-                        "theme": theme,
-                        "confidence": round_score(max(score, 0.65 if len(evidence) >= 2 else score)),
-                        "matchedEvidence": evidence[:3],
-                    }
-                )
+            rows.append({
+                "theme": theme,
+                "confidence": round_score(score),
+                "matchedEvidence": evidence[:3],
+            })
     rows.sort(key=lambda row: row["confidence"], reverse=True)
-    if rows:
-        return rows[:6]
-    fallback_rows.sort(key=lambda row: row["confidence"], reverse=True)
-    return []
+    return rows[:6]
 
 
 def normalize_entity(value):
@@ -830,6 +767,7 @@ def extract_entities(nlp, text: str) -> dict:
     agencies = []
     locations = []
     dates = []
+    people = []
     for ent in doc.ents:
         if ent.label_ == "ORG":
             agencies.append(ent.text)
@@ -837,6 +775,8 @@ def extract_entities(nlp, text: str) -> dict:
             locations.append(ent.text)
         if ent.label_ == "DATE":
             dates.append(ent.text)
+        if ent.label_ == "PERSON":
+            people.append(ent.text)
 
     agencies.extend(
         re.findall(
@@ -869,6 +809,8 @@ def extract_entities(nlp, text: str) -> dict:
         "systems": systems,
         "dates": compact_entities([*dates, *extract_date_phrases(text)]),
         "people_roles": roles,
+        "people": compact_entities(people),
+        "addresses": unique(re.findall(r"\b\d{1,6}\s+[A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+){0,4}\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way)\b", text, flags=re.IGNORECASE)),
     }
 
 

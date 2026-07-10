@@ -330,7 +330,7 @@ async function analyzeWithRetry(text, attempts = 2) {
 async function main() {
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
   if (!skipMl) {
-    for (const name of ['ML_DEBERTA_ENDPOINT', 'ML_BART_ENDPOINT', 'ML_SPACY_ENDPOINT', 'ML_KEYBERT_ENDPOINT']) {
+    for (const name of ['ML_BART_ENDPOINT', 'ML_SPACY_ENDPOINT', 'ML_KEYBERT_ENDPOINT']) {
       if (!process.env[name]) throw new Error(`${name} is required. Use --skip-ml to only enrich story text.`);
     }
   }

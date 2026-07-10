@@ -90,14 +90,14 @@ enum ReactionType {
 }
 
 model Jurisdiction {
-  id                   String                @id @db.VarChar(50)
-  name                 String                @db.VarChar(255)
-  state                String?               @db.VarChar(100)
-  country              String                @default("US") @db.VarChar(100)
-  timezone             String                @default("America/New_York") @db.VarChar(50)
-  isActive             Boolean               @default(true) @map("is_active")
+  id                   String                     @id @db.VarChar(50)
+  name                 String                     @db.VarChar(255)
+  state                String?                    @db.VarChar(100)
+  country              String                     @default("US") @db.VarChar(100)
+  timezone             String                     @default("America/New_York") @db.VarChar(50)
+  isActive             Boolean                    @default(true) @map("is_active")
   config               Json?
-  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdAt            DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
   algorithms           Algorithm[]
   testimonies          Testimony[]
   organizations        Organization[]
@@ -108,6 +108,8 @@ model Jurisdiction {
   comments             Comment[]
   reactions            TestimonyReaction[]
   sharedTaxonomies     SharedTaxonomy[]
+  semanticEmbeddings   SemanticEmbedding[]
+  sourceInsights       CrossJurisdictionInsight[]
   submissionDrafts     SubmissionDraft[]
   themeImprovementMaps ThemeImprovementMap[]
 
@@ -289,6 +291,39 @@ model CorpusTopic {
   @@map("corpus_topics")
 }
 
+model SemanticEmbedding {
+  id             String       @id @default(uuid()) @db.Uuid
+  jurisdictionId String       @map("jurisdiction_id") @db.VarChar(50)
+  entityType     String       @map("entity_type") @db.VarChar(30)
+  entityId       String       @map("entity_id") @db.VarChar(100)
+  model          String       @db.VarChar(255)
+  vector         Json
+  contentHash    String       @map("content_hash") @db.VarChar(64)
+  generatedAt    DateTime     @default(now()) @map("generated_at") @db.Timestamptz(6)
+  jurisdiction   Jurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+
+  @@unique([jurisdictionId, entityType, entityId, model])
+  @@index([jurisdictionId, entityType, model])
+  @@map("semantic_embeddings")
+}
+
+model CrossJurisdictionInsight {
+  id                   String        @id @default(uuid()) @db.Uuid
+  sourceJurisdictionId String?       @map("source_jurisdiction_id") @db.VarChar(50)
+  useCase              String        @map("use_case") @db.VarChar(100)
+  insightType          String?       @map("insight_type") @db.VarChar(50)
+  insightData          Json          @map("insight_data")
+  isApproved           Boolean       @default(false) @map("is_approved")
+  approvedByUserId     String?       @map("approved_by") @db.Uuid
+  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  sourceJurisdiction   Jurisdiction? @relation(fields: [sourceJurisdictionId], references: [id], onDelete: SetNull)
+  approvedBy           User?         @relation("ApprovedCrossJurisdictionInsights", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([useCase])
+  @@index([isApproved])
+  @@map("cross_jurisdiction_insights")
+}
+
 model TranscriptionJob {
   id              String    @id @default(uuid()) @db.Uuid
   testimonyId     String    @map("testimony_id") @db.Uuid
@@ -398,32 +433,33 @@ model TestimonyReaction {
 }
 
 model User {
-  id                      String               @id @default(uuid()) @db.Uuid
-  jurisdictionId          String               @map("jurisdiction_id") @db.VarChar(50)
-  email                   String               @db.VarChar(255)
-  primaryRoleName         String               @default("COMMUNITY_MEMBER") @map("primary_role_name") @db.VarChar(50)
-  emailVerified           DateTime?            @map("email_verified") @db.Timestamptz(6)
-  name                    String               @db.VarChar(255)
-  image                   String?
-  passwordHash            String?              @map("password_hash")
-  passwordSetAt           DateTime?            @map("password_set_at") @db.Timestamptz(6)
-  organizationId          String?              @map("organization_id") @db.Uuid
-  createdAt               DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  jurisdiction            Jurisdiction         @relation(fields: [jurisdictionId], references: [id])
-  organization            Organization?        @relation(fields: [organizationId], references: [id])
-  accounts                Account[]
-  sessions                Session[]
-  passwordResetTokens     PasswordResetToken[]
-  userRoles               UserRole[]
-  submittedTestimonies    Testimony[]          @relation("SubmittedTestimonies")
-  facilitatedTestimonies  Testimony[]          @relation("FacilitatedTestimonies")
-  moderatedTestimonies    Testimony[]          @relation("ModeratedTestimonies")
-  reviewedTestimonyBriefs TestimonyBrief[]     @relation("ReviewedTestimonyBriefs")
-  reviewedBriefings       Briefing[]           @relation("ReviewedBriefings")
-  comments                Comment[]
-  commentLikes            CommentLike[]
-  testimonyReactions      TestimonyReaction[]
-  submissionDrafts        SubmissionDraft[]
+  id                                String                     @id @default(uuid()) @db.Uuid
+  jurisdictionId                    String                     @map("jurisdiction_id") @db.VarChar(50)
+  email                             String                     @db.VarChar(255)
+  primaryRoleName                   String                     @default("COMMUNITY_MEMBER") @map("primary_role_name") @db.VarChar(50)
+  emailVerified                     DateTime?                  @map("email_verified") @db.Timestamptz(6)
+  name                              String                     @db.VarChar(255)
+  image                             String?
+  passwordHash                      String?                    @map("password_hash")
+  passwordSetAt                     DateTime?                  @map("password_set_at") @db.Timestamptz(6)
+  organizationId                    String?                    @map("organization_id") @db.Uuid
+  createdAt                         DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+  jurisdiction                      Jurisdiction               @relation(fields: [jurisdictionId], references: [id])
+  organization                      Organization?              @relation(fields: [organizationId], references: [id])
+  accounts                          Account[]
+  sessions                          Session[]
+  passwordResetTokens               PasswordResetToken[]
+  userRoles                         UserRole[]
+  submittedTestimonies              Testimony[]                @relation("SubmittedTestimonies")
+  facilitatedTestimonies            Testimony[]                @relation("FacilitatedTestimonies")
+  moderatedTestimonies              Testimony[]                @relation("ModeratedTestimonies")
+  reviewedTestimonyBriefs           TestimonyBrief[]           @relation("ReviewedTestimonyBriefs")
+  reviewedBriefings                 Briefing[]                 @relation("ReviewedBriefings")
+  approvedCrossJurisdictionInsights CrossJurisdictionInsight[] @relation("ApprovedCrossJurisdictionInsights")
+  comments                          Comment[]
+  commentLikes                      CommentLike[]
+  testimonyReactions                TestimonyReaction[]
+  submissionDrafts                  SubmissionDraft[]
 
   @@unique([jurisdictionId, email])
   @@index([jurisdictionId])

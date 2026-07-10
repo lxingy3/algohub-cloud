@@ -108,7 +108,7 @@ export default function MLQuickTest() {
       setResult((current) => ({
         ...(current || task1Payload.result),
         status: 'PARTIAL',
-        task2: skippedTask('MoritzLaurer/deberta-v3-base-zeroshot-v1.1-all-33', cleanQuickTestErrorMessage(analysisError.message || 'Task 2-5 failed.')),
+        task2: skippedTask('facebook/bart-large-mnli', cleanQuickTestErrorMessage(analysisError.message || 'Task 2-5 failed.')),
         task3: skippedTask('facebook/bart-large-mnli', cleanQuickTestErrorMessage(analysisError.message || 'Task 2-5 failed.')),
         task4: skippedTask('spaCy', cleanQuickTestErrorMessage(analysisError.message || 'Task 2-5 failed.')),
         task5: skippedTask('KeyBERT', cleanQuickTestErrorMessage(analysisError.message || 'Task 2-5 failed.')),
