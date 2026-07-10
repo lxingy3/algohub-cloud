@@ -144,7 +144,7 @@ async function main() {
     return;
   }
 
-  await prisma.$transaction(async (tx) => {
+  const applyResult = await prisma.$transaction(async (tx) => {
     for (const topic of topics) {
       const topicId = Number(topic.topicId);
       if (!Number.isInteger(topicId) || topicId < 0) continue;
@@ -210,6 +210,17 @@ async function main() {
         },
       });
     }
+    let staleTopicsDeleted = 0;
+    if (selectedRecords.length === cleanRecords.length) {
+      const deleted = await tx.corpusTopic.deleteMany({
+        where: {
+          topicId: { notIn: [...validTopicIds] },
+          testimonies: { none: {} },
+        },
+      });
+      staleTopicsDeleted = deleted.count;
+    }
+    return { staleTopicsDeleted };
   }, { maxWait: 10000, timeout: 120000 });
 
   const relationSample = await prisma.testimony.findFirst({
@@ -222,6 +233,7 @@ async function main() {
     topicsUpserted: topics.length,
     recordsUpdated: selectedRecords.length,
     semanticEmbeddingsUpserted: semanticEmbeddings.length,
+    staleTopicsDeleted: applyResult.staleTopicsDeleted,
     model,
     relationSample,
     warnings,

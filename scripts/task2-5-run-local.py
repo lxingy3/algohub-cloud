@@ -537,9 +537,10 @@ PITTSBURGH_LOCATIONS = [
 
 
 def load_records(path: Path) -> list[dict]:
-    records = json.loads(path.read_text(encoding="utf-8"))
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    records = payload.get("records") if isinstance(payload, dict) else payload
     if not isinstance(records, list):
-        raise ValueError("Input file must contain a JSON array.")
+        raise ValueError("Input file must contain a JSON array or an object with a records array.")
     output = []
     for index, record in enumerate(records, start=1):
         text = str(record.get("narrativeText") or "").strip()
@@ -569,7 +570,6 @@ def classify_impact(classifier, text: str) -> dict:
     result = classifier(
         text,
         candidate_labels=descriptions,
-        hypothesis_template="This public service story has this impact: {}",
         multi_label=False,
     )
     scores_by_description = dict(zip(result["labels"], result["scores"]))
@@ -606,7 +606,6 @@ def detect_themes(classifier, text: str) -> list[dict]:
     result = classifier(
         text,
         candidate_labels=descriptions,
-        hypothesis_template="This public service story shows this theme: {}",
         multi_label=True,
     )
     rows = []

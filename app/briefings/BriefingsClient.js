@@ -488,7 +488,7 @@ function NarrativePanel({ briefing, scope, lens, onLensChange, onScopeChange }) 
   const claims = claimPreviewRows(briefing?.claimVsExperience);
   return (
     <div className="mb-6 rounded-lg border border-slate-200 bg-white p-5">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.48fr)]">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
             {scope === 'algorithm' ? 'Algorithm briefing' : 'Corpus briefing'} / {lens}
@@ -501,12 +501,12 @@ function NarrativePanel({ briefing, scope, lens, onLensChange, onScopeChange }) 
             <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950">{briefing.patternAnalysis}</p>
           ) : null}
         </div>
-        <div className="grid gap-3">
-          <BriefingViewControls lens={lens} scope={scope} onLensChange={onLensChange} onScopeChange={onScopeChange} />
-          <NarrativeList title="Key findings" rows={findings} empty="Pending review." />
-          <NarrativeList title="Recommendations" rows={recommendations} empty="Pending review." />
-          {claims.length ? <NarrativeList title="Claim vs. experience" rows={claims} empty="" limit={3} /> : null}
-        </div>
+        <BriefingViewControls lens={lens} scope={scope} onLensChange={onLensChange} onScopeChange={onScopeChange} />
+      </div>
+      <div className="mt-5 grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <NarrativeList title="Key findings" rows={findings} empty="Pending review." />
+        <NarrativeList title="Recommendations" rows={recommendations} empty="Pending review." />
+        {claims.length ? <NarrativeList title="Claim vs. experience" rows={claims} empty="" limit={3} /> : null}
       </div>
     </div>
   );

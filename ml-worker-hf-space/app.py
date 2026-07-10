@@ -174,7 +174,7 @@ class TextRequest(BaseModel):
 class ZeroShotRequest(BaseModel):
     text: str
     candidate_labels: list[str]
-    hypothesis_template: str | None = "This text is about {}."
+    hypothesis_template: str | None = "This example is {}."
     multi_label: bool | None = True
 
 
@@ -391,7 +391,7 @@ def run_zero_shot(classifier: Any, payload: ZeroShotRequest) -> dict[str, Any]:
     output = classifier(
         text,
         candidate_labels=labels,
-        hypothesis_template=payload.hypothesis_template or "This text is about {}.",
+        hypothesis_template=payload.hypothesis_template or "This example is {}.",
         multi_label=bool(payload.multi_label),
     )
     return {

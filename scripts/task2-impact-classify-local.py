@@ -10,9 +10,10 @@ from transformers import pipeline
 DEFAULT_MODEL = os.environ.get("TASK2_IMPACT_MODEL", "facebook/bart-large-mnli")
 
 LABELS = {
-    "NEGATIVE": "The story says an automated system harmed, disadvantaged, delayed, denied, wrongly flagged, or unfairly treated the person.",
-    "POSITIVE": "The story says an automated system worked well, helped the person, improved access, or led to a good outcome.",
-    "UNCLEAR": "The story does not make the impact clear enough to determine whether it was positive or negative.",
+    "NEGATIVE": "negative experience with an automated system",
+    "POSITIVE": "positive experience with an automated system",
+    "MIXED": "mixed experience with an automated system",
+    "UNCLEAR": "unclear or neutral experience",
 }
 
 EVIDENCE_TO_LABEL = {
@@ -23,9 +24,10 @@ EVIDENCE_TO_LABEL = {
 
 
 def load_narratives(path: Path) -> list[dict]:
-    data = json.loads(path.read_text(encoding="utf-8"))
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    data = payload.get("records") if isinstance(payload, dict) else payload
     if not isinstance(data, list):
-        raise ValueError("Input JSON must be a list of narrative records.")
+        raise ValueError("Input JSON must be a list or an object with a records array.")
 
     records = []
     for index, item in enumerate(data, start=1):
@@ -56,15 +58,15 @@ def classify_records(records: list[dict], model_name: str, threshold: float) -> 
       output = classifier(
           record["narrativeText"],
           candidate_labels=evidence_descriptions,
-          hypothesis_template="This public service story has this impact: {}",
-          multi_label=True,
+          multi_label=False,
       )
       scores_by_description = dict(zip(output["labels"], output["scores"]))
       evidence_scores = {
           EVIDENCE_TO_LABEL[description]: round(float(scores_by_description.get(description, 0.0)), 4)
           for description in evidence_descriptions
       }
-      winner, confidence = choose_label(evidence_scores)
+      winner = EVIDENCE_TO_LABEL[output["labels"][0]]
+      confidence = float(output["scores"][0])
       results.append({
           "id": record["id"],
           "title": record["title"],
@@ -72,30 +74,13 @@ def classify_records(records: list[dict], model_name: str, threshold: float) -> 
           "model": model_name,
           "aiImpactClassification": winner,
           "aiConfidenceScore": confidence,
-          "humanReviewRequired": confidence < threshold,
+          "humanReviewRequired": confidence <= threshold,
           "threshold": threshold,
           "evidenceScores": evidence_scores,
           "narrativeText": record["narrativeText"],
       })
 
     return results
-
-
-def choose_label(evidence_scores: dict[str, float]) -> tuple[str, float]:
-    negative = evidence_scores["NEGATIVE"]
-    positive = evidence_scores["POSITIVE"]
-    unclear = evidence_scores["UNCLEAR"]
-
-    if positive >= 0.65 and negative >= 0.65:
-        return "MIXED", round(min(positive, negative), 4)
-    if unclear >= 0.65 and max(negative, positive) < 0.5:
-        return "UNCLEAR", unclear
-    if negative >= positive and negative >= unclear:
-        return "NEGATIVE", negative
-    if positive >= negative and positive >= unclear:
-        return "POSITIVE", positive
-    return "UNCLEAR", unclear
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run ML Task 2 impact classification on narrative text.")

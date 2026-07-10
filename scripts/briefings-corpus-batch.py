@@ -43,7 +43,7 @@ def topic_id_or_none(topic_id):
 
 
 def min_cluster_size(count):
-    return max(2, min(10, round(count * 0.06)))
+    return max(3, count // 10)
 
 
 def read_json(path):
@@ -333,11 +333,19 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
 
     neighbors = n_neighbors_arg or max(2, min(10, len(records) - 1))
     cluster_size = min_cluster_size_arg or min_cluster_size(len(records))
-    min_samples = min_samples_arg or 1
-    umap_model = UMAP(n_components=2, n_neighbors=neighbors, min_dist=0.0, metric="cosine", random_state=42)
-    hdbscan_model = HDBSCAN(
+    min_samples = min_samples_arg or 2
+    umap_model = UMAP(n_components=5, n_neighbors=neighbors, min_dist=0.0, metric="cosine", random_state=42)
+    cluster_model = HDBSCAN(
         min_cluster_size=cluster_size,
         min_samples=min_samples,
+        metric="euclidean",
+        cluster_selection_method="eom",
+        prediction_data=True,
+    )
+    topic_cluster_size = max(2, min(10, round(len(records) * 0.06)))
+    topic_cluster_model = HDBSCAN(
+        min_cluster_size=topic_cluster_size,
+        min_samples=1,
         metric="euclidean",
         cluster_selection_method="eom",
         prediction_data=True,
@@ -346,21 +354,44 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
     topic_model = BERTopic(
         embedding_model=None,
         umap_model=umap_model,
-        hdbscan_model=hdbscan_model,
+        hdbscan_model=topic_cluster_model,
         vectorizer_model=vectorizer_model,
         calculate_probabilities=False,
         verbose=True,
     )
 
     topic_ids, _probabilities = topic_model.fit_transform(texts, embeddings)
-    umap_xy = topic_model.umap_model.embedding_
-    cluster_ids = topic_model.hdbscan_model.labels_
+    umap_xy = UMAP(
+        n_components=2,
+        n_neighbors=neighbors,
+        min_dist=0.0,
+        metric="cosine",
+        random_state=42,
+    ).fit_transform(embeddings)
+    cluster_ids = cluster_model.fit_predict(embeddings)
     topics = build_topics(records, topic_ids, texts, topic_model, keyword_model)
     params = {
         "embeddingModel": model_name,
-        "umap": {"metric": "cosine", "randomState": 42, "nNeighbors": neighbors, "nComponents": 2},
-        "hdbscan": {"minClusterSize": cluster_size, "minSamples": min_samples, "metric": "euclidean", "clusterSelectionMethod": "eom"},
-        "bertopic": {"topicMinusOneStoredAsNull": True},
+        "umap": {
+            "metric": "cosine",
+            "randomState": 42,
+            "nNeighbors": neighbors,
+            "clusterComponents": 5,
+            "mapComponents": 2,
+        },
+        "hdbscan": {
+            "input": "normalized testimony embeddings",
+            "minClusterSize": cluster_size,
+            "minSamples": min_samples,
+            "metric": "euclidean",
+            "clusterSelectionMethod": "eom",
+        },
+        "bertopic": {
+            "umapComponents": 5,
+            "minClusterSize": topic_cluster_size,
+            "minSamples": 1,
+            "topicMinusOneStoredAsNull": True,
+        },
         "keybert": {"keywordNgramRange": [1, 3], "topN": 10, "useMmr": True, "diversity": 0.45},
         "semanticCache": {
             "dimensions": int(all_embeddings.shape[1]),
