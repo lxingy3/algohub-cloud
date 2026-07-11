@@ -15,6 +15,12 @@ async function get(path) {
   }
 }
 
+async function getAll(paths) {
+  const results = [];
+  for (const path of paths) results.push(await get(path));
+  return results;
+}
+
 const [
   impact,
   themes,
@@ -32,23 +38,23 @@ const [
   filteredStories,
   coverage,
   comparison,
-] = await Promise.all([
-  get('/api/explore/impact?scope=corpus'),
-  get('/api/explore/cross-cutting-themes?scope=corpus'),
-  get('/api/explore/patterns?scope=corpus'),
-  get('/api/explore/silence?scope=corpus&lens=intermediary'),
-  get('/api/explore/recognition?scope=corpus&theme=data_accuracy'),
-  get('/api/explore/claim-vs-experience?scope=corpus&lens=government'),
-  get('/api/explore/claim-vs-experience?scope=corpus&lens=intermediary'),
-  get('/api/testimonies?fields=excerpt&scope=corpus&lens=government'),
-  get('/api/explore/patterns?scope=corpus&lens=government'),
-  get('/api/testimonies?fields=excerpt&scope=corpus&lens=community&limit=200'),
-  get('/api/explore/cross-cutting-themes?scope=corpus&theme=data_accuracy'),
-  get('/api/explore/patterns?scope=corpus&domain=Housing'),
-  get('/api/explore/landscape?scope=corpus&theme=data_accuracy'),
-  get('/api/testimonies?fields=excerpt&scope=corpus&theme=data_accuracy&limit=200'),
-  get('/api/explore/coverage?scope=corpus&lens=intermediary'),
-  get('/api/explore/compare?scope=corpus&dimension=agency&lens=intermediary'),
+] = await getAll([
+  '/api/explore/impact?scope=corpus',
+  '/api/explore/cross-cutting-themes?scope=corpus',
+  '/api/explore/patterns?scope=corpus',
+  '/api/explore/silence?scope=corpus&lens=intermediary',
+  '/api/explore/recognition?scope=corpus&theme=data_accuracy',
+  '/api/explore/claim-vs-experience?scope=corpus&lens=government',
+  '/api/explore/claim-vs-experience?scope=corpus&lens=intermediary',
+  '/api/testimonies?fields=excerpt&scope=corpus&lens=government',
+  '/api/explore/patterns?scope=corpus&lens=government',
+  '/api/testimonies?fields=excerpt&scope=corpus&lens=community&limit=200',
+  '/api/explore/cross-cutting-themes?scope=corpus&theme=data_accuracy',
+  '/api/explore/patterns?scope=corpus&domain=Housing',
+  '/api/explore/landscape?scope=corpus&theme=data_accuracy',
+  '/api/testimonies?fields=excerpt&scope=corpus&theme=data_accuracy&limit=200',
+  '/api/explore/coverage?scope=corpus&lens=intermediary',
+  '/api/explore/compare?scope=corpus&dimension=agency&lens=intermediary',
 ]);
 
 assert.match(impact.method, /stored impact labels/);
