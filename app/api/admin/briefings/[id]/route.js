@@ -12,7 +12,7 @@ export async function POST(request, { params }) {
   const { id } = await params;
   const formData = await request.formData();
   const action = String(formData.get('action') || 'save');
-  const reviewStatus = action === 'publish' ? 'PUBLISHED' : 'DRAFT';
+  const reviewStatus = action === 'publish' ? 'PUBLISHED' : action === 'review' ? 'REVIEWED' : 'DRAFT';
   const briefing = await prisma.briefing.findFirst({
     where: { id, jurisdictionId: getJurisdictionId() },
     select: { id: true },
@@ -33,6 +33,14 @@ export async function POST(request, { params }) {
     },
   });
 
+  if (request.headers.get('accept')?.includes('application/json')) {
+    return NextResponse.json({
+      reviewStatus,
+      message: reviewStatus === 'PUBLISHED' ? 'Published and ready on the public page.' : reviewStatus === 'REVIEWED' ? 'Review recorded. The briefing remains private.' : 'Draft saved. The briefing remains private.',
+      publicPage: reviewStatus === 'PUBLISHED' ? 'Updated now' : 'Not published',
+      mlRefresh: 'Not run. The saved charts and corpus results were left unchanged.',
+    });
+  }
   return NextResponse.redirect(new URL('/admin/briefings', request.url), { status: 303 });
 }
 

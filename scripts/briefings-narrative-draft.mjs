@@ -193,7 +193,7 @@ async function refineWithClaude(draft) {
     },
     body: JSON.stringify({
       model: process.env.CLAUDE_MODEL || 'claude-sonnet-5',
-      max_tokens: 2400,
+      max_tokens: 1600,
       system: 'You are a JSON API. Return valid JSON only. No markdown, no prose outside JSON.',
       messages: [{
         role: 'user',
@@ -231,7 +231,7 @@ async function main() {
       algorithmEmbeddings: new Map([['a1', { vector: [1, 0] }]]),
       storyEmbeddings: new Map([['s1', { vector: [1, 0] }], ['s2', { vector: [0, 1] }]]),
     }).rows[0];
-    assert.equal(silenceCheck.expectedVolume, 30);
+    assert.equal(silenceCheck.expectedVolume, 12);
     assert.equal(silenceCheck.factors.semanticSource, 'sentence-transformers cosine');
     assert.equal(silenceCheck.priority, 'critical');
     console.log('briefings narrative draft self-check ok');

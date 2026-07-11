@@ -585,7 +585,7 @@ function BriefingBlock({ block, snapshot, lens, privateNote, onPrivateNoteChange
   const [expanded, setExpanded] = useState(false);
   return (
     <article className="grid overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:grid-cols-[minmax(420px,1.15fr)_minmax(360px,0.85fr)]">
-      <div className="border-b border-slate-200 bg-slate-950 p-6 text-white lg:border-b-0 lg:border-r">
+      <div className="flex flex-col border-b border-slate-200 bg-slate-950 p-6 text-white lg:border-b-0 lg:border-r">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-3xl font-black tracking-tight text-amber-300">{block.code}</p>
@@ -603,7 +603,9 @@ function BriefingBlock({ block, snapshot, lens, privateNote, onPrivateNoteChange
             </button>
           </div>
         </div>
-        <LiveVisual block={block} snapshot={snapshot} />
+        <div className="flex min-h-[220px] flex-1 items-center [&>*]:w-full">
+          <LiveVisual block={block} snapshot={snapshot} />
+        </div>
       </div>
       <div className="p-5">
         <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -1805,7 +1807,7 @@ function LiveThemeNetwork({ rows, themes, expanded = false }) {
         </div>
       ) : null}
       <div className="relative">
-        <svg aria-label="Theme co-occurrence network" className={`${expanded ? 'h-80' : 'h-40'} w-full rounded-md border border-white/15 bg-white/5`} viewBox="0 0 100 100">
+        <svg aria-label="Theme co-occurrence network" className={`${expanded ? 'h-80' : 'h-52'} w-full rounded-md border border-white/15 bg-white/5`} viewBox="0 0 100 100">
           {topPairs.map((row) => {
             const source = nodeByLabel.get(displayBriefingLabel(row.source));
             const target = nodeByLabel.get(displayBriefingLabel(row.target));
@@ -2018,7 +2020,7 @@ function LiveTrend({ buckets, expanded = false }) {
           <span>0</span>
         </div>
         <div>
-          <div className={`${expanded ? 'h-64' : 'h-36'} relative border-b border-l border-white/15`}>
+          <div className={`${expanded ? 'h-64' : 'h-52'} relative border-b border-l border-white/15`}>
             <svg aria-label="Monthly streamgraph" onMouseMove={handleTrendHover} onMouseLeave={() => setHoveredSeries(null)} className="h-full w-full cursor-help overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 100">
               <line x1="0" x2="100" y1="50" y2="50" stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" />
               {paths.map((path) => (
@@ -2094,7 +2096,7 @@ function LiveScatter({ points, expanded = false }) {
           <span>{minY.toFixed(1)}</span>
         </div>
         <div>
-          <div className={`${expanded ? 'h-96' : 'h-36'} relative rounded-md border border-white/15 bg-white/5`}>
+          <div className={`${expanded ? 'h-96' : 'h-52'} relative rounded-md border border-white/15 bg-white/5`}>
             {plottedPoints.map((point) => (
               <button
                 key={point.id}
