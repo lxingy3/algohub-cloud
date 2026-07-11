@@ -6,7 +6,7 @@ import { getCurrentUser } from '../../../lib/auth';
 import { mediaStorageProvider, mediaStorageUri } from '../../../lib/mediaStorage';
 import { rankStoriesForSearch } from '../../../lib/searchRanking';
 import { buildStorySummary } from '../../../lib/storySummary';
-import { anonymizedExcerpt, parseExploreFilters, storedKeywords } from '../../../lib/briefingsExplore';
+import { anonymizedExcerpt, parseExploreFilters, storedKeywords, storyHasTheme } from '../../../lib/briefingsExplore';
 import { cosineSimilarity, getSemanticEmbeddingMap, meanEmbedding } from '../../../lib/semanticEmbeddings';
 
 export const dynamic = 'force-dynamic';
@@ -129,20 +129,6 @@ function algorithmLinkWhere(value) {
     : { algorithm: { slug: value } };
 }
 
-function normalizeThemeName(value) {
-  return String(value || '').trim().toLowerCase();
-}
-
-function storyHasTheme(story, theme) {
-  const target = normalizeThemeName(theme);
-  if (!target) return true;
-  const themes = Array.isArray(story.aiThemes) ? story.aiThemes : [];
-  return themes.some((item) => {
-    const name = typeof item === 'string' ? item : item?.theme || item?.label || item?.name;
-    return normalizeThemeName(name) === target;
-  });
-}
-
 function cleanExcerptText(story) {
   return anonymizedExcerpt(story);
 }
@@ -219,12 +205,14 @@ function pickBriefingExcerpts(stories, limit, embeddings) {
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const filters = parseExploreFilters(request);
+  const fields = searchParams.get('fields') || '';
   const page = Math.max(Number(searchParams.get('page') || 1), 1);
-  const limit = Math.min(Math.max(Number(searchParams.get('limit') || 20), 1), 50);
+  // ponytail: Briefings can inspect up to 200 excerpts in one snapshot; switch to cursor loading when the corpus outgrows this.
+  const maxLimit = fields === 'excerpt' ? 200 : 50;
+  const limit = Math.min(Math.max(Number(searchParams.get('limit') || 20), 1), maxLimit);
   const jurisdictionId = getJurisdictionId();
   const search = searchParams.get('search') || '';
   const { algorithm, domain, impact, language, lens, submissionMethod, theme } = filters;
-  const fields = searchParams.get('fields') || '';
   const submittedAt = {
     ...(filters.dateFrom ? { gte: filters.dateFrom } : {}),
     ...(filters.dateTo ? { lte: filters.dateTo } : {}),
@@ -232,8 +220,8 @@ export async function GET(request) {
   const storyFilters = [
     ...(domain ? [{
       OR: [
-        { affectedDomain: domain },
-        { algorithmLinks: { some: { algorithm: { useCase: domain } } } },
+        { affectedDomain: { contains: domain, mode: 'insensitive' } },
+        { algorithmLinks: { some: { algorithm: { useCase: { contains: domain, mode: 'insensitive' } } } } },
       ],
     }] : []),
     ...(impact ? [{ OR: [{ selfReportedImpact: impact }, { aiImpactClassification: impact }] }] : []),
@@ -269,7 +257,7 @@ export async function GET(request) {
         { isOutlier: 'desc' },
         { submittedAt: 'desc' },
       ],
-      take: 150,
+      take: 500,
       select: testimonyExcerptSelect,
     });
     const matchingStories = candidates.filter((story) => storyHasTheme(story, theme));

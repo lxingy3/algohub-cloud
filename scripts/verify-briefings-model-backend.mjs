@@ -26,6 +26,12 @@ const [
   governmentStories,
   governmentPatterns,
   communityStories,
+  filteredThemes,
+  filteredPatterns,
+  filteredLandscape,
+  filteredStories,
+  coverage,
+  comparison,
 ] = await Promise.all([
   get('/api/explore/impact?scope=corpus'),
   get('/api/explore/cross-cutting-themes?scope=corpus'),
@@ -36,7 +42,13 @@ const [
   get('/api/explore/claim-vs-experience?scope=corpus&lens=intermediary'),
   get('/api/testimonies?fields=excerpt&scope=corpus&lens=government'),
   get('/api/explore/patterns?scope=corpus&lens=government'),
-  get('/api/testimonies?fields=excerpt&scope=corpus&lens=community&limit=50'),
+  get('/api/testimonies?fields=excerpt&scope=corpus&lens=community&limit=200'),
+  get('/api/explore/cross-cutting-themes?scope=corpus&theme=data_accuracy'),
+  get('/api/explore/patterns?scope=corpus&domain=Housing'),
+  get('/api/explore/landscape?scope=corpus&theme=data_accuracy'),
+  get('/api/testimonies?fields=excerpt&scope=corpus&theme=data_accuracy&limit=200'),
+  get('/api/explore/coverage?scope=corpus&lens=intermediary'),
+  get('/api/explore/compare?scope=corpus&dimension=agency&lens=intermediary'),
 ]);
 
 assert.match(impact.method, /stored impact labels/);
@@ -69,11 +81,28 @@ assert.match(governmentStories.notes.join(' '), /aggregate-only/);
 assert.equal(governmentPatterns.points.length, 0);
 assert.match(governmentPatterns.notes.join(' '), /aggregate-only/);
 assert.ok(communityStories.items.length > 0);
+assert.equal(communityStories.items.length, communityStories.total, 'Briefings excerpt snapshot is incomplete');
 assert.ok(communityStories.items.every((row) => !('narrativeText' in row) && typeof row.excerpt === 'string'));
 assert.ok(communityStories.items.some((row) => row.excerpt.includes('[locations]')));
 assert.ok(communityStories.items.every((row) => Array.isArray(row.keywords) && row.cluster));
 assert.ok(communityStories.items.some((row) => /cluster centroid/.test(row.whyShown)), 'representative excerpts are not centroid-selected');
 assert.ok(communityStories.items.some((row) => /outlier/.test(row.whyShown)), 'outlier excerpt is missing');
+assert.ok(filteredThemes.totalStories > 0 && filteredThemes.totalStories < themes.totalStories, 'theme facet did not narrow the corpus');
+const filteredTopicCounts = new Map();
+for (const point of filteredPatterns.points) {
+  if (point.topicId !== null) filteredTopicCounts.set(point.topicId, (filteredTopicCounts.get(point.topicId) || 0) + 1);
+}
+assert.ok(filteredPatterns.topics.every((topic) => topic.size === filteredTopicCounts.get(topic.topicId)), 'filtered topic size does not match its returned points');
+for (const algorithm of filteredLandscape.algorithms) {
+  const expected = filteredStories.items.filter((story) => story.algorithms.some((item) => item.slug === algorithm.slug)).length;
+  assert.equal(algorithm.approvedTestimonyCount, expected, `${algorithm.name} filtered story count drifted`);
+}
+assert.equal(coverage.processingCoverage.totalApprovedStories, coverage.total);
+for (const key of ['impactClassified', 'themesAssigned', 'summariesAvailable', 'entitiesExtracted', 'perTestimonyProcessed', 'corpusMapped', 'topicAssigned', 'outliers', 'semanticEmbeddings']) {
+  assert.ok(coverage.processingCoverage[key] >= 0 && coverage.processingCoverage[key] <= coverage.total, `${key} processing count is invalid`);
+}
+assert.ok(comparison.groups.every((group) => Array.isArray(group.themes) && (group.averageSilenceScore === null || Number.isFinite(group.averageSilenceScore))));
+assert.ok(governmentPatterns.topics.every((topic) => topic.size >= 5), 'government topic aggregates fell below the privacy threshold');
 
 console.log(JSON.stringify({
   baseUrl,
@@ -82,5 +111,7 @@ console.log(JSON.stringify({
   outliers: patterns.points.filter((row) => row.isOutlier).length,
   silenceRows: silence.rows.length,
   claimRows: claims.rows.length,
+  themeFilteredStories: filteredThemes.totalStories,
+  filteredPatternPoints: filteredPatterns.points.length,
   status: 'PASS',
 }, null, 2));

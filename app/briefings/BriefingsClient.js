@@ -171,7 +171,7 @@ export function BriefingsClient() {
   const excerptQuery = useMemo(() => {
     const params = new URLSearchParams();
     params.set('fields', 'excerpt');
-    params.set('limit', '50');
+    params.set('limit', '200');
     params.set('lens', lens);
     params.set('scope', scope === 'algorithm' ? 'algorithm' : 'corpus');
     if (scope === 'algorithm') params.set('algorithm', selectedVisibleAlgorithm);
