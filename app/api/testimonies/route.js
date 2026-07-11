@@ -12,27 +12,27 @@ import { cosineSimilarity, getSemanticEmbeddingMap, meanEmbedding } from '../../
 export const dynamic = 'force-dynamic';
 
 const testimonySchema = z.object({
-  title: z.string().trim().min(1),
-  name: z.string().trim().optional(),
-  city: z.string().trim().min(1),
-  zipCode: z.string().trim().optional(),
-  occurredAtText: z.string().trim().optional(),
-  referralSource: z.string().trim().optional(),
-  facilitatorCode: z.string().trim().optional(),
-  contactEmail: z.string().trim().email().optional().or(z.literal('')),
-  narrativeText: z.string().trim().optional(),
+  title: z.string().trim().min(1).max(255),
+  name: z.string().trim().max(255).optional(),
+  city: z.string().trim().min(1).max(255),
+  zipCode: z.string().trim().max(20).optional(),
+  occurredAtText: z.string().trim().max(100).optional(),
+  referralSource: z.string().trim().max(1000).optional(),
+  facilitatorCode: z.string().trim().max(100).optional(),
+  contactEmail: z.string().trim().email().max(255).optional().or(z.literal('')),
+  narrativeText: z.string().trim().max(12000).optional(),
   algorithmId: z.string().trim().optional(),
   uncertainSystem: z.boolean().optional(),
-  affectedDomain: z.string().trim().optional(),
+  affectedDomain: z.string().trim().max(100).optional(),
   selfReportedImpact: z.enum(['POSITIVE', 'NEGATIVE', 'MIXED', 'UNCLEAR']).optional(),
   publicPosting: z.boolean(),
   followupConsent: z.literal(true),
   isAnonymous: z.boolean().optional(),
   storyType: z.enum(['text', 'voice', 'facilitated']),
-  mediaObjectKey: z.string().trim().optional(),
-  mediaUrl: z.string().trim().optional(),
-  mediaMimeType: z.string().trim().optional(),
-  mediaDurationSeconds: z.number().int().nonnegative().optional(),
+  mediaObjectKey: z.string().trim().max(1024).optional(),
+  mediaUrl: z.string().trim().max(2048).optional(),
+  mediaMimeType: z.string().trim().max(100).optional(),
+  mediaDurationSeconds: z.number().int().nonnegative().max(30 * 60).optional(),
 });
 
 function isChecked(value) {
@@ -50,25 +50,19 @@ const testimonyListSelect = {
   title: true,
   summary: true,
   city: true,
-  zipCode: true,
   imageUrl: true,
-  submitterName: true,
   referralSource: true,
   publicPosting: true,
-  followupConsent: true,
   storyType: true,
   isAnonymous: true,
   narrativeText: true,
   submissionMethod: true,
-  audioFileUrl: true,
   originalLanguage: true,
   affectedDomain: true,
   selfReportedImpact: true,
   aiImpactClassification: true,
   aiThemes: true,
-  aiLinkedAlgorithmIds: true,
   aiConfidenceScore: true,
-  aiExtractedExperiences: true,
   aiProcessedAt: true,
   moderationStatus: true,
   submittedAt: true,
@@ -230,6 +224,7 @@ export async function GET(request) {
   const where = {
     jurisdictionId,
     moderationStatus: 'APPROVED',
+    publicPosting: true,
     ...(language ? { originalLanguage: language } : {}),
     ...(submissionMethod ? { submissionMethod } : {}),
     ...(Object.keys(submittedAt).length ? { submittedAt } : {}),
@@ -359,13 +354,22 @@ export async function POST(request) {
     isAnonymous,
     storyType,
     mediaObjectKey,
-    mediaUrl,
     mediaMimeType,
     mediaDurationSeconds,
   } = result.data;
 
   if (storyType === 'voice' && !mediaObjectKey) {
     return NextResponse.json({ error: 'Please record or upload media before submitting.' }, { status: 400 });
+  }
+  if (mediaObjectKey && !/^testimonies\/(audio|video)\//.test(mediaObjectKey)) {
+    return NextResponse.json({ error: 'Invalid testimony media reference.' }, { status: 400 });
+  }
+  if (algorithmId) {
+    const algorithm = await prisma.algorithm.findFirst({
+      where: { id: algorithmId, jurisdictionId },
+      select: { id: true },
+    });
+    if (!algorithm) return NextResponse.json({ error: 'Algorithm not found.' }, { status: 400 });
   }
 
   const fallbackNarrative =
@@ -375,7 +379,7 @@ export async function POST(request) {
           ? 'A facilitated story session was submitted.'
           : '';
   const storedNarrative = narrativeText?.trim() || fallbackNarrative;
-  const storedMediaUri = mediaObjectKey ? (mediaUrl || mediaStorageUri(mediaObjectKey)) : null;
+  const storedMediaUri = mediaObjectKey ? mediaStorageUri(mediaObjectKey) : null;
 
   const testimony = await prisma.$transaction(async (tx) => {
     const created = await tx.testimony.create({

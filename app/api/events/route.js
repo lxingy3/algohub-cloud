@@ -12,20 +12,22 @@ export async function GET(request) {
     where: { jurisdictionId: getJurisdictionId() },
     orderBy: { date: 'asc' },
     ...(compact ? { take: Math.min(Math.max(limit, 1), 50) } : {}),
-    ...(compact ? {
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        eventType: true,
-        date: true,
-        location: true,
-        isVirtual: true,
-        registrationUrl: true,
-        imageUrl: true,
-        organizer: { select: { name: true, slug: true } },
-      },
-    } : { include: { organizer: true } }),
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      eventType: true,
+      date: true,
+      endDate: true,
+      location: true,
+      isVirtual: true,
+      virtualLink: true,
+      maxAttendees: true,
+      registrationRequired: true,
+      registrationUrl: true,
+      imageUrl: true,
+      organizer: { select: { name: true, slug: true, websiteUrl: true, logoUrl: true } },
+    },
   });
 
   return NextResponse.json({ items: events.map((event) => ({ ...event, imageUrl: imageUrlForEvent(event) })), total: events.length });

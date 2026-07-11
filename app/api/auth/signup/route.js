@@ -18,9 +18,16 @@ export async function POST(request) {
   const callbackUrl = safeCallbackUrl(formData.get('callbackUrl')) || '/';
   const jurisdictionId = getJurisdictionId();
 
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255) {
+    return redirectToSignup(request, callbackUrl, 'invalid-email');
+  }
+  if (!name || name.length > 255) {
+    return redirectToSignup(request, callbackUrl, 'invalid-name');
+  }
+
   const passwordError = validatePassword(password);
   if (passwordError) {
-    return redirectToSignup(request, callbackUrl, 'password-too-short');
+    return redirectToSignup(request, callbackUrl, password.length > 128 ? 'password-too-long' : 'password-too-short');
   }
 
   if (password !== confirmPassword) {
@@ -52,17 +59,28 @@ export async function POST(request) {
     },
   });
 
-  let user;
+  const passwordHash = await hashPassword(password);
+  let session;
   try {
-    user = await prisma.user.create({
-      data: {
-        email,
-        name,
-        jurisdictionId,
-        primaryRoleName: DEFAULT_ROLE,
-        passwordHash: await hashPassword(password),
-        passwordSetAt: new Date(),
-      },
+    session = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email,
+          name,
+          jurisdictionId,
+          primaryRoleName: DEFAULT_ROLE,
+          passwordHash,
+          passwordSetAt: new Date(),
+        },
+      });
+      await tx.userRole.create({ data: { userId: user.id, roleId: role.id } });
+      return tx.session.create({
+        data: {
+          sessionToken: randomUUID(),
+          userId: user.id,
+          expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
     });
   } catch (error) {
     if (error?.code === 'P2002') {
@@ -70,20 +88,6 @@ export async function POST(request) {
     }
     throw error;
   }
-
-  await prisma.userRole.upsert({
-    where: { userId_roleId: { userId: user.id, roleId: role.id } },
-    update: {},
-    create: { userId: user.id, roleId: role.id },
-  });
-
-  const session = await prisma.session.create({
-    data: {
-      sessionToken: randomUUID(),
-      userId: user.id,
-      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    },
-  });
 
   const response = NextResponse.redirect(new URL(callbackUrl, request.url), { status: 303 });
   response.cookies.set(sessionCookieName, session.sessionToken, {

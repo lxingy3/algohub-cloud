@@ -75,6 +75,7 @@ async function setPasswordWithResetToken(request, payload, resetToken) {
       },
     }),
     prisma.passwordResetToken.deleteMany({ where: { userId: resetRecord.userId } }),
+    prisma.session.deleteMany({ where: { userId: resetRecord.userId } }),
     prisma.session.create({
       data: {
         sessionToken,

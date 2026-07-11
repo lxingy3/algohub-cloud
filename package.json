@@ -25,6 +25,7 @@
     "ml:briefings:evaluate": "node scripts/evaluate-briefings-corpus.mjs",
     "ml:briefings:benchmark": "node scripts/evaluate-briefings-human-benchmark.mjs",
     "ml:briefings:verify": "node scripts/verify-briefings-model-backend.mjs",
+    "backend:verify": "node scripts/verify-backend-boundaries.mjs",
     "ml:briefings:self-check": "python scripts/briefings-corpus-batch.py --self-check --output task-briefings-results/corpus-batch-self-check.json",
     "ml:briefings:apply": "node scripts/briefings-corpus-apply.mjs",
     "briefings:draft": "node scripts/briefings-narrative-draft.mjs",

@@ -17,7 +17,14 @@ export async function POST(request) {
   const websiteUrl = String(formData.get('websiteUrl') || '').trim();
   const message = String(formData.get('message') || '').trim();
 
-  if (!organizationName || !contactEmail || !message) {
+  const validWebsite = !websiteUrl || /^https?:\/\//i.test(websiteUrl);
+  if (
+    !organizationName || organizationName.length > 255
+    || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail) || contactEmail.length > 255
+    || contactName.length > 255
+    || !message || message.length > 4000
+    || websiteUrl.length > 2048 || !validWebsite
+  ) {
     return NextResponse.redirect(new URL('/about?partner=missing#partner-application', request.url), { status: 303 });
   }
 

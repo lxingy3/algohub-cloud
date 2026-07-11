@@ -3,11 +3,15 @@ import assert from 'node:assert/strict';
 const baseUrl = (process.argv[2] || process.env.BRIEFINGS_BASE_URL || 'https://algohub-cloud-ls7r.vercel.app').replace(/\/$/, '');
 
 async function get(path) {
+  const startedAt = Date.now();
+  console.log(`check ${path}`);
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
       const response = await fetch(`${baseUrl}${path}`);
       assert.equal(response.ok, true, `${path} returned ${response.status}`);
-      return response.json();
+      const result = await response.json();
+      console.log(`ok ${path} ${Date.now() - startedAt}ms`);
+      return result;
     } catch (error) {
       if (attempt === 3) throw error;
       await new Promise((resolve) => setTimeout(resolve, attempt * 500));

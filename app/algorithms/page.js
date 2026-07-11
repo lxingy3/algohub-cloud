@@ -31,13 +31,13 @@ export default async function AlgorithmsPage({ searchParams }) {
       include: {
         _count: {
           select: {
-            testimonyLinks: { where: { testimony: { moderationStatus: 'APPROVED' } } },
+            testimonyLinks: { where: { testimony: { moderationStatus: 'APPROVED', publicPosting: true } } },
           },
         },
         claims: { orderBy: { createdAt: 'asc' } },
         documents: { orderBy: { uploadedAt: 'desc' } },
         testimonyLinks: {
-          where: { testimony: { moderationStatus: 'APPROVED' } },
+          where: { testimony: { moderationStatus: 'APPROVED', publicPosting: true } },
           include: {
             testimony: {
               select: {

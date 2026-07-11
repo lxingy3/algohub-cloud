@@ -21,9 +21,15 @@ export default async function AlgorithmDetailPage({ params }) {
         claims: { orderBy: { createdAt: 'asc' } },
         documents: { orderBy: { uploadedAt: 'desc' } },
         testimonyLinks: {
+          where: { testimony: { moderationStatus: 'APPROVED', publicPosting: true } },
           include: {
             testimony: {
-              include: { _count: { select: { comments: true, reactions: true } } },
+              select: {
+                id: true,
+                title: true,
+                summary: true,
+                _count: { select: { comments: true, reactions: true } },
+              },
             },
           },
         },
@@ -33,7 +39,7 @@ export default async function AlgorithmDetailPage({ params }) {
 
   if (!algorithm) notFound();
 
-  const approvedLinks = algorithm.testimonyLinks.filter((link) => link.testimony.moderationStatus === 'APPROVED');
+  const approvedLinks = algorithm.testimonyLinks;
   const { icon: UseCaseIcon, tone: useCaseTone } = getUseCaseIconMeta(algorithm.useCase);
 
   return (

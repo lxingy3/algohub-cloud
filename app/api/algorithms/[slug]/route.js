@@ -15,13 +15,13 @@ export async function GET(_request, { params }) {
       claims: true,
       documents: true,
       testimonyLinks: {
+        where: { testimony: { moderationStatus: 'APPROVED', publicPosting: true } },
         include: {
           testimony: {
             select: {
               id: true,
               title: true,
               summary: true,
-              moderationStatus: true,
               submittedAt: true,
             },
           },

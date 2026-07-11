@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { requireAdmin } from '../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -12,10 +11,18 @@ export async function POST(request) {
   if (!admin) return NextResponse.json({ error: 'Admin only' }, { status: 403 });
 
   const formData = await request.formData();
+  const data = eventPayload(formData);
+  if (data.organizerOrgId) {
+    const organizer = await prisma.organization.findFirst({
+      where: { id: data.organizerOrgId, jurisdictionId: admin.jurisdictionId },
+      select: { id: true },
+    });
+    if (!organizer) return NextResponse.json({ error: 'Organizer not found.' }, { status: 400 });
+  }
   await prisma.communityEvent.create({
     data: {
-      jurisdictionId: getJurisdictionId(),
-      ...eventPayload(formData),
+      jurisdictionId: admin.jurisdictionId,
+      ...data,
     },
   });
 

@@ -13,6 +13,8 @@ function cleanPayload(payload) {
   return safePayload;
 }
 
+const MAX_DRAFT_BYTES = 50 * 1024;
+
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ payload: null }, { status: 401 });
@@ -36,6 +38,9 @@ export async function PUT(request) {
 
   const body = await request.json().catch(() => ({}));
   const payload = cleanPayload(body?.payload);
+  if (Buffer.byteLength(JSON.stringify(payload), 'utf8') > MAX_DRAFT_BYTES) {
+    return NextResponse.json({ error: 'Draft is too large.' }, { status: 413 });
+  }
   const jurisdictionId = getJurisdictionId();
 
   await prisma.submissionDraft.upsert({

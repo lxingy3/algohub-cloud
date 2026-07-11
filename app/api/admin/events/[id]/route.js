@@ -12,12 +12,25 @@ export async function POST(request, { params }) {
 
   const { id } = await params;
   const formData = await request.formData();
+  const event = await prisma.communityEvent.findFirst({
+    where: { id, jurisdictionId: admin.jurisdictionId },
+    select: { id: true },
+  });
+  if (!event) return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
   if (formData.get('action') === 'delete') {
     await prisma.communityEvent.delete({ where: { id } });
   } else {
+    const data = eventPayload(formData);
+    if (data.organizerOrgId) {
+      const organizer = await prisma.organization.findFirst({
+        where: { id: data.organizerOrgId, jurisdictionId: admin.jurisdictionId },
+        select: { id: true },
+      });
+      if (!organizer) return NextResponse.json({ error: 'Organizer not found.' }, { status: 400 });
+    }
     await prisma.communityEvent.update({
       where: { id },
-      data: eventPayload(formData),
+      data,
     });
   }
   return NextResponse.redirect(new URL('/admin/events', request.url), { status: 303 });

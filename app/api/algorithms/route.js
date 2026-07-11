@@ -48,11 +48,11 @@ export async function GET(request) {
       where,
       orderBy: { name: 'asc' },
       include: {
-        _count: { select: { testimonyLinks: true } },
+        _count: { select: { testimonyLinks: { where: { testimony: { moderationStatus: 'APPROVED', publicPosting: true } } } } },
         claims: true,
         documents: true,
         testimonyLinks: {
-          where: { testimony: { moderationStatus: 'APPROVED' } },
+          where: { testimony: { moderationStatus: 'APPROVED', publicPosting: true } },
           include: {
             testimony: {
               select: {
@@ -84,7 +84,7 @@ export async function GET(request) {
       skip,
       take: limit,
       include: {
-        _count: { select: { testimonyLinks: true } },
+        _count: { select: { testimonyLinks: { where: { testimony: { moderationStatus: 'APPROVED', publicPosting: true } } } } },
       },
     }),
     prisma.algorithm.count({ where }),

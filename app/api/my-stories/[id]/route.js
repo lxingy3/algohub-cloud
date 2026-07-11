@@ -72,6 +72,13 @@ export async function POST(request, { params }) {
   if (storyType === 'voice' && !audioFileUrl) {
     return NextResponse.json({ error: 'Please upload a voice story.' }, { status: 400 });
   }
+  if (algorithmId) {
+    const algorithm = await prisma.algorithm.findFirst({
+      where: { id: algorithmId, jurisdictionId },
+      select: { id: true },
+    });
+    if (!algorithm) return NextResponse.json({ error: 'Algorithm not found.' }, { status: 400 });
+  }
   const fallbackNarrative =
     storyType === 'voice'
       ? 'A voice story was submitted.'
@@ -102,7 +109,9 @@ export async function POST(request, { params }) {
       },
     });
 
-    await tx.testimonyAlgorithmLink.deleteMany({ where: { testimonyId: existing.id } });
+    await tx.testimonyAlgorithmLink.deleteMany({
+      where: { testimonyId: existing.id, linkType: 'SUBMITTER_IDENTIFIED' },
+    });
     if (algorithmId) {
       await tx.testimonyAlgorithmLink.create({
         data: {

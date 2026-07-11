@@ -17,12 +17,15 @@ export async function POST(request, { params }) {
   }
 
   const [user, role] = await Promise.all([
-    prisma.user.findUnique({ where: { id } }),
+    prisma.user.findFirst({ where: { id, jurisdictionId: admin.jurisdictionId } }),
     prisma.role.findUnique({ where: { id: roleId } }),
   ]);
 
   if (!user || !role) {
     return NextResponse.redirect(new URL('/admin/users?error=role-missing', request.url), { status: 303 });
+  }
+  if (id === admin.id && role.name !== 'ADMIN') {
+    return NextResponse.redirect(new URL('/admin/users?error=self-role', request.url), { status: 303 });
   }
 
   await prisma.$transaction([

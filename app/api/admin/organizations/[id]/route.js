@@ -10,6 +10,11 @@ export async function POST(request, { params }) {
 
   const { id } = await params;
   const formData = await request.formData();
+  const organization = await prisma.organization.findFirst({
+    where: { id, jurisdictionId: admin.jurisdictionId },
+    select: { id: true },
+  });
+  if (!organization) return NextResponse.json({ error: 'Organization not found.' }, { status: 404 });
   if (formData.get('action') === 'delete') {
     await prisma.organization.delete({ where: { id } });
   } else {

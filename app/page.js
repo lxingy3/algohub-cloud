@@ -20,13 +20,13 @@ export default async function HomePage() {
       include: {
         _count: {
           select: {
-            testimonyLinks: { where: { testimony: { moderationStatus: 'APPROVED' } } },
+            testimonyLinks: { where: { testimony: { moderationStatus: 'APPROVED', publicPosting: true } } },
           },
         },
         claims: { orderBy: { createdAt: 'asc' } },
         documents: { orderBy: { uploadedAt: 'desc' } },
         testimonyLinks: {
-          where: { testimony: { moderationStatus: 'APPROVED' } },
+          where: { testimony: { moderationStatus: 'APPROVED', publicPosting: true } },
           include: {
             testimony: {
               select: {
@@ -42,7 +42,7 @@ export default async function HomePage() {
       },
     }),
     prisma.testimony.findMany({
-      where: { jurisdictionId, moderationStatus: 'APPROVED' },
+      where: { jurisdictionId, moderationStatus: 'APPROVED', publicPosting: true },
       orderBy: { submittedAt: 'desc' },
       take: 3,
       select: {
@@ -60,7 +60,7 @@ export default async function HomePage() {
     }),
     prisma.organization.count({ where: { jurisdictionId, isActive: true } }),
   ]);
-  const approvedStoryCount = await prisma.testimony.count({ where: { jurisdictionId, moderationStatus: 'APPROVED' } });
+  const approvedStoryCount = await prisma.testimony.count({ where: { jurisdictionId, moderationStatus: 'APPROVED', publicPosting: true } });
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 to-slate-100 text-gray-900">

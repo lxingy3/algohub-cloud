@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { requireAdmin } from '../../../../lib/auth';
 import {
   assertMediaUpload,
   createSignedMediaUpload,
@@ -44,10 +45,6 @@ function cleanExtension(fileName, contentType) {
 }
 
 export async function POST(request) {
-  if (!hasFirebaseStorageConfig()) {
-    return NextResponse.json({ error: 'Cloud media storage is not configured for this deployment.' }, { status: 503 });
-  }
-
   const result = uploadSchema.safeParse(await request.json().catch(() => null));
   if (!result.success) {
     return NextResponse.json({ error: 'Invalid upload request.' }, { status: 400 });
@@ -56,6 +53,9 @@ export async function POST(request) {
   const { kind, scope, fileName, contentType, size } = result.data;
 
   if (kind === 'image') {
+    if (!await requireAdmin()) {
+      return NextResponse.json({ error: 'Admin access is required for site images.' }, { status: 403 });
+    }
     if (!IMAGE_CONTENT_TYPES.has(contentType)) {
       return NextResponse.json({ error: 'Please upload a JPEG, PNG, or WebP image.' }, { status: 400 });
     }
@@ -71,6 +71,10 @@ export async function POST(request) {
         : 'Please upload an audio or video file.';
       return NextResponse.json({ error: message }, { status: 400 });
     }
+  }
+
+  if (!hasFirebaseStorageConfig()) {
+    return NextResponse.json({ error: 'Cloud media storage is not configured for this deployment.' }, { status: 503 });
   }
 
   const extension = cleanExtension(fileName, contentType);

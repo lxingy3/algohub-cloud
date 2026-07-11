@@ -13,6 +13,12 @@ export async function POST(request, { params }) {
     return NextResponse.redirect(new URL('/admin/users?error=self-delete', request.url), { status: 303 });
   }
 
+  const user = await prisma.user.findFirst({
+    where: { id, jurisdictionId: admin.jurisdictionId },
+    select: { id: true },
+  });
+  if (!user) return NextResponse.json({ error: 'User not found.' }, { status: 404 });
+
   try {
     await prisma.user.delete({ where: { id } });
     return NextResponse.redirect(new URL('/admin/users?success=deleted', request.url), { status: 303 });

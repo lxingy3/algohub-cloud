@@ -21,6 +21,7 @@ export default async function StoriesPage({ searchParams }) {
   const where = {
     jurisdictionId,
     moderationStatus: 'APPROVED',
+    publicPosting: true,
     ...(useCase !== 'all' ? { affectedDomain: useCase } : {}),
     ...(city !== 'all' ? { city } : {}),
   };
@@ -45,7 +46,7 @@ export default async function StoriesPage({ searchParams }) {
       },
     }),
     prisma.testimony.findMany({
-      where: { jurisdictionId, moderationStatus: 'APPROVED' },
+      where: { jurisdictionId, moderationStatus: 'APPROVED', publicPosting: true },
       select: { affectedDomain: true, city: true, _count: { select: { reactions: true } } },
     }),
   ]);

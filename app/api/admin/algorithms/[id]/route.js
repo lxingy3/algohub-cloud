@@ -25,6 +25,11 @@ export async function POST(request, { params }) {
   const { id } = await params;
   const formData = await request.formData();
   const action = String(formData.get('action') || 'update');
+  const algorithm = await prisma.algorithm.findFirst({
+    where: { id, jurisdictionId: admin.jurisdictionId },
+    select: { id: true },
+  });
+  if (!algorithm) return NextResponse.json({ error: 'Algorithm not found.' }, { status: 404 });
 
   if (action === 'delete') {
     await prisma.algorithm.delete({ where: { id } });
@@ -56,6 +61,11 @@ export async function POST(request, { params }) {
     const claimText = optionalString(formData, 'claimText');
     const claimId = optionalString(formData, 'claimId');
     if (claimText && claimId) {
+      const claim = await prisma.algorithmClaim.findFirst({
+        where: { id: claimId, algorithmId: id, jurisdictionId: admin.jurisdictionId },
+        select: { id: true },
+      });
+      if (!claim) return NextResponse.json({ error: 'Algorithm claim not found.' }, { status: 404 });
       await prisma.algorithmClaim.update({
         where: { id: claimId },
         data: {

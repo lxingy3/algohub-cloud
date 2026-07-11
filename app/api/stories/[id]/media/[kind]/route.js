@@ -16,6 +16,7 @@ export async function GET(request, { params }) {
       id,
       jurisdictionId: getJurisdictionId(),
       moderationStatus: 'APPROVED',
+      publicPosting: true,
     },
     select: { audioFileUrl: true, videoFileUrl: true, mediaObjectKey: true, mediaStorageProvider: true },
   });

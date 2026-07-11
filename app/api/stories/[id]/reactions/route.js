@@ -4,6 +4,7 @@ import { getJurisdictionId } from '../../../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
+const REACTION_TYPES = new Set(['EYE_OPENING', 'SUPPORT']);
 
 export async function POST(request, { params }) {
   const user = await getCurrentUser();
@@ -12,6 +13,16 @@ export async function POST(request, { params }) {
   const { id } = await params;
   const formData = await request.formData();
   const reactionType = String(formData.get('reactionType') || 'SUPPORT');
+  if (!REACTION_TYPES.has(reactionType)) {
+    return NextResponse.json({ error: 'Unsupported reaction type.' }, { status: 400 });
+  }
+
+  const jurisdictionId = getJurisdictionId();
+  const testimony = await prisma.testimony.findFirst({
+    where: { id, jurisdictionId, moderationStatus: 'APPROVED', publicPosting: true },
+    select: { id: true },
+  });
+  if (!testimony) return NextResponse.json({ error: 'Story not found.' }, { status: 404 });
 
   await prisma.testimonyReaction.upsert({
     where: {
@@ -23,7 +34,7 @@ export async function POST(request, { params }) {
     },
     update: {},
     create: {
-      jurisdictionId: getJurisdictionId(),
+      jurisdictionId,
       testimonyId: id,
       userId: user.id,
       reactionType,

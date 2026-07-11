@@ -21,7 +21,7 @@ export async function GET(request, { params }) {
 
   const where = {
     algorithmId: algorithm.id,
-    testimony: { moderationStatus: 'APPROVED', jurisdictionId: getJurisdictionId() },
+    testimony: { moderationStatus: 'APPROVED', publicPosting: true, jurisdictionId: getJurisdictionId() },
   };
 
   const [items, total] = await Promise.all([
@@ -29,7 +29,22 @@ export async function GET(request, { params }) {
       where,
       skip: (page - 1) * limit,
       take: limit,
-      include: { testimony: true },
+      select: {
+        testimony: {
+          select: {
+            id: true,
+            title: true,
+            summary: true,
+            narrativeText: true,
+            city: true,
+            affectedDomain: true,
+            selfReportedImpact: true,
+            aiImpactClassification: true,
+            originalLanguage: true,
+            submittedAt: true,
+          },
+        },
+      },
     }),
     prisma.testimonyAlgorithmLink.count({ where }),
   ]);

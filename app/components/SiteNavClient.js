@@ -30,7 +30,10 @@ const signupErrors = {
   'account-exists': 'This email already has an account. Please log in with the existing account.',
   'name-conflict': 'This email already belongs to another user name. Use the existing account.',
   'password-too-short': 'Password must be at least 8 characters.',
+  'password-too-long': 'Password must be no more than 128 characters.',
   'password-mismatch': 'Passwords do not match.',
+  'invalid-email': 'Enter a valid email address.',
+  'invalid-name': 'Enter a name shorter than 256 characters.',
 };
 
 const profileErrors = {

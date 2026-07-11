@@ -30,6 +30,18 @@ const notices = {
     tone: 'success',
     message: 'User role updated.',
   },
+  'role-protected': {
+    tone: 'error',
+    message: 'Built-in roles cannot be deleted or renamed.',
+  },
+  'role-in-use': {
+    tone: 'error',
+    message: 'Move users to another role before deleting this role.',
+  },
+  'self-role': {
+    tone: 'error',
+    message: 'You cannot remove your own admin role.',
+  },
   deleted: {
     tone: 'success',
     message: 'User account deleted.',
