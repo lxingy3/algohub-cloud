@@ -58,6 +58,7 @@ export default async function AdminUsersPage({ searchParams }) {
   const admin = await requireAdmin();
   const notice = notices[params?.error] || notices[params?.success];
   const jurisdictionId = getJurisdictionId();
+  const now = new Date();
   const [users, roles, organizations] = await Promise.all([
     prisma.user.findMany({
       where: { jurisdictionId },
