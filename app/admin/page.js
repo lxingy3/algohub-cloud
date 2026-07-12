@@ -1,4 +1,4 @@
-import { BookOpenCheck, Database, FileClock, MessageSquareText, MessagesSquare } from 'lucide-react';
+import { BookOpenCheck, Building2, CalendarDays, Database, FileClock, MessageSquareText, MessagesSquare } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 
@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
   const jurisdictionId = getJurisdictionId();
-  const [testimonyCounts, pendingComments, draftBriefings, algorithms] = await Promise.all([
+  const [testimonyCounts, pendingComments, draftBriefings, algorithms, upcomingEvents, pendingOrganizations] = await Promise.all([
     prisma.testimony.groupBy({
       by: ['moderationStatus'],
       where: { jurisdictionId },
@@ -15,6 +15,8 @@ export default async function AdminPage() {
     prisma.comment.count({ where: { jurisdictionId, moderationStatus: 'PENDING' } }),
     prisma.briefing.count({ where: { jurisdictionId, reviewStatus: 'DRAFT' } }),
     prisma.algorithm.count({ where: { jurisdictionId } }),
+    prisma.communityEvent.count({ where: { jurisdictionId, date: { gte: new Date() } } }),
+    prisma.organization.count({ where: { jurisdictionId, isActive: false } }),
   ]);
   const storiesByStatus = Object.fromEntries(testimonyCounts.map((item) => [item.moderationStatus, item._count.moderationStatus]));
   const allTestimonies = testimonyCounts.reduce((total, item) => total + item._count.moderationStatus, 0);
@@ -26,13 +28,15 @@ export default async function AdminPage() {
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-700">Operations</p>
       <h1 className="mt-1 text-3xl font-bold">Admin Dashboard</h1>
       <p className="mt-2 text-sm text-slate-600">Review active records and the queues that need attention.</p>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <DashboardCard href="/admin/algorithms" count={algorithms} label="Algorithms" icon={Database} />
         <DashboardCard href="/admin/testimonies" count={allTestimonies} label="All stories" icon={MessageSquareText} />
         <DashboardCard href="/admin/testimonies?status=APPROVED" count={approvedTestimonies} label="Approved stories" icon={BookOpenCheck} />
+        <DashboardCard href="/admin/events?period=upcoming" count={upcomingEvents} label="Upcoming events" icon={CalendarDays} />
         <DashboardCard href="/admin/testimonies?status=PENDING" count={pendingTestimonies} label="Stories awaiting review" icon={MessageSquareText} attention />
         <DashboardCard href="/admin/comments?status=PENDING" count={pendingComments} label="Comments awaiting review" icon={MessagesSquare} attention />
         <DashboardCard href="/admin/briefings?status=DRAFT" count={draftBriefings} label="Briefings awaiting review" icon={FileClock} attention />
+        <DashboardCard href="/admin/organizations?status=pending" count={pendingOrganizations} label="Partner applications" icon={Building2} attention={pendingOrganizations > 0} />
       </div>
     </div>
   );

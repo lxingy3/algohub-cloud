@@ -15,6 +15,7 @@ export default async function StoriesPage({ searchParams }) {
   const search = String(params?.search || '');
   const useCase = String(params?.useCase || 'all');
   const city = String(params?.city || 'all');
+  const hasFilters = Boolean(search.trim() || useCase !== 'all' || city !== 'all');
   const jurisdictionId = getJurisdictionId();
   const user = await getCurrentUser();
 
@@ -56,16 +57,16 @@ export default async function StoriesPage({ searchParams }) {
   const remainingStories = rankedTestimonies.slice(12);
   const useCases = [...new Set(allStories.map((item) => item.affectedDomain).filter(Boolean))];
   const cities = [...new Set(allStories.map((item) => item.city).filter(Boolean))];
-  const storiesByUseCase = allStories.reduce((acc, story) => {
+  const storiesByUseCase = rankedTestimonies.reduce((acc, story) => {
     const key = story.affectedDomain || 'Other';
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
   const metrics = {
-    storiesShared: allStories.length,
+    storiesShared: rankedTestimonies.length,
     algorithmsAffected: Object.keys(storiesByUseCase).length,
-    statesRepresented: cities.length,
-    voicesUnited: allStories.reduce((sum, story) => sum + story._count.reactions, 0),
+    statesRepresented: new Set(rankedTestimonies.map((story) => story.city).filter(Boolean)).size,
+    voicesUnited: rankedTestimonies.reduce((sum, story) => sum + story._count.reactions, 0),
     storiesByUseCase,
   };
 
@@ -124,7 +125,8 @@ export default async function StoriesPage({ searchParams }) {
               </select>
             </label>
           </div>
-          <div className="flex justify-end">
+          <div className="flex flex-col justify-end gap-2 sm:flex-row">
+            {hasFilters ? <Link href="/stories" className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 sm:w-fit">Clear filters</Link> : null}
             <button className="min-h-11 w-full rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md sm:w-fit">
               Apply filters
             </button>
@@ -133,7 +135,8 @@ export default async function StoriesPage({ searchParams }) {
       </div>
 
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <p className="mb-4 text-sm text-gray-600">Showing <span className="font-semibold text-gray-900">{rankedTestimonies.length}</span> of {allStories.length} stories</p>
+        {rankedTestimonies.length ? <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           {initialStories.map((story) => <StoryRow key={story.id} story={story} />)}
           {remainingStories.length ? (
             <>
@@ -151,7 +154,12 @@ export default async function StoriesPage({ searchParams }) {
               </div>
             </>
           ) : null}
-        </div>
+        </div> : (
+          <div className="rounded-xl border border-gray-200 bg-white px-5 py-14 text-center shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900">No stories match these filters</h2>
+            <Link href="/stories" className="mt-4 inline-flex min-h-11 items-center rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-gray-900">Clear filters</Link>
+          </div>
+        )}
       </section>
 
       <CommunityImpact metrics={metrics} />

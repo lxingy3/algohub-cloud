@@ -13,6 +13,8 @@ export default async function AdminAlgorithmsPage({ searchParams }) {
   const useCase = String(params?.useCase || 'all');
   const location = String(params?.location || 'all');
   const status = String(params?.status || 'all');
+  const filters = { search, useCase, location, status };
+  const returnTo = buildAlgorithmsHref(filters);
 
   const where = {
     jurisdictionId,
@@ -80,15 +82,29 @@ export default async function AdminAlgorithmsPage({ searchParams }) {
             <option value="all">All statuses</option>
             {statusOptions.map((item) => <option key={item} value={item}>{formatStatus(item)}</option>)}
           </select>
-          <button className="rounded-md bg-slate-900 px-4 py-2 text-white">Find</button>
+          <div className="flex gap-2">
+            <button className="min-h-11 rounded-md bg-slate-900 px-4 py-2 text-white">Find</button>
+            {returnTo !== '/admin/algorithms' ? <a href="/admin/algorithms" className="inline-flex min-h-11 items-center rounded-md border px-3 py-2 text-sm font-semibold">Clear</a> : null}
+          </div>
         </form>
       </section>
 
       <div className="mt-6 space-y-4">
         {algorithms.map((algorithm) => (
-          <AdminAlgorithmCard key={algorithm.id} algorithm={JSON.parse(JSON.stringify(algorithm))} />
+          <AdminAlgorithmCard key={algorithm.id} algorithm={JSON.parse(JSON.stringify(algorithm))} returnTo={returnTo} />
         ))}
+        {!algorithms.length ? <div className="rounded-lg border bg-white px-4 py-12 text-center text-sm text-slate-500">No algorithms match these filters.</div> : null}
       </div>
     </div>
   );
+}
+
+function buildAlgorithmsHref(filters) {
+  const params = new URLSearchParams();
+  if (filters.search) params.set('search', filters.search);
+  if (filters.useCase !== 'all') params.set('useCase', filters.useCase);
+  if (filters.location !== 'all') params.set('location', filters.location);
+  if (filters.status !== 'all') params.set('status', filters.status);
+  const query = params.toString();
+  return `/admin/algorithms${query ? `?${query}` : ''}`;
 }

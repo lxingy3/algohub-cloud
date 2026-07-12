@@ -10,6 +10,7 @@ export async function POST(request, { params }) {
 
   const { id } = await params;
   const formData = await request.formData();
+  const returnTo = String(formData.get('returnTo') || '/admin/organizations');
   const organization = await prisma.organization.findFirst({
     where: { id, jurisdictionId: admin.jurisdictionId },
     select: { id: true },
@@ -32,5 +33,5 @@ export async function POST(request, { params }) {
       },
     });
   }
-  return NextResponse.redirect(new URL('/admin/organizations', request.url), { status: 303 });
+  return NextResponse.redirect(new URL(returnTo.startsWith('/admin/organizations') ? returnTo : '/admin/organizations', request.url), { status: 303 });
 }

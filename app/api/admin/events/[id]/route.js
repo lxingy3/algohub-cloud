@@ -12,6 +12,7 @@ export async function POST(request, { params }) {
 
   const { id } = await params;
   const formData = await request.formData();
+  const returnTo = String(formData.get('returnTo') || '/admin/events');
   const event = await prisma.communityEvent.findFirst({
     where: { id, jurisdictionId: admin.jurisdictionId },
     select: { id: true },
@@ -33,7 +34,7 @@ export async function POST(request, { params }) {
       data,
     });
   }
-  return NextResponse.redirect(new URL('/admin/events', request.url), { status: 303 });
+  return NextResponse.redirect(new URL(returnTo.startsWith('/admin/events') ? returnTo : '/admin/events', request.url), { status: 303 });
 }
 
 function eventPayload(formData) {

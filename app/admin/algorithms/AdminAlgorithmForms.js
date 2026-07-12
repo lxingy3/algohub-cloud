@@ -75,7 +75,7 @@ export function AddAlgorithmPanel({ currentRole = 'ADMIN' }) {
   );
 }
 
-export function AdminAlgorithmCard({ algorithm }) {
+export function AdminAlgorithmCard({ algorithm, returnTo }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const { icon: UseCaseIcon, tone: useCaseTone } = getUseCaseIconMeta(algorithm.useCase);
@@ -129,6 +129,7 @@ export function AdminAlgorithmCard({ algorithm }) {
           submitLabel="Save changes"
           algorithm={algorithm}
           claim={algorithm.claims?.[0]}
+          returnTo={returnTo}
         />
       ) : null}
     </article>
@@ -181,9 +182,10 @@ function LongReadOnly({ label, value }) {
   );
 }
 
-const AlgorithmFields = forwardRef(function AlgorithmFields({ action, submitLabel, algorithm = {}, claim = null, onSubmit }, ref) {
+const AlgorithmFields = forwardRef(function AlgorithmFields({ action, submitLabel, algorithm = {}, claim = null, onSubmit, returnTo = '' }, ref) {
   return (
     <form ref={ref} action={action} method="post" onSubmit={onSubmit} className="mt-4 grid gap-3 md:grid-cols-2">
+      {returnTo ? <input type="hidden" name="returnTo" value={returnTo} /> : null}
       {claim?.id ? <input type="hidden" name="claimId" value={claim.id} /> : null}
       <Field name="name" label="Name" value={algorithm.name} required />
       <Field name="slug" label="Slug" value={algorithm.slug} />
@@ -216,7 +218,9 @@ const AlgorithmFields = forwardRef(function AlgorithmFields({ action, submitLabe
       <Field name="claimSource" label="Claim source" value={claim?.claimSource} />
       <div className="flex gap-2 md:col-span-2">
         <button name="action" value="update" className="rounded-md bg-slate-900 px-4 py-2 text-white">{submitLabel}</button>
-        {algorithm.id ? <button name="action" value="delete" className="rounded-md border border-red-200 px-4 py-2 text-red-700">Delete</button> : null}
+        {algorithm.id ? <button name="action" value="delete" onClick={(event) => {
+          if (!window.confirm(`Delete "${algorithm.name}"? This cannot be undone.`)) event.preventDefault();
+        }} className="rounded-md border border-red-200 px-4 py-2 text-red-700">Delete</button> : null}
       </div>
     </form>
   );

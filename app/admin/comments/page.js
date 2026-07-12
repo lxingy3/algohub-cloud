@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
 import {
@@ -22,7 +23,15 @@ export default async function AdminCommentsPage({ searchParams }) {
       where,
       orderBy: { createdAt: 'desc' },
       take: 100,
-      include: { testimony: true, user: true },
+      select: {
+        id: true,
+        content: true,
+        authorName: true,
+        moderationStatus: true,
+        createdAt: true,
+        testimony: { select: { id: true, title: true } },
+        user: { select: { email: true } },
+      },
     }),
     prisma.comment.groupBy({
       by: ['moderationStatus'],
@@ -32,6 +41,7 @@ export default async function AdminCommentsPage({ searchParams }) {
   ]);
   const counts = Object.fromEntries(statusCounts.map((item) => [item.moderationStatus, item._count.moderationStatus]));
   comments.sort((a, b) => (moderationStatusOrder[a.moderationStatus] ?? 9) - (moderationStatusOrder[b.moderationStatus] ?? 9) || b.createdAt - a.createdAt);
+  const returnTo = isModerationStatus(statusFilter) ? `/admin/comments?status=${statusFilter}` : '/admin/comments';
 
   return (
     <div>
@@ -45,10 +55,13 @@ export default async function AdminCommentsPage({ searchParams }) {
       <div className="mt-6 space-y-3">
         {comments.map((comment) => (
           <form key={comment.id} action={`/api/admin/comments/${comment.id}/moderate`} method="post" className="rounded-lg border bg-white p-4">
-            {isModerationStatus(statusFilter) ? <input type="hidden" name="returnTo" value={`/admin/comments?status=${statusFilter}`} /> : null}
+            <input type="hidden" name="returnTo" value={returnTo} />
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm text-slate-500">{comment.user?.email || comment.authorName || 'Anonymous'} on {comment.testimony.title}</p>
+                <p className="text-sm text-slate-500">
+                  {comment.user?.email || comment.authorName || 'Anonymous'} on{' '}
+                  <Link href={`/stories/${comment.testimony.id}`} className="font-semibold text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-amber-700">{comment.testimony.title}</Link>
+                </p>
                 <p className="mt-0.5 text-xs text-slate-500">
                   Posted <time dateTime={comment.createdAt.toISOString()}>{formatDate(comment.createdAt)}</time>
                 </p>

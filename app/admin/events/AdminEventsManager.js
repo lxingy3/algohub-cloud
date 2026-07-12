@@ -6,7 +6,7 @@ import { formatStatus } from '../../components/Formatters';
 
 const eventTypes = ['WORKSHOP', 'TESTIMONY_SESSION', 'TOWN_HALL', 'TRAINING', 'PANEL', 'OFFICE_HOURS', 'OTHER'];
 
-export function AdminEventsManager({ events, organizations }) {
+export function AdminEventsManager({ events, organizations, eventTypes: filterEventTypes, filters, totalCount, returnTo }) {
   const [editingId, setEditingId] = useState(null);
   const [adding, setAdding] = useState(false);
 
@@ -35,9 +35,41 @@ export function AdminEventsManager({ events, organizations }) {
             <h2 className="text-lg font-semibold">Add event</h2>
             <button type="button" onClick={() => setAdding(false)} className="min-h-10 rounded-md border px-3 py-2 text-sm">Cancel</button>
           </div>
-          <EventForm action="/api/admin/events" organizations={organizations} submitLabel="Add event" />
+          <EventForm action="/api/admin/events" organizations={organizations} submitLabel="Add event" returnTo="/admin/events" />
         </section>
       ) : null}
+
+      <section className="mt-5 rounded-lg border bg-white p-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Find events</h2>
+            <p className="mt-1 text-sm text-slate-500">Showing {events.length} of {totalCount}</p>
+          </div>
+          {returnTo !== '/admin/events' ? <a href="/admin/events" className="inline-flex min-h-10 items-center rounded-md border px-3 py-2 text-sm font-semibold">Clear filters</a> : null}
+        </div>
+        <form className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_150px_180px_150px_190px_auto]">
+          <input name="search" defaultValue={filters.search} placeholder="Search title or location" className="min-h-11 rounded-md border px-3 py-2" />
+          <select name="period" defaultValue={filters.period} className="min-h-11 rounded-md border bg-white px-3 py-2">
+            <option value="all">Any date</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="past">Past</option>
+          </select>
+          <select name="eventType" defaultValue={filters.eventType} className="min-h-11 rounded-md border bg-white px-3 py-2">
+            <option value="all">All event types</option>
+            {filterEventTypes.map((item) => <option key={item} value={item}>{formatStatus(item)}</option>)}
+          </select>
+          <select name="format" defaultValue={filters.format} className="min-h-11 rounded-md border bg-white px-3 py-2">
+            <option value="all">Any format</option>
+            <option value="virtual">Virtual</option>
+            <option value="in-person">In person</option>
+          </select>
+          <select name="organizer" defaultValue={filters.organizer} className="min-h-11 rounded-md border bg-white px-3 py-2">
+            <option value="all">All organizers</option>
+            {organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}
+          </select>
+          <button className="min-h-11 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Find</button>
+        </form>
+      </section>
 
       <div className="mt-6 space-y-3">
         {events.map((event) => (
@@ -48,19 +80,20 @@ export function AdminEventsManager({ events, organizations }) {
                   <h2 className="text-lg font-semibold">Edit event</h2>
                   <button type="button" onClick={() => setEditingId(null)} className="min-h-10 rounded-md border px-3 py-2 text-sm">Cancel</button>
                 </div>
-                <EventForm action={`/api/admin/events/${event.id}`} event={event} organizations={organizations} submitLabel="Save event" />
+                <EventForm action={`/api/admin/events/${event.id}`} event={event} organizations={organizations} submitLabel="Save event" returnTo={returnTo} />
               </div>
             ) : (
-              <EventSummary event={event} onEdit={() => setEditingId(event.id)} />
+              <EventSummary event={event} onEdit={() => setEditingId(event.id)} returnTo={returnTo} />
             )}
           </article>
         ))}
+        {!events.length ? <div className="rounded-lg border bg-white px-4 py-12 text-center text-sm text-slate-500">No events match these filters.</div> : null}
       </div>
     </div>
   );
 }
 
-function EventSummary({ event, onEdit }) {
+function EventSummary({ event, onEdit, returnTo }) {
   const date = new Date(event.date);
   const isPast = date < new Date();
 
@@ -82,7 +115,7 @@ function EventSummary({ event, onEdit }) {
         <h2 className="mt-2 text-lg font-semibold text-slate-950">{event.title}</h2>
         {event.description ? <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600">{event.description}</p> : null}
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-500">
-          <span className="inline-flex items-center gap-1"><Calendar className="h-4 w-4 text-yellow-600" /> {date.toLocaleString()}</span>
+          <span className="inline-flex items-center gap-1"><Calendar className="h-4 w-4 text-yellow-600" /> {date.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
           <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4 text-yellow-600" /> {event.isVirtual ? 'Virtual' : event.location || 'Location TBD'}</span>
           {event.registrationUrl ? <span className="inline-flex items-center gap-1"><ExternalLink className="h-4 w-4 text-yellow-600" /> Registration link</span> : null}
         </div>
@@ -92,7 +125,10 @@ function EventSummary({ event, onEdit }) {
           <Pencil className="h-4 w-4" />
           Edit
         </button>
-        <form action={`/api/admin/events/${event.id}`} method="post" className="flex-1 md:flex-none">
+        <form action={`/api/admin/events/${event.id}`} method="post" className="flex-1 md:flex-none" onSubmit={(submitEvent) => {
+          if (!window.confirm(`Delete "${event.title}"? This cannot be undone.`)) submitEvent.preventDefault();
+        }}>
+          <input type="hidden" name="returnTo" value={returnTo} />
           <button name="action" value="delete" className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-red-700">
             <Trash2 className="h-4 w-4" />
             Delete
@@ -103,7 +139,7 @@ function EventSummary({ event, onEdit }) {
   );
 }
 
-function EventForm({ action, event, organizations, submitLabel }) {
+function EventForm({ action, event, organizations, submitLabel, returnTo }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
@@ -147,7 +183,7 @@ function EventForm({ action, event, organizations, submitLabel }) {
     formData.delete('imageFile');
     const response = await fetch(action, { method: 'POST', body: formData });
     if (response.ok || response.redirected) {
-      window.location.href = '/admin/events';
+      window.location.href = returnTo;
       return;
     }
     setError('Event could not be saved.');
@@ -156,6 +192,7 @@ function EventForm({ action, event, organizations, submitLabel }) {
 
   return (
     <form onSubmit={submit} className="mt-4 grid gap-3 md:grid-cols-2">
+      <input type="hidden" name="returnTo" value={returnTo} />
       {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 md:col-span-2">{error}</div> : null}
       <Field label="Title">
         <input name="title" defaultValue={event?.title || ''} className="w-full rounded-md border px-3 py-2" required />

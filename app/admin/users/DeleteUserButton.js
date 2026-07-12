@@ -17,7 +17,7 @@ export function DeleteUserButton({ disabled }) {
         if (!confirmed) event.preventDefault();
       }}
     >
-      Delete / Deactivate user
+      Delete user
     </button>
   );
 }

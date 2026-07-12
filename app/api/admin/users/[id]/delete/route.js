@@ -9,8 +9,11 @@ export async function POST(request, { params }) {
   if (!admin) return NextResponse.json({ error: 'Admin only' }, { status: 403 });
 
   const { id } = await params;
+  const formData = await request.formData();
+  const requestedReturnTo = String(formData.get('returnTo') || '/admin/users');
+  const returnTo = requestedReturnTo.startsWith('/admin/users') ? requestedReturnTo : '/admin/users';
   if (id === admin.id) {
-    return NextResponse.redirect(new URL('/admin/users?error=self-delete', request.url), { status: 303 });
+    return redirectWithNotice(request, returnTo, 'error', 'self-delete');
   }
 
   const user = await prisma.user.findFirst({
@@ -21,9 +24,15 @@ export async function POST(request, { params }) {
 
   try {
     await prisma.user.delete({ where: { id } });
-    return NextResponse.redirect(new URL('/admin/users?success=deleted', request.url), { status: 303 });
+    return redirectWithNotice(request, returnTo, 'success', 'deleted');
   } catch (error) {
     console.error('Could not delete user', error);
-    return NextResponse.redirect(new URL('/admin/users?error=delete-failed', request.url), { status: 303 });
+    return redirectWithNotice(request, returnTo, 'error', 'delete-failed');
   }
+}
+
+function redirectWithNotice(request, returnTo, key, value) {
+  const url = new URL(returnTo, request.url);
+  url.searchParams.set(key, value);
+  return NextResponse.redirect(url, { status: 303 });
 }

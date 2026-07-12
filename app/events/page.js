@@ -15,6 +15,7 @@ export default async function EventsPage({ searchParams }) {
   const params = await searchParams;
   const activeFilter = String(params?.filter || 'all');
   const eventType = String(params?.eventType || 'all');
+  const hasFilters = activeFilter !== 'all' || eventType !== 'all';
   const initialEventId = String(params?.eventId || '');
   const [user, events] = await Promise.all([
     getCurrentUser(),
@@ -95,7 +96,10 @@ export default async function EventsPage({ searchParams }) {
                 <option key={item} value={item}>{formatStatus(item)}</option>
               ))}
             </select>
-            <button className="min-h-11 w-full rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md sm:w-fit">Apply filters</button>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              {hasFilters ? <Link href="/events" className="inline-flex min-h-11 items-center justify-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700">Clear filters</Link> : null}
+              <button className="min-h-11 w-full rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md sm:w-fit">Apply filters</button>
+            </div>
           </form>
         </div>
       </div>

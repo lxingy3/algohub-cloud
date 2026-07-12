@@ -5,7 +5,7 @@ import { Check, ExternalLink, Pencil, Trash2, Upload } from 'lucide-react';
 
 const MAX_INLINE_LOGO_BYTES = 2 * 1024 * 1024;
 
-export function AdminOrganizationsManager({ organizations }) {
+export function AdminOrganizationsManager({ organizations, counts, filters, returnTo }) {
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
@@ -34,9 +34,28 @@ export function AdminOrganizationsManager({ organizations }) {
             <h2 className="text-lg font-semibold">Add organization</h2>
             <button type="button" onClick={() => setAdding(false)} className="min-h-10 rounded-md border px-3 py-2 text-sm">Cancel</button>
           </div>
-          <OrganizationForm action="/api/admin/organizations" submitLabel="Add organization" />
+          <OrganizationForm action="/api/admin/organizations" submitLabel="Add organization" returnTo="/admin/organizations" />
         </section>
       ) : null}
+
+      <section className="mt-5 rounded-lg border bg-white p-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Find organizations</h2>
+            <p className="mt-1 text-sm text-slate-500">{counts.active} active / {counts.pending} awaiting approval</p>
+          </div>
+          {returnTo !== '/admin/organizations' ? <a href="/admin/organizations" className="inline-flex min-h-10 items-center rounded-md border px-3 py-2 text-sm font-semibold">Clear filters</a> : null}
+        </div>
+        <form className="mt-4 grid gap-3 sm:grid-cols-[1fr_190px_auto]">
+          <input name="search" defaultValue={filters.search} placeholder="Search name, email, or role" className="min-h-11 rounded-md border px-3 py-2" />
+          <select name="status" defaultValue={filters.status} className="min-h-11 rounded-md border bg-white px-3 py-2">
+            <option value="all">All organizations</option>
+            <option value="pending">Awaiting approval ({counts.pending})</option>
+            <option value="active">Active ({counts.active})</option>
+          </select>
+          <button className="min-h-11 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Find</button>
+        </form>
+      </section>
 
       <div className="mt-6 grid gap-4 xl:grid-cols-2">
         {organizations.map((org) => (
@@ -47,19 +66,20 @@ export function AdminOrganizationsManager({ organizations }) {
                   <h2 className="text-lg font-semibold">Edit organization</h2>
                   <button type="button" onClick={() => setEditingId(null)} className="min-h-10 rounded-md border px-3 py-2 text-sm">Cancel</button>
                 </div>
-                <OrganizationForm action={`/api/admin/organizations/${org.id}`} organization={org} submitLabel="Save organization" />
+                <OrganizationForm action={`/api/admin/organizations/${org.id}`} organization={org} submitLabel="Save organization" returnTo={returnTo} />
               </div>
             ) : (
-              <OrganizationSummary organization={org} onEdit={() => setEditingId(org.id)} />
+              <OrganizationSummary organization={org} onEdit={() => setEditingId(org.id)} returnTo={returnTo} />
             )}
           </article>
         ))}
+        {!organizations.length ? <div className="rounded-lg border bg-white px-4 py-12 text-center text-sm text-slate-500 xl:col-span-2">No organizations match these filters.</div> : null}
       </div>
     </div>
   );
 }
 
-function OrganizationSummary({ organization, onEdit }) {
+function OrganizationSummary({ organization, onEdit, returnTo }) {
   return (
     <div className="grid gap-4 md:grid-cols-[128px_1fr_auto]">
       <div className="flex h-28 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-50 p-3">
@@ -98,6 +118,7 @@ function OrganizationSummary({ organization, onEdit }) {
         </button>
         {!organization.isActive ? (
           <form action={`/api/admin/organizations/${organization.id}`} method="post" className="flex-1 md:flex-none">
+            <input type="hidden" name="returnTo" value={returnTo} />
             <input type="hidden" name="name" value={organization.name} />
             <input type="hidden" name="contactEmail" value={organization.contactEmail || ''} />
             <input type="hidden" name="role" value={organization.role || 'community_partner'} />
@@ -110,7 +131,10 @@ function OrganizationSummary({ organization, onEdit }) {
             </button>
           </form>
         ) : null}
-        <form action={`/api/admin/organizations/${organization.id}`} method="post" className="flex-1 md:flex-none">
+        <form action={`/api/admin/organizations/${organization.id}`} method="post" className="flex-1 md:flex-none" onSubmit={(submitEvent) => {
+          if (!window.confirm(`Delete "${organization.name}"? This cannot be undone.`)) submitEvent.preventDefault();
+        }}>
+          <input type="hidden" name="returnTo" value={returnTo} />
           <button name="action" value="delete" className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-red-700">
             <Trash2 className="h-4 w-4" />
             Delete
@@ -121,7 +145,7 @@ function OrganizationSummary({ organization, onEdit }) {
   );
 }
 
-function OrganizationForm({ action, organization, submitLabel }) {
+function OrganizationForm({ action, organization, submitLabel, returnTo }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
@@ -175,7 +199,7 @@ function OrganizationForm({ action, organization, submitLabel }) {
     formData.delete('logoFile');
     const response = await fetch(action, { method: 'POST', body: formData });
     if (response.ok || response.redirected) {
-      window.location.href = '/admin/organizations';
+      window.location.href = returnTo;
       return;
     }
     setError('Organization could not be saved.');
@@ -184,6 +208,7 @@ function OrganizationForm({ action, organization, submitLabel }) {
 
   return (
     <form onSubmit={submit} className="mt-4 grid gap-3 md:grid-cols-2">
+      <input type="hidden" name="returnTo" value={returnTo} />
       {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 md:col-span-2">{error}</div> : null}
       <Field label="Name">
         <input name="name" defaultValue={organization?.name || ''} className="w-full rounded-md border px-3 py-2" required />

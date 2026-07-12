@@ -15,6 +15,7 @@ export default async function AlgorithmsPage({ searchParams }) {
   const search = String(params?.search || '');
   const useCase = String(params?.useCase || 'all');
   const location = String(params?.location || 'all');
+  const hasFilters = Boolean(search.trim() || useCase !== 'all' || location !== 'all');
   const jurisdictionId = getJurisdictionId();
   const user = await getCurrentUser();
 
@@ -126,6 +127,7 @@ export default async function AlgorithmsPage({ searchParams }) {
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 py-6 sm:px-6">
         <form className="-mt-14 space-y-6 rounded-2xl border border-gray-200/80 bg-white/95 p-4 shadow-xl backdrop-blur-sm sm:p-6">
+          <input type="hidden" name="useCase" value={useCase} />
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
@@ -154,16 +156,17 @@ export default async function AlgorithmsPage({ searchParams }) {
                     <ChevronDown aria-hidden="true" className="h-4 w-4 text-gray-400 transition group-open:rotate-180" />
                   </summary>
                   <div className="mt-2 hidden flex-wrap gap-2 group-open:flex md:mt-0 md:flex">
-                  <FilterPill href="/algorithms" active={useCase === 'all'}>All Use Cases</FilterPill>
+                  <FilterPill href={algorithmFilterHref({ search, location, useCase: 'all' })} active={useCase === 'all'}>All Use Cases</FilterPill>
                   {useCases.map((item) => (
-                    <FilterPill key={item} href={`/algorithms?useCase=${encodeURIComponent(item)}${location !== 'all' ? `&location=${encodeURIComponent(location)}` : ''}`} active={useCase === item}>
+                    <FilterPill key={item} href={algorithmFilterHref({ search, location, useCase: item })} active={useCase === item}>
                       <UseCaseFilterLabel useCase={item} />
                     </FilterPill>
                   ))}
                   </div>
                 </details>
               </div>
-              <div className="flex justify-end">
+              <div className="flex flex-col justify-end gap-2 sm:flex-row">
+                {hasFilters ? <Link href="/algorithms" className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 sm:w-fit">Clear filters</Link> : null}
                 <button className="min-h-11 w-full rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md sm:w-fit">
                   Apply filters
                 </button>
@@ -180,7 +183,14 @@ export default async function AlgorithmsPage({ searchParams }) {
             Showing <span className="font-semibold text-gray-900">{rankedAlgorithms.length}</span> of {allAlgorithms.length}
           </p>
         </div>
-        <AlgorithmsRegistry algorithms={registryItems} />
+        {registryItems.length ? (
+          <AlgorithmsRegistry algorithms={registryItems} />
+        ) : (
+          <div className="rounded-xl border border-gray-200 bg-white px-5 py-14 text-center shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900">No algorithms match these filters</h3>
+            <Link href="/algorithms" className="mt-4 inline-flex min-h-11 items-center rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-gray-900">Clear filters</Link>
+          </div>
+        )}
       </section>
     </main>
   );
@@ -207,4 +217,13 @@ function FilterPill({ href, active, children }) {
       {children}
     </Link>
   );
+}
+
+function algorithmFilterHref({ search, location, useCase }) {
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (location !== 'all') params.set('location', location);
+  if (useCase !== 'all') params.set('useCase', useCase);
+  const query = params.toString();
+  return `/algorithms${query ? `?${query}` : ''}`;
 }

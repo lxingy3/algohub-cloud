@@ -25,6 +25,7 @@ export async function POST(request, { params }) {
   const { id } = await params;
   const formData = await request.formData();
   const action = String(formData.get('action') || 'update');
+  const returnTo = String(formData.get('returnTo') || '/admin/algorithms');
   const algorithm = await prisma.algorithm.findFirst({
     where: { id, jurisdictionId: admin.jurisdictionId },
     select: { id: true },
@@ -85,5 +86,5 @@ export async function POST(request, { params }) {
     }
   }
 
-  return NextResponse.redirect(new URL('/admin/algorithms', request.url), { status: 303 });
+  return NextResponse.redirect(new URL(returnTo.startsWith('/admin/algorithms') ? returnTo : '/admin/algorithms', request.url), { status: 303 });
 }
