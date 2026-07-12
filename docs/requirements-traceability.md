@@ -16,7 +16,7 @@ Priority order: current weekly assignments and meeting decisions, then `AlgoHub_
 | Corpus embeddings, UMAP, HDBSCAN, BERTopic, KeyBERT | Week 9 | Offline batch and cached DB fields | Corpus evaluation and API verification | Implemented; quality tuning required |
 | Suggested/interpretive labels and privacy gating | Week 9 | Suggested labels; government aggregate-only APIs | `npm run ml:briefings:verify` | Complete |
 | Reading level, language, progressive disclosure | Week 9 build spec | Plain, standard, and detailed URL state; English/original language mode; Expand | Browser and build review | Implemented |
-| Drill-through from every aggregate | Week 9 build spec | Evidence drawer and drilldown modal, including impact and claim members | API count/member checks | Implemented; production browser regression required |
+| Drill-through from every aggregate | Week 9 build spec | Evidence drawer and drilldown modal, including impact and claim members | Production Playwright count/member checks | Complete for the audited Week 9 views |
 | Optional LLM wording and briefing prose | Week 9 build spec; optional in meeting | Local draft first; optional provider polish; every output remains a draft | Queue fallback and reviewer fields | Implemented; provider access is optional |
 | Admin generate, review, publish | Big spec Phase 5 | Persistent offline queue, worker status, review and publish UI | Queue integration and database status | Implemented |
 | PDF/print Briefing | Big spec Phase 5 | Single reviewed-Briefing export is not present | Route/UI review | Incomplete; do not print the six-view explorer as a substitute |
