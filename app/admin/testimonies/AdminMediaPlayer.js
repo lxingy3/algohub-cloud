@@ -1,5 +1,6 @@
 'use client';
 
+import { Play } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export default function AdminMediaPlayer({ sources }) {
@@ -16,11 +17,14 @@ export default function AdminMediaPlayer({ sources }) {
 
 function MediaItem({ source }) {
   const mediaRef = useRef(null);
+  const [loadRequested, setLoadRequested] = useState(false);
   const [objectUrl, setObjectUrl] = useState('');
   const [error, setError] = useState('');
   const mediaUrl = source.directUrl || objectUrl;
 
   useEffect(() => {
+    if (!loadRequested) return undefined;
+
     if (source.directUrl) {
       setError('');
       setObjectUrl('');
@@ -53,7 +57,7 @@ function MediaItem({ source }) {
       controller.abort();
       if (nextObjectUrl) URL.revokeObjectURL(nextObjectUrl);
     };
-  }, [source.directUrl, source.url]);
+  }, [loadRequested, source.directUrl, source.url]);
 
   function pauseOtherMedia() {
     document.querySelectorAll('audio, video').forEach((element) => {
@@ -63,6 +67,19 @@ function MediaItem({ source }) {
 
   if (error) {
     return <p className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>;
+  }
+
+  if (!loadRequested) {
+    return (
+      <button
+        type="button"
+        onClick={() => setLoadRequested(true)}
+        className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:border-amber-400 hover:bg-amber-50"
+      >
+        <Play className="h-4 w-4" />
+        Load {source.kind === 'video' ? 'video' : 'audio'}
+      </button>
+    );
   }
 
   if (!mediaUrl) {
@@ -76,7 +93,7 @@ function MediaItem({ source }) {
         className="mt-3 max-h-96 w-full rounded-md border bg-black object-contain"
         src={mediaUrl}
         controls
-        preload="metadata"
+        preload="none"
         onPlay={pauseOtherMedia}
       >
         Your browser does not support video playback.
@@ -85,7 +102,7 @@ function MediaItem({ source }) {
   }
 
   return (
-    <audio ref={mediaRef} className="mt-3 w-full" src={mediaUrl} controls preload="metadata" onPlay={pauseOtherMedia}>
+    <audio ref={mediaRef} className="mt-3 w-full" src={mediaUrl} controls preload="none" onPlay={pauseOtherMedia}>
       Your browser does not support audio playback.
     </audio>
   );

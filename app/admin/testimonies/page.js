@@ -3,16 +3,15 @@ import { getJurisdictionId } from '../../../lib/jurisdiction';
 import {
   allowedModerationActions,
   isModerationStatus,
-  moderationStatusOrder,
   moderationStatuses,
 } from '../../../lib/moderation';
-import { inferStoredMediaKind } from '../../../lib/mediaStorage';
 import { buildStorySummary } from '../../../lib/storySummary';
 import AdminMediaPlayer from './AdminMediaPlayer';
 import { InlineExpandableText, MLPipelinePanel } from './ExpandablePanels';
 import MLQuickTest from './MLQuickTest';
 
 export const dynamic = 'force-dynamic';
+const pageSize = 10;
 
 function formatDate(value) {
   if (!value) return 'Unknown date';
@@ -29,35 +28,21 @@ function fieldValue(value) {
   return value || 'Not provided';
 }
 
-function getDirectMediaUrl(mediaUrl) {
-  if (!mediaUrl || mediaUrl.startsWith('data:') || mediaUrl.startsWith('gcs://')) return '';
-  return mediaUrl;
-}
-
-function versionedMediaUrl(mediaUrl, testimony) {
-  if (!mediaUrl) return '';
-  const version = [
-    testimony.updatedAt ? new Date(testimony.updatedAt).getTime() : '',
-    testimony.mediaDurationSeconds || '',
-  ].filter(Boolean).join('-');
-  if (!version) return mediaUrl;
-  const separator = mediaUrl.includes('?') ? '&' : '?';
-  return `${mediaUrl}${separator}v=${encodeURIComponent(version)}`;
-}
-
 export default async function AdminTestimoniesPage({ searchParams }) {
   const params = await searchParams;
   const statusFilter = String(params?.status || '').toUpperCase();
+  const pageNumber = Math.max(1, Number.parseInt(String(params?.page || '1'), 10) || 1);
   const jurisdictionId = getJurisdictionId();
   const where = {
     jurisdictionId,
     ...(isModerationStatus(statusFilter) ? { moderationStatus: statusFilter } : {}),
   };
-  const [testimonies, statusCounts] = await Promise.all([
+  const [testimonies, statusCounts, filteredCount, mediaFlagRows] = await Promise.all([
     prisma.testimony.findMany({
       where,
-      orderBy: { submittedAt: 'desc' },
-      take: 100,
+      orderBy: [{ moderationStatus: 'asc' }, { submittedAt: 'desc' }],
+      skip: (pageNumber - 1) * pageSize,
+      take: pageSize,
       select: {
         id: true,
         title: true,
@@ -65,8 +50,7 @@ export default async function AdminTestimoniesPage({ searchParams }) {
         submitterName: true,
         submitterEmail: true,
         storyType: true,
-        audioFileUrl: true,
-        videoFileUrl: true,
+        mediaMimeType: true,
         transcriptionStatus: true,
         transcriptionText: true,
         moderationStatus: true,
@@ -85,7 +69,6 @@ export default async function AdminTestimoniesPage({ searchParams }) {
         moderationNotes: true,
         mediaDurationSeconds: true,
         submittedAt: true,
-        updatedAt: true,
         user: { select: { name: true, email: true } },
         partnerOrganization: { select: { name: true } },
         algorithmLinks: { select: { algorithmId: true, algorithm: { select: { name: true } } } },
@@ -96,9 +79,20 @@ export default async function AdminTestimoniesPage({ searchParams }) {
       where: { jurisdictionId },
       _count: { moderationStatus: true },
     }),
+    prisma.testimony.count({ where }),
+    prisma.$queryRaw`
+      SELECT
+        id::text AS id,
+        (audio_file_url IS NOT NULL) AS "hasAudio",
+        (video_file_url IS NOT NULL) AS "hasVideo"
+      FROM testimonies
+      WHERE jurisdiction_id = ${jurisdictionId}
+    `,
   ]);
   const counts = Object.fromEntries(statusCounts.map((item) => [item.moderationStatus, item._count.moderationStatus]));
-  testimonies.sort((a, b) => (moderationStatusOrder[a.moderationStatus] ?? 9) - (moderationStatusOrder[b.moderationStatus] ?? 9) || b.submittedAt - a.submittedAt);
+  const mediaFlags = new Map(mediaFlagRows.map((row) => [row.id, row]));
+  const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
+  const returnTo = queueHref(statusFilter, pageNumber);
 
   return (
     <div>
@@ -116,9 +110,10 @@ export default async function AdminTestimoniesPage({ searchParams }) {
           const submitter = testimony.submitterName || testimony.user?.name || 'Anonymous';
           const submitterEmail = testimony.submitterEmail || testimony.user?.email || '';
           const storyType = testimony.storyType || 'text';
-          const hasAudio = Boolean(testimony.audioFileUrl);
-          const hasVideo = Boolean(testimony.videoFileUrl);
-          const audioFieldMediaKind = hasAudio ? inferStoredMediaKind(testimony.audioFileUrl, 'audio') : 'audio';
+          const media = mediaFlags.get(testimony.id) || {};
+          const hasAudio = Boolean(media.hasAudio);
+          const hasVideo = Boolean(media.hasVideo);
+          const audioFieldMediaKind = testimony.mediaMimeType?.startsWith('video/') ? 'video' : 'audio';
           const isVoiceInput = storyType === 'voice' || hasAudio;
           const task2Impact = getTask2Impact(testimony);
           const task345Insights = getTask345Insights(testimony);
@@ -128,18 +123,16 @@ export default async function AdminTestimoniesPage({ searchParams }) {
             hasAudio ? {
               kind: audioFieldMediaKind,
               url: `/api/admin/testimonies/${testimony.id}/media/audio`,
-              directUrl: versionedMediaUrl(getDirectMediaUrl(testimony.audioFileUrl), testimony),
             } : null,
             hasVideo ? {
               kind: 'video',
               url: `/api/admin/testimonies/${testimony.id}/media/video`,
-              directUrl: versionedMediaUrl(getDirectMediaUrl(testimony.videoFileUrl), testimony),
             } : null,
           ].filter(Boolean);
 
           return (
             <form key={testimony.id} action={`/api/admin/testimonies/${testimony.id}/moderate`} method="post" className="rounded-lg border bg-white p-4">
-              {isModerationStatus(statusFilter) ? <input type="hidden" name="returnTo" value={`/admin/testimonies?status=${statusFilter}`} /> : null}
+              <input type="hidden" name="returnTo" value={returnTo} />
               <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:gap-4">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -229,6 +222,15 @@ export default async function AdminTestimoniesPage({ searchParams }) {
           <div className="rounded-lg border bg-white p-4 text-sm text-slate-600">No testimonies have been submitted yet.</div>
         ) : null}
       </div>
+      {filteredCount > pageSize ? (
+        <nav className="mt-5 flex flex-col items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm sm:flex-row" aria-label="Testimony pages">
+          <span className="text-slate-600">Page {Math.min(pageNumber, totalPages)} of {totalPages} - {filteredCount} records</span>
+          <div className="flex gap-2">
+            {pageNumber > 1 ? <a href={queueHref(statusFilter, pageNumber - 1)} className="inline-flex min-h-10 items-center rounded-md border px-3 py-2 font-semibold hover:bg-amber-50">Previous</a> : <span className="inline-flex min-h-10 items-center rounded-md border px-3 py-2 text-slate-400">Previous</span>}
+            {pageNumber < totalPages ? <a href={queueHref(statusFilter, pageNumber + 1)} className="inline-flex min-h-10 items-center rounded-md bg-slate-900 px-3 py-2 font-semibold text-white hover:bg-slate-800">Next</a> : <span className="inline-flex min-h-10 items-center rounded-md border px-3 py-2 text-slate-400">Next</span>}
+          </div>
+        </nav>
+      ) : null}
     </div>
   );
 }
@@ -264,6 +266,14 @@ function StatusTabs({ baseHref, activeStatus, counts }) {
 
 function formatStatusLabel(status) {
   return status.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function queueHref(status, page) {
+  const params = new URLSearchParams();
+  if (isModerationStatus(status)) params.set('status', status);
+  if (page > 1) params.set('page', String(page));
+  const query = params.toString();
+  return `/admin/testimonies${query ? `?${query}` : ''}`;
 }
 
 function getTask2Impact(testimony) {
