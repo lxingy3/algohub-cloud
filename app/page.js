@@ -67,14 +67,83 @@ export default async function HomePage() {
     <main className="min-h-screen bg-gradient-to-br from-amber-50 to-slate-100 text-gray-900">
       <SiteNav currentUser={user} />
 
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-gold via-[#8e690f] to-brand-dark text-white">
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#e0ac19] via-[#8e690f] to-[#050505] text-white">
         <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
         <svg aria-hidden="true" viewBox="0 0 1200 560" preserveAspectRatio="none" className="absolute inset-0 h-full w-full opacity-[0.36]">
-          <g fill="none" stroke="rgba(255,255,255,.22)" strokeWidth="1.15">
+          <defs>
+            <linearGradient id="heroMeshStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.3)" />
+              <stop offset="100%" stopColor="rgba(255,255,255,0.12)" />
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke="url(#heroMeshStroke)" strokeWidth="1.15">
             <path d="M0 420 L110 360 L235 405 L360 338 L490 382 L620 318 L760 360 L900 300 L1020 345 L1200 280" />
             <path d="M0 500 L135 438 L250 482 L382 420 L510 462 L645 400 L785 445 L915 382 L1060 420 L1200 360" />
             <path d="M0 360 L130 300 L245 340 L365 280 L505 332 L630 270 L770 315 L905 252 L1030 300 L1200 240" />
             <path d="M110 360 L135 438 M235 405 L250 482 M360 338 L382 420 M490 382 L510 462 M620 318 L645 400 M760 360 L785 445 M900 300 L915 382 M1020 345 L1060 420" />
+            <path d="M110 360 L130 300 M235 405 L245 340 M360 338 L365 280 M490 382 L505 332 M620 318 L630 270 M760 360 L770 315 M900 300 L905 252 M1020 345 L1030 300" />
+            <path d="M135 438 L250 482 L365 430 L510 462 L645 412 L785 445 L915 392 L1060 420" />
+            <path d="M130 300 L245 340 L365 288 L505 332 L630 278 L770 315 L905 260 L1030 300" />
+          </g>
+          <g fill="rgba(255,255,255,0.24)">
+            <circle cx="235" cy="405" r="1.6" />
+            <circle cx="360" cy="338" r="1.6" />
+            <circle cx="490" cy="382" r="1.6" />
+            <circle cx="620" cy="318" r="1.6" />
+            <circle cx="760" cy="360" r="1.6" />
+            <circle cx="900" cy="300" r="1.6" />
+            <circle cx="250" cy="482" r="1.6" />
+            <circle cx="382" cy="420" r="1.6" />
+            <circle cx="510" cy="462" r="1.6" />
+            <circle cx="645" cy="400" r="1.6" />
+            <circle cx="785" cy="445" r="1.6" />
+            <circle cx="915" cy="382" r="1.6" />
+          </g>
+        </svg>
+        <svg aria-hidden="true" viewBox="0 0 1200 560" preserveAspectRatio="none" className="absolute inset-0 h-full w-full opacity-[0.2]">
+          <defs>
+            <linearGradient id="dataFlowStroke" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.05)" />
+              <stop offset="45%" stopColor="rgba(255,255,255,0.2)" />
+              <stop offset="100%" stopColor="rgba(255,255,255,0.08)" />
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke="url(#dataFlowStroke)" strokeWidth="1">
+            <path d="M90 120 H260 L315 178 H470 L540 130 H690 L760 188 H930 L1005 145 H1135" />
+            <path d="M70 210 H210 L280 258 H405 L470 218 H635 L700 270 H840 L915 230 H1090" />
+            <path d="M110 300 H250 L330 352 H475 L550 308 H705 L780 360 H925 L990 320 H1140" />
+            <path d="M80 390 H230 L300 440 H445 L520 402 H680 L755 450 H910 L980 412 H1120" />
+          </g>
+          <g fill="rgba(255,255,255,0.18)">
+            <circle cx="90" cy="120" r="2.2" /><circle cx="315" cy="178" r="2.2" /><circle cx="540" cy="130" r="2.2" /><circle cx="760" cy="188" r="2.2" /><circle cx="1005" cy="145" r="2.2" />
+            <circle cx="70" cy="210" r="2.2" /><circle cx="280" cy="258" r="2.2" /><circle cx="470" cy="218" r="2.2" /><circle cx="700" cy="270" r="2.2" /><circle cx="915" cy="230" r="2.2" />
+            <circle cx="110" cy="300" r="2.2" /><circle cx="330" cy="352" r="2.2" /><circle cx="550" cy="308" r="2.2" /><circle cx="780" cy="360" r="2.2" /><circle cx="990" cy="320" r="2.2" />
+            <circle cx="80" cy="390" r="2.2" /><circle cx="300" cy="440" r="2.2" /><circle cx="520" cy="402" r="2.2" /><circle cx="755" cy="450" r="2.2" /><circle cx="980" cy="412" r="2.2" />
+          </g>
+          <g fill="rgba(255,255,255,0.13)">
+            <rect x="250" y="113" width="10" height="10" rx="2" /><rect x="690" y="123" width="10" height="10" rx="2" /><rect x="405" y="203" width="10" height="10" rx="2" /><rect x="840" y="263" width="10" height="10" rx="2" /><rect x="475" y="292" width="10" height="10" rx="2" /><rect x="925" y="350" width="10" height="10" rx="2" />
+          </g>
+        </svg>
+        <svg aria-hidden="true" viewBox="0 0 620 560" preserveAspectRatio="none" className="absolute inset-y-0 right-0 h-full w-[52%] opacity-[0.3]">
+          <defs>
+            <linearGradient id="ctaClusterStroke" x1="100%" y1="0%" x2="0%" y2="40%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.34)" />
+              <stop offset="70%" stopColor="rgba(255,255,255,0.18)" />
+              <stop offset="100%" stopColor="rgba(255,255,255,0.08)" />
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke="url(#ctaClusterStroke)" strokeWidth="1.2">
+            <path d="M560 90 L455 160 L355 140 L248 205 L172 280" />
+            <path d="M592 165 L492 205 L380 230 L276 252 L172 280" />
+            <path d="M575 255 L488 285 L395 318 L292 305 L172 280" />
+            <path d="M598 355 L505 382 L410 372 L306 334 L172 280" />
+            <path d="M562 460 L468 432 L365 396 L265 346 L172 280" />
+            <path d="M455 160 L492 205 L488 285 L505 382 L468 432" />
+            <path d="M355 140 L380 230 L395 318 L410 372 L365 396" />
+          </g>
+          <g fill="rgba(255,255,255,0.26)">
+            <circle cx="560" cy="90" r="3" /><circle cx="592" cy="165" r="3" /><circle cx="575" cy="255" r="3" /><circle cx="598" cy="355" r="3" /><circle cx="562" cy="460" r="3" />
+            <circle cx="455" cy="160" r="2.6" /><circle cx="492" cy="205" r="2.6" /><circle cx="488" cy="285" r="2.6" /><circle cx="505" cy="382" r="2.6" /><circle cx="468" cy="432" r="2.6" /><circle cx="172" cy="280" r="3.6" />
           </g>
         </svg>
         <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 pb-16 pt-10 sm:px-6 md:pb-28 md:pt-16 lg:grid-cols-2 lg:gap-20">

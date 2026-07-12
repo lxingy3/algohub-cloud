@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Lock, X } from 'lucide-react';
+import { PasswordConfirmationFields } from './PasswordConfirmationFields';
 
 export function SetPasswordModal({ open, onClose, onSaved, resetToken = '' }) {
   const [error, setError] = useState('');
@@ -64,28 +65,7 @@ export function SetPasswordModal({ open, onClose, onSaved, resetToken = '' }) {
         {error ? <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-          <label className="block text-sm font-medium text-slate-700">
-            Password
-            <input
-              name="password"
-              type="password"
-              minLength={8}
-              autoComplete="new-password"
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-              required
-            />
-          </label>
-          <label className="block text-sm font-medium text-slate-700">
-            Confirm password
-            <input
-              name="confirmPassword"
-              type="password"
-              minLength={8}
-              autoComplete="new-password"
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-              required
-            />
-          </label>
+          <PasswordConfirmationFields />
           <button
             type="submit"
             disabled={saving}

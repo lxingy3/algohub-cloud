@@ -122,7 +122,13 @@ export default async function AboutPage({ searchParams }) {
       <section className="relative overflow-hidden border-b border-white/15 bg-gradient-to-r from-[#201805] via-[#4b3508] to-[#0a0a0a]">
         <div className="absolute inset-0 opacity-[0.2] [background-image:linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:38px_38px]" />
         <svg aria-hidden="true" viewBox="0 0 1200 260" preserveAspectRatio="none" className="absolute inset-0 h-full w-full opacity-[0.24]">
-          <g fill="none" stroke="rgba(255,255,255,.18)" strokeWidth="1.1">
+          <defs>
+            <linearGradient id="aboutHeaderMesh" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.24)" />
+              <stop offset="100%" stopColor="rgba(255,255,255,0.08)" />
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke="url(#aboutHeaderMesh)" strokeWidth="1.1">
             <path d="M0 200 L120 160 L240 190 L350 148 L470 176 L590 138 L720 166 L860 126 L980 160 L1200 112" />
             <path d="M0 240 L130 206 L250 234 L375 196 L505 224 L635 188 L770 218 L900 182 L1040 208 L1200 168" />
             <path d="M120 160 L130 206 M240 190 L250 234 M350 148 L375 196 M470 176 L505 224 M590 138 L635 188 M720 166 L770 218 M860 126 L900 182 M980 160 L1040 208" />

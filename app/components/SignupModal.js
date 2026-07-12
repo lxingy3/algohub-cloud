@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useId, useState } from 'react';
 import { X } from 'lucide-react';
 import { SignupSsoButtons } from '../signup/SignupSsoButtons';
+import { PasswordConfirmationFields } from './PasswordConfirmationFields';
 
 export function SignupModal({ open, onClose, onLogin, forceOpen = false, errorMessage }) {
   const titleId = useId();
@@ -78,14 +79,7 @@ export function SignupModal({ open, onClose, onLogin, forceOpen = false, errorMe
             Email
             <input name="email" type="email" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" required />
           </label>
-          <label className="block text-sm font-medium text-slate-700">
-            Password
-            <input name="password" type="password" minLength={8} autoComplete="new-password" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" required />
-          </label>
-          <label className="block text-sm font-medium text-slate-700">
-            Confirm password
-            <input name="confirmPassword" type="password" minLength={8} autoComplete="new-password" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" required />
-          </label>
+          <PasswordConfirmationFields />
           <button className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800">
             Create account
           </button>
