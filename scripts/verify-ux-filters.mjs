@@ -56,7 +56,6 @@ try {
   checks.userSearchMatches = await userList.getByText(adminEmail, { exact: true }).count();
   checks.userEditActions = await userList.getByRole('button', { name: 'Edit profile' }).count();
   checks.userSignOutActions = await userList.getByRole('button', { name: /Sign out/ }).count();
-  checks.currentAdminSignOutOthers = await userList.getByRole('button', { name: /Sign out others/ }).count();
   await userList.getByRole('button', { name: 'Edit profile' }).first().click();
   const userEditor = page.getByRole('heading', { name: 'Edit user profile' });
   await userEditor.waitFor({ state: 'visible' });
@@ -70,10 +69,15 @@ try {
 
   await goTo(page, '/admin/comments');
   checks.commentStoryLinks = await page.locator('a[href^="/stories/"]').count();
+  const pendingTestimonyLink = page.locator('a[href^="/admin/testimonies?focus="]').first();
+  checks.pendingTestimonyHref = await pendingTestimonyLink.getAttribute('href');
+  const pendingTestimonyTitle = (await pendingTestimonyLink.textContent())?.trim();
+  await goTo(page, checks.pendingTestimonyHref);
+  checks.pendingTestimonyReview = await page.getByRole('heading', { name: 'Testimony Review' }).isVisible()
+    && await page.getByRole('heading', { name: pendingTestimonyTitle }).isVisible();
 
   await goTo(page, `/algorithms?search=Housing&location=Pittsburgh&useCase=${encodeURIComponent('Housing Prioritization')}`);
-  checks.algorithmUseCasePreserved = await page.locator('input[name="useCase"]').inputValue();
-  checks.allUseCasesHref = await page.getByRole('link', { name: 'All Use Cases' }).getAttribute('href');
+  checks.algorithmUseCasePreserved = await page.locator('select[name="useCase"]').inputValue();
   await goTo(page, '/algorithms?search=__no_such_algorithm__');
   checks.algorithmEmpty = await page.getByText('No algorithms match these filters').isVisible();
 
@@ -105,10 +109,10 @@ try {
   if (checks.eventPeriod !== 'upcoming' || checks.eventReturnTo !== '/admin/events?period=upcoming' || !checks.eventDeleteConfirmation) failures.push('Event filter, return path, or delete confirmation is incomplete');
   if (!checks.eventEmpty) failures.push('Event empty state is missing');
   if (checks.pendingOrganizationRows !== pendingOrganizations || checks.organizationStatus !== 'pending') failures.push('Pending organization filter does not match the dashboard count');
-  if (checks.userSearchMatches !== 1 || checks.userEditActions < 1 || checks.userSignOutActions !== checks.userEditActions || checks.currentAdminSignOutOthers !== 1 || !checks.userEditorVisible) failures.push('Admin user search or account actions are incomplete');
+  if (checks.userSearchMatches !== 1 || checks.userEditActions < 1 || checks.userSignOutActions !== 0 || !checks.userEditorVisible) failures.push('Admin user search or account actions are incomplete');
   if (checks.draftBriefingRows !== draftBriefings || !checks.briefingSearchVisible) failures.push('Draft briefing filter does not match the dashboard count');
-  if (!checks.commentStoryLinks) failures.push('Comment rows do not link to their source stories');
-  if (checks.algorithmUseCasePreserved !== 'Housing Prioritization' || !checks.allUseCasesHref?.includes('search=Housing') || !checks.allUseCasesHref?.includes('location=Pittsburgh')) failures.push('Public algorithm filters do not preserve search and location');
+  if (!checks.commentStoryLinks || !checks.pendingTestimonyHref || !checks.pendingTestimonyReview) failures.push('Comment rows do not open the correct public or admin testimony view');
+  if (checks.algorithmUseCasePreserved !== 'Housing Prioritization') failures.push('Public algorithm use-case selection is unavailable or not preserved');
   if (!checks.algorithmEmpty || !checks.storyEmpty || !checks.storyClear || checks.filteredStoryMetric !== 1 || !checks.eventClear) failures.push('Public filter empty/reset states or filtered metrics are incomplete');
   for (const name of ['events', 'organizations', 'stories']) {
     const [width, scrollWidth] = checks[`${name}MobileWidth`];

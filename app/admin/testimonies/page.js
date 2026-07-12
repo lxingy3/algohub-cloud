@@ -31,10 +31,12 @@ function fieldValue(value) {
 export default async function AdminTestimoniesPage({ searchParams }) {
   const params = await searchParams;
   const statusFilter = String(params?.status || '').toUpperCase();
+  const focusId = String(params?.focus || '').trim();
   const pageNumber = Math.max(1, Number.parseInt(String(params?.page || '1'), 10) || 1);
   const jurisdictionId = getJurisdictionId();
   const where = {
     jurisdictionId,
+    ...(focusId ? { id: focusId } : {}),
     ...(isModerationStatus(statusFilter) ? { moderationStatus: statusFilter } : {}),
   };
   const [testimonies, statusCounts, filteredCount, mediaFlagRows] = await Promise.all([
@@ -92,13 +94,13 @@ export default async function AdminTestimoniesPage({ searchParams }) {
   const counts = Object.fromEntries(statusCounts.map((item) => [item.moderationStatus, item._count.moderationStatus]));
   const mediaFlags = new Map(mediaFlagRows.map((row) => [row.id, row]));
   const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
-  const returnTo = queueHref(statusFilter, pageNumber);
+  const returnTo = focusId ? `/admin/testimonies?focus=${encodeURIComponent(focusId)}` : queueHref(statusFilter, pageNumber);
 
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold">{statusFilter === 'PENDING' ? 'Pending Testimony Queue' : 'Testimony Queue'}</h1>
-        {isModerationStatus(statusFilter) ? (
+        <h1 className="text-2xl font-semibold">{focusId ? 'Testimony Review' : statusFilter === 'PENDING' ? 'Pending Testimony Queue' : 'Testimony Queue'}</h1>
+        {focusId || isModerationStatus(statusFilter) ? (
           <a href="/admin/testimonies" className="inline-flex min-h-11 items-center rounded-md border bg-white px-3 py-2 text-sm">Show all</a>
         ) : null}
       </div>

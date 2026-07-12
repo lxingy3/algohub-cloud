@@ -6,7 +6,7 @@ import { TransientNotice } from '../../components/TransientNotice';
 import { DeleteUserButton } from './DeleteUserButton';
 import { RoleSettingsModal } from './RoleSettingsModal';
 import { PasswordResetButton } from './PasswordResetButton';
-import { EditUserButton, SignOutUserButton } from './UserActions';
+import { EditUserButton } from './UserActions';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,7 +58,6 @@ export default async function AdminUsersPage({ searchParams }) {
   const admin = await requireAdmin();
   const notice = notices[params?.error] || notices[params?.success];
   const jurisdictionId = getJurisdictionId();
-  const now = new Date();
   const [users, roles, organizations] = await Promise.all([
     prisma.user.findMany({
       where: { jurisdictionId },
@@ -72,7 +71,7 @@ export default async function AdminUsersPage({ searchParams }) {
           take: 1,
         },
         accounts: { select: { provider: true } },
-        _count: { select: { submittedTestimonies: true, comments: true, sessions: { where: { expires: { gt: now } } } } },
+        _count: { select: { submittedTestimonies: true, comments: true } },
       },
     }),
     prisma.role.findMany({ orderBy: { name: 'asc' } }),
@@ -168,7 +167,7 @@ export default async function AdminUsersPage({ searchParams }) {
                 <div className="text-sm">
                   <div className="font-medium text-slate-700">{user.organization?.name || 'No organization'}</div>
                   <div className="text-slate-500">Created {formatDate(user.createdAt)}</div>
-                  <div className="mt-1 text-xs text-slate-500">{user._count.submittedTestimonies} stories / {user._count.comments} comments / {user._count.sessions} active sessions</div>
+                  <div className="mt-1 text-xs text-slate-500">{user._count.submittedTestimonies} stories / {user._count.comments} comments</div>
                 </div>
                 <form action={`/api/admin/users/${user.id}/role`} method="post" className="grid gap-2">
                   <input type="hidden" name="returnTo" value={returnTo} />
@@ -185,7 +184,6 @@ export default async function AdminUsersPage({ searchParams }) {
                 <div className="flex w-full flex-col gap-2 xl:justify-self-end">
                   <EditUserButton user={{ id: user.id, name: user.name, organizationId: user.organizationId }} organizations={organizations} />
                   <PasswordResetButton userId={user.id} disabled={isCurrentAdmin} requested={resetRequested} />
-                  <SignOutUserButton userId={user.id} disabled={isCurrentAdmin ? user._count.sessions <= 1 : user._count.sessions === 0} sessionCount={user._count.sessions} preserveCurrent={isCurrentAdmin} />
                   <form action={`/api/admin/users/${user.id}/delete`} method="post">
                     <input type="hidden" name="returnTo" value={returnTo} />
                     <DeleteUserButton disabled={isCurrentAdmin} />

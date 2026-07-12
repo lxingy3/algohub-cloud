@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, Pencil, X } from 'lucide-react';
+import { Pencil, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export function EditUserButton({ user, organizations }) {
@@ -67,25 +67,5 @@ export function EditUserButton({ user, organizations }) {
         </div>
       ) : null}
     </>
-  );
-}
-
-export function SignOutUserButton({ userId, disabled, sessionCount, preserveCurrent = false }) {
-  const [status, setStatus] = useState('');
-  const targetCount = Math.max(0, sessionCount - (preserveCurrent ? 1 : 0));
-
-  async function signOut() {
-    if (!window.confirm(`Sign this user out of ${targetCount} active session${targetCount === 1 ? '' : 's'}?`)) return;
-    setStatus('Signing out...');
-    const formData = new FormData();
-    formData.set('action', 'sign-out');
-    const response = await fetch(`/api/admin/users/${userId}/manage`, { method: 'POST', body: formData });
-    setStatus(response.ok ? 'Signed out' : 'Could not sign out');
-  }
-
-  return (
-    <button type="button" onClick={signOut} disabled={disabled || status === 'Signing out...'} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50" title={disabled ? 'No other active sessions to close.' : undefined}>
-      <LogOut className="h-4 w-4" /> {status || `${preserveCurrent ? 'Sign out others' : 'Sign out'} (${targetCount})`}
-    </button>
   );
 }

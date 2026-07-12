@@ -29,7 +29,7 @@ export default async function AdminCommentsPage({ searchParams }) {
         authorName: true,
         moderationStatus: true,
         createdAt: true,
-        testimony: { select: { id: true, title: true } },
+        testimony: { select: { id: true, title: true, moderationStatus: true, publicPosting: true } },
         user: { select: { email: true } },
       },
     }),
@@ -60,7 +60,7 @@ export default async function AdminCommentsPage({ searchParams }) {
               <div>
                 <p className="text-sm text-slate-500">
                   {comment.user?.email || comment.authorName || 'Anonymous'} on{' '}
-                  <Link href={`/stories/${comment.testimony.id}`} className="font-semibold text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-amber-700">{comment.testimony.title}</Link>
+                  <Link href={testimonyHref(comment.testimony)} className="font-semibold text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-amber-700">{comment.testimony.title}</Link>
                 </p>
                 <p className="mt-0.5 text-xs text-slate-500">
                   Posted <time dateTime={comment.createdAt.toISOString()}>{formatDate(comment.createdAt)}</time>
@@ -84,6 +84,12 @@ export default async function AdminCommentsPage({ searchParams }) {
       </div>
     </div>
   );
+}
+
+function testimonyHref(testimony) {
+  return testimony.moderationStatus === 'APPROVED' && testimony.publicPosting
+    ? `/stories/${testimony.id}`
+    : `/admin/testimonies?focus=${encodeURIComponent(testimony.id)}`;
 }
 
 function StatusTabs({ baseHref, activeStatus, counts }) {

@@ -1,12 +1,11 @@
 import Link from 'next/link';
-import { ChevronDown, Database, Search } from 'lucide-react';
+import { Database, Search } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
 import { rankAlgorithmsForSearch } from '../../lib/searchRanking';
 import { SiteNav } from '../components/SiteNav';
 import { AlgorithmsRegistry } from '../components/AlgorithmsRegistry';
-import { getUseCaseIconMeta } from '../components/useCaseIcons';
 
 export const dynamic = 'force-dynamic';
 
@@ -127,7 +126,6 @@ export default async function AlgorithmsPage({ searchParams }) {
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 py-6 sm:px-6">
         <form className="-mt-14 space-y-6 rounded-2xl border border-gray-200/80 bg-white/95 p-4 shadow-xl backdrop-blur-sm sm:p-6">
-          <input type="hidden" name="useCase" value={useCase} />
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
@@ -148,23 +146,13 @@ export default async function AlgorithmsPage({ searchParams }) {
                   {locations.map((item) => <option key={item} value={item}>{item}</option>)}
                 </select>
               </label>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-                <span className="shrink-0 pt-1 text-sm font-medium text-gray-600 sm:w-28">Use Case</span>
-                <details className="group" open={useCase !== 'all'}>
-                  <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-800 md:hidden">
-                    {useCase === 'all' ? 'Choose a use case' : useCase}
-                    <ChevronDown aria-hidden="true" className="h-4 w-4 text-gray-400 transition group-open:rotate-180" />
-                  </summary>
-                  <div className="mt-2 hidden flex-wrap gap-2 group-open:flex md:mt-0 md:flex">
-                  <FilterPill href={algorithmFilterHref({ search, location, useCase: 'all' })} active={useCase === 'all'}>All Use Cases</FilterPill>
-                  {useCases.map((item) => (
-                    <FilterPill key={item} href={algorithmFilterHref({ search, location, useCase: item })} active={useCase === item}>
-                      <UseCaseFilterLabel useCase={item} />
-                    </FilterPill>
-                  ))}
-                  </div>
-                </details>
-              </div>
+              <label className="flex flex-col gap-2 text-sm font-medium text-gray-600 sm:flex-row sm:items-center">
+                <span className="sm:w-28">Use Case</span>
+                <select name="useCase" defaultValue={useCase} className="min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 py-2 sm:w-[320px]">
+                  <option value="all">All Use Cases</option>
+                  {useCases.map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </label>
               <div className="flex flex-col justify-end gap-2 sm:flex-row">
                 {hasFilters ? <Link href="/algorithms" className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 sm:w-fit">Clear filters</Link> : null}
                 <button className="min-h-11 w-full rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md sm:w-fit">
@@ -194,36 +182,4 @@ export default async function AlgorithmsPage({ searchParams }) {
       </section>
     </main>
   );
-}
-
-function UseCaseFilterLabel({ useCase }) {
-  const { icon: Icon } = getUseCaseIconMeta(useCase);
-  return (
-    <>
-      <Icon className="h-3.5 w-3.5" />
-      {useCase}
-    </>
-  );
-}
-
-function FilterPill({ href, active, children }) {
-  return (
-    <Link
-      href={href}
-      className={active
-        ? 'inline-flex min-h-10 items-center gap-1.5 rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md'
-        : 'inline-flex min-h-10 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50'}
-    >
-      {children}
-    </Link>
-  );
-}
-
-function algorithmFilterHref({ search, location, useCase }) {
-  const params = new URLSearchParams();
-  if (search) params.set('search', search);
-  if (location !== 'all') params.set('location', location);
-  if (useCase !== 'all') params.set('useCase', useCase);
-  const query = params.toString();
-  return `/algorithms${query ? `?${query}` : ''}`;
 }
