@@ -50,6 +50,33 @@ function cleanRow(row) {
   };
 }
 
+function normalizedSet(values) {
+  return new Set((Array.isArray(values) ? values : []).map((value) => String(value?.keyword || value?.text || value || '').trim().toLowerCase()).filter(Boolean));
+}
+
+function flattenedEntities(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return new Set();
+  return normalizedSet(Object.values(value).flatMap((items) => Array.isArray(items) ? items : []));
+}
+
+function addSetScores(stats, expected, actual) {
+  stats.records += 1;
+  for (const item of actual) item && (expected.has(item) ? stats.tp += 1 : stats.fp += 1);
+  for (const item of expected) if (!actual.has(item)) stats.fn += 1;
+}
+
+function setMetrics(stats) {
+  if (!stats.records) return null;
+  const precision = stats.tp / Math.max(1, stats.tp + stats.fp);
+  const recall = stats.tp / Math.max(1, stats.tp + stats.fn);
+  return {
+    records: stats.records,
+    precision: Number(precision.toFixed(4)),
+    recall: Number(recall.toFixed(4)),
+    f1: Number((precision + recall ? (2 * precision * recall) / (precision + recall) : 0).toFixed(4)),
+  };
+}
+
 function evaluateRows(rows) {
   if (!fs.existsSync(evalSetPath)) return null;
   const payload = JSON.parse(fs.readFileSync(evalSetPath, 'utf8'));
@@ -76,6 +103,8 @@ function evaluateRows(rows) {
   let actualThemeCount = 0;
   let foundThemeCount = 0;
   const impactCounts = new Map([...IMPACT_LABELS].map((label) => [label, { tp: 0, fp: 0, fn: 0 }]));
+  const entityScores = { records: 0, tp: 0, fp: 0, fn: 0 };
+  const keywordScores = { records: 0, tp: 0, fp: 0, fn: 0 };
   for (const expected of expectedRows) {
     const row = byId.get(String(expected.id));
     if (!row) continue;
@@ -92,6 +121,12 @@ function evaluateRows(rows) {
     for (const theme of expected.expectedThemes || []) {
       expectedThemeCount += 1;
       if (actualThemes.has(theme)) foundThemeCount += 1;
+    }
+    if (expected.expectedEntities && typeof expected.expectedEntities === 'object') {
+      addSetScores(entityScores, flattenedEntities(expected.expectedEntities), flattenedEntities(row.aiExtractedExperiences?.entities));
+    }
+    if (Array.isArray(expected.expectedKeywords)) {
+      addSetScores(keywordScores, normalizedSet(expected.expectedKeywords), normalizedSet(row.aiExtractedExperiences?.keywords));
     }
   }
   if (!matched) return null;
@@ -120,6 +155,8 @@ function evaluateRows(rows) {
     themePrecision: Number(themePrecision.toFixed(4)),
     themeRecall: Number(themeRecall.toFixed(4)),
     themeF1: Number(themeF1.toFixed(4)),
+    entityBenchmark: setMetrics(entityScores),
+    keywordBenchmark: setMetrics(keywordScores),
     requiredImpactAccuracy: 0.75,
     requiredThemeRecall: 0.7,
     minimumBenchmarkSize,

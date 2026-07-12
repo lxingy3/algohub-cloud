@@ -7,10 +7,10 @@ Priority order: current weekly assignments and meeting decisions, then `AlgoHub_
 | Next.js, Neon, Prisma, jurisdiction-scoped schema | Week 3 | App Router, Prisma migrations, Neon production DB | `npm run build`; backend boundary checks | Complete |
 | ERD and UI/database field mapping | Week 3 | `public/database-erd.svg`, `database-map.md` | File review | Complete |
 | Community auth, reactions, comments, moderation | Week 3 | Public and admin routes | Authenticated lifecycle regression still required before release | Implemented, regression pending |
-| Audio/video transcription | Weeks 6-7 | FastAPI/Docker worker; video audio track only | Production worker samples | Implemented; no independent WER/CER benchmark |
+| Audio/video transcription | Weeks 6-7 | FastAPI/Docker worker; video audio track only | Production worker samples; `npm run ml:task1:evaluate` | Implemented; WER/CER evaluator added, independent gold transcripts pending |
 | Task 2 impact classification | Week 7 | Local BART-MNLI with reviewed fallback state | `npm run ml:eval` | Development baseline only |
 | Task 3 multi-label themes | Week 7 | Local BART-MNLI | `npm run ml:eval` | Development baseline only |
-| Task 4 entities and Task 5 keywords | Week 7 | spaCy and KeyBERT | Stored coverage plus fixtures | Gold benchmark pending |
+| Task 4 entities and Task 5 keywords | Week 7 | spaCy and KeyBERT | Stored coverage plus fixtures; optional gold entity/keyword scoring | Gold labels pending; evaluator reports no metric rather than inferring one |
 | Task 6 linking and Task 7 summary | Week 8 discussion | Deliberately rolled back | Requirement history | Deferred until a new detailed assignment |
 | Six Briefing views and 52 numbered blocks | Week 9 | `/briefings` community/library/government, overview/algorithm | Playwright route and block-count check | Complete |
 | Corpus embeddings, UMAP, HDBSCAN, BERTopic, KeyBERT | Week 9 | Offline batch and cached DB fields | Corpus evaluation and API verification | Implemented; quality tuning required |
@@ -19,7 +19,7 @@ Priority order: current weekly assignments and meeting decisions, then `AlgoHub_
 | Drill-through from every aggregate | Week 9 build spec | Evidence drawer and drilldown modal, including impact and claim members | API count/member checks | Implemented; production browser regression required |
 | Optional LLM wording and briefing prose | Week 9 build spec; optional in meeting | Local draft first; optional provider polish; every output remains a draft | Queue fallback and reviewer fields | Implemented; provider access is optional |
 | Admin generate, review, publish | Big spec Phase 5 | Persistent offline queue, worker status, review and publish UI | Queue integration and database status | Implemented |
-| PDF/print Briefing | Big spec Phase 5 | Print / Save PDF action and dedicated print layout | Production build and print preview | Implemented |
+| PDF/print Briefing | Big spec Phase 5 | Single reviewed-Briefing export is not present | Route/UI review | Incomplete; do not print the six-view explorer as a substitute |
 | Partner review | Big spec Phase 5 | Role-limited draft review page, notes, and admin display | Auth boundary and build | Implemented |
 | Peer-jurisdiction benchmark | Week 9 | Approved-only endpoint | Live API | Waiting for approved peer data |
 | Google Cloud scheduled worker | Week 9 meeting | Local reproducible queue worker with a persistent job contract | Manual worker run | Migration-ready; hosted worker expected later with Aziz |

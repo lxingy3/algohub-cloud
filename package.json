@@ -12,6 +12,7 @@
     "lint:i18n": "node scripts/check-i18n-coverage.mjs",
     "lint:fix": "eslint . --fix",
     "ml:eval": "node scripts/run-task2-5-evals.mjs",
+    "ml:task1:evaluate": "node scripts/evaluate-task1-transcription.mjs",
     "ml:eval:production": "node scripts/run-task2-5-production-regression.mjs",
     "ml:eval:ui": "node scripts/run-ml-quick-test-ui-regression.mjs",
     "ml:eval:pittsburgh": "node scripts/evaluate-task2-5-results.mjs task345-results/production-regression/task2-5-pittsburgh-production-results.json data/task2-5-pittsburgh-eval-set.json",

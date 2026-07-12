@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { BookOpen, ChevronDown, Database, ExternalLink, FileText, Filter, Landmark, Maximize2, MessageSquare, Printer, Search, Users, X } from 'lucide-react';
+import { BookOpen, ChevronDown, Database, ExternalLink, FileText, Filter, Landmark, Maximize2, MessageSquare, Search, Users, X } from 'lucide-react';
 import { AlgorithmModal } from '../components/AlgorithmsRegistry';
 import { InfoTooltip } from '../components/InfoTooltip';
 import { EventModal } from '../events/EventsClient';
@@ -404,14 +404,9 @@ export function BriefingsClient() {
               <h2 className="mt-3 text-2xl font-bold text-slate-950">{view.title}</h2>
               <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">{view.subtitle}</p>
             </div>
-            <div className="flex items-start gap-2">
-              <button type="button" onClick={() => window.print()} className="briefings-print-hide inline-flex min-h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                <Printer className="h-4 w-4" /> Print / Save PDF
-              </button>
             <div className="hidden rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 md:block">
               <span className="block text-xs font-bold uppercase tracking-wide text-slate-500">Route</span>
               <span className="font-mono">{scope === 'algorithm' ? view.route.replace('[slug]', selectedAlgorithm.slug) : view.route}</span>
-            </div>
             </div>
           </div>
         </div>
