@@ -1,6 +1,7 @@
 import { chromium } from 'playwright';
 
-const baseUrl = process.env.BRIEFINGS_BASE_URL || 'http://127.0.0.1:3011';
+const baseUrlArgument = process.argv.find((value, index, values) => values[index - 1] === '--base-url');
+const baseUrl = baseUrlArgument || process.env.BRIEFINGS_BASE_URL || 'http://127.0.0.1:3011';
 const routes = [
   { lens: 'community', scope: 'overview', codes: range('CC', 8) },
   { lens: 'intermediary', scope: 'overview', codes: range('IC', 9) },
