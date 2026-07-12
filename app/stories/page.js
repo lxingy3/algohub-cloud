@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BarChart3, BookOpen, Calendar, PenLine, Search } from 'lucide-react';
+import { BarChart3, BookOpen, Calendar, ChevronDown, PenLine, Search } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
@@ -52,6 +52,8 @@ export default async function StoriesPage({ searchParams }) {
   ]);
 
   const rankedTestimonies = search ? rankStoriesForSearch(testimonies, search) : testimonies;
+  const initialStories = rankedTestimonies.slice(0, 12);
+  const remainingStories = rankedTestimonies.slice(12);
   const useCases = [...new Set(allStories.map((item) => item.affectedDomain).filter(Boolean))];
   const cities = [...new Set(allStories.map((item) => item.city).filter(Boolean))];
   const storiesByUseCase = allStories.reduce((acc, story) => {
@@ -125,37 +127,55 @@ export default async function StoriesPage({ searchParams }) {
 
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          {rankedTestimonies.map((story) => {
-            const StoryIcon = getUseCaseIcon(story.affectedDomain);
-            return (
-            <Link key={story.id} href={`/stories/${story.id}`} className="group flex w-full items-start px-3 py-4 text-left transition-colors hover:bg-gray-50/80 sm:px-4 sm:py-3">
-              <div className={`mr-3 mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border sm:h-8 sm:w-8 ${getUseCaseIconTone(story.affectedDomain)}`} aria-hidden="true">
-                <StoryIcon className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1 py-0.5">
-                <h3 className="mb-1 line-clamp-2 text-base font-bold text-gray-900 transition-colors group-hover:text-yellow-600">{story.title}</h3>
-                <p className="mb-1.5 line-clamp-2 text-sm text-gray-600">
-                  <span className="mr-1.5 inline rounded bg-gray-100 px-1 py-0.5 align-middle text-[9px] font-medium uppercase tracking-wider text-gray-400">AI summary</span>
-                  {story.summary}
-                </p>
-                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                  {story.affectedDomain ? <span className="rounded border border-gray-300 bg-gray-50 px-1.5 text-[10px] text-gray-700">{story.affectedDomain}</span> : null}
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {formatDate(story.submittedAt)}
-                  </span>
-                  <span>{story._count.reactions} reactions</span>
-                  <span>{story._count.comments} comments</span>
+          {initialStories.map((story) => <StoryRow key={story.id} story={story} />)}
+          {remainingStories.length ? (
+            <>
+              <details className="group border-t border-gray-200 md:hidden">
+                <summary className="flex min-h-12 cursor-pointer list-none items-center justify-center gap-2 px-4 py-3 text-sm font-bold text-amber-800">
+                  Show {remainingStories.length} more stories
+                  <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
+                </summary>
+                <div className="hidden border-t border-gray-100 group-open:block">
+                  {remainingStories.map((story) => <StoryRow key={story.id} story={story} />)}
                 </div>
+              </details>
+              <div className="hidden md:contents">
+                {remainingStories.map((story) => <StoryRow key={story.id} story={story} />)}
               </div>
-            </Link>
-            );
-          })}
+            </>
+          ) : null}
         </div>
       </section>
 
       <CommunityImpact metrics={metrics} />
     </main>
+  );
+}
+
+function StoryRow({ story }) {
+  const StoryIcon = getUseCaseIcon(story.affectedDomain);
+  return (
+    <Link href={`/stories/${story.id}`} className="group flex w-full items-start px-3 py-4 text-left transition-colors hover:bg-gray-50/80 sm:px-4 sm:py-3">
+      <div className={`mr-3 mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border sm:h-8 sm:w-8 ${getUseCaseIconTone(story.affectedDomain)}`} aria-hidden="true">
+        <StoryIcon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0 flex-1 py-0.5">
+        <h3 className="mb-1 line-clamp-2 text-base font-bold text-gray-900 transition-colors group-hover:text-yellow-600">{story.title}</h3>
+        <p className="mb-1.5 line-clamp-2 text-sm text-gray-600">
+          <span className="mr-1.5 inline rounded bg-gray-100 px-1 py-0.5 align-middle text-[9px] font-medium uppercase tracking-wider text-gray-400">AI summary</span>
+          {story.summary}
+        </p>
+        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+          {story.affectedDomain ? <span className="rounded border border-gray-300 bg-gray-50 px-1.5 text-[10px] text-gray-700">{story.affectedDomain}</span> : null}
+          <span className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            {formatDate(story.submittedAt)}
+          </span>
+          <span>{story._count.reactions} reactions</span>
+          <span>{story._count.comments} comments</span>
+        </div>
+      </div>
+    </Link>
   );
 }
 

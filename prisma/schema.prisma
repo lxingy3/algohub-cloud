@@ -112,6 +112,7 @@ model Jurisdiction {
   sourceInsights       CrossJurisdictionInsight[]
   submissionDrafts     SubmissionDraft[]
   themeImprovementMaps ThemeImprovementMap[]
+  eventRegistrations   EventRegistration[]
 
   @@map("jurisdictions")
 }
@@ -595,9 +596,26 @@ model CommunityEvent {
   jurisdiction         Jurisdiction  @relation(fields: [jurisdictionId], references: [id])
   organizer            Organization? @relation(fields: [organizerOrgId], references: [id])
   newsUpdates          NewsUpdate[]
+  registrations        EventRegistration[]
 
   @@index([jurisdictionId])
   @@map("community_events")
+}
+
+model EventRegistration {
+  id             String         @id @default(uuid()) @db.Uuid
+  jurisdictionId String         @map("jurisdiction_id") @db.VarChar(50)
+  eventId        String         @map("event_id") @db.Uuid
+  name           String         @db.VarChar(255)
+  email          String         @db.VarChar(255)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  jurisdiction   Jurisdiction   @relation(fields: [jurisdictionId], references: [id])
+  event          CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, email])
+  @@index([jurisdictionId])
+  @@index([eventId])
+  @@map("event_registrations")
 }
 
 model Briefing {

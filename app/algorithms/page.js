@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Database, Search } from 'lucide-react';
+import { ChevronDown, Database, Search } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
@@ -141,14 +141,20 @@ export default async function AlgorithmsPage({ searchParams }) {
               </label>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
                 <span className="shrink-0 pt-1 text-sm font-medium text-gray-600 sm:w-28">Use Case</span>
-                <div className="flex flex-wrap gap-2">
+                <details className="group" open={useCase !== 'all'}>
+                  <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-800 md:hidden">
+                    {useCase === 'all' ? 'Choose a use case' : useCase}
+                    <ChevronDown aria-hidden="true" className="h-4 w-4 text-gray-400 transition group-open:rotate-180" />
+                  </summary>
+                  <div className="mt-2 hidden flex-wrap gap-2 group-open:flex md:mt-0 md:flex">
                   <FilterPill href="/algorithms" active={useCase === 'all'}>All Use Cases</FilterPill>
                   {useCases.map((item) => (
                     <FilterPill key={item} href={`/algorithms?useCase=${encodeURIComponent(item)}${location !== 'all' ? `&location=${encodeURIComponent(location)}` : ''}`} active={useCase === item}>
                       <UseCaseFilterLabel useCase={item} />
                     </FilterPill>
                   ))}
-                </div>
+                  </div>
+                </details>
               </div>
               <div className="flex justify-end">
                 <button className="min-h-11 w-full rounded-full bg-yellow-500 px-4 py-2 text-sm font-medium text-gray-900 shadow-md sm:w-fit">

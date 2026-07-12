@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from './LanguageSelector';
@@ -52,6 +53,7 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
   const [profileReturnTo, setProfileReturnTo] = useState('/');
   const [passwordReminderOpen, setPasswordReminderOpen] = useState(false);
   const [resetToken, setResetToken] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   function openLogin(config = {}) {
     setLoginConfig(config);
@@ -126,54 +128,83 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-gray-100 bg-white">
-        <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-4 md:h-16 md:flex-nowrap md:gap-4 md:px-6 md:py-0">
-          <Link href="/" className="flex min-h-11 items-center gap-2">
-            <img src="/newlogo.png" alt="AlgoStories Logo" className="h-7 w-auto sm:h-8" />
-          </Link>
-          <nav className="hidden items-center gap-1 text-sm md:flex">
-            {navItems.map(([href, label, literal]) => (
-              <Link key={href} href={href} data-no-i18n className="rounded-md px-4 py-2 font-medium text-gray-800 hover:bg-gray-100">
-                {literal ? label : t(label)}
-              </Link>
-            ))}
-          </nav>
-          <div className="flex items-center gap-1 text-sm md:gap-2">
-            <LanguageSelector />
-            {isLoggedIn ? (
-              <Link href="/my-stories" data-no-i18n className="hidden rounded-md px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 md:inline-flex">
-                {t('nav.myStories')}
-              </Link>
-            ) : null}
-            {!isLoggedIn ? (
-              <button type="button" onClick={() => openLogin()} data-no-i18n className="inline-flex min-h-11 items-center rounded-md px-2 py-2 font-medium text-gray-700 hover:bg-gray-100 sm:px-3 md:min-h-0">
-                {t('nav.login')}
-              </button>
-            ) : null}
-            {isAdmin ? (
-              <Link href="/admin" data-no-i18n className="inline-flex min-h-11 items-center rounded-md border border-gray-200 px-2 py-2 font-medium text-gray-800 hover:bg-gray-100 sm:px-3 md:min-h-0">
-                {t('nav.admin')}
-              </Link>
-            ) : null}
-            {isLoggedIn ? (
-              <form action="/api/auth/logout" method="post">
-                <button onClick={clearPasswordReminderDismissals} data-no-i18n className="min-h-11 rounded-md px-3 py-2 font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 md:min-h-0">
-                  {t('nav.logout')}
+        <div className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6">
+          <div className="flex min-h-16 items-center justify-between gap-2">
+            <Link href="/" className="flex min-h-11 min-w-0 items-center">
+              <img src="/newlogo.png" alt="AlgoStories Logo" className="h-7 w-auto sm:h-8" />
+            </Link>
+            <nav className="hidden items-center gap-1 text-sm md:flex">
+              {navItems.map(([href, label, literal]) => (
+                <Link key={href} href={href} data-no-i18n className="rounded-md px-4 py-2 font-medium text-gray-800 hover:bg-gray-100">
+                  {literal ? label : t(label)}
+                </Link>
+              ))}
+            </nav>
+            <div className="flex items-center gap-1 text-sm md:gap-2">
+              <LanguageSelector />
+              {isLoggedIn ? (
+                <Link href="/my-stories" data-no-i18n className="hidden rounded-md px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 md:inline-flex">
+                  {t('nav.myStories')}
+                </Link>
+              ) : null}
+              {!isLoggedIn ? (
+                <button type="button" onClick={() => openLogin()} data-no-i18n className="hidden rounded-md px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 md:inline-flex">
+                  {t('nav.login')}
                 </button>
-              </form>
-            ) : null}
+              ) : null}
+              {isAdmin ? (
+                <Link href="/admin" data-no-i18n className="hidden rounded-md border border-gray-200 px-3 py-2 font-medium text-gray-800 hover:bg-gray-100 md:inline-flex">
+                  {t('nav.admin')}
+                </Link>
+              ) : null}
+              {isLoggedIn ? (
+                <form action="/api/auth/logout" method="post" className="hidden md:block">
+                  <button onClick={clearPasswordReminderDismissals} data-no-i18n className="rounded-md px-3 py-2 font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900">
+                    {t('nav.logout')}
+                  </button>
+                </form>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((open) => !open)}
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-gray-200 text-gray-800 hover:bg-gray-50 md:hidden"
+                aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                aria-expanded={mobileMenuOpen}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            </div>
           </div>
-          <nav className="order-3 flex w-full flex-wrap gap-1 pb-1 text-sm md:hidden">
-            {navItems.map(([href, label, literal]) => (
-              <Link key={href} href={href} data-no-i18n className="inline-flex min-h-11 shrink-0 items-center rounded-md px-3 py-2 font-medium text-gray-800 hover:bg-gray-100">
-                {literal ? label : t(label)}
-              </Link>
-            ))}
-            {isLoggedIn ? (
-              <Link href="/my-stories" data-no-i18n className="inline-flex min-h-11 shrink-0 items-center rounded-md px-3 py-2 font-medium text-gray-800 hover:bg-gray-100">
-                {t('nav.myStories')}
-              </Link>
-            ) : null}
-          </nav>
+          {mobileMenuOpen ? (
+            <nav className="grid grid-cols-2 gap-1 border-t border-gray-100 py-2 text-sm md:hidden">
+              {navItems.map(([href, label, literal]) => (
+                <Link key={href} href={href} onClick={() => setMobileMenuOpen(false)} data-no-i18n className="inline-flex min-h-11 items-center rounded-md px-3 py-2 font-medium text-gray-800 hover:bg-gray-100">
+                  {literal ? label : t(label)}
+                </Link>
+              ))}
+              {isLoggedIn ? (
+                <Link href="/my-stories" onClick={() => setMobileMenuOpen(false)} data-no-i18n className="inline-flex min-h-11 items-center rounded-md px-3 py-2 font-medium text-gray-800 hover:bg-gray-100">
+                  {t('nav.myStories')}
+                </Link>
+              ) : (
+                <button type="button" onClick={() => { setMobileMenuOpen(false); openLogin(); }} data-no-i18n className="inline-flex min-h-11 items-center rounded-md px-3 py-2 text-left font-medium text-gray-800 hover:bg-gray-100">
+                  {t('nav.login')}
+                </button>
+              )}
+              {isAdmin ? (
+                <Link href="/admin" onClick={() => setMobileMenuOpen(false)} data-no-i18n className="inline-flex min-h-11 items-center rounded-md px-3 py-2 font-medium text-gray-800 hover:bg-gray-100">
+                  {t('nav.admin')}
+                </Link>
+              ) : null}
+              {isLoggedIn ? (
+                <form action="/api/auth/logout" method="post">
+                  <button onClick={clearPasswordReminderDismissals} data-no-i18n className="inline-flex min-h-11 w-full items-center rounded-md px-3 py-2 text-left font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">
+                    {t('nav.logout')}
+                  </button>
+                </form>
+              ) : null}
+            </nav>
+          ) : null}
         </div>
       </header>
       <LoginModal

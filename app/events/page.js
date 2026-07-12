@@ -21,7 +21,7 @@ export default async function EventsPage({ searchParams }) {
     prisma.communityEvent.findMany({
       where: { jurisdictionId: getJurisdictionId() },
       orderBy: { date: 'asc' },
-      include: { organizer: true },
+      include: { organizer: true, _count: { select: { registrations: true } } },
     }),
   ]);
 
@@ -99,6 +99,7 @@ export default async function EventsPage({ searchParams }) {
           upcomingEvents={upcomingEvents.map(serializeEvent)}
           pastEvents={pastEvents.map(serializeEvent)}
           initialEventId={initialEventId}
+          registrationIdentity={user ? { name: user.name, email: user.email } : null}
         />
       </section>
     </main>

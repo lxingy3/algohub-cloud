@@ -166,7 +166,31 @@ export function AISystemsDiagram() {
           </div>
         </div>
 
-        <div className="relative overflow-x-auto rounded-xl border-2 border-gray-200 bg-white p-3 pb-5 shadow-lg sm:p-6 sm:pb-8">
+        <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-lg md:hidden">
+          <div className="grid gap-2">
+            {steps.map((content, index) => {
+              const stepNum = index + 1;
+              const active = step === stepNum;
+              return (
+                <button
+                  key={content.title}
+                  type="button"
+                  onClick={() => chooseStep(stepNum)}
+                  className={`flex min-h-11 items-center gap-3 rounded-md border px-3 py-2 text-left text-sm font-bold ${active ? 'border-amber-400 bg-amber-50 text-slate-950' : 'border-slate-200 bg-white text-slate-600'}`}
+                >
+                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs ${active ? 'bg-slate-950 text-amber-300' : 'bg-slate-100 text-slate-600'}`}>{stepNum}</span>
+                  {content.title.replace(/^\d+\.\s*/, '')}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-3 rounded-md bg-slate-950 p-4 text-white">
+            <p className="text-sm font-bold text-amber-300">{steps[step - 1].title}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-200">{steps[step - 1].text}</p>
+          </div>
+        </div>
+
+        <div className="relative hidden overflow-x-auto rounded-xl border-2 border-gray-200 bg-white p-3 pb-5 shadow-lg sm:p-6 sm:pb-8 md:block">
           <div className="relative min-w-[760px] pt-4 sm:min-w-[900px]">
             <div ref={diagramRef} className="relative mb-4 h-44 w-full">
               <div className="absolute left-[16.66%] top-[25%] h-0 w-[66.66%] border-t-2 border-dashed border-gray-400" />

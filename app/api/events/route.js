@@ -27,6 +27,7 @@ export async function GET(request) {
       registrationUrl: true,
       imageUrl: true,
       organizer: { select: { name: true, slug: true, websiteUrl: true, logoUrl: true } },
+      _count: { select: { registrations: true } },
     },
   });
 

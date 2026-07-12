@@ -13,6 +13,7 @@ export const dynamic = 'force-dynamic';
 export default async function HomePage() {
   const jurisdictionId = getJurisdictionId();
   const user = await getCurrentUser();
+  const now = new Date();
   const [algorithms, recentStories, upcomingEvents, organizationCount] = await Promise.all([
     prisma.algorithm.findMany({
       where: { jurisdictionId },
@@ -53,7 +54,7 @@ export default async function HomePage() {
       },
     }),
     prisma.communityEvent.findMany({
-      where: { jurisdictionId },
+      where: { jurisdictionId, date: { gte: now } },
       orderBy: { date: 'asc' },
       take: 3,
       include: { organizer: true },

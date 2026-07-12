@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Calendar, ChevronRight, Clock, ExternalLink, MapPin, Video, X } from 'lucide-react';
+import { Calendar, CheckCircle2, ChevronRight, Clock, Loader2, MapPin, UserPlus, Video, X } from 'lucide-react';
 import { formatStatus } from '../components/Formatters';
 
 const eventTimeZone = 'America/New_York';
 
-export function EventsClient({ activeFilter, upcomingEvents, pastEvents, initialEventId }) {
+export function EventsClient({ activeFilter, upcomingEvents, pastEvents, initialEventId, registrationIdentity = null }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [registrationEvent, setRegistrationEvent] = useState(null);
   const allEvents = useMemo(() => [...upcomingEvents, ...pastEvents], [upcomingEvents, pastEvents]);
 
   useEffect(() => {
@@ -16,20 +17,26 @@ export function EventsClient({ activeFilter, upcomingEvents, pastEvents, initial
     if (event) setSelectedEvent(event);
   }, [allEvents, initialEventId]);
 
+  function openRegistration(event) {
+    setSelectedEvent(null);
+    setRegistrationEvent(event);
+  }
+
   return (
     <>
       {(activeFilter === 'all' || activeFilter === 'upcoming') ? (
-        <EventSection title="Upcoming Events" events={upcomingEvents} onSelect={setSelectedEvent} />
+        <EventSection title="Upcoming Events" events={upcomingEvents} onSelect={setSelectedEvent} onRegister={openRegistration} />
       ) : null}
       {(activeFilter === 'all' || activeFilter === 'past') ? (
         <EventSection title="Past Events" events={pastEvents} muted onSelect={setSelectedEvent} />
       ) : null}
-      <EventModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+      <EventModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onRegister={openRegistration} />
+      <RegistrationModal event={registrationEvent} identity={registrationIdentity} onClose={() => setRegistrationEvent(null)} />
     </>
   );
 }
 
-function EventSection({ title, events, muted = false, onSelect }) {
+function EventSection({ title, events, muted = false, onSelect, onRegister }) {
   const countText = muted
     ? `${events.length} past ${events.length === 1 ? 'event' : 'events'}`
     : `${events.length} ${events.length === 1 ? 'event' : 'events'} coming up`;
@@ -44,7 +51,7 @@ function EventSection({ title, events, muted = false, onSelect }) {
         <p className="mt-0.5 text-sm text-gray-500">{countText}</p>
       </div>
       <div className="divide-y divide-gray-100">
-        {events.length ? events.map((event) => <EventRow key={event.id} event={event} onSelect={onSelect} />) : (
+        {events.length ? events.map((event) => <EventRow key={event.id} event={event} muted={muted} onSelect={onSelect} onRegister={onRegister} />) : (
           <div className="py-12 text-center text-gray-500">No events in this section</div>
         )}
       </div>
@@ -52,7 +59,7 @@ function EventSection({ title, events, muted = false, onSelect }) {
   );
 }
 
-function EventRow({ event, onSelect }) {
+function EventRow({ event, muted, onSelect, onRegister }) {
   const date = new Date(event.date);
   const tags = getEventTags(event);
   const location = event.isVirtual ? 'Virtual' : event.location || 'Location TBD';
@@ -93,18 +100,22 @@ function EventRow({ event, onSelect }) {
                 <MapPin className="h-3.5 w-3.5" />
                 <span className="max-w-[220px] truncate">{location}</span>
               </span>
+              {event._count?.registrations ? <span>{event._count.registrations} registered</span> : null}
             </div>
           </div>
           <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
-            {event.registrationUrl ? (
-              <a
-                href={event.registrationUrl}
-                onClick={(clickEvent) => clickEvent.stopPropagation()}
+            {!muted && event.registrationRequired ? (
+              <button
+                type="button"
+                onClick={(clickEvent) => {
+                  clickEvent.stopPropagation();
+                  onRegister(event);
+                }}
                 className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 shadow-sm hover:border-amber-300 hover:bg-white sm:w-auto"
               >
-                <ExternalLink className="h-3.5 w-3.5" />
+                <UserPlus className="h-3.5 w-3.5" />
                 Register
-              </a>
+              </button>
             ) : null}
             <button
               type="button"
@@ -124,7 +135,7 @@ function EventRow({ event, onSelect }) {
   );
 }
 
-export function EventModal({ event, onClose }) {
+export function EventModal({ event, onClose, onRegister }) {
   useEffect(() => {
     if (!event) return undefined;
     const onKeyDown = (keyEvent) => {
@@ -176,13 +187,114 @@ export function EventModal({ event, onClose }) {
             <InfoRow icon={Clock} value={formatTimeRange(event)} />
             <InfoRow icon={MapPin} value={location} />
           </div>
-          {event.registrationUrl ? (
-            <a href={event.registrationUrl} className="mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-yellow-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-700 sm:w-auto">
-              <ExternalLink className="h-4 w-4" />
+          {event.registrationRequired && new Date(event.date) > new Date() && onRegister ? (
+            <button type="button" onClick={() => onRegister(event)} className="mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-yellow-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-700 sm:w-auto">
+              <UserPlus className="h-4 w-4" />
               Register for this event
-            </a>
+            </button>
           ) : null}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function RegistrationModal({ event, identity, onClose }) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('idle');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!event) return;
+    setName(identity?.name || '');
+    setEmail(identity?.email || '');
+    setStatus('idle');
+    setError('');
+  }, [event, identity]);
+
+  useEffect(() => {
+    if (!event) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const onKeyDown = (keyEvent) => {
+      if (keyEvent.key === 'Escape') onClose();
+    };
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [event, onClose]);
+
+  if (!event) return null;
+
+  async function submitRegistration(formEvent) {
+    formEvent.preventDefault();
+    setStatus('saving');
+    setError('');
+    const response = await fetch(`/api/events/${event.id}/registrations`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name, email }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setStatus('idle');
+      setError(result.error || 'Registration could not be completed.');
+      return;
+    }
+    setStatus(result.alreadyRegistered ? 'already-registered' : 'registered');
+  }
+
+  const completed = status === 'registered' || status === 'already-registered';
+  return (
+    <div
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 px-3 py-4 sm:px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="event-registration-title"
+      onMouseDown={(mouseEvent) => {
+        if (mouseEvent.target === mouseEvent.currentTarget) onClose();
+      }}
+    >
+      <div className="relative w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-2xl sm:p-6">
+        <button type="button" onClick={onClose} className="absolute right-3 top-3 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100" aria-label="Close event registration">
+          <X className="h-5 w-5" />
+        </button>
+        {completed ? (
+          <div className="py-5 text-center">
+            <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
+            <h2 id="event-registration-title" className="mt-4 text-2xl font-bold text-slate-950">
+              {status === 'already-registered' ? 'You are already registered' : 'Registration confirmed'}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{event.title}</p>
+            <button type="button" onClick={onClose} className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-slate-950 px-4 py-2 font-semibold text-white hover:bg-slate-800">
+              Done
+            </button>
+          </div>
+        ) : (
+          <>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-700">Event registration</p>
+            <h2 id="event-registration-title" className="mt-2 pr-10 text-2xl font-bold leading-tight text-slate-950">{event.title}</h2>
+            <p className="mt-2 text-sm text-slate-600">{formatFullDate(event.date)} · {formatTimeRange(event)}</p>
+            <form onSubmit={submitRegistration} className="mt-5 space-y-4">
+              <label className="block text-sm font-semibold text-slate-700">
+                Name
+                <input value={name} onChange={(changeEvent) => setName(changeEvent.target.value)} name="name" minLength={2} maxLength={120} autoComplete="name" required className="mt-1 min-h-11 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-950 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200" />
+              </label>
+              <label className="block text-sm font-semibold text-slate-700">
+                Email
+                <input value={email} onChange={(changeEvent) => setEmail(changeEvent.target.value)} name="email" type="email" maxLength={255} autoComplete="email" required className="mt-1 min-h-11 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-950 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200" />
+              </label>
+              {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
+              <button disabled={status === 'saving'} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-yellow-500 px-4 py-2 font-semibold text-slate-950 hover:bg-yellow-400 disabled:cursor-wait disabled:opacity-70">
+                {status === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+                {status === 'saving' ? 'Registering...' : 'Confirm registration'}
+              </button>
+            </form>
+          </>
+        )}
       </div>
     </div>
   );
@@ -214,6 +326,12 @@ function getEventTags(event) {
     'Open Office Hours: Ask AlgoStories': ['Q&A', 'Virtual', 'Drop-in'],
     'Language Access Listening Session': ['Town Hall'],
     'Worker Rights and Algorithmic Enforcement Roundtable': ['Panel'],
+    'Understanding Automated Benefits Decisions': ['Workshop', 'Benefits', 'Appeals'],
+    'Housing Algorithms Community Listening Session': ['Town Hall', 'Housing', 'Community'],
+    'Transit Reporting and Data Correction Clinic': ['Workshop', 'Transit', 'Data Rights'],
+    'Youth Data Rights Workshop': ['Workshop', 'Youth', 'Education'],
+    'Public Service AI Accountability Roundtable': ['Panel', 'Policy', 'Accountability'],
+    'Language Access and Automated Services Clinic': ['Clinic', 'Language Access', 'Community'],
   };
   if (knownTags[event.title]) return knownTags[event.title];
 

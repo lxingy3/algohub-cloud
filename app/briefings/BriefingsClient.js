@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { BookOpen, Database, ExternalLink, FileText, Filter, Landmark, Maximize2, MessageSquare, Search, Users, X } from 'lucide-react';
+import { BookOpen, ChevronDown, Database, ExternalLink, FileText, Filter, Landmark, Maximize2, MessageSquare, Search, Users, X } from 'lucide-react';
 import { AlgorithmModal } from '../components/AlgorithmsRegistry';
 import { InfoTooltip } from '../components/InfoTooltip';
 import { EventModal } from '../events/EventsClient';
@@ -385,7 +385,7 @@ export function BriefingsClient() {
               <h2 className="mt-3 text-2xl font-bold text-slate-950">{view.title}</h2>
               <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">{view.subtitle}</p>
             </div>
-            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            <div className="hidden rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 md:block">
               <span className="block text-xs font-bold uppercase tracking-wide text-slate-500">Route</span>
               <span className="font-mono">{scope === 'algorithm' ? view.route.replace('[slug]', selectedAlgorithm.slug) : view.route}</span>
             </div>
@@ -450,7 +450,7 @@ function LiveSnapshot({ snapshot, lens }) {
   const pipelineCardClass = `${cardClass} border-emerald-200 bg-emerald-50 hover:border-emerald-400 hover:bg-emerald-100`;
   return (
     <div className="mt-5 max-w-5xl">
-      <div className="grid gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {stats.map(([label, value, drill]) => (
           <button key={label} type="button" onClick={() => drill && setDrilldown(drill)} className={topCardClass}>
             <div className="text-xl font-bold text-slate-950">{value}</div>
@@ -458,7 +458,7 @@ function LiveSnapshot({ snapshot, lens }) {
           </button>
         ))}
       </div>
-      <div className="mt-2 grid gap-2 sm:grid-cols-4">
+      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {pipelines.map(([label, value, drill]) => (
           <button key={label} type="button" onClick={() => drill && setDrilldown(drill)} className={pipelineCardClass}>
             <div className="text-lg font-bold text-emerald-900">{value}</div>
@@ -585,7 +585,7 @@ function BriefingBlock({ block, snapshot, lens, privateNote, onPrivateNoteChange
   const [expanded, setExpanded] = useState(false);
   return (
     <article className="grid overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:grid-cols-[minmax(420px,1.15fr)_minmax(360px,0.85fr)]">
-      <div className="flex flex-col border-b border-slate-200 bg-slate-950 p-6 text-white lg:border-b-0 lg:border-r">
+      <div className="flex flex-col border-b border-slate-200 bg-slate-950 p-4 text-white sm:p-6 lg:border-b-0 lg:border-r">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-3xl font-black tracking-tight text-amber-300">{block.code}</p>
@@ -596,24 +596,35 @@ function BriefingBlock({ block, snapshot, lens, privateNote, onPrivateNoteChange
             <button
               type="button"
               onClick={() => setExpanded(true)}
-              className="inline-flex items-center gap-1 rounded-md border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/15"
+              className="inline-flex min-h-11 items-center gap-1 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/15"
             >
               <Maximize2 className="h-3.5 w-3.5" />
               Expand
             </button>
           </div>
         </div>
-        <div className="flex min-h-[220px] flex-1 items-center [&>*]:w-full">
+        <div className="flex min-h-[180px] flex-1 items-center md:min-h-[220px] [&>*]:w-full">
           <LiveVisual block={block} snapshot={snapshot} />
         </div>
       </div>
-      <div className="p-5">
+      <div className="p-4 sm:p-5">
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">{block.framing}</span>
           </div>
         </div>
-        <BlockExplanation block={block} />
+        <details className="group md:hidden">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800">
+            What this chart means
+            <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
+          </summary>
+          <div className="mt-3 hidden group-open:block">
+            <BlockExplanation block={block} />
+          </div>
+        </details>
+        <div className="hidden md:block">
+          <BlockExplanation block={block} />
+        </div>
         <div className="mt-5 flex justify-center">
           <button type="button" onClick={onOpenEvidence} className="rounded-md bg-emerald-600 px-5 py-3 text-sm font-black uppercase tracking-wide text-white shadow-sm hover:bg-emerald-700">
             View evidence
