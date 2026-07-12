@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Building2, CalendarDays, Database, FileCheck2, LayoutDashboard, MessageSquareText, MessagesSquare, Users } from 'lucide-react';
+import { Activity, Building2, CalendarDays, Database, FileCheck2, LayoutDashboard, MessageSquareText, MessagesSquare, Users } from 'lucide-react';
 
 const links = [
   ['/admin', 'Dashboard', LayoutDashboard],
@@ -11,6 +11,7 @@ const links = [
   ['/admin/organizations', 'Organizations', Building2],
   ['/admin/testimonies', 'Testimonies', MessageSquareText],
   ['/admin/briefings', 'Briefings', FileCheck2],
+  ['/admin/silence', 'Silence Monitor', Activity],
   ['/admin/comments', 'Comments', MessagesSquare],
   ['/admin/users', 'Users', Users],
 ];

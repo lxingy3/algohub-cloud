@@ -52,10 +52,14 @@ export function BriefingReviewEditor({ briefing }) {
           <p className="mt-1 text-sm text-slate-500">
             {briefing.briefingType} - {briefing.targetAlgorithmName || 'Cross-cutting corpus'} - {briefing.testimonyCount ?? 0} stories
             {briefing.reviewedByLabel ? ` - reviewed by ${briefing.reviewedByLabel}` : ''}
+            {briefing.reviewedAt ? ` on ${new Date(briefing.reviewedAt).toLocaleString()}` : ''}
           </p>
           <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-700">{previewText(fields.executiveSummary)}</p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
+          <a href={briefing.partnerReviewUrl} className="inline-flex min-h-10 items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            Partner review
+          </a>
           {status === 'PUBLISHED' ? (
             <a href={briefing.previewUrl} className="inline-flex min-h-10 items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
               <Eye className="h-4 w-4" /> View page
@@ -66,6 +70,15 @@ export function BriefingReviewEditor({ briefing }) {
           </button>
         </div>
       </div>
+
+      {briefing.reviewNotes?.length ? (
+        <section className="border-t border-slate-200 bg-amber-50/60 p-4">
+          <h3 className="text-sm font-bold text-slate-900">Partner review notes ({briefing.reviewNotes.length})</h3>
+          <div className="mt-2 grid gap-2">
+            {briefing.reviewNotes.map((note) => <div key={note.id} className="rounded-md border border-amber-200 bg-white p-3 text-sm"><strong>{note.author}{note.organization ? ` - ${note.organization}` : ''}</strong><p className="mt-1 whitespace-pre-wrap text-slate-700">{note.content}</p></div>)}
+          </div>
+        </section>
+      ) : null}
 
       {editing ? (
         <div className="grid border-t border-slate-200 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.72fr)]">

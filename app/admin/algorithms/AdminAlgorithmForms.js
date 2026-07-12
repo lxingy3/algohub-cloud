@@ -93,6 +93,11 @@ export function AdminAlgorithmCard({ algorithm, returnTo }) {
                 {algorithm.useCase}
               </span>
             ) : null}
+            {algorithm._count?.testimonyLinks < 3 ? (
+              <a href="/admin/silence" className="rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-800">
+                {algorithm._count.testimonyLinks === 0 ? 'No linked stories' : `${algorithm._count.testimonyLinks} linked stories`}
+              </a>
+            ) : null}
           </div>
           <p className="mt-1 text-sm text-slate-500">{algorithm.agencyName || 'No agency'} / {algorithm.location}</p>
         </div>

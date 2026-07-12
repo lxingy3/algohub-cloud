@@ -37,7 +37,7 @@ export default async function AdminAlgorithmsPage({ searchParams }) {
     prisma.algorithm.findMany({
       where,
       orderBy: { name: 'asc' },
-      include: { claims: { orderBy: { createdAt: 'asc' }, take: 1 } },
+      include: { claims: { orderBy: { createdAt: 'asc' }, take: 1 }, _count: { select: { testimonyLinks: true } } },
     }),
     prisma.algorithm.findMany({
       where: { jurisdictionId },

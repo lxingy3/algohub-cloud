@@ -77,6 +77,13 @@ enum ReviewStatus {
   PUBLISHED
 }
 
+enum GenerationJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
 enum NewsUpdateType {
   NEW_ALGORITHM
   EVENT
@@ -90,29 +97,31 @@ enum ReactionType {
 }
 
 model Jurisdiction {
-  id                   String                     @id @db.VarChar(50)
-  name                 String                     @db.VarChar(255)
-  state                String?                    @db.VarChar(100)
-  country              String                     @default("US") @db.VarChar(100)
-  timezone             String                     @default("America/New_York") @db.VarChar(50)
-  isActive             Boolean                    @default(true) @map("is_active")
-  config               Json?
-  createdAt            DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
-  algorithms           Algorithm[]
-  testimonies          Testimony[]
-  organizations        Organization[]
-  users                User[]
-  communityEvents      CommunityEvent[]
-  briefings            Briefing[]
-  newsUpdates          NewsUpdate[]
-  comments             Comment[]
-  reactions            TestimonyReaction[]
-  sharedTaxonomies     SharedTaxonomy[]
-  semanticEmbeddings   SemanticEmbedding[]
-  sourceInsights       CrossJurisdictionInsight[]
-  submissionDrafts     SubmissionDraft[]
-  themeImprovementMaps ThemeImprovementMap[]
-  eventRegistrations   EventRegistration[]
+  id                     String                     @id @db.VarChar(50)
+  name                   String                     @db.VarChar(255)
+  state                  String?                    @db.VarChar(100)
+  country                String                     @default("US") @db.VarChar(100)
+  timezone               String                     @default("America/New_York") @db.VarChar(50)
+  isActive               Boolean                    @default(true) @map("is_active")
+  config                 Json?
+  createdAt              DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+  algorithms             Algorithm[]
+  testimonies            Testimony[]
+  organizations          Organization[]
+  users                  User[]
+  communityEvents        CommunityEvent[]
+  briefings              Briefing[]
+  newsUpdates            NewsUpdate[]
+  comments               Comment[]
+  reactions              TestimonyReaction[]
+  sharedTaxonomies       SharedTaxonomy[]
+  semanticEmbeddings     SemanticEmbedding[]
+  sourceInsights         CrossJurisdictionInsight[]
+  submissionDrafts       SubmissionDraft[]
+  themeImprovementMaps   ThemeImprovementMap[]
+  eventRegistrations     EventRegistration[]
+  briefingGenerationJobs BriefingGenerationJob[]
+  briefingReviewNotes    BriefingReviewNote[]
 
   @@map("jurisdictions")
 }
@@ -163,6 +172,7 @@ model Algorithm {
   documents                AlgorithmDocument[]
   briefings                Briefing[]
   newsUpdates              NewsUpdate[]
+  briefingGenerationJobs   BriefingGenerationJob[]
 
   @@index([jurisdictionId])
   @@index([useCase])
@@ -461,6 +471,8 @@ model User {
   commentLikes                      CommentLike[]
   testimonyReactions                TestimonyReaction[]
   submissionDrafts                  SubmissionDraft[]
+  requestedBriefingJobs             BriefingGenerationJob[]    @relation("RequestedBriefingJobs")
+  briefingReviewNotes               BriefingReviewNote[]
 
   @@unique([jurisdictionId, email])
   @@index([jurisdictionId])
@@ -555,46 +567,47 @@ model VerificationToken {
 }
 
 model Organization {
-  id             String           @id @default(uuid()) @db.Uuid
-  jurisdictionId String           @map("jurisdiction_id") @db.VarChar(50)
-  name           String           @db.VarChar(255)
-  slug           String           @unique @db.VarChar(255)
-  description    String?
-  contactEmail   String?          @map("contact_email") @db.VarChar(255)
-  websiteUrl     String?          @map("website_url")
-  logoUrl        String?          @map("logo_url")
-  role           String?          @db.VarChar(50)
-  isActive       Boolean          @default(true) @map("is_active")
-  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  jurisdiction   Jurisdiction     @relation(fields: [jurisdictionId], references: [id])
-  users          User[]
-  testimonies    Testimony[]      @relation("PartnerTestimonies")
-  events         CommunityEvent[]
+  id                  String               @id @default(uuid()) @db.Uuid
+  jurisdictionId      String               @map("jurisdiction_id") @db.VarChar(50)
+  name                String               @db.VarChar(255)
+  slug                String               @unique @db.VarChar(255)
+  description         String?
+  contactEmail        String?              @map("contact_email") @db.VarChar(255)
+  websiteUrl          String?              @map("website_url")
+  logoUrl             String?              @map("logo_url")
+  role                String?              @db.VarChar(50)
+  isActive            Boolean              @default(true) @map("is_active")
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  jurisdiction        Jurisdiction         @relation(fields: [jurisdictionId], references: [id])
+  users               User[]
+  testimonies         Testimony[]          @relation("PartnerTestimonies")
+  events              CommunityEvent[]
+  briefingReviewNotes BriefingReviewNote[]
 
   @@index([jurisdictionId])
   @@map("organizations")
 }
 
 model CommunityEvent {
-  id                   String        @id @default(uuid()) @db.Uuid
-  sourceId             String?       @unique @map("source_id")
-  jurisdictionId       String        @map("jurisdiction_id") @db.VarChar(50)
-  title                String        @db.VarChar(255)
+  id                   String              @id @default(uuid()) @db.Uuid
+  sourceId             String?             @unique @map("source_id")
+  jurisdictionId       String              @map("jurisdiction_id") @db.VarChar(50)
+  title                String              @db.VarChar(255)
   description          String?
-  eventType            EventType     @default(OTHER) @map("event_type")
-  date                 DateTime      @db.Timestamptz(6)
-  endDate              DateTime?     @map("end_date") @db.Timestamptz(6)
-  location             String?       @db.VarChar(255)
-  isVirtual            Boolean       @default(false) @map("is_virtual")
-  virtualLink          String?       @map("virtual_link")
-  organizerOrgId       String?       @map("organizer_org_id") @db.Uuid
-  maxAttendees         Int?          @map("max_attendees")
-  registrationRequired Boolean       @default(false) @map("registration_required")
-  registrationUrl      String?       @map("registration_url")
-  imageUrl             String?       @map("image_url")
-  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  jurisdiction         Jurisdiction  @relation(fields: [jurisdictionId], references: [id])
-  organizer            Organization? @relation(fields: [organizerOrgId], references: [id])
+  eventType            EventType           @default(OTHER) @map("event_type")
+  date                 DateTime            @db.Timestamptz(6)
+  endDate              DateTime?           @map("end_date") @db.Timestamptz(6)
+  location             String?             @db.VarChar(255)
+  isVirtual            Boolean             @default(false) @map("is_virtual")
+  virtualLink          String?             @map("virtual_link")
+  organizerOrgId       String?             @map("organizer_org_id") @db.Uuid
+  maxAttendees         Int?                @map("max_attendees")
+  registrationRequired Boolean             @default(false) @map("registration_required")
+  registrationUrl      String?             @map("registration_url")
+  imageUrl             String?             @map("image_url")
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  jurisdiction         Jurisdiction        @relation(fields: [jurisdictionId], references: [id])
+  organizer            Organization?       @relation(fields: [organizerOrgId], references: [id])
   newsUpdates          NewsUpdate[]
   registrations        EventRegistration[]
 
@@ -619,35 +632,78 @@ model EventRegistration {
 }
 
 model Briefing {
-  id                String       @id @default(uuid()) @db.Uuid
-  jurisdictionId    String       @map("jurisdiction_id") @db.VarChar(50)
-  title             String       @db.VarChar(255)
-  slug              String       @unique @db.VarChar(255)
-  briefingType      BriefingType @map("briefing_type")
-  targetAlgorithmId String?      @map("target_algorithm_id") @db.Uuid
-  targetTheme       String?      @map("target_theme") @db.VarChar(255)
-  dateRangeStart    DateTime?    @map("date_range_start") @db.Date
-  dateRangeEnd      DateTime?    @map("date_range_end") @db.Date
-  testimonyCount    Int?         @map("testimony_count")
-  executiveSummary  String?      @map("executive_summary")
-  keyFindings       Json?        @map("key_findings")
-  patternAnalysis   String?      @map("pattern_analysis")
-  silenceGaps       Json?        @map("silence_gaps")
+  id                String                  @id @default(uuid()) @db.Uuid
+  jurisdictionId    String                  @map("jurisdiction_id") @db.VarChar(50)
+  title             String                  @db.VarChar(255)
+  slug              String                  @unique @db.VarChar(255)
+  briefingType      BriefingType            @map("briefing_type")
+  targetAlgorithmId String?                 @map("target_algorithm_id") @db.Uuid
+  targetTheme       String?                 @map("target_theme") @db.VarChar(255)
+  dateRangeStart    DateTime?               @map("date_range_start") @db.Date
+  dateRangeEnd      DateTime?               @map("date_range_end") @db.Date
+  testimonyCount    Int?                    @map("testimony_count")
+  executiveSummary  String?                 @map("executive_summary")
+  keyFindings       Json?                   @map("key_findings")
+  patternAnalysis   String?                 @map("pattern_analysis")
+  silenceGaps       Json?                   @map("silence_gaps")
   recommendations   Json?
-  claimVsExperience Json?        @map("claim_vs_experience")
-  generatedBy       String?      @map("generated_by") @db.VarChar(50)
-  reviewedByUserId  String?      @map("reviewed_by") @db.Uuid
-  reviewStatus      ReviewStatus @default(DRAFT) @map("review_status")
-  publishedAt       DateTime?    @map("published_at") @db.Timestamptz(6)
-  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  jurisdiction      Jurisdiction @relation(fields: [jurisdictionId], references: [id])
-  targetAlgorithm   Algorithm?   @relation(fields: [targetAlgorithmId], references: [id])
-  reviewedBy        User?        @relation("ReviewedBriefings", fields: [reviewedByUserId], references: [id])
+  claimVsExperience Json?                   @map("claim_vs_experience")
+  generatedBy       String?                 @map("generated_by") @db.VarChar(50)
+  reviewedByUserId  String?                 @map("reviewed_by") @db.Uuid
+  reviewedAt        DateTime?               @map("reviewed_at") @db.Timestamptz(6)
+  reviewStatus      ReviewStatus            @default(DRAFT) @map("review_status")
+  publishedAt       DateTime?               @map("published_at") @db.Timestamptz(6)
+  createdAt         DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  jurisdiction      Jurisdiction            @relation(fields: [jurisdictionId], references: [id])
+  targetAlgorithm   Algorithm?              @relation(fields: [targetAlgorithmId], references: [id])
+  reviewedBy        User?                   @relation("ReviewedBriefings", fields: [reviewedByUserId], references: [id])
+  generationJobs    BriefingGenerationJob[]
+  reviewNotes       BriefingReviewNote[]
 
   @@index([jurisdictionId])
   @@index([briefingType])
   @@index([reviewStatus])
   @@map("briefings")
+}
+
+model BriefingGenerationJob {
+  id                String              @id @default(uuid()) @db.Uuid
+  jurisdictionId    String              @map("jurisdiction_id") @db.VarChar(50)
+  requestedByUserId String              @map("requested_by") @db.Uuid
+  briefingType      BriefingType        @map("briefing_type")
+  targetAlgorithmId String?             @map("target_algorithm_id") @db.Uuid
+  resultBriefingId  String?             @map("result_briefing_id") @db.Uuid
+  status            GenerationJobStatus @default(PENDING)
+  useClaude         Boolean             @default(false) @map("use_claude")
+  message           String?
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  startedAt         DateTime?           @map("started_at") @db.Timestamptz(6)
+  completedAt       DateTime?           @map("completed_at") @db.Timestamptz(6)
+  jurisdiction      Jurisdiction        @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  requestedBy       User                @relation("RequestedBriefingJobs", fields: [requestedByUserId], references: [id], onDelete: Cascade)
+  targetAlgorithm   Algorithm?          @relation(fields: [targetAlgorithmId], references: [id], onDelete: SetNull)
+  resultBriefing    Briefing?           @relation(fields: [resultBriefingId], references: [id], onDelete: SetNull)
+
+  @@index([jurisdictionId, status])
+  @@map("briefing_generation_jobs")
+}
+
+model BriefingReviewNote {
+  id             String        @id @default(uuid()) @db.Uuid
+  jurisdictionId String        @map("jurisdiction_id") @db.VarChar(50)
+  briefingId     String        @map("briefing_id") @db.Uuid
+  userId         String        @map("user_id") @db.Uuid
+  organizationId String?       @map("organization_id") @db.Uuid
+  content        String
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  jurisdiction   Jurisdiction  @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  briefing       Briefing      @relation(fields: [briefingId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([briefingId, createdAt])
+  @@index([organizationId])
+  @@map("briefing_review_notes")
 }
 
 model ThemeImprovementMap {

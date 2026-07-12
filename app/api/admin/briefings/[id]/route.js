@@ -29,6 +29,7 @@ export async function POST(request, { params }) {
       recommendations: lines(formData, 'recommendations'),
       reviewStatus,
       reviewedByUserId: admin.id,
+      reviewedAt: new Date(),
       publishedAt: reviewStatus === 'PUBLISHED' ? new Date() : null,
     },
   });

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { anonymizedExcerpt, getApprovedBriefingCorpus, parseExploreFilters, storyTitle } from '../../../../lib/briefingsExplore';
+import { anonymizedExcerpt, getApprovedBriefingCorpus, normalizeThemes, parseExploreFilters, storyTitle } from '../../../../lib/briefingsExplore';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { prisma } from '../../../../lib/prisma';
 import { BRIEFINGS_EMBEDDING_MODEL, cosineSimilarity, getSemanticEmbeddingMap, SEMANTIC_RELEVANCE_THRESHOLD } from '../../../../lib/semanticEmbeddings';
@@ -18,7 +18,7 @@ export async function GET(request) {
       reviewStatus: cached.reviewStatus,
       generatedBy: cached.generatedBy,
       rows: filters.lens === 'government'
-        ? cached.rows.map((row) => ({ ...row, experienceExamples: [] }))
+        ? cached.rows.map((row) => ({ ...row, experienceExamples: [], experienceMembers: [] }))
         : cached.rows,
     });
   }
@@ -82,6 +82,17 @@ export async function GET(request) {
           similarity: story.similarity ?? null,
           excerpt: anonymizedExcerpt(story),
         })),
+        experienceMembers: filters.lens === 'government' ? [] : stories.map((story) => ({
+          id: story.id,
+          title: storyTitle(story),
+          impact: story.aiImpactClassification,
+          affectedDomain: story.affectedDomain,
+          submittedAt: story.submittedAt,
+          themes: normalizeThemes(story.aiThemes),
+          algorithms: story.algorithmLinks.map((link) => link.algorithm),
+          similarity: story.similarity ?? null,
+          excerpt: anonymizedExcerpt(story),
+        })),
       };
     }).filter((row) => row.claims.length || row.experienceCount),
   });
@@ -105,7 +116,7 @@ async function cachedClaimRows({ jurisdictionId, filters }) {
     method: rows.find((row) => row && typeof row === 'object' && row.matchMethod)?.matchMethod || null,
     rows: rows.map((row, index) => {
     if (typeof row === 'string') {
-      return { algorithmSlug: null, algorithmName: `Briefing note ${index + 1}`, claims: [{ text: row }], experienceCount: null, experienceExamples: [] };
+      return { algorithmSlug: null, algorithmName: `Briefing note ${index + 1}`, claims: [{ text: row }], experienceCount: null, experienceExamples: [], experienceMembers: [] };
     }
     return {
       algorithmSlug: row.algorithmSlug || null,
@@ -113,6 +124,7 @@ async function cachedClaimRows({ jurisdictionId, filters }) {
       claims: Array.isArray(row.claims) ? row.claims : [],
       experienceCount: row.experienceCount ?? null,
       experienceExamples: Array.isArray(row.experienceExamples) ? row.experienceExamples : [],
+      experienceMembers: Array.isArray(row.experienceMembers) ? row.experienceMembers : (Array.isArray(row.experienceExamples) ? row.experienceExamples : []),
       discrepancy: row.discrepancy || row.summary || null,
       matchMethod: row.matchMethod || null,
     };

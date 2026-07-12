@@ -47,6 +47,25 @@ function cleanText(parts) {
   };
 }
 
+function normalizeThemes(value) {
+  return (Array.isArray(value) ? value : [])
+    .map((item) => typeof item === 'string' ? item : item?.theme || item?.label || item?.name)
+    .filter(Boolean);
+}
+
+function normalizeKeywords(value) {
+  return (Array.isArray(value) ? value : [])
+    .map((item) => typeof item === 'string' ? item : item?.keyword || item?.phrase || item?.text)
+    .filter(Boolean);
+}
+
+function maskKnownEntities(text, values) {
+  return values
+    .filter((value) => value.length >= 3)
+    .sort((left, right) => right.length - left.length)
+    .reduce((current, value) => current.replaceAll(value, '[context]'), text);
+}
+
 async function main() {
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
 
@@ -72,6 +91,8 @@ async function main() {
         originalLanguage: true,
         submittedAt: true,
         referralSource: true,
+        aiImpactClassification: true,
+        aiThemes: true,
         aiLinkedAlgorithmIds: true,
         aiExtractedExperiences: true,
         algorithmLinks: { select: { algorithmId: true } },
@@ -102,6 +123,17 @@ async function main() {
   ]);
 
   const records = testimonies.map((testimony) => {
+    const entityValues = Object.values(testimony.aiExtractedExperiences?.entities || {})
+      .flatMap((values) => Array.isArray(values) ? values : [])
+      .map((value) => String(value || '').trim())
+      .filter(Boolean);
+    const themes = normalizeThemes(testimony.aiThemes);
+    const keywords = normalizeKeywords(testimony.aiExtractedExperiences?.keywords);
+    const experienceText = maskKnownEntities(cleanText([
+      testimony.summary,
+      testimony.narrativeText,
+      testimony.transcriptionText,
+    ]).text, entityValues);
     const { text, truncated } = cleanText([
       testimony.title,
       testimony.summary,
@@ -117,6 +149,9 @@ async function main() {
       originalLanguage: testimony.originalLanguage,
       submittedAt: testimony.submittedAt?.toISOString?.() || null,
       referralSource: testimony.referralSource,
+      aiImpactClassification: testimony.aiImpactClassification,
+      aiThemes: themes,
+      keywords,
       algorithmIds: [
         ...new Set([
           ...(testimony.aiLinkedAlgorithmIds || []),
@@ -124,10 +159,12 @@ async function main() {
         ]),
       ],
       analysisText: text,
-      knownEntityExclusions: Object.values(testimony.aiExtractedExperiences?.entities || {})
-        .flatMap((values) => Array.isArray(values) ? values : [])
-        .map((value) => String(value || '').trim())
-        .filter(Boolean),
+      clusterText: cleanText([
+        themes.length ? `Experience themes: ${themes.join(', ')}.` : '',
+        keywords.length ? `Key phrases: ${keywords.join(', ')}.` : '',
+        experienceText,
+      ]).text,
+      knownEntityExclusions: entityValues,
       truncated,
     };
   }).filter((record) => record.analysisText);

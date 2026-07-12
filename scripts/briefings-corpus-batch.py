@@ -268,7 +268,16 @@ def run_lightweight_self_check(output_path):
     print(json.dumps({"outputPath": output_path, "records": len(payload["records"]), "topics": len(payload["topics"])}, indent=2))
 
 
-def run_production(input_path, output_path, model_name, n_neighbors_arg=None, min_cluster_size_arg=None, min_samples_arg=None, reuse_result_path=None):
+def run_production(
+    input_path,
+    output_path,
+    model_name,
+    n_neighbors_arg=None,
+    min_cluster_size_arg=None,
+    min_samples_arg=None,
+    reuse_result_path=None,
+    cluster_text_mode="full",
+):
     from bertopic import BERTopic
     from hdbscan import HDBSCAN
     from keybert import KeyBERT
@@ -287,6 +296,17 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
         if claim.get("id") and claim.get("text")
     ]
     texts = [record.get("analysisText", "").strip() for record in records]
+    cluster_texts = [
+        (
+            record.get("clusterText")
+            if cluster_text_mode == "experience"
+            else record.get("analysisText")
+        )
+        or record.get("analysisText")
+        or ""
+        for record in records
+    ]
+    cluster_texts = [text.strip() for text in cluster_texts]
     algorithm_texts = [algorithm.get("analysisText", "").strip() for algorithm in algorithms]
     claim_texts = [claim.get("text", "").strip() for claim in claims]
     peer_texts = [insight.get("analysisText", "").strip() for insight in peer_insights]
@@ -337,9 +357,10 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
     else:
         all_embeddings = model.encode(all_texts, batch_size=16, show_progress_bar=True, normalize_embeddings=True)
         all_embeddings = np.asarray(all_embeddings)
-    embeddings = all_embeddings[:record_end]
+    embeddings = model.encode(cluster_texts, batch_size=16, show_progress_bar=True, normalize_embeddings=True)
+    embeddings = np.asarray(embeddings)
     semantic_embeddings = [
-        *semantic_rows(records, embeddings, "testimony"),
+        *semantic_rows(records, all_embeddings[:record_end], "testimony"),
         *semantic_rows(algorithms, all_embeddings[record_end:algorithm_end], "algorithm"),
         *semantic_rows(claims, all_embeddings[algorithm_end:claim_end], "claim"),
         *semantic_rows(peer_insights, all_embeddings[claim_end:], "cross_jurisdiction_insight"),
@@ -370,12 +391,16 @@ def run_production(input_path, output_path, model_name, n_neighbors_arg=None, mi
         verbose=True,
     )
 
-    topic_ids, _probabilities = topic_model.fit_transform(texts, embeddings)
+    topic_ids, _probabilities = topic_model.fit_transform(cluster_texts, embeddings)
     umap_xy = topic_model.umap_model.embedding_
     cluster_ids = topic_model.hdbscan_model.labels_
-    topics = build_topics(records, topic_ids, texts, topic_model, keyword_model)
+    topics = build_topics(records, topic_ids, cluster_texts, topic_model, keyword_model)
     params = {
         "embeddingModel": model_name,
+        "clusterText": {
+            "mode": cluster_text_mode,
+            "source": "full analysis text" if cluster_text_mode == "full" else "stored themes and KeyBERT phrases plus entity-masked experience text",
+        },
         "umap": {"metric": "cosine", "randomState": 42, "nNeighbors": neighbors, "nComponents": 2},
         "hdbscan": {"minClusterSize": cluster_size, "minSamples": min_samples, "metric": "euclidean", "clusterSelectionMethod": "eom"},
         "bertopic": {"topicMinusOneStoredAsNull": True},
@@ -425,13 +450,23 @@ def main():
     parser.add_argument("--min-cluster-size", type=int)
     parser.add_argument("--min-samples", type=int)
     parser.add_argument("--reuse-result")
+    parser.add_argument("--cluster-text-mode", choices=("full", "experience"), default="full")
     parser.add_argument("--self-check", action="store_true")
     args = parser.parse_args()
 
     if args.self_check:
         run_lightweight_self_check(args.output)
     else:
-        run_production(args.input, args.output, args.model, args.n_neighbors, args.min_cluster_size, args.min_samples, args.reuse_result)
+        run_production(
+            args.input,
+            args.output,
+            args.model,
+            args.n_neighbors,
+            args.min_cluster_size,
+            args.min_samples,
+            args.reuse_result,
+            args.cluster_text_mode,
+        )
 
 
 if __name__ == "__main__":

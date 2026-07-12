@@ -11,7 +11,7 @@ export default async function AdminBriefingsPage({ searchParams }) {
     : '';
   const search = String(params?.search || '').trim();
   const jurisdictionId = getJurisdictionId();
-  const [briefings, statusCounts] = await Promise.all([
+  const [briefings, statusCounts, algorithms, generationJobs] = await Promise.all([
     prisma.briefing.findMany({
       where: {
         jurisdictionId,
@@ -27,12 +27,20 @@ export default async function AdminBriefingsPage({ searchParams }) {
       include: {
         targetAlgorithm: { select: { name: true, slug: true } },
         reviewedBy: { select: { name: true, email: true } },
+        reviewNotes: { orderBy: { createdAt: 'desc' }, include: { user: { select: { name: true, email: true } }, organization: { select: { name: true } } } },
       },
     }),
     prisma.briefing.groupBy({
       by: ['reviewStatus'],
       where: { jurisdictionId },
       _count: { reviewStatus: true },
+    }),
+    prisma.algorithm.findMany({ where: { jurisdictionId }, select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+    prisma.briefingGenerationJob.findMany({
+      where: { jurisdictionId },
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: { targetAlgorithm: { select: { name: true } }, requestedBy: { select: { name: true, email: true } } },
     }),
   ]);
   const counts = Object.fromEntries(statusCounts.map((item) => [item.reviewStatus, item._count.reviewStatus]));
@@ -59,6 +67,27 @@ export default async function AdminBriefingsPage({ searchParams }) {
         <button className="min-h-11 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Find</button>
         {search ? <a href={briefingFilterHref(status, '')} className="inline-flex min-h-11 items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold">Clear</a> : null}
       </form>
+      <section className="mt-5 rounded-lg border bg-white p-4">
+        <h2 className="text-lg font-semibold">Generate briefing draft</h2>
+        <p className="mt-1 text-sm text-slate-600">This queues an offline job. Run <code>npm run briefings:jobs</code> on the local worker until Google Cloud takes over.</p>
+        <form action="/api/admin/briefings/generate" method="post" className="mt-4 grid gap-3 md:grid-cols-[190px_1fr_auto_auto]">
+          <select name="briefingType" className="min-h-11 rounded-md border bg-white px-3 py-2">
+            <option value="CROSS_CUTTING">Cross-cutting corpus</option>
+            <option value="ALGORITHM_SPECIFIC">Specific algorithm</option>
+          </select>
+          <select name="targetAlgorithmId" className="min-h-11 rounded-md border bg-white px-3 py-2">
+            <option value="">Choose an algorithm when needed</option>
+            {algorithms.map((algorithm) => <option key={algorithm.id} value={algorithm.id}>{algorithm.name}</option>)}
+          </select>
+          <label className="inline-flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold"><input type="checkbox" name="useClaude" /> Optional language polish</label>
+          <button className="min-h-11 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Queue draft</button>
+        </form>
+        {generationJobs.length ? <div className="mt-4 grid gap-2">
+          {generationJobs.map((job) => <div key={job.id} className="grid gap-1 rounded-md border bg-slate-50 p-3 text-sm md:grid-cols-[120px_1fr_1fr]">
+            <strong>{job.status}</strong><span>{job.targetAlgorithm?.name || 'Cross-cutting corpus'}</span><span className="text-slate-600">{job.message || 'Queued'} - {job.requestedBy.name || job.requestedBy.email}</span>
+          </div>)}
+        </div> : null}
+      </section>
       <p className="mt-3 text-sm text-slate-500">Showing {briefings.length} briefing{briefings.length === 1 ? '' : 's'}</p>
 
       <div className="mt-6 space-y-4">
@@ -73,6 +102,7 @@ function serializeBriefing(briefing) {
   const algorithm = briefing.targetAlgorithm;
   return {
     id: briefing.id,
+    slug: briefing.slug,
     title: briefing.title,
     briefingType: briefing.briefingType,
     testimonyCount: briefing.testimonyCount,
@@ -84,7 +114,16 @@ function serializeBriefing(briefing) {
     reviewStatus: briefing.reviewStatus,
     targetAlgorithmName: algorithm?.name || null,
     reviewedByLabel: briefing.reviewedBy?.name || briefing.reviewedBy?.email || null,
+    reviewedAt: briefing.reviewedAt?.toISOString() || null,
     previewUrl: `/briefings?scope=${algorithm ? 'algorithm' : 'overview'}${algorithm ? `&algorithm=${algorithm.slug}` : ''}`,
+    partnerReviewUrl: `/briefings/review/${briefing.slug}`,
+    reviewNotes: briefing.reviewNotes.map((note) => ({
+      id: note.id,
+      content: note.content,
+      author: note.user.name || note.user.email,
+      organization: note.organization?.name || null,
+      createdAt: note.createdAt.toISOString(),
+    })),
   };
 }
 

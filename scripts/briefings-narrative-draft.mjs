@@ -9,6 +9,7 @@ import { buildSilenceAnalysis } from '../lib/silenceAnalysis.js';
 loadEnvFile('.env.production.local');
 loadEnvFile('.env.ml-run.local');
 loadEnvFile('.env.local');
+loadEnvFile('../LOCAL_SECRETS_DO_NOT_COMMIT.md');
 
 const prisma = new PrismaClient();
 const args = parseArgs(process.argv.slice(2));
@@ -94,6 +95,10 @@ function buildDraft({ algorithm = null, rows, generatedAt, silenceGaps = [], cla
   const title = algorithm ? `${algorithm.name} briefing` : 'Cross-cutting briefing';
   const slug = algorithm ? `local-draft-${algorithm.slug}` : 'local-draft-cross-cutting';
   const dateValues = rows.map((row) => row.submittedAt).filter(Boolean).sort((a, b) => a - b);
+  const storyLabel = rows.length === 1 ? 'story' : 'stories';
+  const outlierFinding = outliers === 0
+    ? 'No less common experiences are separated from the main story groups.'
+    : `${outliers} less common ${outliers === 1 ? 'experience is' : 'experiences are'} kept separate in the story map.`;
 
   return {
     title,
@@ -104,12 +109,12 @@ function buildDraft({ algorithm = null, rows, generatedAt, silenceGaps = [], cla
     dateRangeStart: dateValues[0]?.toISOString?.().slice(0, 10) || null,
     dateRangeEnd: dateValues.at(-1)?.toISOString?.().slice(0, 10) || null,
     testimonyCount: rows.length,
-    executiveSummary: `${rows.length} approved stories are in this briefing. Common themes: ${labels(themes)}. Main domains: ${labels(domains)}.`,
+    executiveSummary: `${rows.length} approved ${storyLabel} ${rows.length === 1 ? 'is' : 'are'} in this briefing. Common themes: ${labels(themes)}. Main domains: ${labels(domains)}.`,
     keyFindings: [
       `Common themes: ${labelsWithCounts(themes)}.`,
       `Impact mix: ${labelsWithCounts(impacts)}.`,
       `Represented domains: ${labelsWithCounts(domains)}.`,
-      `${outliers} less common experiences are kept separate in the story map.`,
+      outlierFinding,
     ],
     patternAnalysis: 'This briefing uses approved stories, reviewed algorithm records, and the offline topic map. Treat the groupings as leads for review, not final findings.',
     silenceGaps,
@@ -184,7 +189,7 @@ function parseClaudeJson(text) {
 
 async function refineWithClaude(draft) {
   if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is required for --claude.');
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const request = {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -192,15 +197,25 @@ async function refineWithClaude(draft) {
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: process.env.CLAUDE_MODEL || 'claude-sonnet-5',
-      max_tokens: 1600,
+      model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+      max_tokens: 1400,
       system: 'You are a JSON API. Return valid JSON only. No markdown, no prose outside JSON.',
       messages: [{
         role: 'user',
         content: `Return a JSON object with exactly these keys: executiveSummary, keyFindings, patternAnalysis, silenceGaps, recommendations, claimVsExperience. Rewrite this AlgoHub briefing draft in plain staff-review language. Keep the wording direct and specific; avoid stiff review-template phrasing. The response must start with { and end with }.\n\nDraft:\n${JSON.stringify(draft)}`,
       }],
     }),
-  });
+  };
+  let response;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      response = await fetch('https://api.anthropic.com/v1/messages', request);
+      if (response.ok || (response.status < 500 && response.status !== 429)) break;
+    } catch (error) {
+      if (attempt === 3) throw error;
+    }
+    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
+  }
   const payload = await response.json();
   if (!response.ok) throw new Error(payload?.error?.message || `Claude API failed: ${response.status}`);
   const text = payload.content?.find((item) => item.type === 'text')?.text;
@@ -318,7 +333,10 @@ async function main() {
       silenceGaps: silenceAnalysis.rows.filter((row) => row.algorithmId === algorithm.id),
       claimVsExperience: claimRows.filter((row) => row.algorithmSlug === algorithm.slug),
     })),
-  ].slice(0, maxDrafts);
+  ];
+  if (args.scope === 'corpus') drafts = drafts.filter((draft) => draft.briefingType === 'CROSS_CUTTING');
+  if (args.algorithm) drafts = drafts.filter((draft) => draft.slug === `local-draft-${args.algorithm}`);
+  drafts = drafts.slice(0, maxDrafts);
 
   if (useClaude) drafts = await Promise.all(drafts.map(refineWithClaude));
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { BookOpen, ChevronDown, Database, ExternalLink, FileText, Filter, Landmark, Maximize2, MessageSquare, Search, Users, X } from 'lucide-react';
+import { BookOpen, ChevronDown, Database, ExternalLink, FileText, Filter, Landmark, Maximize2, MessageSquare, Printer, Search, Users, X } from 'lucide-react';
 import { AlgorithmModal } from '../components/AlgorithmsRegistry';
 import { InfoTooltip } from '../components/InfoTooltip';
 import { EventModal } from '../events/EventsClient';
@@ -27,6 +27,12 @@ const fallbackAlgorithms = [
 const languageModes = [
   { id: 'en', label: 'English' },
   { id: 'original', label: 'Original' },
+];
+
+const readingLevels = [
+  { id: 'plain', label: 'Plain' },
+  { id: 'standard', label: 'Standard' },
+  { id: 'detailed', label: 'Detailed' },
 ];
 
 const briefingViews = {
@@ -147,6 +153,7 @@ export function BriefingsClient() {
   const [algorithm, setAlgorithm] = useState(fallbackAlgorithms[0].slug);
   const [algorithms, setAlgorithms] = useState(fallbackAlgorithms);
   const [languageMode, setLanguageMode] = useState('en');
+  const [readingLevel, setReadingLevel] = useState('standard');
   const [paramsReady, setParamsReady] = useState(false);
   const [liveSnapshot, setLiveSnapshot] = useState(null);
   const [activeEvidenceBlock, setActiveEvidenceBlock] = useState(null);
@@ -187,20 +194,23 @@ export function BriefingsClient() {
   }, [scope, selectedVisibleAlgorithm]);
 
   useEffect(() => {
+    if (paramsReady) return;
     const params = new URLSearchParams(window.location.search);
     const nextLens = params.get('lens');
     const nextScope = params.get('scope');
     const nextDomain = params.get('domain');
     const nextAlgorithm = params.get('algorithm');
     const nextLanguage = params.get('language');
+    const nextReading = params.get('reading');
 
     if (lenses.some((item) => item.id === nextLens)) setLens(nextLens);
     if (scopes.some((item) => item.id === nextScope)) setScope(nextScope);
     if (domains.includes(nextDomain)) setDomain(nextDomain);
     if (algorithms.some((item) => item.slug === nextAlgorithm)) setAlgorithm(nextAlgorithm);
     if (languageModes.some((item) => item.id === nextLanguage)) setLanguageMode(nextLanguage);
+    if (readingLevels.some((item) => item.id === nextReading)) setReadingLevel(nextReading);
     setParamsReady(true);
-  }, [domains]);
+  }, [domains, paramsReady]);
 
   useEffect(() => {
     if (!paramsReady || activeEvidenceBlock) return;
@@ -241,9 +251,10 @@ export function BriefingsClient() {
       params.set('algorithm', selectedVisibleAlgorithm);
     }
     params.set('language', languageMode);
+    params.set('reading', readingLevel);
     if (activeEvidenceBlock) params.set('evidence', activeEvidenceBlock.code);
     window.history.replaceState(null, '', `/briefings?${params.toString()}`);
-  }, [activeEvidenceBlock, domain, languageMode, lens, paramsReady, scope, selectedVisibleAlgorithm]);
+  }, [activeEvidenceBlock, domain, languageMode, lens, paramsReady, readingLevel, scope, selectedVisibleAlgorithm]);
 
   useEffect(() => {
     if (lens !== 'intermediary') return;
@@ -342,7 +353,7 @@ export function BriefingsClient() {
             <LiveSnapshot snapshot={liveSnapshot} lens={lens} />
           </div>
           {scope === 'algorithm' ? (
-            <div className="relative mt-5 grid gap-3 rounded-lg border border-white/15 bg-white/95 p-4 text-slate-950 shadow-xl md:grid-cols-3">
+            <div className="relative mt-5 grid gap-3 rounded-lg border border-white/15 bg-white/95 p-4 text-slate-950 shadow-xl md:grid-cols-4">
               <label className="text-sm font-semibold text-slate-700">
                 Domain
                 <select
@@ -365,9 +376,10 @@ export function BriefingsClient() {
                 </select>
               </label>
               <ControlSelect label="Language" value={languageMode} options={languageModes} onChange={setLanguageMode} />
+              <ControlSelect label="Reading level" value={readingLevel} options={readingLevels} onChange={setReadingLevel} />
             </div>
           ) : (
-            <div className="relative mt-5 grid gap-3 rounded-lg border border-white/15 bg-white/95 p-4 text-slate-950 shadow-xl md:grid-cols-2">
+            <div className="relative mt-5 grid gap-3 rounded-lg border border-white/15 bg-white/95 p-4 text-slate-950 shadow-xl md:grid-cols-3">
               <label className="text-sm font-semibold text-slate-700">
                 Domain
                 <select value={domain} onChange={(event) => setDomain(event.target.value)} className="mt-1 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900">
@@ -375,6 +387,7 @@ export function BriefingsClient() {
                 </select>
               </label>
               <ControlSelect label="Language" value={languageMode} options={languageModes} onChange={setLanguageMode} />
+              <ControlSelect label="Reading level" value={readingLevel} options={readingLevels} onChange={setReadingLevel} />
             </div>
           )}
         </div>
@@ -391,9 +404,14 @@ export function BriefingsClient() {
               <h2 className="mt-3 text-2xl font-bold text-slate-950">{view.title}</h2>
               <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">{view.subtitle}</p>
             </div>
+            <div className="flex items-start gap-2">
+              <button type="button" onClick={() => window.print()} className="briefings-print-hide inline-flex min-h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                <Printer className="h-4 w-4" /> Print / Save PDF
+              </button>
             <div className="hidden rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 md:block">
               <span className="block text-xs font-bold uppercase tracking-wide text-slate-500">Route</span>
               <span className="font-mono">{scope === 'algorithm' ? view.route.replace('[slug]', selectedAlgorithm.slug) : view.route}</span>
+            </div>
             </div>
           </div>
         </div>
@@ -413,6 +431,7 @@ export function BriefingsClient() {
               block={block}
               snapshot={liveSnapshot}
               lens={lens}
+              readingLevel={readingLevel}
               privateNote={privateNote}
               onPrivateNoteChange={updatePrivateNote}
               onOpenEvidence={() => openEvidence(block)}
@@ -587,7 +606,7 @@ function listJson(value) {
   }).filter(Boolean);
 }
 
-function BriefingBlock({ block, snapshot, lens, privateNote, onPrivateNoteChange, onOpenEvidence, showPrivateNotes }) {
+function BriefingBlock({ block, snapshot, lens, readingLevel, privateNote, onPrivateNoteChange, onOpenEvidence, showPrivateNotes }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <article className="grid overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:grid-cols-[minmax(420px,1.15fr)_minmax(360px,0.85fr)]">
@@ -625,11 +644,11 @@ function BriefingBlock({ block, snapshot, lens, privateNote, onPrivateNoteChange
             <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
           </summary>
           <div className="mt-3 hidden group-open:block">
-            <BlockExplanation block={block} />
+            <BlockExplanation block={block} readingLevel={readingLevel} />
           </div>
         </details>
         <div className="hidden md:block">
-          <BlockExplanation block={block} />
+          <BlockExplanation block={block} readingLevel={readingLevel} />
         </div>
         <div className="mt-5 flex justify-center">
           <button type="button" onClick={onOpenEvidence} className="rounded-md bg-emerald-600 px-5 py-3 text-sm font-black uppercase tracking-wide text-white shadow-sm hover:bg-emerald-700">
@@ -763,14 +782,14 @@ function evidenceRowsWithFallback(block, snapshot, lens) {
     : { title: 'No rows for the current filters', value: '', detail: 'Try another domain, lens, or algorithm.' }];
 }
 
-function BlockExplanation({ block }) {
+function BlockExplanation({ block, readingLevel = 'standard' }) {
   const explanation = explainBlock(block);
   return (
     <div className="grid gap-3">
       <PlainInfo title="Summary" text={explanation.summary} />
-      <PlainInfo title="Data used" text={explanation.data} />
-      <PlainInfo title="ML/NLP method" text={explanation.method} />
-      <PlainInfo title="Now" text={explanation.now} />
+      {readingLevel !== 'plain' ? <PlainInfo title="Data used" text={explanation.data} /> : null}
+      {readingLevel !== 'plain' ? <PlainInfo title="ML/NLP method" text={explanation.method} /> : null}
+      {readingLevel === 'detailed' ? <PlainInfo title="Now" text={explanation.now} /> : null}
     </div>
   );
 }
@@ -1135,6 +1154,16 @@ function groupStoriesByTheme(snapshot, theme, lens, count) {
   return storyDrilldown(`${displayBriefingLabel(theme)} - ${count} stories`, stories, lens, count);
 }
 
+function groupStoriesByImpact(snapshot, impact, lens, count) {
+  const stories = briefingStories(snapshot).filter((story) => story.impact === impact || story.aiImpactClassification === impact);
+  return storyDrilldown(`${displayBriefingLabel(impact)} - ${count} stories`, stories, lens, count);
+}
+
+function groupStoriesByClaim(row, lens) {
+  const stories = row.experienceMembers || row.experienceExamples || [];
+  return storyDrilldown(`${row.algorithmName} - ${row.experienceCount} matched stories`, stories, lens, row.experienceCount);
+}
+
 function groupStoriesByDomainTheme(snapshot, row, lens) {
   const stories = briefingStories(snapshot).filter((story) => story.affectedDomain === row.domain && storyHasTheme(story, row.theme));
   return storyDrilldown(`${row.domain} / ${displayBriefingLabel(row.theme)} - ${row.count} stories`, stories, lens, row.count);
@@ -1237,6 +1266,7 @@ function evidenceRows(block, snapshot, lens) {
     value: row.experienceCount,
     detail: (row.claims || []).map((claim) => claim.text).join(' ') || 'No formal claim text listed.',
     actions: [algorithmAction(row.algorithmSlug)],
+    drilldown: groupStoriesByClaim(row, lens),
   }));
   if (api.includes('status=proposed')) return (snapshot.proposedAlgorithms?.items || []).map((row) => ({
     title: row.name,
@@ -1297,7 +1327,12 @@ function evidenceRows(block, snapshot, lens) {
       drilldown: groupStoriesByDomain(snapshot, row.label, lens, row.total),
     };
   });
-  if (api.includes('impact')) return (snapshot.impact?.aiSuggested || []).map((row) => ({ title: row.label, value: row.count, detail: 'Stored impact label count.' }));
+  if (api.includes('impact')) return (snapshot.impact?.aiSuggested || []).map((row) => ({
+    title: row.label,
+    value: row.count,
+    detail: 'Stored impact label count.',
+    drilldown: groupStoriesByImpact(snapshot, row.label, lens, row.count),
+  }));
   if (api.includes('themes') || api.includes('cross-cutting-themes')) return (snapshot.themes?.themes || []).map((row) => ({
     title: displayBriefingLabel(row.theme),
     value: row.count,

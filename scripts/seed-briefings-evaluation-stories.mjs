@@ -96,7 +96,7 @@ async function main() {
     const story = stories[index];
     const algorithm = algorithmBySlug.get(story.algorithmSlug);
     const sourceId = `synthetic-briefings-v1-${story.key}`;
-    const submittedAt = new Date(Date.UTC(2026, 6, 1 + index, 14, 0, 0));
+    const submittedAt = new Date(Date.UTC(2026, 5, 20 + index, 14, 0, 0));
     const testimony = await prisma.testimony.upsert({
       where: { sourceId },
       create: {
@@ -130,6 +130,7 @@ async function main() {
         moderationNotes: 'Synthetic model-evaluation fixture. Reviewed by Xiangyu Li.',
         referralSource: 'Synthetic model-evaluation fixture',
         publicPosting: true,
+        submittedAt,
         clusterId: null,
         topicId: null,
         umapX: null,

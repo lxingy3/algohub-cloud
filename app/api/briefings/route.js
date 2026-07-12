@@ -47,6 +47,7 @@ export async function GET(request) {
       targetTheme: true,
       testimonyCount: true,
       reviewStatus: true,
+      reviewedAt: true,
       publishedAt: true,
       generatedBy: true,
       dateRangeStart: true,
@@ -57,6 +58,7 @@ export async function GET(request) {
       recommendations: true,
       claimVsExperience: true,
       targetAlgorithm: { select: { slug: true, name: true, useCase: true, agencyName: true } },
+      reviewedBy: { select: { name: true } },
     },
   });
   return NextResponse.json({ items, total: items.length });
