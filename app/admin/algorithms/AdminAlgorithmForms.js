@@ -218,9 +218,14 @@ const AlgorithmFields = forwardRef(function AlgorithmFields({ action, submitLabe
       <Field name="claimSource" label="Claim source" value={claim?.claimSource} />
       <div className="flex gap-2 md:col-span-2">
         <button name="action" value="update" className="rounded-md bg-slate-900 px-4 py-2 text-white">{submitLabel}</button>
-        {algorithm.id ? <button name="action" value="delete" onClick={(event) => {
-          if (!window.confirm(`Delete "${algorithm.name}"? This cannot be undone.`)) event.preventDefault();
-        }} className="rounded-md border border-red-200 px-4 py-2 text-red-700">Delete</button> : null}
+        {algorithm.id ? <>
+          <button type="button" onClick={(clickEvent) => {
+            if (!window.confirm(`Delete "${algorithm.name}"? This cannot be undone.`)) return;
+            const submitter = clickEvent.currentTarget.form?.querySelector('[data-delete-submitter]');
+            if (submitter) clickEvent.currentTarget.form.requestSubmit(submitter);
+          }} className="rounded-md border border-red-200 px-4 py-2 text-red-700">Delete</button>
+          <button type="submit" name="action" value="delete" data-delete-submitter className="hidden" aria-hidden="true" tabIndex={-1}>Confirm delete</button>
+        </> : null}
       </div>
     </form>
   );

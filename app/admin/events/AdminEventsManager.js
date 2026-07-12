@@ -125,11 +125,12 @@ function EventSummary({ event, onEdit, returnTo }) {
           <Pencil className="h-4 w-4" />
           Edit
         </button>
-        <form action={`/api/admin/events/${event.id}`} method="post" className="flex-1 md:flex-none" onSubmit={(submitEvent) => {
-          if (!window.confirm(`Delete "${event.title}"? This cannot be undone.`)) submitEvent.preventDefault();
-        }}>
+        <form action={`/api/admin/events/${event.id}`} method="post" className="flex-1 md:flex-none">
           <input type="hidden" name="returnTo" value={returnTo} />
-          <button name="action" value="delete" className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-red-700">
+          <input type="hidden" name="action" value="delete" />
+          <button type="button" onClick={(clickEvent) => {
+            if (window.confirm(`Delete "${event.title}"? This cannot be undone.`)) clickEvent.currentTarget.form?.requestSubmit();
+          }} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-red-700">
             <Trash2 className="h-4 w-4" />
             Delete
           </button>
