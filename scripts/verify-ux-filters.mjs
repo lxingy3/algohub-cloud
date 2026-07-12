@@ -37,7 +37,7 @@ try {
   await goTo(page, '/admin/events?period=upcoming');
   checks.eventPeriod = await page.locator('select[name="period"]').inputValue();
   checks.eventReturnTo = await page.locator('input[name="returnTo"]').first().inputValue();
-  await page.waitForTimeout(750);
+  await page.waitForLoadState('networkidle');
   page.once('dialog', async (dialog) => {
     checks.eventDeleteConfirmation = dialog.type() === 'confirm';
     await dialog.dismiss();

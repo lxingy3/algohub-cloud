@@ -146,7 +146,7 @@ export default async function AdminUsersPage({ searchParams }) {
             const currentRoleId = user.userRoles.find((userRole) => userRole.role.name === user.primaryRoleName)?.roleId || user.userRoles[0]?.roleId || '';
             const resetRequested = user.passwordResetTokens.length > 0;
             return (
-              <div key={user.id} className="grid gap-4 px-4 py-4 lg:grid-cols-[1.4fr_1fr_0.9fr_auto] lg:items-center">
+              <div key={user.id} className="grid gap-4 px-4 py-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(180px,0.8fr)_minmax(180px,0.7fr)_200px] xl:items-start">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="font-semibold text-slate-950">{user.name}</div>
@@ -170,7 +170,7 @@ export default async function AdminUsersPage({ searchParams }) {
                   <div className="text-slate-500">Created {formatDate(user.createdAt)}</div>
                   <div className="mt-1 text-xs text-slate-500">{user._count.submittedTestimonies} stories / {user._count.comments} comments / {user._count.sessions} active sessions</div>
                 </div>
-                <form action={`/api/admin/users/${user.id}/role`} method="post" className="flex flex-col items-end gap-2 sm:flex-row">
+                <form action={`/api/admin/users/${user.id}/role`} method="post" className="grid gap-2">
                   <input type="hidden" name="returnTo" value={returnTo} />
                   <label className="grid w-full gap-1 text-xs font-semibold uppercase text-slate-500">
                     Role
@@ -180,9 +180,9 @@ export default async function AdminUsersPage({ searchParams }) {
                       ))}
                     </select>
                   </label>
-                  <button className="min-h-10 shrink-0 rounded-md border px-3 py-2 text-sm font-semibold">Update role</button>
+                  <button className="min-h-10 w-full rounded-md border px-3 py-2 text-sm font-semibold">Update role</button>
                 </form>
-                <div className="flex flex-col gap-2 lg:justify-self-end">
+                <div className="flex w-full flex-col gap-2 xl:justify-self-end">
                   <EditUserButton user={{ id: user.id, name: user.name, organizationId: user.organizationId }} organizations={organizations} />
                   <PasswordResetButton userId={user.id} disabled={isCurrentAdmin} requested={resetRequested} />
                   <SignOutUserButton userId={user.id} disabled={isCurrentAdmin ? user._count.sessions <= 1 : user._count.sessions === 0} sessionCount={user._count.sessions} preserveCurrent={isCurrentAdmin} />
