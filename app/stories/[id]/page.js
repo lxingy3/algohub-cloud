@@ -9,6 +9,7 @@ import { SiteNav } from '../../components/SiteNav';
 import { formatDate } from '../../components/Formatters';
 import { BackButton } from './BackButton';
 import { StoryShareMenu } from './StoryShareMenu';
+import { StoryMutationForm } from './StoryMutationForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -139,10 +140,10 @@ export default async function StoryPage({ params }) {
             Comments
           </h2>
           {user ? (
-            <form action={`/api/stories/${testimony.id}/comments`} method="post" className="mt-4">
+            <StoryMutationForm action={`/api/stories/${testimony.id}/comments`} className="mt-4" resetOnSuccess>
               <textarea name="content" placeholder="Write a comment" className="min-h-24 w-full rounded-md border border-slate-200 px-3 py-2" required />
               <button className="mt-2 min-h-11 w-full rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 sm:w-auto">Post comment</button>
-            </form>
+            </StoryMutationForm>
           ) : (
             <p className="mt-4 text-sm text-slate-500">Log in to post a comment.</p>
           )}
@@ -160,20 +161,20 @@ export default async function StoryPage({ params }) {
 function EngagementBar({ testimonyId, title, eyeOpening, support, eyeOpeningSelected, supportSelected, commentCount }) {
   return (
     <div className="mb-6 flex flex-wrap items-center gap-2">
-      <form action={`/api/stories/${testimonyId}/reactions`} method="post">
+      <StoryMutationForm action={`/api/stories/${testimonyId}/reactions`}>
         <input type="hidden" name="reactionType" value="EYE_OPENING" />
         <button aria-pressed={eyeOpeningSelected} className={`inline-flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold ${eyeOpeningSelected ? 'border-amber-400 bg-amber-50 text-amber-900' : 'border-slate-200 bg-white hover:border-amber-300'}`}>
           <Eye className="h-4 w-4 text-amber-600" />
           Eye-Opening {eyeOpening}
         </button>
-      </form>
-      <form action={`/api/stories/${testimonyId}/reactions`} method="post">
+      </StoryMutationForm>
+      <StoryMutationForm action={`/api/stories/${testimonyId}/reactions`}>
         <input type="hidden" name="reactionType" value="SUPPORT" />
         <button aria-pressed={supportSelected} className={`inline-flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold ${supportSelected ? 'border-amber-400 bg-amber-50 text-amber-900' : 'border-slate-200 bg-white hover:border-amber-300'}`}>
           <Heart className="h-4 w-4 text-amber-600" />
           Support {support}
         </button>
-      </form>
+      </StoryMutationForm>
       <StoryShareMenu title={title} />
       <span className="inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
         <MessageCircle className="h-4 w-4 text-amber-600" />
@@ -234,15 +235,15 @@ function CommentBlock({ comment, testimonyId, user }) {
         <time dateTime={comment.createdAt?.toISOString?.()}>{formatDate(comment.createdAt)}</time>
       </div>
       <p className="mt-1 leading-6">{comment.content}</p>
-      <form action={`/api/stories/${testimonyId}/comments/${comment.id}/like`} method="post" className="mt-3">
+      <StoryMutationForm action={`/api/stories/${testimonyId}/comments/${comment.id}/like`} className="mt-3">
         <button aria-pressed={likedByUser} className={`min-h-9 rounded-md border px-2 py-1 text-xs ${likedByUser ? 'border-amber-400 bg-amber-50 font-semibold text-amber-900' : 'border-slate-200 bg-white'}`}>{comment.likes.length} likes</button>
-      </form>
+      </StoryMutationForm>
       {user ? (
-        <form action={`/api/stories/${testimonyId}/comments`} method="post" className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <StoryMutationForm action={`/api/stories/${testimonyId}/comments`} className="mt-3 flex flex-col gap-2 sm:flex-row" resetOnSuccess>
           <input type="hidden" name="parentCommentId" value={comment.id} />
           <input name="content" placeholder="Reply" className="min-h-11 min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm" required />
           <button className="min-h-11 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">Reply</button>
-        </form>
+        </StoryMutationForm>
       ) : null}
       {comment.replies.map((reply) => (
         <div key={reply.id} className="ml-5 mt-3 border-l-2 border-amber-200 pl-4">
@@ -252,9 +253,9 @@ function CommentBlock({ comment, testimonyId, user }) {
             <time dateTime={reply.createdAt?.toISOString?.()}>{formatDate(reply.createdAt)}</time>
           </div>
           <p className="mt-1 leading-6">{reply.content}</p>
-          <form action={`/api/stories/${testimonyId}/comments/${reply.id}/like`} method="post" className="mt-2">
+          <StoryMutationForm action={`/api/stories/${testimonyId}/comments/${reply.id}/like`} className="mt-2">
             <button aria-pressed={reply.likes.some((like) => like.userId === user?.id)} className={`min-h-9 rounded-md border px-2 py-1 text-xs ${reply.likes.some((like) => like.userId === user?.id) ? 'border-amber-400 bg-amber-50 font-semibold text-amber-900' : 'border-slate-200 bg-white'}`}>{reply.likes.length} likes</button>
-          </form>
+          </StoryMutationForm>
         </div>
       ))}
     </div>

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { chromium } from 'playwright';
 
 import { prisma } from '../lib/prisma.js';
 import { getJurisdictionId } from '../lib/jurisdiction.js';
@@ -10,6 +11,7 @@ const jurisdictionId = getJurisdictionId();
 const suffix = randomUUID();
 
 let user;
+let browser;
 
 try {
   user = await prisma.user.create({
@@ -17,6 +19,7 @@ try {
       jurisdictionId,
       email: `reaction-toggle-check-${suffix}@example.invalid`,
       name: 'Reaction Toggle Check',
+      passwordHash: 'session-only-test-user',
     },
   });
 
@@ -63,9 +66,24 @@ try {
 
   const clearedHtml = await (await fetch(`${baseUrl}/stories/${testimonyId}`, { headers: { cookie } })).text();
   assert.doesNotMatch(clearedHtml, /aria-pressed="true"/);
+  assert.match(clearedHtml, /data-story-mutation="true"/);
 
-  console.log('PASS: Eye-Opening persisted 0 -> 1 -> 0 and the pressed state followed it.');
+  browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext();
+  await context.addCookies([{ name: 'algohub_session', value: sessionToken, url: baseUrl }]);
+  const page = await context.newPage();
+  await page.goto(`${baseUrl}/stories`);
+  await page.goto(`${baseUrl}/stories/${testimonyId}`);
+
+  const reactionButton = page.getByRole('button', { name: /^Eye-Opening / });
+  await reactionButton.click();
+  await page.waitForFunction(() => document.querySelector('button[aria-pressed="true"]'));
+  await page.goBack();
+  assert.equal(new URL(page.url()).pathname, '/stories');
+
+  console.log('PASS: Eye-Opening persisted 0 -> 1 -> 0 and a single Back returned to /stories.');
 } finally {
+  await browser?.close();
   if (user) await prisma.user.delete({ where: { id: user.id } });
   await prisma.$disconnect();
 }

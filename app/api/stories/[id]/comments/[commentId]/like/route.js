@@ -42,5 +42,8 @@ export async function POST(request, { params }) {
     });
   }
 
+  if (request.headers.get('x-story-mutation') === 'true') {
+    return NextResponse.json({ ok: true });
+  }
   return NextResponse.redirect(new URL(`/stories/${id}`, request.url), { status: 303 });
 }
