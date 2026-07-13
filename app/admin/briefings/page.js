@@ -70,7 +70,7 @@ export default async function AdminBriefingsPage({ searchParams }) {
       <section className="mt-5 rounded-lg border bg-white p-4">
         <h2 className="text-lg font-semibold">Generate briefing draft</h2>
         <p className="mt-1 text-sm text-slate-600">This queues an offline job. Run <code>npm run briefings:jobs</code> on the local worker until Google Cloud takes over.</p>
-        <form action="/api/admin/briefings/generate" method="post" className="mt-4 grid gap-3 md:grid-cols-[190px_1fr_auto_auto]">
+        <form action="/api/admin/briefings/generate" method="post" className="mt-4 grid gap-3 md:grid-cols-[190px_1fr_auto]">
           <select name="briefingType" className="min-h-11 rounded-md border bg-white px-3 py-2">
             <option value="CROSS_CUTTING">Cross-cutting corpus</option>
             <option value="ALGORITHM_SPECIFIC">Specific algorithm</option>
@@ -79,7 +79,6 @@ export default async function AdminBriefingsPage({ searchParams }) {
             <option value="">Choose an algorithm when needed</option>
             {algorithms.map((algorithm) => <option key={algorithm.id} value={algorithm.id}>{algorithm.name}</option>)}
           </select>
-          <label className="inline-flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold"><input type="checkbox" name="useClaude" /> Optional language polish</label>
           <button className="min-h-11 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Queue draft</button>
         </form>
         {generationJobs.length ? <div className="mt-4 grid gap-2">

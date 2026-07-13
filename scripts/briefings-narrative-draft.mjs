@@ -16,8 +16,7 @@ const args = parseArgs(process.argv.slice(2));
 const outputPath = args.output || 'task-briefings-results/briefing-narrative-drafts.json';
 const jurisdictionId = args.jurisdiction || process.env.JURISDICTION_ID || 'pittsburgh';
 const apply = Boolean(args.apply);
-const useClaude = Boolean(args.claude);
-const maxDrafts = Number(args['max-drafts'] || (useClaude ? 1 : 999));
+const maxDrafts = Number(args['max-drafts'] || 999);
 
 function parseArgs(argv) {
   const parsed = {};
@@ -179,65 +178,11 @@ function toBriefingWrite(draft) {
   };
 }
 
-function parseClaudeJson(text) {
-  const trimmed = String(text || '').trim().replace(/^```json\s*|\s*```$/g, '');
-  const start = trimmed.indexOf('{');
-  const end = trimmed.lastIndexOf('}');
-  if (start < 0 || end < start) throw new Error('The rewrite step did not return JSON.');
-  return JSON.parse(trimmed.slice(start, end + 1));
-}
-
-async function refineWithClaude(draft) {
-  if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is required for --claude.');
-  const request = {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
-      max_tokens: 1400,
-      system: 'You are a JSON API. Return valid JSON only. No markdown, no prose outside JSON.',
-      messages: [{
-        role: 'user',
-        content: `Return a JSON object with exactly these keys: executiveSummary, keyFindings, patternAnalysis, silenceGaps, recommendations, claimVsExperience. Rewrite this AlgoHub briefing draft in plain staff-review language. Keep the wording direct and specific; avoid stiff review-template phrasing. The response must start with { and end with }.\n\nDraft:\n${JSON.stringify(draft)}`,
-      }],
-    }),
-  };
-  let response;
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    try {
-      response = await fetch('https://api.anthropic.com/v1/messages', request);
-      if (response.ok || (response.status < 500 && response.status !== 429)) break;
-    } catch (error) {
-      if (attempt === 3) throw error;
-    }
-    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
-  }
-  const payload = await response.json();
-  if (!response.ok) throw new Error(payload?.error?.message || `Claude API failed: ${response.status}`);
-  const text = payload.content?.find((item) => item.type === 'text')?.text;
-  const refined = parseClaudeJson(text);
-  return {
-    ...draft,
-    executiveSummary: refined.executiveSummary || draft.executiveSummary,
-    keyFindings: Array.isArray(refined.keyFindings) ? refined.keyFindings : draft.keyFindings,
-    patternAnalysis: refined.patternAnalysis || draft.patternAnalysis,
-    silenceGaps: Array.isArray(refined.silenceGaps) ? refined.silenceGaps : draft.silenceGaps,
-    recommendations: Array.isArray(refined.recommendations) ? refined.recommendations : draft.recommendations,
-    claimVsExperience: Array.isArray(refined.claimVsExperience) ? refined.claimVsExperience : draft.claimVsExperience,
-    generatedBy: 'assisted_draft',
-  };
-}
-
 async function main() {
   if (args['self-check']) {
     assert.deepEqual(topCounts(['b', 'a', 'b']), [{ label: 'B', count: 2 }, { label: 'A', count: 1 }]);
     assert.equal(labels([]), 'not enough reviewed data yet');
     assert.equal(toBriefingWrite({ dateRangeStart: '2026-02-08', dateRangeEnd: null }).dateRangeStart.toISOString(), '2026-02-08T00:00:00.000Z');
-    assert.equal(parseClaudeJson('```json\n{"ok":true}\n```').ok, true);
     assert.equal(cosineSimilarity([1, 0], [1, 0]), 1);
     assert.equal(Number(cosineSimilarity([1, 0], [0, 1]).toFixed(3)), 0);
     const silenceCheck = buildSilenceAnalysis({
@@ -338,14 +283,12 @@ async function main() {
   if (args.algorithm) drafts = drafts.filter((draft) => draft.slug === `local-draft-${args.algorithm}`);
   drafts = drafts.slice(0, maxDrafts);
 
-  if (useClaude) drafts = await Promise.all(drafts.map(refineWithClaude));
-
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, `${JSON.stringify({
     generatedAt,
     jurisdictionId,
     apply,
-    generatedBy: useClaude ? 'assisted_draft' : 'staff_draft',
+    generatedBy: 'staff_draft',
     embeddingModel: BRIEFINGS_EMBEDDING_MODEL,
     missingSemanticCache,
     drafts,

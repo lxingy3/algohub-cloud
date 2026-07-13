@@ -29,7 +29,6 @@ export async function POST(request) {
       requestedByUserId: admin.id,
       briefingType,
       targetAlgorithmId,
-      useClaude: formData.get('useClaude') === 'on',
       message: 'Waiting for the local or Google Cloud briefing worker.',
     },
   });

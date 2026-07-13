@@ -26,14 +26,7 @@ async function main() {
     const args = ['scripts/briefings-narrative-draft.mjs', '--apply', '--output', `task-briefings-results/job-${job.id}.json`];
     if (job.briefingType === 'CROSS_CUTTING') args.push('--scope', 'corpus');
     else args.push('--algorithm', job.targetAlgorithm.slug);
-    if (job.useClaude) args.push('--claude');
-    let usedLocalFallback = false;
-    let run = spawnSync(process.execPath, args, { cwd: process.cwd(), env: process.env, encoding: 'utf8' });
-    if (run.status !== 0 && job.useClaude) {
-      usedLocalFallback = true;
-      const localArgs = args.filter((arg) => arg !== '--claude');
-      run = spawnSync(process.execPath, localArgs, { cwd: process.cwd(), env: process.env, encoding: 'utf8' });
-    }
+    const run = spawnSync(process.execPath, args, { cwd: process.cwd(), env: process.env, encoding: 'utf8' });
     if (run.status !== 0) {
       const rawError = `${run.stderr || ''}\n${run.stdout || ''}`;
       const reason = rawError.includes('fetch failed') || rawError.includes('ECONNRESET')
@@ -50,11 +43,7 @@ async function main() {
         status: 'COMPLETED',
         completedAt: new Date(),
         resultBriefingId: briefing?.id || null,
-        message: briefing
-          ? usedLocalFallback
-            ? 'Local draft ready for admin review. Optional language polishing was unavailable.'
-            : 'Draft ready for admin review.'
-          : 'Generation finished, but no matching draft was found.',
+        message: briefing ? 'Draft ready for admin review.' : 'Generation finished, but no matching draft was found.',
       },
     });
   }
