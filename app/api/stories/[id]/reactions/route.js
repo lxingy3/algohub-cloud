@@ -24,7 +24,7 @@ export async function POST(request, { params }) {
   });
   if (!testimony) return NextResponse.json({ error: 'Story not found.' }, { status: 404 });
 
-  await prisma.testimonyReaction.upsert({
+  const existing = await prisma.testimonyReaction.findUnique({
     where: {
       testimonyId_userId_reactionType: {
         testimonyId: id,
@@ -32,14 +32,15 @@ export async function POST(request, { params }) {
         reactionType,
       },
     },
-    update: {},
-    create: {
-      jurisdictionId,
-      testimonyId: id,
-      userId: user.id,
-      reactionType,
-    },
   });
+
+  if (existing) {
+    await prisma.testimonyReaction.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.testimonyReaction.create({
+      data: { jurisdictionId, testimonyId: id, userId: user.id, reactionType },
+    });
+  }
 
   return NextResponse.redirect(new URL(`/stories/${id}`, request.url), { status: 303 });
 }

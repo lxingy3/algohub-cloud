@@ -30,7 +30,7 @@ export default async function StoryPage({ params }) {
       audioFileUrl: true,
       videoFileUrl: true,
       brief: { select: { summary: true, keyExcerpts: true } },
-      reactions: { select: { reactionType: true } },
+      reactions: { select: { reactionType: true, userId: true } },
       comments: {
         where: { moderationStatus: 'APPROVED', parentCommentId: null },
         orderBy: { createdAt: 'asc' },
@@ -48,10 +48,10 @@ export default async function StoryPage({ params }) {
               content: true,
               createdAt: true,
               user: { select: { id: true, name: true } },
-              likes: { select: { id: true } },
+              likes: { select: { id: true, userId: true } },
             },
           },
-          likes: { select: { id: true } },
+          likes: { select: { id: true, userId: true } },
         },
       },
     },
@@ -66,6 +66,8 @@ export default async function StoryPage({ params }) {
   const citation = getCitation(testimony);
   const eyeOpening = testimony.reactions.filter((reaction) => reaction.reactionType === 'EYE_OPENING').length;
   const support = testimony.reactions.filter((reaction) => reaction.reactionType === 'SUPPORT').length;
+  const eyeOpeningSelected = testimony.reactions.some((reaction) => reaction.reactionType === 'EYE_OPENING' && reaction.userId === user?.id);
+  const supportSelected = testimony.reactions.some((reaction) => reaction.reactionType === 'SUPPORT' && reaction.userId === user?.id);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 text-slate-950">
@@ -94,7 +96,7 @@ export default async function StoryPage({ params }) {
             </span>
           </div>
 
-          <EngagementBar testimonyId={testimony.id} title={testimony.title} eyeOpening={eyeOpening} support={support} commentCount={testimony.comments.length} />
+          <EngagementBar testimonyId={testimony.id} title={testimony.title} eyeOpening={eyeOpening} support={support} eyeOpeningSelected={eyeOpeningSelected} supportSelected={supportSelected} commentCount={testimony.comments.length} />
 
           <h1 className="mb-4 text-3xl font-bold leading-tight text-gray-900">{testimony.title}</h1>
 
@@ -155,19 +157,19 @@ export default async function StoryPage({ params }) {
   );
 }
 
-function EngagementBar({ testimonyId, title, eyeOpening, support, commentCount }) {
+function EngagementBar({ testimonyId, title, eyeOpening, support, eyeOpeningSelected, supportSelected, commentCount }) {
   return (
     <div className="mb-6 flex flex-wrap items-center gap-2">
       <form action={`/api/stories/${testimonyId}/reactions`} method="post">
         <input type="hidden" name="reactionType" value="EYE_OPENING" />
-        <button className="inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:border-amber-300">
+        <button aria-pressed={eyeOpeningSelected} className={`inline-flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold ${eyeOpeningSelected ? 'border-amber-400 bg-amber-50 text-amber-900' : 'border-slate-200 bg-white hover:border-amber-300'}`}>
           <Eye className="h-4 w-4 text-amber-600" />
           Eye-Opening {eyeOpening}
         </button>
       </form>
       <form action={`/api/stories/${testimonyId}/reactions`} method="post">
         <input type="hidden" name="reactionType" value="SUPPORT" />
-        <button className="inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:border-amber-300">
+        <button aria-pressed={supportSelected} className={`inline-flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold ${supportSelected ? 'border-amber-400 bg-amber-50 text-amber-900' : 'border-slate-200 bg-white hover:border-amber-300'}`}>
           <Heart className="h-4 w-4 text-amber-600" />
           Support {support}
         </button>
@@ -223,6 +225,7 @@ function StoryText({ text }) {
 }
 
 function CommentBlock({ comment, testimonyId, user }) {
+  const likedByUser = comment.likes.some((like) => like.userId === user?.id);
   return (
     <div className="rounded-md bg-slate-50 p-4">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
@@ -232,7 +235,7 @@ function CommentBlock({ comment, testimonyId, user }) {
       </div>
       <p className="mt-1 leading-6">{comment.content}</p>
       <form action={`/api/stories/${testimonyId}/comments/${comment.id}/like`} method="post" className="mt-3">
-        <button className="min-h-9 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs">{comment.likes.length} likes</button>
+        <button aria-pressed={likedByUser} className={`min-h-9 rounded-md border px-2 py-1 text-xs ${likedByUser ? 'border-amber-400 bg-amber-50 font-semibold text-amber-900' : 'border-slate-200 bg-white'}`}>{comment.likes.length} likes</button>
       </form>
       {user ? (
         <form action={`/api/stories/${testimonyId}/comments`} method="post" className="mt-3 flex flex-col gap-2 sm:flex-row">
@@ -250,7 +253,7 @@ function CommentBlock({ comment, testimonyId, user }) {
           </div>
           <p className="mt-1 leading-6">{reply.content}</p>
           <form action={`/api/stories/${testimonyId}/comments/${reply.id}/like`} method="post" className="mt-2">
-            <button className="min-h-9 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs">{reply.likes.length} likes</button>
+            <button aria-pressed={reply.likes.some((like) => like.userId === user?.id)} className={`min-h-9 rounded-md border px-2 py-1 text-xs ${reply.likes.some((like) => like.userId === user?.id) ? 'border-amber-400 bg-amber-50 font-semibold text-amber-900' : 'border-slate-200 bg-white'}`}>{reply.likes.length} likes</button>
           </form>
         </div>
       ))}
