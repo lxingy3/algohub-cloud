@@ -100,7 +100,7 @@ These fields feed the story map, emergent topics, recognition/similar-story rows
 
 ## Briefing prose and claim comparison
 
-The chart data is local/model-backed as described above. Longer briefing prose and claim-vs-experience text can be drafted offline with `scripts/briefings-narrative-draft.mjs`. By default the script builds a deterministic draft from stored counts and similarity matches. With `--claude` and `ANTHROPIC_API_KEY`, it can ask Claude for a rewrite, then store that result as a briefing draft for review. The public page reads only stored briefing rows and does not call Claude during page load.
+The chart data is local/model-backed as described above. `scripts/briefings-narrative-draft.mjs` builds deterministic staff drafts from stored counts and locally computed similarity matches. External LLM rewriting is paused; the public claim-vs-experience endpoint recomputes rows from reviewed claims, approved stories, and the open-source embedding cache instead of serving legacy assisted prose.
 
 For text stories, an admin can run the refresh endpoint to write Task 2 through Task 5 results:
 

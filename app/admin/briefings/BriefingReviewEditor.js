@@ -47,7 +47,7 @@ export function BriefingReviewEditor({ briefing }) {
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-lg font-semibold text-slate-950">{fields.title}</h2>
             <span className={statusClass(status)}>{status}</span>
-            {briefing.generatedBy ? <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">Source: {briefing.generatedBy}</span> : null}
+            {briefing.generatedBy ? <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">Source: {generationSourceLabel(briefing.generatedBy)}</span> : null}
           </div>
           <p className="mt-1 text-sm text-slate-500">
             {briefing.briefingType} - {briefing.targetAlgorithmName || 'Cross-cutting corpus'} - {briefing.testimonyCount ?? 0} stories
@@ -200,6 +200,14 @@ function previewText(value) {
   const text = String(value || '').replace(/\s+/g, ' ').trim();
   if (!text) return 'No summary text yet.';
   return text.length > 260 ? `${text.slice(0, 260).trim()}...` : text;
+}
+
+function generationSourceLabel(source) {
+  if (source === 'staff_draft') return 'Local staff draft';
+  if (source === 'local_rule_draft') return 'Local rule draft';
+  if (source === 'claude_draft' || source === 'assisted_draft') return 'Open Source LLM';
+  if (source === 'chatgpt_codex_generated') return 'ChatGPT/Codex generated';
+  return source;
 }
 
 function statusClass(status) {

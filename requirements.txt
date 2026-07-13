@@ -24,9 +24,6 @@ scikit-learn>=1.3.0
 numpy>=1.24.0
 datasets>=2.16.0
 
-# Cloud API, only for big-spec future briefings/summaries/comparisons.
-anthropic>=0.39.0
-
 # Infrastructure
 httpx>=0.25.0
 redis>=5.0.0

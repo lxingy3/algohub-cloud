@@ -29,7 +29,7 @@ function reviewDraft(briefing) {
   if (list(briefing.keyFindings).length < 3) issues.push('fewer than three findings');
   if (list(briefing.recommendations).length < 1) issues.push('no recommendation');
   if (!briefing.testimonyCount || briefing.testimonyCount < 1) issues.push('no approved story evidence');
-  if (!['staff_draft', 'assisted_draft'].includes(briefing.generatedBy)) issues.push('unknown generation source');
+  if (briefing.generatedBy !== 'staff_draft') issues.push('unknown generation source');
   if (briefing.briefingType === 'ALGORITHM_SPECIFIC' && !briefing.targetAlgorithmId) issues.push('algorithm is missing');
   if (briefing.dateRangeEnd && briefing.dateRangeEnd > today) issues.push('future-dated evidence');
   const canPublish = issues.length === 0 && (briefing.briefingType === 'CROSS_CUTTING' || briefing.testimonyCount >= 2);

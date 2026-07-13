@@ -10,18 +10,6 @@ export const dynamic = 'force-dynamic';
 export async function GET(request) {
   const filters = parseExploreFilters(request);
   const jurisdictionId = getJurisdictionId();
-  const cached = await cachedClaimRows({ jurisdictionId, filters });
-  if (cached.rows.length && cached.generatedBy === 'assisted_draft') {
-    return NextResponse.json({
-      label: 'claim vs experience cache',
-      method: cached.method || `reviewed briefing cache using ${BRIEFINGS_EMBEDDING_MODEL} cosine relevance before synthesis`,
-      reviewStatus: cached.reviewStatus,
-      generatedBy: cached.generatedBy,
-      rows: filters.lens === 'government'
-        ? cached.rows.map((row) => ({ ...row, experienceExamples: [], experienceMembers: [] }))
-        : cached.rows,
-    });
-  }
   const algorithms = await prisma.algorithm.findMany({
     where: {
       jurisdictionId,
@@ -96,40 +84,6 @@ export async function GET(request) {
       };
     }).filter((row) => row.claims.length || row.experienceCount),
   });
-}
-
-async function cachedClaimRows({ jurisdictionId, filters }) {
-  const briefing = await prisma.briefing.findFirst({
-    where: {
-      jurisdictionId,
-      reviewStatus: 'PUBLISHED',
-      briefingType: filters.algorithm ? 'ALGORITHM_SPECIFIC' : 'CROSS_CUTTING',
-      ...(filters.algorithm ? { targetAlgorithm: { slug: filters.algorithm } } : { targetAlgorithmId: null }),
-    },
-    orderBy: { publishedAt: 'desc' },
-    select: { claimVsExperience: true, generatedBy: true, reviewStatus: true },
-  });
-  const rows = Array.isArray(briefing?.claimVsExperience) ? briefing.claimVsExperience : [];
-  return {
-    generatedBy: briefing?.generatedBy || null,
-    reviewStatus: briefing?.reviewStatus || 'PUBLISHED',
-    method: rows.find((row) => row && typeof row === 'object' && row.matchMethod)?.matchMethod || null,
-    rows: rows.map((row, index) => {
-    if (typeof row === 'string') {
-      return { algorithmSlug: null, algorithmName: `Briefing note ${index + 1}`, claims: [{ text: row }], experienceCount: null, experienceExamples: [], experienceMembers: [] };
-    }
-    return {
-      algorithmSlug: row.algorithmSlug || null,
-      algorithmName: row.algorithmName || row.algorithmSlug || `Briefing note ${index + 1}`,
-      claims: Array.isArray(row.claims) ? row.claims : [],
-      experienceCount: row.experienceCount ?? null,
-      experienceExamples: Array.isArray(row.experienceExamples) ? row.experienceExamples : [],
-      experienceMembers: Array.isArray(row.experienceMembers) ? row.experienceMembers : (Array.isArray(row.experienceExamples) ? row.experienceExamples : []),
-      discrepancy: row.discrepancy || row.summary || null,
-      matchMethod: row.matchMethod || null,
-    };
-    }),
-  };
 }
 
 function rankClaimStories(algorithm, stories, claimEmbeddings, storyEmbeddings) {
