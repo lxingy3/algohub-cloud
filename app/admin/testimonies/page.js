@@ -311,25 +311,30 @@ const entityGroups = ['agencies', 'locations', 'systems', 'dates', 'people_roles
 
 function getStoredMlResult(testimony, isVoiceInput) {
   const task1 = buildStoredTask1(testimony, isVoiceInput);
+  const experiences = isRecord(testimony.aiExtractedExperiences) ? testimony.aiExtractedExperiences : null;
+  const modelProvenance = isRecord(experiences?.modelProvenance) ? experiences.modelProvenance : {};
   const impactConfidence = numberOrNull(testimony.aiConfidenceScore);
   const task2 = testimony.aiImpactClassification ? {
     status: 'COMPLETED',
     aiImpactClassification: testimony.aiImpactClassification,
     aiConfidenceScore: impactConfidence,
     humanReviewRequired: impactConfidence === null || impactConfidence <= 0.85,
+    ...(isRecord(modelProvenance.task2) ? modelProvenance.task2 : {}),
   } : notRunTask();
   const task3 = Array.isArray(testimony.aiThemes) ? {
     status: 'COMPLETED',
     aiThemes: normalizeThemes(testimony.aiThemes),
+    ...(isRecord(modelProvenance.task3) ? modelProvenance.task3 : {}),
   } : notRunTask();
-  const experiences = isRecord(testimony.aiExtractedExperiences) ? testimony.aiExtractedExperiences : null;
   const task4 = isRecord(experiences?.entities) ? {
     status: 'COMPLETED',
     entities: normalizeEntities(experiences.entities),
+    ...(isRecord(modelProvenance.task4) ? modelProvenance.task4 : {}),
   } : notRunTask();
   const task5 = Array.isArray(experiences?.keywords) ? {
     status: 'COMPLETED',
     keywords: normalizeStringArray(experiences.keywords).slice(0, 10),
+    ...(isRecord(modelProvenance.task5) ? modelProvenance.task5 : {}),
   } : notRunTask();
   const algorithmMatching = isRecord(experiences?.algorithmMatching)
     ? experiences.algorithmMatching
@@ -352,6 +357,7 @@ function getStoredMlResult(testimony, isVoiceInput) {
     task4,
     task5,
     processedAt: testimony.aiProcessedAt,
+    modelProvenance,
     downstream: { algorithmMatching },
   };
 }

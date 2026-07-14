@@ -138,6 +138,8 @@ async function storeTask2To5ForTestimony(testimonyId, text) {
         id: true,
         title: true,
         affectedDomain: true,
+        narrativeText: true,
+        transcriptionText: true,
         aiImpactClassification: true,
         aiConfidenceScore: true,
         aiThemes: true,

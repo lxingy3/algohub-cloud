@@ -128,6 +128,11 @@ function evaluateRow(row, expected) {
       issues.push({ id: row.id, title: row.title, type: 'missing_theme', expected: theme, actual: themes });
     }
   }
+  for (const theme of row.task3.aiThemes || []) {
+    if (!Array.isArray(theme.matchedEvidence) || !theme.matchedEvidence.length) {
+      issues.push({ id: row.id, title: row.title, type: 'theme_without_evidence', theme: theme.theme });
+    }
+  }
   for (const [field, expectedValues] of Object.entries(expected.requiredEntities || {})) {
     const actualValues = Array.isArray(entities[field]) ? entities[field] : [];
     for (const expectedValue of expectedValues) {

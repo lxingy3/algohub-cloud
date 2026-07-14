@@ -33,7 +33,7 @@ If the original story text was only the voice placeholder, the transcript also b
 
 ## Task 2: impact classification
 
-Task 2 classifies a story as positive, negative, mixed, or unclear. The current model path uses `facebook/bart-large-mnli` as the local/open-source zero-shot classifier through the Python runner or a self-hosted worker. The app also includes tuned phrase rules for Pittsburgh public service stories as a degraded fallback when the local model environment is unavailable.
+Task 2 classifies a story as positive, negative, mixed, or unclear. The current model path uses raw `facebook/bart-large-mnli` scores from the local Python runner or self-hosted worker, then applies the same deterministic evidence resolver in the shared web entry point. This prevents the remote-worker path from returning raw BART while the fallback path returns a different contract. If the model worker is unavailable, the same resolver can still run from text evidence, but the runtime is explicitly stored and displayed as `js-degraded-fallback` rather than being presented as a BART result.
 
 The formal database fields are:
 
@@ -41,19 +41,21 @@ The formal database fields are:
 - `Testimony.aiConfidenceScore`
 - `Testimony.aiProcessedAt`
 
-The admin page only displays the stored fields. If a stored value is missing, it shows `No stored result`; it does not generate a page estimate. A confidence score of `0.85` or lower requires human review.
+The admin page only displays the stored fields. If a stored value is missing, it shows `No stored result`; it does not generate a page estimate. A value of `0.85` or lower requires human review. When evidence calibration decides the label, the displayed value is a rule decision score, not a BART probability; raw BART labels and scores remain in model provenance for audit.
 
 ## Task 3: theme detection
 
 Task 3 detects themes such as data accuracy, opacity, delayed outcome, arbitrary outcome, lack of recourse, loss of dignity, positive experience, and process confusion.
 
-The current model path uses `facebook/bart-large-mnli` as a multi-label zero-shot classifier through the local Python runner or a self-hosted worker. The app also has local theme rules that were tuned with Pittsburgh-style stories and the Week 7 test set. This gives the interface a useful result even when the local model environment is unavailable.
+The current model path uses `facebook/bart-large-mnli` as a multi-label zero-shot classifier through the local Python runner or a self-hosted worker. Formal `aiThemes` must also contain matched source-text evidence. BART can raise the confidence of an evidence-backed theme, but a high model score without text evidence is not inserted into the formal theme list. The same evidence gate runs when the worker is unavailable and is identified as a degraded fallback.
 
 The formal database field is:
 
 - `Testimony.aiThemes`
 
 Each theme item stores a theme label and confidence score. Themes below `0.75` are displayed as `Suggested` while that provisional review threshold is evaluated against labeled data.
+
+The shared Task 2/3 contract regression covers the current 34 stories plus 8 challenge, 10 messy, and 19 Pittsburgh fixtures (71 total). It checks both degraded-fallback output and a simulated remote-score path, including evidence presence. This is an internally reviewed development check, not independent research-team accuracy evidence.
 
 ## Task 4: entity extraction
 
@@ -102,6 +104,8 @@ The website does not automatically send new testimony text to OpenAI or another 
 ## How results are stored
 
 Formal stories store Task 1 through Task 5 on the `Testimony` table and related `TranscriptionJob` table.
+
+`Testimony.aiExtractedExperiences.modelProvenance` records pipeline version, processing time, source-content hash, input source, runtime, model/calibration names, raw Task 2/3 scores when a model actually ran, and any fallback reason. A pipeline-version change makes the stored Task 2-5 result eligible for refresh. `Testimony.aiProcessedAt` records the latest completed formal run.
 
 ## Briefings corpus batch
 
@@ -157,4 +161,5 @@ Task 2 through Task 5 use open-source packages and cached models locally or thro
 - `lib/mlAnalysisInput.js`: shared transcript/narrative selection, safe translation, and text limit
 - `lib/algorithmMatcher.js`: shared formal/Quick Test registry matcher
 - `lib/testimonyMlPersistence.js`: preserves human links while replacing stored ML suggestions
+- `scripts/run-task2-3-shared-contract-regression.mjs`: 71-row Task 2/3 contract and evidence regression
 - `app/admin/testimonies/ExpandablePanels.js`: admin display for story details and the ML Pipeline panel

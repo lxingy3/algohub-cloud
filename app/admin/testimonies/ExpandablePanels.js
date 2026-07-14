@@ -137,10 +137,21 @@ export function MLTaskResults({ result, showTechnicalDetails = false }) {
           {task2.status === 'COMPLETED' && task2.aiImpactClassification ? (
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
               <span className="rounded-full bg-slate-900 px-2.5 py-1 font-semibold text-white">{task2.aiImpactClassification}</span>
-              <span className="text-slate-600">confidence {formatConfidence(task2.aiConfidenceScore)}</span>
+              <span className="text-slate-600">
+                {task2.confidenceKind === 'rule-decision-score' ? 'decision score' : 'confidence'} {formatConfidence(task2.aiConfidenceScore)}
+              </span>
               {needsImpactReview(task2) ? <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">Needs review</span> : null}
+              {task2.runtime ? <span className="text-xs text-slate-500">Runtime: {formatRuntimeLabel(task2.runtime)}</span> : null}
             </div>
           ) : <TaskState task={task2} />}
+          {task2.status === 'COMPLETED' && task2.fallbackReason ? (
+            <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+              Model worker unavailable; this result used the deterministic degraded fallback.
+            </p>
+          ) : null}
+          {showTechnicalDetails && task2.status === 'COMPLETED' && task2.decisionSource ? (
+            <p className="mt-2 text-xs text-slate-500">Decision source: {task2.decisionSource}</p>
+          ) : null}
         </TaskSection>
       ) : null}
 
@@ -159,6 +170,14 @@ export function MLTaskResults({ result, showTechnicalDetails = false }) {
               }) : <span className="text-sm text-slate-600">No themes detected.</span>}
             </div>
           ) : <TaskState task={task3} />}
+          {task3.status === 'COMPLETED' && task3.runtime ? (
+            <p className="mt-2 text-xs text-slate-500">Runtime: {formatRuntimeLabel(task3.runtime)}</p>
+          ) : null}
+          {task3.status === 'COMPLETED' && task3.fallbackReason ? (
+            <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+              Model worker unavailable; themes came from the deterministic evidence gate.
+            </p>
+          ) : null}
         </TaskSection>
       ) : null}
 
@@ -177,6 +196,11 @@ export function MLTaskResults({ result, showTechnicalDetails = false }) {
               })}
             </div>
           ) : <TaskState task={task4} />}
+          {task4.status === 'COMPLETED' && task4.runtime ? (
+            <p className="mt-2 text-xs text-slate-500">
+              Runtime: {formatRuntimeLabel(task4.runtime)}{task4.fallbackReason ? ' (spaCy worker unavailable)' : ''}
+            </p>
+          ) : null}
         </TaskSection>
       ) : null}
 
@@ -189,6 +213,11 @@ export function MLTaskResults({ result, showTechnicalDetails = false }) {
               )) : <span className="text-sm text-slate-600">None found</span>}
             </div>
           ) : <TaskState task={task5} />}
+          {task5.status === 'COMPLETED' && task5.runtime ? (
+            <p className="mt-2 text-xs text-slate-500">
+              Runtime: {formatRuntimeLabel(task5.runtime)}{task5.fallbackReason ? ' (KeyBERT worker unavailable)' : ''}
+            </p>
+          ) : null}
         </TaskSection>
       ) : null}
 
@@ -349,6 +378,13 @@ function statusMessage(status) {
 
 function formatStatusLabelLoose(status) {
   return String(status || '').replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatRuntimeLabel(runtime) {
+  if (runtime === 'self-hosted-worker') return 'self-hosted open-source model worker';
+  if (runtime === 'local-python') return 'local open-source Python models';
+  if (runtime === 'js-degraded-fallback') return 'deterministic JS degraded fallback';
+  return String(runtime || 'unknown').replaceAll('-', ' ');
 }
 
 function formatConfidence(value) {

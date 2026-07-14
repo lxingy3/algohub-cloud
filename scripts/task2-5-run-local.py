@@ -14,9 +14,7 @@ TASK2_MODEL = os.environ.get("TASK2_IMPACT_MODEL", "facebook/bart-large-mnli")
 TASK3_MODEL = os.environ.get("TASK3_THEME_MODEL", "facebook/bart-large-mnli")
 TASK4_MODEL = os.environ.get("SPACY_MODEL", "en_core_web_trf")
 TASK5_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-POSITIVE_IMPACT_SCORE = float(os.environ.get("TASK2_POSITIVE_SCORE", "0.20"))
-THEME_UNSUPPORTED_THRESHOLD = float(os.environ.get("TASK3_UNSUPPORTED_THRESHOLD", "0.90"))
-THEME_MAX_LABELS = int(os.environ.get("TASK3_MAX_LABELS", "5"))
+THEME_MAX_LABELS = int(os.environ.get("TASK3_MAX_LABELS", "8"))
 
 IMPACT_LABELS = {
     "NEGATIVE": "negative experience with an automated system",
@@ -288,6 +286,7 @@ THEME_EVIDENCE = {
         r"\bscolded\b",
         r"\bstrip\s+(?:my|me|kid|child|children|someone)\b",
         r"\bnaked\b",
+        r"\b(?:ranked|ranking|counting|score)\b[^.]{0,160}\b(?:consequences|without listening|without a voice|no voice)\b",
     ],
 }
 
@@ -631,65 +630,69 @@ def round_score(value: float) -> float:
     return round(float(value or 0), 4)
 
 
-def count_matches(text: str, patterns: list[str]) -> int:
-    lower_text = text.lower()
-    return sum(1 for pattern in patterns if re.search(pattern, lower_text, flags=re.IGNORECASE))
-
-
-MIXED_OUTCOME_PATTERNS = [
-    r"\bdispatcher listened\b[^.]{0,140}\bchanged the priority\b",
-    r"\bpriority changed\b",
-    r"\binspection date appeared\b",
-    r"\bthat part worked\b",
-    r"\bending was good\b",
-    r"\bglad it moved\b",
-    r"\bconnected me\b[^.]{0,140}\bquickly\b",
-    r"\bcorrectly saw\b[^.]{0,180}\bbut\b",
-    r"\bcorrectly moved\b[^.]{0,180}\bbut\b",
-    r"\bsent a crew\b[^.]{0,140}\bwhich helped\b",
-    r"\breopened the case\b",
-    r"\bcorrected the field\b",
-    r"\bcorrected the record and scheduled an inspection\b",
-    r"\bnext list included\b[^.]{0,180}\bhelped me get an interview\b",
-]
-
-NEGATIVE_EVENT_PATTERNS = [
-    r"\b(wrong|incorrect|outdated|stale|duplicate|mismatch|misrouted)\b",
-    r"\b(paused|denied|delayed|flagged|lowered|low priority|high risk)\b",
-    r"\b(no way|no reason|could not|did not explain|did not show|did not fit)\b",
-    r"\b(wrong queue|wrong service|wrong office|wrong station)\b",
-    r"\b(sent|routed)\b[^.]{0,100}\b(noise complaint|maintenance|wrong)\b",
-    r"\b(kept suggesting|had not saved)\b",
-]
-
-RESOLUTION_PATTERNS = [
-    r"\b(corrected|restored|recalculated|reopened|removed|merged)\b",
-    r"\b(assistance|benefit|application|request|case) was approved\b",
-    r"\b(returned to normal|changed the category|changed the priority|moved the report)\b",
-    r"\b(transferred|connected me|reran the match|helped me apply|referred us)\b",
-    r"\b(scheduled (?:a visit|an inspection|legal help)|sent the appropriate response team)\b",
-]
-
-UNRESOLVED_HARM_PATTERNS = [
-    r"\b(corrected|fixed|removed)\b[^.]{0,120}\bbut\b[^.]{0,120}\b(harm|burden|late|deadline|rent|fee|wait|delay|month)\b",
-    r"\b(appeal took six weeks|submitted the same documents to two offices|children were coughing while we waited)\b",
-]
+def matched_surfaces(text: str, patterns: list[str]) -> list[str]:
+    matches = []
+    for pattern in patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+            matches.append(match.group(0))
+    return unique(matches)
 
 
 def resolve_impact(text: str, evidence_scores: dict[str, float]) -> str:
-    if re.search(r"\bi (?:do not|don't) know whether\b", text, flags=re.IGNORECASE):
-        return "UNCLEAR"
-    if any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in UNRESOLVED_HARM_PATTERNS):
-        return "NEGATIVE"
-    if any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in MIXED_OUTCOME_PATTERNS):
-        return "MIXED"
-    has_negative_event = any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in NEGATIVE_EVENT_PATTERNS)
-    has_resolution = any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in RESOLUTION_PATTERNS)
-    if has_negative_event and has_resolution:
-        return "MIXED"
-    if evidence_scores.get("POSITIVE", 0) >= POSITIVE_IMPACT_SCORE:
-        return "POSITIVE"
-    return "NEGATIVE"
+    return resolve_impact_decision(text, evidence_scores)["aiImpactClassification"]
+
+
+def resolve_impact_decision(text: str, evidence_scores: dict[str, float]) -> dict:
+    weak_positive = {r"\bquickly\b", r"\bpriority changed\b", r"\bapproved\b"}
+    weak_negative = {r"\bflagged\b", r"\bweeks\b"}
+    positive_patterns = [pattern for pattern in POSITIVE_CUES if pattern not in weak_positive]
+    negative_patterns = list(dict.fromkeys([
+        *NEGATIVE_CUES,
+        *THEME_EVIDENCE["lack_of_recourse"],
+        *THEME_EVIDENCE["arbitrary_outcome"],
+        *THEME_EVIDENCE["data_accuracy"],
+        *THEME_EVIDENCE["loss_of_dignity"],
+    ]))
+    negative_patterns = [pattern for pattern in negative_patterns if pattern not in weak_negative]
+    positive_evidence = matched_surfaces(text, positive_patterns)
+    negative_evidence = matched_surfaces(text, negative_patterns)
+    weak_evidence = matched_surfaces(
+        text,
+        [pattern for pattern in POSITIVE_CUES if pattern in weak_positive]
+        + [pattern for pattern in NEGATIVE_CUES if pattern in weak_negative],
+    )
+    ambiguous = re.search(r"\b(?:i\s+)?(?:do not|don't|cannot|can't)\s+know\s+whether\b", text, flags=re.IGNORECASE) \
+        or re.search(r"\bwhether\s+(?:an\s+)?automated\b", text, flags=re.IGNORECASE)
+
+    if ambiguous and not positive_evidence and not negative_evidence:
+        classification, confidence, confidence_kind = "UNCLEAR", 0.75, "rule-decision-score"
+    elif positive_evidence and negative_evidence:
+        classification, confidence, confidence_kind = "MIXED", 0.86, "rule-decision-score"
+    elif positive_evidence:
+        classification = "POSITIVE"
+        confidence = 0.90 if len(positive_evidence) >= 2 else 0.86
+        confidence_kind = "rule-decision-score"
+    elif negative_evidence:
+        classification = "NEGATIVE"
+        confidence = 0.90 if len(negative_evidence) >= 2 else 0.86
+        confidence_kind = "rule-decision-score"
+    else:
+        classification, confidence = max(evidence_scores.items(), key=lambda item: float(item[1] or 0))
+        confidence_kind = "model-score"
+
+    return {
+        "aiImpactClassification": classification,
+        "aiConfidenceScore": round_score(confidence),
+        "humanReviewRequired": confidence <= 0.85,
+        "confidenceKind": confidence_kind,
+        "calibration": "evidence-resolver-v2",
+        "decisionEvidence": {
+            "positive": positive_evidence,
+            "negative": negative_evidence,
+            "weak": weak_evidence,
+        },
+    }
 
 
 def classify_impact(classifier, text: str) -> dict:
@@ -704,14 +707,14 @@ def classify_impact(classifier, text: str) -> dict:
         key: round_score(scores_by_description.get(description, 0))
         for key, description in IMPACT_LABELS.items()
     }
-    classification = resolve_impact(text, evidence_scores)
-    confidence = evidence_scores[classification]
-
+    decision = resolve_impact_decision(text, evidence_scores)
+    raw_prediction, raw_confidence = max(evidence_scores.items(), key=lambda item: float(item[1] or 0))
     return {
-        "aiImpactClassification": classification,
-        "aiConfidenceScore": round_score(confidence),
-        "humanReviewRequired": confidence <= 0.85,
+        **decision,
         "evidenceScores": evidence_scores,
+        "rawModelPrediction": raw_prediction,
+        "rawModelConfidence": round_score(raw_confidence),
+        "rawModelScores": evidence_scores,
     }
 
 
@@ -737,9 +740,10 @@ def select_themes(text: str, scores_by_theme: dict[str, float]) -> list[dict]:
     for theme in THEME_LABELS:
         score = float(scores_by_theme.get(theme, 0))
         evidence = find_theme_evidence(text, theme)
-        if not evidence and score <= THEME_UNSUPPORTED_THRESHOLD:
+        if not evidence:
             continue
-        confidence = max(score, 0.55 if evidence else score)
+        evidence_score = 0.65 if len(evidence) >= 2 else 0.55
+        confidence = score if score > 0.5 else evidence_score
         rows.append({
             "theme": theme,
             "confidence": round_score(confidence),
@@ -764,8 +768,8 @@ def detect_themes(classifier, text: str) -> list[dict]:
 def self_check() -> None:
     assert resolve_impact("The system helped and approval arrived.", {"POSITIVE": 0.4}) == "POSITIVE"
     assert resolve_impact("I do not know whether a rule or staff review caused it.", {"POSITIVE": 0.01}) == "UNCLEAR"
-    assert resolve_impact("The priority changed after tenant photos, but the delay caused harm.", {"POSITIVE": 0.02}) == "MIXED"
-    assert resolve_impact("The wrong record paused the benefit until a worker corrected it.", {"POSITIVE": 0.02}) == "MIXED"
+    assert resolve_impact("The wrong record was fixed and an inspection date appeared.", {"POSITIVE": 0.02}) == "MIXED"
+    assert resolve_impact("The wrong record paused the benefit until a worker reopened the case.", {"POSITIVE": 0.02}) == "MIXED"
     assert resolve_impact("The wrong record delayed my application.", {"POSITIVE": 0.01}) == "NEGATIVE"
     themes = select_themes("The old address was wrong and staff could not explain it.", {"data_accuracy": 0.4, "opacity": 0.4})
     assert {row["theme"] for row in themes} == {"data_accuracy", "opacity"}

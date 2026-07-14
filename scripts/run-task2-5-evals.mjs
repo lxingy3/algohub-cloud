@@ -6,6 +6,10 @@ const checks = [
     command: ['scripts/run-task2-5-live-smoke.mjs'],
   },
   {
+    name: 'task2_3_shared_contract',
+    command: ['scripts/run-task2-3-shared-contract-regression.mjs'],
+  },
+  {
     name: 'current_stories',
     resultPath: 'task345-results/tuned-all-stories-ml-output/task2-5-combined-results.json',
     evalSetPath: 'data/task2-5-eval-set.json',
@@ -54,7 +58,7 @@ const runEval = (check) => {
     return {
       name: check.name,
       status: child.status === 0 && report.issueCount === 0 ? 'PASS' : 'FAIL',
-      count: Array.isArray(report.results) ? report.results.length : 0,
+      count: Array.isArray(report.results) ? report.results.length : Number(report.count || 0),
       issueCount: report.issueCount,
       issues: report.issues,
       results: report.results,
