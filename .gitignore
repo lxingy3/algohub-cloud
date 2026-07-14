@@ -15,3 +15,45 @@ pnpm-debug.log*
 .task2-deberta-env/
 __pycache__/
 .vercel_ml_worker_token.tmp
+
+# Local evaluation output and review artifacts
+output/
+tmp/
+task-briefings-results/
+task2-5-results/
+task2-5-tuned-results/
+task2-5-ml-package/
+task2-5-ml-package.zip
+task2-5-slack-*/
+task2-5-slack-*.zip
+ml-quick-test-combined-package/
+ML task2-5 test.zip
+
+# Generated Task 1 packages and verification runs
+task1-results/*.zip
+task1-results/*-package/
+task1-results/*-verification/
+task1-results/*-manifest.json
+task1-results/debug-*/
+task1-results/temp-*/
+task1-results/hf-space-*/
+task1-results/bitrate-impact-test/
+task1-results/vercel-upload-limit-proof/
+task1-results/read-aloud-scripts/
+task1-results/transcripts/*-source-result.json
+public/task1-audio-samples/*-full.*
+
+# Split ML outputs regenerated from the tracked combined results
+task2-results/production-narratives.json
+task2-results/task2-deberta-briefings-results.json
+task2-results/task2-production-impact-results.json
+task345-results/*-ml-input.json
+task345-results/*-ml-output/
+task345-results/briefings-local*/
+task345-results/existing-stories-ml-refresh-*.json
+task345-results/production-regression/
+task345-results/**/task2-5-input-narratives.json
+task345-results/**/task2-impact-classification-results.json
+task345-results/**/task3-theme-detection-results.json
+task345-results/**/task4-entity-extraction-results.json
+task345-results/**/task5-keyword-extraction-results.json

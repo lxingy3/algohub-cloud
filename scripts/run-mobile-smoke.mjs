@@ -39,6 +39,9 @@ async function runProfile(profile) {
   await runSubmitReviewSmoke(page, name);
   await runSubmitVideoMediaSmoke(page, name);
 
+  await goto(page, '/');
+  const navigationMenu = page.getByRole('button', { name: /^Open navigation menu$/i });
+  if (await navigationMenu.isVisible()) await navigationMenu.click();
   await page.getByRole('button', { name: /^Login$/i }).click();
   await page.getByRole('heading', { name: /^Login$/i }).waitFor({ timeout: 15000 });
   await assertNoHorizontalOverflow(page, `${name} login modal`);

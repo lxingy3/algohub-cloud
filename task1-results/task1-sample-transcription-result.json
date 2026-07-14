@@ -1,30 +1,66 @@
-﻿{
-    "task":  "Task 1: audio transcription",
-    "inputKind":  "audio",
-    "inputFile":  "C:\\Users\\33672\\Desktop\\Capstone\\voice test.mp3",
-    "provider":  "local-faster-whisper",
-    "model":  "small",
-    "status":  "COMPLETED",
-    "language":  "en",
-    "languageProbability":  0.6702,
-    "durationSeconds":  15.0,
-    "transcript":  "I remember when I saw you for the first time You were laughing sparkly like a new dime You\u0027d be mine",
-    "segments":  [
-                     {
-                         "start":  0.0,
-                         "end":  3.3,
-                         "text":  "I remember when I saw you for the first time"
-                     },
-                     {
-                         "start":  3.3,
-                         "end":  6.6,
-                         "text":  "You were laughing sparkly like a new dime"
-                     },
-                     {
-                         "start":  6.6,
-                         "end":  11.51,
-                         "text":  "You\u0027d be mine"
-                     }
-                 ],
-    "generatedAt":  "2026-06-14T02:26:20.466709+00:00"
+{
+  "task": "Task 1: audio transcription",
+  "inputKind": "audio",
+  "inputFile": "test-voice-input.mp3",
+  "provider": "local-faster-whisper",
+  "model": "small",
+  "status": "COMPLETED",
+  "language": "en",
+  "languageProbability": 0.9986,
+  "durationSeconds": 15,
+  "transcript": "I remember when I saw you for the first time. You were laughing sparkly like a new dime. You'd be mine.",
+  "rawTranscript": "I remember when I saw you for the first time You were laughing sparkly like a new dime You'd be mine",
+  "rawSegments": [
+    {
+      "start": 0,
+      "end": 3.3,
+      "text": "I remember when I saw you for the first time"
+    },
+    {
+      "start": 3.3,
+      "end": 6.6,
+      "text": "You were laughing sparkly like a new dime"
+    },
+    {
+      "start": 6.6,
+      "end": 11.51,
+      "text": "You'd be mine"
+    }
+  ],
+  "generatedAt": "2026-06-17T08:07:52.178Z",
+  "sentenceSegments": [
+    {
+      "start": 0,
+      "end": 3.3,
+      "text": "I remember when I saw you for the first time."
+    },
+    {
+      "start": 3.3,
+      "end": 6.6,
+      "text": "You were laughing sparkly like a new dime."
+    },
+    {
+      "start": 6.6,
+      "end": 11.51,
+      "text": "You'd be mine."
+    }
+  ],
+  "segments": [
+    {
+      "start": 0,
+      "end": 3.3,
+      "text": "I remember when I saw you for the first time."
+    },
+    {
+      "start": 3.3,
+      "end": 6.6,
+      "text": "You were laughing sparkly like a new dime."
+    },
+    {
+      "start": 6.6,
+      "end": 11.51,
+      "text": "You'd be mine."
+    }
+  ],
+  "outputFormat": "transcript and segments are sentence-smoothed; rawTranscript/rawSegments keep the original Whisper time chunks"
 }
