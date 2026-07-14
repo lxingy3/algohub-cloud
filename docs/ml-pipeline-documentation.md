@@ -4,7 +4,7 @@ Current ML pipeline in AlgoStories.
 
 ## Scope
 
-The pipeline covers Task 1 through Task 5 currently.
+The primary pipeline covers Task 1 through Task 5. A separate downstream preview links the completed Task 4/5 output to one registry algorithm when its match score clears the review threshold.
 
 - Task 1 transcribes audio stories.
 - Task 2 classifies the story impact.
@@ -12,7 +12,7 @@ The pipeline covers Task 1 through Task 5 currently.
 - Task 4 extracts agencies, locations, systems, dates, and people roles.
 - Task 5 extracts keywords.
 
-The admin "ML Quick Test" tool is for testing. It does not create or update a formal story record. Formal results are stored on testimony records in the database, and both views use the same Task 1-5 result component.
+The admin "ML Quick Test" tool is for testing. It does not create or update a formal story record. Formal results are stored on testimony records in the database, and both views use the same Task 1-5 result component, analysis-input preparation, and downstream registry matcher. Both paths analyze the transcript when present, otherwise the narrative; summary text is never mixed back into model input. A title is matcher context only.
 
 ## Task 1: transcription
 
@@ -29,7 +29,7 @@ Supported formats are WAV, MP3, WebM, FLAC, OGG, and M4A. In the formal story fl
 - `TranscriptionJob.provider`
 - `TranscriptionJob.processedAt`
 
-If the original story text was only the voice placeholder, the transcript also becomes `Testimony.narrativeText`, and the app writes a short `Testimony.summary`. The public story page shows the transcript text, not the raw audio file.
+If the original story text was only the voice placeholder, the transcript also becomes `Testimony.narrativeText`, and the app writes a short rule-based `Testimony.summary`. That fallback is labeled only `Summary`, not AI-generated. The public story page shows the transcript text, not the raw audio file.
 
 ## Task 2: impact classification
 
@@ -85,6 +85,20 @@ The formal database field is:
 
 - `Testimony.aiExtractedExperiences.keywords`
 
+## Downstream related-algorithm preview
+
+After Task 4 and Task 5, a shared deterministic matcher compares the story text, extracted systems/agencies, KeyBERT phrases, and affected domain with the algorithm registry. Its current weights are 45% registry-text similarity, 20% keyword overlap, 20% agency match, and 15% domain match. A narrow cue guardrail separates housing allocation, eviction, and inspection records when their shared domain wording would otherwise dominate. It stores only the top match when the score is at least `0.35`.
+
+The result is labeled `Open-source ML suggested match` and the number is a match score, not a calibrated probability. Formal processing stores the explanation under `Testimony.aiExtractedExperiences.algorithmMatching`, including matcher version and registry-content fingerprint, synchronizes `Testimony.aiLinkedAlgorithmIds`, and replaces only `AI_DETECTED` relations. Submitter-identified and facilitator-tagged links are never overwritten. A changed matcher version or algorithm catalog makes the stored result eligible for refresh.
+
+This is the currently deployable subset of the older Task 6 proposal. It does not claim to be the full sentence-transformer implementation. The internal 16-story reviewed synthetic fixture checks ranking behavior; it is not an independent research evaluation.
+
+## Story summary provenance
+
+The Story and Admin pages use `Testimony.summary` as the current display text. A one-time OpenAI Codex batch authorized by the user on July 14, 2026 writes summaries only for approved stories whose submitters allowed public posting. The matching `TestimonyBrief.modelName`, generation time, and `DRAFT` review state preserve provenance, and those records display `OpenAI-generated summary`. Rule/seed summaries without that provenance display the neutral label `Summary`.
+
+The website does not automatically send new testimony text to OpenAI or another LLM. New stories keep the local rule-based fallback until a separately authorized and reviewed generation run occurs.
+
 ## How results are stored
 
 Formal stories store Task 1 through Task 5 on the `Testimony` table and related `TranscriptionJob` table.
@@ -122,15 +136,15 @@ The admin Quick Test route is:
 
 - `POST /api/ml/quick-test`
 
-Text input runs Task 2 through Task 5. Audio input runs Task 1 first, then feeds the transcript into Task 2 through Task 5. Quick Test is convenient for demos and debugging, but it does not store results in the database. Its primary Task cards match the formal stored-story display; file names, models, and timestamp segments remain optional technical details. Summary generation is not part of the Task 1-5 Quick Test output.
+Text input runs Task 2 through Task 5. Audio input runs Task 1 first, then feeds the transcript into Task 2 through Task 5. Selecting the affected domain and, when available, entering the Story title runs the same downstream registry matcher with the same formal inputs. Quick Test is convenient for demos and debugging, but it does not store results in the database. Its primary Task cards and related-algorithm preview match the formal stored-story display; file names, models, and timestamp segments remain optional technical details. Summary generation is not part of the Task 1-5 Quick Test output.
 
 ## Current limits
 
-The expected demo limits are now 30 minutes for audio input and 12,000 characters for ML text analysis. Longer narrative text is accepted by Quick Test but truncated for Task 2 through Task 5 analysis instead of returning a query-length error. Formal story uploads already use signed media upload, so the audio file does not pass through the app server as a large request body.
+The expected demo limits are now 30 minutes for audio input and 12,000 characters for ML text analysis. Longer narrative text is accepted but both Quick Test and formal processing truncate it before Task 2 through Task 5 analysis. Non-English text is translated only when the project has a configured translation provider; ML paths never use the public Google/MyMemory fallback.
 
 The admin Quick Test audio path has been changed to match that approach. It uploads the audio file to media storage first, then sends the stored object key to the ML endpoint. This avoids Vercel's function payload limit, which is what caused the `FUNCTION_PAYLOAD_TOO_LARGE` error on a 29-minute audio test.
 
-Task 2 through Task 5 use local open-source packages and cached models. External hosted model APIs are not part of the production pipeline. Long audio can still produce long transcript output, so the admin page uses collapsible story details and an ML Pipeline panel.
+Task 2 through Task 5 use open-source packages and cached models locally or through the project-owned worker. Third-party LLM APIs are not part of the production Task 1-5 pipeline. Long audio can still produce long transcript output, so the admin page uses collapsible story details and an ML Pipeline panel.
 
 ## Files and routes to know
 
@@ -140,4 +154,7 @@ Task 2 through Task 5 use local open-source packages and cached models. External
 - `app/api/admin/testimonies/refresh-ml/route.js`: formal Task 2 through Task 5 refresh for stored stories
 - `app/api/ml/quick-test/route.js`: admin test route
 - `lib/mlFullAnalysis.js`: Task 2 through Task 5 analysis logic
+- `lib/mlAnalysisInput.js`: shared transcript/narrative selection, safe translation, and text limit
+- `lib/algorithmMatcher.js`: shared formal/Quick Test registry matcher
+- `lib/testimonyMlPersistence.js`: preserves human links while replacing stored ML suggestions
 - `app/admin/testimonies/ExpandablePanels.js`: admin display for story details and the ML Pipeline panel

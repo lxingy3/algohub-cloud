@@ -11,7 +11,8 @@ Priority order: current weekly assignments and meeting decisions, then `AlgoHub_
 | Task 2 impact classification | Week 7 | Local BART-MNLI with reviewed fallback state | `npm run ml:eval` | Development baseline only |
 | Task 3 multi-label themes | Week 7 | Local BART-MNLI | `npm run ml:eval` | Development baseline only |
 | Task 4 entities and Task 5 keywords | Week 7 | spaCy and KeyBERT | Stored coverage plus fixtures; optional gold entity/keyword scoring | Gold labels pending; evaluator reports no metric rather than inferring one |
-| Task 6 linking and Task 7 summary | Week 8 discussion | Deliberately rolled back | Requirement history | Deferred until a new detailed assignment |
+| Downstream algorithm linking subset | July 14 user direction; older Task 6 design | Shared analysis input + versioned Task 4/5/registry scorer; formal persistence and Quick Test preview | `npm run ml:matcher:self-check`; 62-row DB backfill audit | Re-opened as suggested top-1 match; full embedding linker still deferred |
+| Summary generation | July 14 user direction; older Task 7 design | User-authorized OpenAI Codex one-time batch for approved, publicly shareable stories, explicit `TestimonyBrief` provenance; local fallback for new stories | DB provenance/count check | Batch implemented; public-posting permission is not represented as separate LLM-processing consent, and automatic LLM processing remains disabled |
 | Six Briefing views and 52 numbered blocks | Week 9 | `/briefings` community/library/government, overview/algorithm | Playwright route and block-count check | Complete |
 | Corpus embeddings, UMAP, HDBSCAN, BERTopic, KeyBERT | Week 9 | Offline batch and cached DB fields | Corpus evaluation and API verification | Implemented; quality tuning required |
 | Suggested/interpretive labels and privacy gating | Week 9 | Suggested labels; government aggregate-only APIs | `npm run ml:briefings:verify` | Complete |

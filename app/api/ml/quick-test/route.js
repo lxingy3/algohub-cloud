@@ -3,12 +3,17 @@ import { requireAdmin } from '../../../../lib/auth';
 import { analyzeNarrativeTextWithModels } from '../../../../lib/mlFullAnalysis';
 import { transcribeAudioForTask1 } from '../../../../lib/task1Transcription';
 import { createSignedMediaRead } from '../../../../lib/mediaStorage';
-import { shouldTranslateToEnglish, translateLongText } from '../../../../lib/translation';
+import { shouldTranslateToEnglish, translateLongTextWithConfiguredProvider } from '../../../../lib/translation';
+import { prepareMlAnalysisInput } from '../../../../lib/mlAnalysisInput';
+import { prisma } from '../../../../lib/prisma';
+import { getJurisdictionId } from '../../../../lib/jurisdiction';
+import {
+  buildAlgorithmMatchResultFromAnalysis,
+  loadAlgorithmMatchCatalog,
+} from '../../../../lib/algorithmMatcher';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
-
-const MAX_NARRATIVE_TEXT_CHARS = 12000;
 
 export async function POST(request) {
   try {
@@ -27,23 +32,24 @@ export async function POST(request) {
     }
 
     const narrativeText = String(body.narrativeText || '').trim();
+    const affectedDomain = String(body.affectedDomain || '').trim();
+    const title = String(body.title || '').trim();
     if (!narrativeText) {
       return NextResponse.json({ error: 'Please enter narrative_text.' }, { status: 400 });
     }
 
-    const preparedText = await prepareEnglishAnalysisText(narrativeText);
-    const analysisInput = limitAnalysisText(preparedText.text);
-    const result = await analyzeNarrativeTextWithModels(analysisInput.text);
+    const analysisInput = await prepareMlAnalysisInput(narrativeText);
+    const result = await analyzeQuickTestText(analysisInput.text, affectedDomain, title);
     return NextResponse.json({
       ok: true,
       result: {
         ...result,
-        inputLanguage: preparedText.translatedToEnglish ? 'translated-to-english' : 'english',
-        originalNarrativeText: preparedText.translatedToEnglish ? narrativeText : undefined,
+        inputLanguage: analysisInput.translatedToEnglish ? 'translated-to-english' : 'english',
+        originalNarrativeText: analysisInput.translatedToEnglish ? narrativeText : undefined,
         analysisText: analysisInput.text,
         truncatedForAnalysis: analysisInput.truncated,
         originalAnalysisTextLength: analysisInput.originalLength,
-        translatedToEnglish: preparedText.translatedToEnglish,
+        translatedToEnglish: analysisInput.translatedToEnglish,
       },
     });
   } catch (error) {
@@ -69,6 +75,8 @@ async function handleStoredAudioQuickTest(body) {
     audioFile: file,
     taskMode: String(body.task || '').trim().toLowerCase(),
     fallbackNarrativeText: String(body.narrativeText || '').trim(),
+    affectedDomain: String(body.affectedDomain || '').trim(),
+    title: String(body.title || '').trim(),
   });
 }
 
@@ -103,6 +111,8 @@ async function handleAudioQuickTest(request) {
   const audioFile = formData.get('audio');
   const taskMode = String(formData.get('task') || '').trim().toLowerCase();
   const fallbackNarrativeText = String(formData.get('narrativeText') || '').trim();
+  const affectedDomain = String(formData.get('affectedDomain') || '').trim();
+  const title = String(formData.get('title') || '').trim();
   const compressedForQuickTest = String(formData.get('compressedForQuickTest') || '').trim() === 'true';
   const originalFileName = String(formData.get('originalFileName') || '').trim();
   const originalFileSizeBytes = Number(formData.get('originalFileSizeBytes') || 0) || null;
@@ -115,6 +125,8 @@ async function handleAudioQuickTest(request) {
     audioFile,
     taskMode,
     fallbackNarrativeText,
+    affectedDomain,
+    title,
     audioTransformMetadata: compressedForQuickTest ? {
       compressedForQuickTest,
       originalFileName,
@@ -124,15 +136,14 @@ async function handleAudioQuickTest(request) {
   });
 }
 
-async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, audioTransformMetadata = null }) {
+async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, affectedDomain = '', title = '', audioTransformMetadata = null }) {
   let task1;
   try {
     task1 = await transcribeAudioForTask1(audioFile);
   } catch (task1Error) {
     if (fallbackNarrativeText) {
-      const preparedFallbackText = await prepareEnglishAnalysisText(fallbackNarrativeText);
-      const analysisInput = limitAnalysisText(preparedFallbackText.text);
-      const analysis = await analyzeNarrativeTextWithModels(analysisInput.text);
+      const analysisInput = await prepareMlAnalysisInput(fallbackNarrativeText);
+      const analysis = await analyzeQuickTestText(analysisInput.text, affectedDomain, title);
       return NextResponse.json({
         ok: true,
         result: {
@@ -140,11 +151,11 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
           inputField: 'audio',
           source: 'audio-upload',
           status: 'PARTIAL',
-          originalNarrativeText: preparedFallbackText.translatedToEnglish ? fallbackNarrativeText : undefined,
+          originalNarrativeText: analysisInput.translatedToEnglish ? fallbackNarrativeText : undefined,
           analysisText: analysisInput.text,
           truncatedForAnalysis: analysisInput.truncated,
           originalAnalysisTextLength: analysisInput.originalLength,
-          translatedToEnglish: preparedFallbackText.translatedToEnglish,
+          translatedToEnglish: analysisInput.translatedToEnglish,
           task1: {
             status: 'SKIPPED',
             tool: process.env.TASK1_WHISPER_MODEL || 'small',
@@ -178,9 +189,8 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
   const narrativeText = String(task1.transcript || task1.rawTranscript || '').trim();
   if (!narrativeText) {
     if (fallbackNarrativeText) {
-      const preparedFallbackText = await prepareEnglishAnalysisText(fallbackNarrativeText);
-      const analysisInput = limitAnalysisText(preparedFallbackText.text);
-      const analysis = await analyzeNarrativeTextWithModels(analysisInput.text);
+      const analysisInput = await prepareMlAnalysisInput(fallbackNarrativeText);
+      const analysis = await analyzeQuickTestText(analysisInput.text, affectedDomain, title);
       return NextResponse.json({
         ok: true,
         result: {
@@ -188,11 +198,11 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
           inputField: 'audio',
           source: 'audio-upload',
           status: 'PARTIAL',
-          originalNarrativeText: preparedFallbackText.translatedToEnglish ? fallbackNarrativeText : undefined,
+          originalNarrativeText: analysisInput.translatedToEnglish ? fallbackNarrativeText : undefined,
           analysisText: analysisInput.text,
           truncatedForAnalysis: analysisInput.truncated,
           originalAnalysisTextLength: analysisInput.originalLength,
-          translatedToEnglish: preparedFallbackText.translatedToEnglish,
+          translatedToEnglish: analysisInput.translatedToEnglish,
           task1: {
             ...task1,
             status: task1.status || 'SKIPPED',
@@ -226,31 +236,8 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
       },
     });
   }
-  if (narrativeText.length > MAX_NARRATIVE_TEXT_CHARS) {
-    if (fallbackNarrativeText) {
-      const preparedFallbackText = await prepareEnglishAnalysisText(fallbackNarrativeText);
-      const analysisInput = limitAnalysisText(preparedFallbackText.text);
-      const analysis = await analyzeNarrativeTextWithModels(analysisInput.text);
-      return NextResponse.json({
-        ok: true,
-        result: {
-          ...analysis,
-          inputField: 'audio',
-          source: 'audio-upload',
-          status: 'PARTIAL',
-          originalNarrativeText: preparedFallbackText.translatedToEnglish ? fallbackNarrativeText : undefined,
-          analysisText: analysisInput.text,
-          truncatedForAnalysis: analysisInput.truncated,
-          originalAnalysisTextLength: analysisInput.originalLength,
-          translatedToEnglish: preparedFallbackText.translatedToEnglish,
-          task1,
-        },
-      });
-    }
-  }
-
-  const analysisInput = limitAnalysisText(narrativeText);
-  const analysis = await analyzeNarrativeTextWithModels(analysisInput.text);
+  const analysisInput = await prepareMlAnalysisInput(narrativeText);
+  const analysis = await analyzeQuickTestText(analysisInput.text, affectedDomain, title);
   return NextResponse.json({
     ok: true,
     result: {
@@ -265,24 +252,35 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
   });
 }
 
-async function prepareEnglishAnalysisText(text) {
-  const originalText = String(text || '').trim();
-  if (!shouldTranslateToEnglish(originalText)) {
-    return { text: originalText, translatedToEnglish: false };
-  }
-  const translatedText = await translateLongText(originalText, 'auto', 'en');
-  if (!translatedText || translatedText === originalText) {
-    return { text: originalText, translatedToEnglish: false };
-  }
-  return { text: translatedText, translatedToEnglish: true };
-}
+async function analyzeQuickTestText(text, affectedDomain = '', title = '') {
+  const analysis = await analyzeNarrativeTextWithModels(text);
+  const task4And5Complete = analysis.task4?.status === 'COMPLETED' && analysis.task5?.status === 'COMPLETED';
+  const algorithmMatching = !affectedDomain
+    ? {
+      status: 'NEEDS_DOMAIN',
+      method: 'task-output+registry-text',
+      matches: [],
+      reason: 'Select the same affected domain used by a formal Story to preview its production algorithm match.',
+    }
+    : task4And5Complete
+      ? buildAlgorithmMatchResultFromAnalysis({
+      analysis,
+      narrativeText: text,
+      title,
+      affectedDomain,
+      algorithms: await loadAlgorithmMatchCatalog(prisma, getJurisdictionId()),
+    })
+    : {
+      status: 'SKIPPED',
+      method: 'task-output+registry-text',
+      matches: [],
+      reason: 'Task 4 and Task 5 must complete before algorithm matching can run.',
+    };
 
-function limitAnalysisText(text) {
-  const value = String(text || '').trim();
   return {
-    text: value.slice(0, MAX_NARRATIVE_TEXT_CHARS),
-    truncated: value.length > MAX_NARRATIVE_TEXT_CHARS,
-    originalLength: value.length,
+    ...analysis,
+    affectedDomain: affectedDomain || null,
+    downstream: { algorithmMatching },
   };
 }
 
@@ -290,7 +288,7 @@ async function prepareTask1ForEnglishDisplay(task1) {
   const originalTranscript = String(task1.transcript || task1.rawTranscript || '').trim();
   if (!shouldTranslateToEnglish(originalTranscript)) return task1;
 
-  const translatedTranscript = await translateLongText(originalTranscript, 'auto', 'en');
+  const translatedTranscript = await translateLongTextWithConfiguredProvider(originalTranscript, 'auto', 'en');
   if (!translatedTranscript || translatedTranscript === originalTranscript) return task1;
 
   return {

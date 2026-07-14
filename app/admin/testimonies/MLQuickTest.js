@@ -13,8 +13,10 @@ const COMPRESSED_AUDIO_BITRATES = [16, 8];
 const AUDIO_COMPRESSION_TIMEOUT_MS = 2 * 60 * 1000;
 let mp3EncoderLoadPromise = null;
 
-export default function MLQuickTest() {
+export default function MLQuickTest({ domains = [] }) {
+  const [storyTitle, setStoryTitle] = useState('');
   const [narrativeText, setNarrativeText] = useState('');
+  const [affectedDomain, setAffectedDomain] = useState('');
   const [audioFile, setAudioFile] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -41,7 +43,7 @@ export default function MLQuickTest() {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ narrativeText }),
+          body: JSON.stringify({ title: storyTitle, narrativeText, affectedDomain }),
           signal: abortController.signal,
         });
         if (!isCurrentRun(runVersion)) return;
@@ -69,7 +71,7 @@ export default function MLQuickTest() {
 
     setLoadingLabel('Uploading audio...');
     setLoadingLabel('Running Task 1...');
-    const task1Request = await buildAudioTask1Request(file, signal, fallbackNarrativeText, durationSeconds, setLoadingLabel);
+    const task1Request = await buildAudioTask1Request(file, signal, fallbackNarrativeText, durationSeconds, setLoadingLabel, affectedDomain, storyTitle);
     if (task1Request.fallbackOnly) {
       await runAudioFallbackOnlyTask25({ file, fallbackNarrativeText, runVersion, signal, reason: task1Request.reason, durationSeconds });
       return;
@@ -94,7 +96,7 @@ export default function MLQuickTest() {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ narrativeText: analysisText }),
+        body: JSON.stringify({ title: storyTitle, narrativeText: analysisText, affectedDomain }),
         signal,
       });
       if (!isCurrentRun(runVersion)) return;
@@ -126,7 +128,7 @@ export default function MLQuickTest() {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ narrativeText: fallbackNarrativeText }),
+      body: JSON.stringify({ title: storyTitle, narrativeText: fallbackNarrativeText, affectedDomain }),
       signal,
     });
     if (!isCurrentRun(runVersion)) return;
@@ -165,6 +167,14 @@ export default function MLQuickTest() {
     clearQuickTestOutput();
   }
 
+  function handleStoryTitleChange(event) {
+    runVersionRef.current += 1;
+    abortCurrentRequest();
+    setStoryTitle(event.target.value);
+    setLoadingLabel('');
+    clearQuickTestOutput();
+  }
+
   function handleAudioChange(event) {
     runVersionRef.current += 1;
     abortCurrentRequest();
@@ -189,6 +199,34 @@ export default function MLQuickTest() {
         <p className="text-sm text-slate-600">Test only — results use the production Task 1–5 format and are not saved.</p>
       </div>
       <form onSubmit={runQuickTest} className="mt-3 space-y-3">
+        <label className="block text-sm font-medium text-slate-700">
+          Story title <span className="font-normal text-slate-500">(optional; used by the formal matcher)</span>
+          <input
+            type="text"
+            name="story_title"
+            value={storyTitle}
+            onChange={handleStoryTitleChange}
+            maxLength={255}
+            className="mt-2 min-h-11 w-full rounded-md border px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block text-sm font-medium text-slate-700">
+          Affected domain
+          <select
+            value={affectedDomain}
+            onChange={(event) => {
+              runVersionRef.current += 1;
+              abortCurrentRequest();
+              setAffectedDomain(event.target.value);
+              setLoadingLabel('');
+              clearQuickTestOutput();
+            }}
+            className="mt-2 min-h-11 w-full rounded-md border px-3 py-2 text-sm"
+          >
+            <option value="">Select a domain for production-equivalent algorithm matching</option>
+            {domains.map((domain) => <option key={domain} value={domain}>{domain}</option>)}
+          </select>
+        </label>
         <textarea
           value={narrativeText}
           onChange={handleNarrativeTextChange}
@@ -287,13 +325,13 @@ async function uploadAudioForQuickTest(audioFile, signal) {
   };
 }
 
-async function buildAudioTask1Request(audioFile, signal, fallbackText = '', durationSeconds = null, updateStatus = () => {}) {
+async function buildAudioTask1Request(audioFile, signal, fallbackText = '', durationSeconds = null, updateStatus = (_value) => {}, affectedDomain = '', title = '') {
   const contentType = audioContentTypeForFile(audioFile);
   const isVideo = contentType.toLowerCase().startsWith('video/');
   if (isVideo) updateStatus('Uploading video for audio transcription...');
   try {
     const uploadedAudio = await uploadAudioForQuickTest(audioFile, signal);
-    return buildStoredAudioRequest(uploadedAudio, 'task1', signal, fallbackText);
+    return buildStoredAudioRequest(uploadedAudio, 'task1', signal, fallbackText, affectedDomain, title);
   } catch (uploadError) {
     if (uploadError.status !== 503) throw uploadError;
     if (isVideo && audioFile.size > DIRECT_AUDIO_UPLOAD_SAFE_BYTES) {
@@ -314,7 +352,7 @@ async function buildAudioTask1Request(audioFile, signal, fallbackText = '', dura
           originalFileSizeBytes: String(audioFile.size),
           originalDurationSeconds: durationSeconds ? String(durationSeconds) : '',
           compressedForQuickTest: 'true',
-        });
+        }, affectedDomain, title);
       } catch (compressionError) {
         if (!fallbackText) {
           throw new Error(`Audio compression did not finish in this browser. Add narrative_text up to ${MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters so Task 2-5 can run while audio transcription is retried later.`);
@@ -326,15 +364,17 @@ async function buildAudioTask1Request(audioFile, signal, fallbackText = '', dura
         reason: 'Audio transcription is deferred for this Quick Test run. Task 2-5 ran from narrative_text.',
       };
     }
-    return buildDirectAudioRequest(audioFile, 'task1', signal, fallbackText);
+    return buildDirectAudioRequest(audioFile, 'task1', signal, fallbackText, {}, affectedDomain, title);
   }
 }
 
-function buildDirectAudioRequest(audioFile, task = '', signal, fallbackText = '', extraFields = {}) {
+function buildDirectAudioRequest(audioFile, task = '', signal, fallbackText = '', extraFields = {}, affectedDomain = '', title = '') {
   const formData = new FormData();
   formData.append('audio', audioFile);
   if (task) formData.append('task', task);
   if (fallbackText) formData.append('narrativeText', fallbackText);
+  if (affectedDomain) formData.append('affectedDomain', affectedDomain);
+  if (title) formData.append('title', title);
   for (const [key, value] of Object.entries(extraFields)) {
     if (value) formData.append(key, value);
   }
@@ -346,7 +386,7 @@ function buildDirectAudioRequest(audioFile, task = '', signal, fallbackText = ''
   };
 }
 
-function buildStoredAudioRequest(uploadedAudio, task = '', signal, fallbackText = '') {
+function buildStoredAudioRequest(uploadedAudio, task = '', signal, fallbackText = '', affectedDomain = '', title = '') {
   return {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -357,6 +397,8 @@ function buildStoredAudioRequest(uploadedAudio, task = '', signal, fallbackText 
       fileName: uploadedAudio.fileName,
       task,
       narrativeText: fallbackText,
+      affectedDomain,
+      title,
     }),
     signal,
   };

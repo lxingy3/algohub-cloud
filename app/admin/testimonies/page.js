@@ -5,7 +5,7 @@ import {
   isModerationStatus,
   moderationStatuses,
 } from '../../../lib/moderation';
-import { buildStorySummary } from '../../../lib/storySummary';
+import { buildStorySummary, isOpenAiGeneratedSummary } from '../../../lib/storySummary';
 import AdminMediaPlayer from './AdminMediaPlayer';
 import { InlineExpandableText, MLPipelinePanel } from './ExpandablePanels';
 import MLQuickTest from './MLQuickTest';
@@ -39,7 +39,7 @@ export default async function AdminTestimoniesPage({ searchParams }) {
     ...(focusId ? { id: focusId } : {}),
     ...(isModerationStatus(statusFilter) ? { moderationStatus: statusFilter } : {}),
   };
-  const [testimonies, statusCounts, filteredCount, mediaFlagRows] = await Promise.all([
+  const [testimonies, statusCounts, filteredCount, mediaFlagRows, algorithmDomains, testimonyDomains] = await Promise.all([
     prisma.testimony.findMany({
       where,
       orderBy: [{ moderationStatus: 'asc' }, { submittedAt: 'desc' }],
@@ -64,16 +64,26 @@ export default async function AdminTestimoniesPage({ searchParams }) {
         publicPosting: true,
         followupConsent: true,
         selfReportedImpact: true,
+        affectedDomain: true,
         aiImpactClassification: true,
         aiConfidenceScore: true,
         aiThemes: true,
         aiExtractedExperiences: true,
+        aiProcessedAt: true,
         moderationNotes: true,
         mediaDurationSeconds: true,
         submittedAt: true,
         user: { select: { name: true, email: true } },
         partnerOrganization: { select: { name: true } },
-        algorithmLinks: { select: { algorithmId: true, algorithm: { select: { name: true } } } },
+        brief: { select: { summary: true, modelName: true, generatedAt: true, reviewStatus: true } },
+        algorithmLinks: {
+          select: {
+            algorithmId: true,
+            linkType: true,
+            confidence: true,
+            algorithm: { select: { name: true, slug: true } },
+          },
+        },
       },
     }),
     prisma.testimony.groupBy({
@@ -90,6 +100,17 @@ export default async function AdminTestimoniesPage({ searchParams }) {
       FROM testimonies
       WHERE jurisdiction_id = ${jurisdictionId}
     `,
+    prisma.algorithm.findMany({
+      where: { jurisdictionId },
+      distinct: ['useCase'],
+      orderBy: { useCase: 'asc' },
+      select: { useCase: true },
+    }),
+    prisma.testimony.findMany({
+      where: { jurisdictionId, affectedDomain: { not: null } },
+      distinct: ['affectedDomain'],
+      select: { affectedDomain: true },
+    }),
   ]);
   const counts = Object.fromEntries(statusCounts.map((item) => [item.moderationStatus, item._count.moderationStatus]));
   const mediaFlags = new Map(mediaFlagRows.map((row) => [row.id, row]));
@@ -105,10 +126,15 @@ export default async function AdminTestimoniesPage({ searchParams }) {
         ) : null}
       </div>
       <StatusTabs baseHref="/admin/testimonies" activeStatus={statusFilter} counts={counts} />
-      <MLQuickTest />
+      <MLQuickTest domains={[...new Set([
+        ...algorithmDomains.map((item) => item.useCase),
+        ...testimonyDomains.map((item) => item.affectedDomain),
+      ].filter(Boolean))].sort((left, right) => left.localeCompare(right))} />
       <div className="mt-6 space-y-3">
         {testimonies.map((testimony) => {
-          const linkedAlgorithms = testimony.algorithmLinks.map((link) => link.algorithm?.name).filter(Boolean);
+          const linkedAlgorithms = testimony.algorithmLinks
+            .filter((link) => link.algorithm?.name)
+            .map((link) => `${link.algorithm.name} (${formatAlgorithmLinkType(link.linkType)})`);
           const submitter = testimony.submitterName || testimony.user?.name || 'Anonymous';
           const submitterEmail = testimony.submitterEmail || testimony.user?.email || '';
           const storyType = testimony.storyType || 'text';
@@ -118,7 +144,10 @@ export default async function AdminTestimoniesPage({ searchParams }) {
           const audioFieldMediaKind = testimony.mediaMimeType?.startsWith('video/') ? 'video' : 'audio';
           const isVoiceInput = storyType === 'voice' || hasAudio || hasVideo;
           const mlResult = getStoredMlResult(testimony, isVoiceInput);
-          const aiSummary = testimony.summary || buildStorySummary(testimony.narrativeText || testimony.transcriptionText || '');
+          const storySummary = testimony.summary || buildStorySummary(testimony.transcriptionText || testimony.narrativeText || '');
+          const summaryLabel = isOpenAiGeneratedSummary(testimony.summary, testimony.brief)
+            ? 'OpenAI-generated summary'
+            : 'Summary';
           const mediaSources = [
             hasAudio ? {
               kind: audioFieldMediaKind,
@@ -173,8 +202,8 @@ export default async function AdminTestimoniesPage({ searchParams }) {
               />
 
               <div className="mt-4 rounded-md border border-slate-200 bg-white p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">AI-generated summary</p>
-                <p className="mt-2 text-sm leading-6 text-slate-800">{aiSummary || 'No summary available.'}</p>
+                <p className="text-xs font-semibold uppercase text-slate-500">{summaryLabel}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-800">{storySummary || 'No summary available.'}</p>
               </div>
 
               {hasAudio || hasVideo ? (
@@ -264,6 +293,12 @@ function formatStatusLabel(status) {
   return status.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function formatAlgorithmLinkType(linkType) {
+  if (linkType === 'AI_DETECTED') return 'Open-source ML suggested';
+  if (linkType === 'FACILITATOR_TAGGED') return 'Facilitator tagged';
+  return 'Submitter identified';
+}
+
 function queueHref(status, page) {
   const params = new URLSearchParams();
   if (isModerationStatus(status)) params.set('status', status);
@@ -296,6 +331,14 @@ function getStoredMlResult(testimony, isVoiceInput) {
     status: 'COMPLETED',
     keywords: normalizeStringArray(experiences.keywords).slice(0, 10),
   } : notRunTask();
+  const algorithmMatching = isRecord(experiences?.algorithmMatching)
+    ? experiences.algorithmMatching
+    : {
+      status: 'NOT_RUN',
+      method: 'task-output+registry-text',
+      matches: [],
+      reason: 'This stored testimony has not been processed by the current algorithm matcher.',
+    };
   const tasks = [task1, task2, task3, task4, task5];
 
   return {
@@ -308,6 +351,8 @@ function getStoredMlResult(testimony, isVoiceInput) {
     task3,
     task4,
     task5,
+    processedAt: testimony.aiProcessedAt,
+    downstream: { algorithmMatching },
   };
 }
 

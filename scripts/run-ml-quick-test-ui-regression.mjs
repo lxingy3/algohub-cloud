@@ -27,6 +27,8 @@ try {
   await runAdminPipelineRenderingCheck(page);
 
   const textarea = quickTest.locator('textarea[name="narrative_text"]');
+  await quickTest.locator('input[name="story_title"]').fill(sample.title);
+  await quickTest.getByLabel('Affected domain').selectOption({ label: 'Housing Inspections' });
   await textarea.fill(sample.narrativeText);
   const runButton = quickTest.getByRole('button', { name: 'Run ML test' });
   await expectEnabled(runButton, 'run_button_enabled_with_text_input');
@@ -45,6 +47,8 @@ try {
   await expectVisible(quickTest.getByText('permit reviewer').first(), 'task4_role_value_visible');
   await expectVisible(quickTest.getByText('Task 5 keyword extraction').first(), 'task5_heading_visible');
   await expectVisible(quickTest.getByText('wrong parcel number').first(), 'task5_keyword_visible');
+  await expectVisible(quickTest.getByText('Downstream preview: related algorithm').first(), 'algorithm_match_heading_visible');
+  await expectVisible(quickTest.getByText('Public Housing Inspection Scheduler').first(), 'algorithm_match_value_visible');
   await expectCount(quickTest.getByText(/^Summary$/), 0, 'quick_test_summary_not_part_of_task1_5');
 
   await textarea.fill(`${sample.narrativeText}\nChanged input should clear stale output.`);

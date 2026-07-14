@@ -4,7 +4,7 @@ import { Calendar, CheckCircle2, Eye, FileText, Heart, MessageCircle, Quote } fr
 import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../lib/auth';
-import { buildStorySummary } from '../../../lib/storySummary';
+import { buildStorySummary, isOpenAiGeneratedSummary } from '../../../lib/storySummary';
 import { SiteNav } from '../../components/SiteNav';
 import { formatDate } from '../../components/Formatters';
 import { BackButton } from './BackButton';
@@ -30,7 +30,7 @@ export default async function StoryPage({ params }) {
       transcriptionText: true,
       audioFileUrl: true,
       videoFileUrl: true,
-      brief: { select: { summary: true, keyExcerpts: true } },
+      brief: { select: { summary: true, keyExcerpts: true, modelName: true, reviewStatus: true } },
       reactions: { select: { reactionType: true, userId: true } },
       comments: {
         where: { moderationStatus: 'APPROVED', parentCommentId: null },
@@ -60,9 +60,14 @@ export default async function StoryPage({ params }) {
 
   if (!testimony) notFound();
 
-  const excerpts = Array.isArray(testimony.brief?.keyExcerpts) ? testimony.brief.keyExcerpts : [];
+  const excerpts = testimony.brief?.reviewStatus === 'REVIEWED' && Array.isArray(testimony.brief?.keyExcerpts)
+    ? testimony.brief.keyExcerpts
+    : [];
   const storyText = testimony.transcriptionText || testimony.narrativeText;
-  const storySummary = testimony.brief?.summary || testimony.summary || buildStorySummary(storyText);
+  const storySummary = testimony.summary || buildStorySummary(storyText);
+  const summaryLabel = isOpenAiGeneratedSummary(testimony.summary, testimony.brief)
+    ? 'OpenAI-generated summary'
+    : 'Summary';
   const hasTask1Transcript = Boolean(testimony.transcriptionText);
   const citation = getCitation(testimony);
   const eyeOpening = testimony.reactions.filter((reaction) => reaction.reactionType === 'EYE_OPENING').length;
@@ -103,7 +108,7 @@ export default async function StoryPage({ params }) {
 
           <div className="mb-8 border-l-4 border-yellow-500 pl-4">
             <span className="mb-1 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-gray-400">
-              AI-generated summary
+              {summaryLabel}
             </span>
             <p className="text-lg leading-8 text-gray-600">{storySummary}</p>
           </div>

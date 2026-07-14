@@ -47,6 +47,7 @@ export function MLPipelinePanel({ result }) {
       >
         <p className="text-xs font-semibold uppercase text-slate-500">ML Pipeline</p>
         <p className="mt-2 text-sm leading-6 text-slate-800">{pipelinePreview}</p>
+        {result?.processedAt ? <p className="mt-1 text-xs text-slate-500">Last processed {formatProcessedAt(result.processedAt)}</p> : null}
       </button>
 
       {open ? (
@@ -70,6 +71,7 @@ export function MLTaskResults({ result, showTechnicalDetails = false }) {
   const task3 = result?.task3;
   const task4 = result?.task4;
   const task5 = result?.task5;
+  const algorithmMatching = result?.downstream?.algorithmMatching;
   const [showOriginalTask1, setShowOriginalTask1] = useState(false);
   const task1HasOriginal = Boolean(task1?.originalTranscript);
   const displayedTask1Transcript = showOriginalTask1 && task1HasOriginal
@@ -189,6 +191,40 @@ export function MLTaskResults({ result, showTechnicalDetails = false }) {
           ) : <TaskState task={task5} />}
         </TaskSection>
       ) : null}
+
+      {algorithmMatching ? (
+        <section className="rounded-md border border-emerald-200 bg-emerald-50/40 p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-xs font-semibold uppercase text-emerald-900">Downstream preview: related algorithm</h3>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium uppercase text-emerald-900">
+              {formatStatusLabelLoose(algorithmMatching.status)}
+            </span>
+          </div>
+          {algorithmMatching.generatedAt ? (
+            <p className="mt-1 text-xs text-slate-500">Matched {formatProcessedAt(algorithmMatching.generatedAt)}</p>
+          ) : null}
+          {algorithmMatching.status === 'COMPLETED' ? (
+            algorithmMatching.matches?.length ? (
+              <div className="mt-2 space-y-2">
+                {algorithmMatching.matches.map((match) => (
+                  <div key={match.algorithmId} className="rounded-md border border-emerald-200 bg-white p-3 text-sm text-slate-800">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-semibold">{match.name}</span>
+                      <span className="rounded-full bg-slate-900 px-2 py-1 text-xs font-semibold text-white">match score {formatConfidence(match.confidence)}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-600">Open-source ML suggested match. It remains reviewable and does not replace a submitter or facilitator link.</p>
+                    {showTechnicalDetails && match.scoreBreakdown ? (
+                      <p className="mt-2 text-xs text-slate-500">
+                        Text {formatConfidence(match.scoreBreakdown.textSimilarity)} / keywords {formatConfidence(match.scoreBreakdown.keywordOverlap)} / agency {formatConfidence(match.scoreBreakdown.agencyMatch)} / domain {formatConfidence(match.scoreBreakdown.domainMatch)}
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : <p className="mt-2 text-sm text-slate-600">No registry algorithm cleared the stored matching threshold.</p>
+          ) : <p className="mt-2 text-sm text-slate-600">{algorithmMatching.reason || 'Algorithm matching is not available.'}</p>}
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -276,6 +312,10 @@ function buildPipelinePreview(result) {
   const task5Summary = task5.status === 'COMPLETED'
     ? `${task5.keywords?.length || 0} keyword${task5.keywords?.length === 1 ? '' : 's'}`
     : formatStatusLabelLoose(task5.status);
+  const algorithmMatching = result?.downstream?.algorithmMatching;
+  const algorithmSummary = algorithmMatching?.status === 'COMPLETED'
+    ? algorithmMatching.matches?.[0]?.name || 'no related algorithm above threshold'
+    : algorithmMatching ? formatStatusLabelLoose(algorithmMatching.status) : null;
 
   return [
     `Task 1 ${formatStatusLabelLoose(task1.status)}`,
@@ -283,7 +323,8 @@ function buildPipelinePreview(result) {
     `Task 3 ${task3Summary}`,
     `Task 4 ${task4Summary}`,
     `Task 5 ${task5Summary}`,
-  ].join(' | ');
+    algorithmSummary ? `Related algorithm ${algorithmSummary}` : null,
+  ].filter(Boolean).join(' | ');
 }
 
 function countEntities(entities) {
@@ -327,6 +368,14 @@ function formatEntityGroup(value) {
 function formatTimestamp(value) {
   const number = Number(value);
   return Number.isFinite(number) ? `${number.toFixed(2)}s` : '--';
+}
+
+function formatProcessedAt(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'at an unknown time' : date.toLocaleString('en', {
+    timeZone: 'America/New_York',
+    timeZoneName: 'short',
+  });
 }
 
 function numberOrNull(value) {

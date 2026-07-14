@@ -105,6 +105,7 @@ function automaticTranslation(text, language) {
     Deprecated: '已停用',
     'AI SUMMARY': 'AI 摘要',
     'AI-GENERATED SUMMARY': 'AI 生成摘要',
+    'OPENAI-GENERATED SUMMARY': 'OpenAI 生成摘要',
     'Story Details': '故事详情',
     'Key Excerpts': '关键摘录',
     Comments: '评论',

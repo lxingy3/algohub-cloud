@@ -4,6 +4,7 @@ import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
 import { rankStoriesForSearch } from '../../lib/searchRanking';
+import { isOpenAiGeneratedSummary } from '../../lib/storySummary';
 import { SiteNav } from '../components/SiteNav';
 import { formatDate } from '../components/Formatters';
 import { getUseCaseIcon, getUseCaseIconTone } from '../components/useCaseIcons';
@@ -42,7 +43,7 @@ export default async function StoriesPage({ searchParams }) {
         aiImpactClassification: true,
         transcriptionText: true,
         submittedAt: true,
-        brief: { select: { summary: true } },
+        brief: { select: { summary: true, modelName: true } },
         _count: { select: { comments: true, reactions: true } },
       },
     }),
@@ -169,6 +170,9 @@ export default async function StoriesPage({ searchParams }) {
 
 function StoryRow({ story }) {
   const StoryIcon = getUseCaseIcon(story.affectedDomain);
+  const summaryLabel = isOpenAiGeneratedSummary(story.summary, story.brief)
+    ? 'OpenAI-generated summary'
+    : 'Summary';
   return (
     <Link href={`/stories/${story.id}`} className="group flex w-full items-start px-3 py-4 text-left transition-colors hover:bg-gray-50/80 sm:px-4 sm:py-3">
       <div className={`mr-3 mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border sm:h-8 sm:w-8 ${getUseCaseIconTone(story.affectedDomain)}`} aria-hidden="true">
@@ -177,7 +181,7 @@ function StoryRow({ story }) {
       <div className="min-w-0 flex-1 py-0.5">
         <h3 className="mb-1 line-clamp-2 text-base font-bold text-gray-900 transition-colors group-hover:text-yellow-600">{story.title}</h3>
         <p className="mb-1.5 line-clamp-2 text-sm text-gray-600">
-          <span className="mr-1.5 inline rounded bg-gray-100 px-1 py-0.5 align-middle text-[9px] font-medium uppercase tracking-wider text-gray-400">AI summary</span>
+          <span className="mr-1.5 inline rounded bg-gray-100 px-1 py-0.5 align-middle text-[9px] font-medium uppercase tracking-wider text-gray-400">{summaryLabel}</span>
           {story.summary}
         </p>
         <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">

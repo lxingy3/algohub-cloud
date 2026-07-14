@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../lib/prisma';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../../lib/auth';
@@ -106,20 +107,33 @@ export async function POST(request, { params }) {
         videoFileUrl,
         moderationStatus: 'PENDING',
         submittedAt: new Date(),
+        aiImpactClassification: null,
+        aiConfidenceScore: null,
+        aiThemes: Prisma.DbNull,
+        aiExtractedExperiences: Prisma.DbNull,
+        aiLinkedAlgorithmIds: [],
+        aiProcessedAt: null,
       },
+    });
+
+    await tx.testimonyBrief.deleteMany({ where: { testimonyId: existing.id } });
+
+    await tx.testimonyAlgorithmLink.deleteMany({
+      where: { testimonyId: existing.id, linkType: 'AI_DETECTED' },
     });
 
     await tx.testimonyAlgorithmLink.deleteMany({
       where: { testimonyId: existing.id, linkType: 'SUBMITTER_IDENTIFIED' },
     });
     if (algorithmId) {
-      await tx.testimonyAlgorithmLink.create({
-        data: {
+      await tx.testimonyAlgorithmLink.createMany({
+        data: [{
           testimonyId: existing.id,
           algorithmId,
           linkType: 'SUBMITTER_IDENTIFIED',
           confidence: 1,
-        },
+        }],
+        skipDuplicates: true,
       });
     }
   });
