@@ -55,6 +55,7 @@ export default async function AdminTestimoniesPage({ searchParams }) {
         mediaMimeType: true,
         transcriptionStatus: true,
         transcriptionText: true,
+        transcriptionError: true,
         moderationStatus: true,
         city: true,
         zipCode: true,
@@ -67,7 +68,6 @@ export default async function AdminTestimoniesPage({ searchParams }) {
         aiConfidenceScore: true,
         aiThemes: true,
         aiExtractedExperiences: true,
-        aiProcessedAt: true,
         moderationNotes: true,
         mediaDurationSeconds: true,
         submittedAt: true,
@@ -116,11 +116,9 @@ export default async function AdminTestimoniesPage({ searchParams }) {
           const hasAudio = Boolean(media.hasAudio);
           const hasVideo = Boolean(media.hasVideo);
           const audioFieldMediaKind = testimony.mediaMimeType?.startsWith('video/') ? 'video' : 'audio';
-          const isVoiceInput = storyType === 'voice' || hasAudio;
-          const task2Impact = getTask2Impact(testimony);
-          const task345Insights = getTask345Insights(testimony);
+          const isVoiceInput = storyType === 'voice' || hasAudio || hasVideo;
+          const mlResult = getStoredMlResult(testimony, isVoiceInput);
           const aiSummary = testimony.summary || buildStorySummary(testimony.narrativeText || testimony.transcriptionText || '');
-          const transcriptSummary = buildStorySummary(testimony.transcriptionText || '', { maxChars: 260 });
           const mediaSources = [
             hasAudio ? {
               kind: audioFieldMediaKind,
@@ -202,11 +200,7 @@ export default async function AdminTestimoniesPage({ searchParams }) {
               </div>
 
               <MLPipelinePanel
-                testimony={testimony}
-                isVoiceInput={isVoiceInput}
-                transcriptSummary={transcriptSummary}
-                task2Impact={task2Impact}
-                task345Insights={task345Insights}
+                result={mlResult}
               />
 
               <textarea name="notes" placeholder="Moderation notes" defaultValue={testimony.moderationNotes || ''} className="mt-3 w-full rounded-md border px-3 py-2" />
@@ -278,166 +272,82 @@ function queueHref(status, page) {
   return `/admin/testimonies${query ? `?${query}` : ''}`;
 }
 
-function getTask2Impact(testimony) {
-  if (testimony.aiImpactClassification) {
-    return {
-      classification: testimony.aiImpactClassification,
-      confidence: Number.isFinite(Number(testimony.aiConfidenceScore)) ? Number(testimony.aiConfidenceScore) : 0,
-      source: 'stored',
-    };
-  }
-
-  const text = [
-    testimony.title,
-    testimony.narrativeText,
-    testimony.transcriptionText,
-  ].filter(Boolean).join(' ').toLowerCase();
-
-  if (!text.trim()) {
-    return { classification: 'UNCLEAR', confidence: 0.5, source: 'estimate' };
-  }
-
-  const negativeScore = scoreTerms(text, [
-    'harm',
-    'harmed',
-    'unsafe',
-    'denied',
-    'delay',
-    'delayed',
-    'wrong',
-    'incorrect',
-    'risk',
-    'flag',
-    'flagged',
-    'low priority',
-    'unfair',
-    'complaint',
-    'failed',
-    'missing',
-    'not eligible',
-    'rejected',
-    'ignored',
-    'worse',
-    'problem',
-  ]);
-  const positiveScore = scoreTerms(text, [
-    'help',
-    'helped',
-    'support',
-    'supported',
-    'worked',
-    'successful',
-    'success',
-    'faster',
-    'right person',
-    'improved',
-    'approved',
-    'resolved',
-    'connected',
-    'completed',
-    'benefit',
-    'better',
-  ]);
-  const unclearScore = scoreTerms(text, [
-    'not sure',
-    'unclear',
-    'do not know',
-    "don't know",
-    'unknown',
-    'no clear',
-    'cannot tell',
-  ]);
-
-  if (unclearScore >= 2 && Math.max(negativeScore, positiveScore) <= 1) {
-    return { classification: 'UNCLEAR', confidence: confidenceFromScore(unclearScore), source: 'estimate' };
-  }
-  if (negativeScore >= 2 && positiveScore >= 2) {
-    return { classification: 'MIXED', confidence: confidenceFromScore(Math.min(negativeScore, positiveScore) + 1), source: 'estimate' };
-  }
-  if (negativeScore > positiveScore) {
-    return { classification: 'NEGATIVE', confidence: confidenceFromScore(negativeScore), source: 'estimate' };
-  }
-  if (positiveScore > negativeScore) {
-    return { classification: 'POSITIVE', confidence: confidenceFromScore(positiveScore), source: 'estimate' };
-  }
-  return { classification: 'UNCLEAR', confidence: 0.55, source: 'estimate' };
-}
-
-function scoreTerms(text, terms) {
-  return terms.reduce((score, term) => score + (text.includes(term) ? 1 : 0), 0);
-}
-
-function confidenceFromScore(score) {
-  return Math.min(0.84, 0.58 + score * 0.07);
-}
-
-const themeTerms = {
-  opacity: ['explain', 'explained', 'why', 'how', 'transparent', 'transparency', 'calculated', 'criteria'],
-  positive_experience: ['helped', 'worked', 'successful', 'faster', 'connected', 'completed', 'approved', 'right person'],
-  lack_of_recourse: ['appeal', 'challenge', 'no way', 'could not dispute', 'recourse', 'review'],
-  process_confusion: ['confused', 'confusion', 'unclear', 'not sure', 'do not know', "didn't know"],
-  arbitrary_outcome: ['random', 'inconsistent', 'arbitrary', 'did not match', 'mismatch'],
-  delayed_outcome: ['delay', 'delayed', 'waiting', 'months', 'weeks', 'took too long', 'slow'],
-  discriminatory_impact: ['bias', 'biased', 'discriminatory', 'race', 'racial', 'income', 'demographic', 'homeless'],
-  lack_of_notification: ['not told', 'no notice', 'notice', 'algorithm involved', "didn't realize"],
-  data_accuracy: ['incorrect', 'wrong', 'outdated', 'old record', 'missing data', 'accuracy', 'record'],
-  loss_of_dignity: ['dignity', 'dehumanized', 'treated', 'suspicion', 'punished', 'ashamed'],
-};
-
 const entityGroups = ['agencies', 'locations', 'systems', 'dates', 'people_roles'];
-const roleTerms = ['caseworker', 'worker', 'screeners', 'supervisor', 'supervisors', 'tenant', 'resident', 'student', 'parent', 'applicant', 'rider', 'counselor', 'teacher', 'interpreter', 'agency staff', 'community member'];
 
-function getTask345Insights(testimony) {
-  const storedThemes = normalizeThemes(testimony.aiThemes);
-  const storedExperiences = normalizeExperiences(testimony.aiExtractedExperiences);
-  const hasStoredResults = storedThemes.length || Object.values(storedExperiences.entities).some((values) => values.length) || storedExperiences.keywords.length;
-  if (hasStoredResults) {
-    return {
-      source: 'stored',
-      themes: storedThemes.length ? storedThemes : estimateThemes(testimony),
-      entities: storedExperiences.entities,
-      keywords: storedExperiences.keywords,
-    };
-  }
+function getStoredMlResult(testimony, isVoiceInput) {
+  const task1 = buildStoredTask1(testimony, isVoiceInput);
+  const impactConfidence = numberOrNull(testimony.aiConfidenceScore);
+  const task2 = testimony.aiImpactClassification ? {
+    status: 'COMPLETED',
+    aiImpactClassification: testimony.aiImpactClassification,
+    aiConfidenceScore: impactConfidence,
+    humanReviewRequired: impactConfidence === null || impactConfidence <= 0.85,
+  } : notRunTask();
+  const task3 = Array.isArray(testimony.aiThemes) ? {
+    status: 'COMPLETED',
+    aiThemes: normalizeThemes(testimony.aiThemes),
+  } : notRunTask();
+  const experiences = isRecord(testimony.aiExtractedExperiences) ? testimony.aiExtractedExperiences : null;
+  const task4 = isRecord(experiences?.entities) ? {
+    status: 'COMPLETED',
+    entities: normalizeEntities(experiences.entities),
+  } : notRunTask();
+  const task5 = Array.isArray(experiences?.keywords) ? {
+    status: 'COMPLETED',
+    keywords: normalizeStringArray(experiences.keywords).slice(0, 10),
+  } : notRunTask();
+  const tasks = [task1, task2, task3, task4, task5];
+
   return {
-    source: 'estimate',
-    themes: estimateThemes(testimony),
-    entities: estimateEntities(testimony),
-    keywords: estimateKeywords(testimony),
+    source: 'stored-testimony',
+    status: tasks.every((task) => task.status === 'COMPLETED' || task.status === 'SKIPPED')
+      ? 'COMPLETED'
+      : tasks.some((task) => task.status === 'COMPLETED') ? 'PARTIAL' : 'NOT_RUN',
+    task1,
+    task2,
+    task3,
+    task4,
+    task5,
   };
+}
+
+function buildStoredTask1(testimony, isVoiceInput) {
+  if (!isVoiceInput) return { status: 'SKIPPED', reason: 'Skipped for text input.' };
+  if (testimony.transcriptionText) {
+    return { status: 'COMPLETED', transcript: testimony.transcriptionText };
+  }
+
+  const storedStatus = String(testimony.transcriptionStatus || 'PENDING').toUpperCase();
+  const status = storedStatus === 'NOT_REQUIRED' ? 'PENDING' : storedStatus;
+  return {
+    status,
+    ...(testimony.transcriptionError ? { error: testimony.transcriptionError } : {}),
+    reason: status === 'PENDING' ? 'Waiting for transcription.' : undefined,
+  };
+}
+
+function notRunTask() {
+  return { status: 'NOT_RUN', reason: 'No stored result.' };
 }
 
 function normalizeThemes(value) {
   if (!Array.isArray(value)) return [];
   return value
     .map((item) => {
-      if (typeof item === 'string') return { theme: item, confidence: 0 };
+      if (typeof item === 'string') return { theme: item, confidence: null, label: 'suggested' };
       if (!item || typeof item !== 'object') return null;
+      const confidence = numberOrNull(item.confidence);
       return {
         theme: String(item.theme || item.label || '').trim(),
-        confidence: Number.isFinite(Number(item.confidence)) ? Number(item.confidence) : 0,
+        confidence,
+        label: item.label === 'suggested' || confidence === null || confidence < 0.75 ? 'suggested' : 'detected',
       };
     })
-    .filter((item) => item?.theme)
-    .slice(0, 5);
+    .filter((item) => item?.theme);
 }
 
-function normalizeExperiences(value) {
-  const entities = Object.fromEntries(entityGroups.map((group) => [group, []]));
-  const keywords = [];
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return { entities, keywords };
-
-  const rawEntities = value.entities && typeof value.entities === 'object' && !Array.isArray(value.entities) ? value.entities : {};
-  for (const group of entityGroups) {
-    const values = normalizeStringArray(rawEntities[group]);
-    entities[group] = group === 'people_roles'
-      ? values.filter((item) => roleTerms.some((role) => item.toLowerCase().includes(role)))
-      : values;
-  }
-  return {
-    entities,
-    keywords: normalizeStringArray(value.keywords).filter((keyword) => keyword.length <= 60).slice(0, 10),
-  };
+function normalizeEntities(value) {
+  return Object.fromEntries(entityGroups.map((group) => [group, normalizeStringArray(value[group])]));
 }
 
 function normalizeStringArray(value) {
@@ -445,91 +355,12 @@ function normalizeStringArray(value) {
   return [...new Set(value.map((item) => String(item || '').trim()).filter(Boolean))];
 }
 
-function estimateThemes(testimony) {
-  const text = getStoryText(testimony).toLowerCase();
-  const themes = Object.entries(themeTerms)
-    .map(([theme, terms]) => {
-      const matches = terms.filter((term) => text.includes(term));
-      return matches.length ? { theme, confidence: confidenceFromScore(matches.length), evidence: matches.slice(0, 4) } : null;
-    })
-    .filter(Boolean)
-    .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, 5);
-
-  return themes.length ? themes : [{ theme: 'process_confusion', confidence: 0.5, evidence: [] }];
+function isRecord(value) {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
 }
 
-function estimateEntities(testimony) {
-  const text = getStoryText(testimony);
-  const lowerText = text.toLowerCase();
-  return {
-    agencies: uniqueMatches(text.match(/\b[A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){0,4}\s+(?:Agency|Department|Office|Authority|Center|University|County)\b/g)),
-    locations: uniqueMatches(text.match(/\b(?:Pittsburgh|Allegheny County|Downtown Labor Center)\b/g)),
-    systems: [
-      'risk score',
-      'priority score',
-      'waiting list',
-      'screening tool',
-      'routing system',
-      'inspection system',
-      'student support system',
-      'benefits system',
-      'housing system',
-      'traffic management system',
-    ].filter((term) => lowerText.includes(term)),
-    dates: uniqueMatches(text.match(/\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2},?\s+\d{4}|\b\d{4}\b/g)),
-    people_roles: [
-      'caseworker',
-      'worker',
-      'screeners',
-      'supervisors',
-      'counselor',
-      'teacher',
-      'tenant',
-      'resident',
-      'parent',
-      'student',
-      'caller',
-      'interpreter',
-      'agency staff',
-      'community member',
-    ].filter((term) => lowerText.includes(term)),
-  };
-}
-
-function estimateKeywords(testimony) {
-  const stopwords = new Set(['able', 'about', 'after', 'again', 'also', 'and', 'are', 'because', 'before', 'being', 'but', 'could', 'during', 'every', 'first', 'for', 'from', 'had', 'has', 'have', 'here', 'her', 'him', 'his', 'how', 'into', 'like', 'made', 'more', 'most', 'not', 'one', 'our', 'out', 'over', 'own', 'she', 'than', 'that', 'the', 'their', 'there', 'these', 'they', 'this', 'those', 'through', 'too', 'was', 'were', 'when', 'where', 'which', 'while', 'who', 'why', 'with', 'without', 'would', 'you', 'your', 'system', 'algorithm', 'automated', 'public', 'service', 'story']);
-  const words = getStoryText(testimony).toLowerCase().match(/[a-z][a-z'-]{2,}/g)?.filter((word) => !stopwords.has(word)) || [];
-  const candidates = [];
-  for (const size of [3, 2]) {
-    for (let index = 0; index <= words.length - size; index += 1) {
-      const phrase = words.slice(index, index + size).join(' ');
-      if (new Set(phrase.split(' ')).size > 1) candidates.push(phrase);
-    }
-  }
-  candidates.push(...words);
-
-  const counts = new Map();
-  for (const candidate of candidates) counts.set(candidate, (counts.get(candidate) || 0) + 1);
-  const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([candidate]) => candidate);
-  const selected = [];
-  for (const candidate of ranked) {
-    const tokens = new Set(candidate.split(' '));
-    const repeatsExisting = selected.some((existing) => {
-      const existingTokens = new Set(existing.split(' '));
-      const overlap = [...tokens].filter((token) => existingTokens.has(token)).length;
-      return overlap >= Math.min(tokens.size, 2);
-    });
-    if (!repeatsExisting) selected.push(candidate);
-    if (selected.length >= 10) break;
-  }
-  return selected;
-}
-
-function getStoryText(testimony) {
-  return [testimony.title, testimony.narrativeText, testimony.transcriptionText].filter(Boolean).join(' ');
-}
-
-function uniqueMatches(matches) {
-  return [...new Set(matches || [])];
+function numberOrNull(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }

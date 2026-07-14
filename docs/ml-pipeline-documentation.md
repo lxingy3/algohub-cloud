@@ -12,7 +12,7 @@ The pipeline covers Task 1 through Task 5 currently.
 - Task 4 extracts agencies, locations, systems, dates, and people roles.
 - Task 5 extracts keywords.
 
-The admin "ML Quick Test" tool is for testing. It does not create or update a formal story record. Formal results are stored on testimony records in the database.
+The admin "ML Quick Test" tool is for testing. It does not create or update a formal story record. Formal results are stored on testimony records in the database, and both views use the same Task 1-5 result component.
 
 ## Task 1: transcription
 
@@ -41,7 +41,7 @@ The formal database fields are:
 - `Testimony.aiConfidenceScore`
 - `Testimony.aiProcessedAt`
 
-The admin page reads those stored fields first. If a stored value is missing, the page can still show a local fallback estimate for review. The label now makes clear that the result is not stored yet, rather than showing `Page estimate`.
+The admin page only displays the stored fields. If a stored value is missing, it shows `No stored result`; it does not generate a page estimate. A confidence score of `0.85` or lower requires human review.
 
 ## Task 3: theme detection
 
@@ -53,7 +53,7 @@ The formal database field is:
 
 - `Testimony.aiThemes`
 
-Each theme item stores a theme label and confidence score.
+Each theme item stores a theme label and confidence score. Themes below `0.75` are displayed as `Suggested` while that provisional review threshold is evaluated against labeled data.
 
 ## Task 4: entity extraction
 
@@ -71,11 +71,15 @@ The formal database field is:
 
 - `Testimony.aiExtractedExperiences.entities`
 
+An empty stored group means Task 4 completed and found no value for that group. A missing `entities` result means Task 4 has not produced a stored result.
+
 Examples of the Pittsburgh-specific values include Pittsburgh Housing Authority, Pittsburgh Public Schools, Allegheny County Department of Human Services, OneStopPGH, PLI, PA CareerLink Pittsburgh, East Liberty, Homewood, Squirrel Hill, and Downtown Pittsburgh.
 
 ## Task 5: keyword extraction
 
 Task 5 extracts short phrases that help reviewers identify what the story is about. The current implementation uses KeyBERT with MMR through the Python runner or self-hosted worker. It prefers phrases that carry meaning, such as "language access routing system" or "low priority score," instead of generic words.
+
+The displayed output is limited to the top 10 one-to-three-word phrases.
 
 The formal database field is:
 
@@ -118,7 +122,7 @@ The admin Quick Test route is:
 
 - `POST /api/ml/quick-test`
 
-Text input runs Task 2 through Task 5. Audio input runs Task 1 first, then feeds the transcript into Task 2 through Task 5. Quick Test is convenient for demos and debugging, but it does not store results in the database.
+Text input runs Task 2 through Task 5. Audio input runs Task 1 first, then feeds the transcript into Task 2 through Task 5. Quick Test is convenient for demos and debugging, but it does not store results in the database. Its primary Task cards match the formal stored-story display; file names, models, and timestamp segments remain optional technical details. Summary generation is not part of the Task 1-5 Quick Test output.
 
 ## Current limits
 

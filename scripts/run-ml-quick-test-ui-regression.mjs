@@ -23,6 +23,7 @@ try {
 
   const quickTest = page.getByTestId('ml-quick-test');
   await expectVisible(quickTest, 'quick_test_section_visible');
+  await expectVisible(quickTest.getByText(/Test only .* results use the production Task 1.*5 format and are not saved/i), 'quick_test_not_saved_notice_visible');
   await runAdminPipelineRenderingCheck(page);
 
   const textarea = quickTest.locator('textarea[name="narrative_text"]');
@@ -44,6 +45,7 @@ try {
   await expectVisible(quickTest.getByText('permit reviewer').first(), 'task4_role_value_visible');
   await expectVisible(quickTest.getByText('Task 5 keyword extraction').first(), 'task5_heading_visible');
   await expectVisible(quickTest.getByText('wrong parcel number').first(), 'task5_keyword_visible');
+  await expectCount(quickTest.getByText(/^Summary$/), 0, 'quick_test_summary_not_part_of_task1_5');
 
   await textarea.fill(`${sample.narrativeText}\nChanged input should clear stale output.`);
   await expectHidden(quickTest.getByText('Task 2 impact classification').first(), 'result_cleared_after_text_change');
@@ -124,6 +126,7 @@ async function runAdminPipelineRenderingCheck(page) {
   await expectVisible(pipeline.getByText(/Task 3 theme detection/i).first(), 'admin_pipeline_task3_visible_after_expand');
   await expectVisible(pipeline.getByText(/Task 4 entity extraction/i).first(), 'admin_pipeline_task4_visible_after_expand');
   await expectVisible(pipeline.getByText(/Task 5 keyword extraction/i).first(), 'admin_pipeline_task5_visible_after_expand');
+  await expectCount(targetForm.getByText(/Page estimate|Not stored yet/i), 0, 'admin_pipeline_page_estimates_removed');
 }
 
 async function runAudioInterimRenderingCheck(page) {
@@ -190,7 +193,7 @@ async function runAudioInterimRenderingCheck(page) {
         source: 'model',
         status: 'COMPLETED',
         task1: { status: 'SKIPPED', reason: 'Text input does not need transcription.' },
-        task2: { status: 'COMPLETED', aiImpactClassification: 'NEGATIVE', aiConfidenceScore: 0.91, humanReviewRequired: false },
+        task2: { status: 'COMPLETED', aiImpactClassification: 'NEGATIVE', aiConfidenceScore: 0.85, humanReviewRequired: true },
         task3: { status: 'COMPLETED', aiThemes: [{ theme: 'opacity', confidence: 0.82 }] },
         task4: {
           status: 'COMPLETED',
@@ -210,6 +213,7 @@ async function runAudioInterimRenderingCheck(page) {
   await expectVisible(quickTest.getByText(/Task 3 theme detection/i).first(), 'audio_final_task3_visible');
   await expectVisible(quickTest.getByText(/Task 4 entity extraction/i).first(), 'audio_final_task4_visible');
   await expectVisible(quickTest.getByText(/Task 5 keyword extraction/i).first(), 'audio_final_task5_visible');
+  await expectVisible(quickTest.getByText(/Needs review/i).first(), 'impact_confidence_085_needs_review');
   await page.unroute('**/api/ml/quick-test').catch(() => {});
 }
 

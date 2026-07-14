@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { MEDIA_ACCEPT, audioContentTypeForFile } from '../../../lib/audioAccept';
 import { getMediaDurationSeconds } from '../../../lib/clientMedia';
+import { MLTaskResults } from './ExpandablePanels';
 
 const MAX_NARRATIVE_TEXT_CHARS = 12000;
 const MAX_AUDIO_DURATION_SECONDS = 30 * 60;
@@ -185,6 +186,7 @@ export default function MLQuickTest() {
     <section data-testid="ml-quick-test" className="mt-5 rounded-lg border bg-white p-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-semibold text-slate-950">ML Quick Test</h2>
+        <p className="text-sm text-slate-600">Test only — results use the production Task 1–5 format and are not saved.</p>
       </div>
       <form onSubmit={runQuickTest} className="mt-3 space-y-3">
         <textarea
@@ -515,25 +517,8 @@ function loadScript(src) {
 }
 
 function QuickTestResult({ result, isRunning = false }) {
-  const task1 = result.task1 || {};
-  const task2 = result.task2 || {};
-  const task3 = result.task3 || {};
-  const task4 = result.task4 || {};
-  const task5 = result.task5 || {};
-  const entities = task4.entities || {};
-  const hasTask2 = task2.status === 'SKIPPED' || Boolean(task2.aiImpactClassification);
-  const hasTask3 = task3.status === 'SKIPPED' || Array.isArray(task3.aiThemes);
-  const hasTask4 = task4.status === 'SKIPPED' || Boolean(task4.entities);
-  const hasTask5 = task5.status === 'SKIPPED' || Array.isArray(task5.keywords);
-  const hasIncompleteTask = [task1, task2, task3, task4, task5].some((task) => task.status === 'SKIPPED' && task.error);
-  const [showOriginalTask1, setShowOriginalTask1] = useState(false);
-  const task1HasOriginal = Boolean(task1.originalTranscript);
-  const displayedTask1Transcript = showOriginalTask1 && task1HasOriginal
-    ? task1.originalTranscript
-    : task1.transcript || task1.rawTranscript;
-  const displayedTask1Segments = showOriginalTask1 && task1HasOriginal
-    ? task1.originalSegments || []
-    : task1.segments || [];
+  const tasks = [result.task1, result.task2, result.task3, result.task4, result.task5].filter(Boolean);
+  const hasIncompleteTask = tasks.some((task) => task.status === 'SKIPPED' && task.error);
 
   return (
     <div className="mt-4 space-y-3">
@@ -545,134 +530,7 @@ function QuickTestResult({ result, isRunning = false }) {
           Task 2-5 used the first {MAX_NARRATIVE_TEXT_CHARS.toLocaleString()} characters for analysis.
         </p>
       ) : null}
-      {result.summary ? (
-        <div className="rounded-md border border-slate-200 bg-white p-3">
-          <p className="text-xs font-semibold uppercase text-slate-500">Summary</p>
-          <p className="mt-1 text-sm leading-6 text-slate-800">{result.summary}</p>
-        </div>
-      ) : null}
-      <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-        <p className="text-xs font-semibold uppercase text-slate-500">Task 1 transcription</p>
-        {task1.status === 'SKIPPED' || task1.status === 'DEFERRED' ? (
-          <p className="mt-1 text-sm text-slate-700">{task1.reason || 'Skipped for text input.'}</p>
-        ) : (
-          <div className="mt-2 space-y-3">
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-800">{task1.status}</span>
-              {task1.tool ? <span className="text-slate-600">{task1.tool}</span> : null}
-              {task1.inputFile ? <span className="text-slate-600">{task1.inputFile}</span> : null}
-            </div>
-            {task1.compressedForQuickTest ? (
-              <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-sm text-amber-900">
-                Audio was compressed for this Quick Test run before transcription.
-              </p>
-            ) : null}
-            {task1.translatedToEnglish ? (
-              <div className="flex justify-end rounded-md border border-blue-100 bg-blue-50 p-2">
-                <button
-                  type="button"
-                  onClick={() => setShowOriginalTask1((current) => !current)}
-                  className="rounded-md border border-blue-200 bg-white px-2 py-1 text-xs font-semibold text-blue-900 hover:bg-blue-100"
-                >
-                  {showOriginalTask1 ? 'Show English translation' : 'Show original transcript'}
-                </button>
-              </div>
-            ) : null}
-            <p className="whitespace-pre-wrap rounded-md border bg-white p-3 text-sm leading-6 text-slate-800">{displayedTask1Transcript}</p>
-            {displayedTask1Segments.length ? (
-              <div className="grid gap-2 md:grid-cols-2">
-                {displayedTask1Segments.map((segment, index) => (
-                  <div key={`${segment.start}-${segment.end}-${index}`} className="rounded-md border bg-white p-2 text-sm">
-                    <p className="text-xs font-semibold text-slate-500">{formatTimestamp(segment.start)} - {formatTimestamp(segment.end)}</p>
-                    <p className="mt-1 text-slate-800">{segment.text}</p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        )}
-      </div>
-      {hasTask2 ? (
-        <div className="rounded-md border border-slate-200 bg-white p-3">
-          <p className="text-xs font-semibold uppercase text-slate-500">Task 2 impact classification</p>
-          {task2.status === 'SKIPPED' ? <TaskError task={task2} /> : (
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-              <span className="rounded-full bg-slate-900 px-2.5 py-1 font-semibold text-white">{task2.aiImpactClassification}</span>
-              <span className="text-slate-600">confidence {formatScore(task2.aiConfidenceScore)}</span>
-              {task2.humanReviewRequired ? <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">Needs review</span> : null}
-            </div>
-          )}
-        </div>
-      ) : null}
-      {hasTask3 ? (
-        <div className="rounded-md border border-slate-200 bg-white p-3">
-          <p className="text-xs font-semibold uppercase text-slate-500">Task 3 theme detection</p>
-          {task3.status === 'SKIPPED' ? <TaskError task={task3} /> : (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {(task3.aiThemes || []).length ? task3.aiThemes.map((theme) => (
-                <span key={theme.theme} className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-800">
-                  {formatLabel(theme.theme)} {formatScore(theme.confidence)}
-                </span>
-              )) : <span className="text-sm text-slate-600">No themes detected.</span>}
-            </div>
-          )}
-        </div>
-      ) : null}
-      {hasTask4 ? (
-        <div className="rounded-md border border-slate-200 bg-white p-3">
-          <p className="text-xs font-semibold uppercase text-slate-500">Task 4 entity extraction</p>
-          {task4.status === 'SKIPPED' ? <TaskError task={task4} /> : (
-            <div className="mt-2 grid gap-3 text-sm text-slate-700 md:grid-cols-2">
-              {entityGroups.map((group) => {
-                const values = Array.isArray(entities[group]) ? entities[group] : [];
-                return (
-                <div key={group}>
-                  <span className="block text-xs font-semibold uppercase text-slate-500">{formatLabel(group)}</span>
-                  <span>{values.length ? values.join(', ') : 'None found'}</span>
-                </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : null}
-      {hasTask5 ? (
-        <div className="rounded-md border border-slate-200 bg-white p-3">
-          <p className="text-xs font-semibold uppercase text-slate-500">Task 5 keyword extraction</p>
-          {task5.status === 'SKIPPED' ? <TaskError task={task5} /> : (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {(task5.keywords || []).length ? task5.keywords.map((keyword) => (
-                <span key={keyword} className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">{keyword}</span>
-              )) : <span className="text-sm text-slate-600">None found</span>}
-            </div>
-          )}
-        </div>
-      ) : null}
+      <MLTaskResults result={result} showTechnicalDetails />
     </div>
   );
-}
-
-const entityGroups = ['agencies', 'locations', 'systems', 'dates', 'people_roles'];
-
-function TaskError({ task }) {
-  return (
-    <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-      {task.tool ? <p className="font-semibold">{task.tool}</p> : null}
-      <p>{task.error || 'No result returned.'}</p>
-    </div>
-  );
-}
-
-function formatScore(value) {
-  const score = Number(value);
-  return Number.isFinite(score) ? score.toFixed(2) : 'not available';
-}
-
-function formatLabel(value) {
-  return String(value || '').replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function formatTimestamp(value) {
-  const number = Number(value);
-  return Number.isFinite(number) ? `${number.toFixed(2)}s` : '--';
 }

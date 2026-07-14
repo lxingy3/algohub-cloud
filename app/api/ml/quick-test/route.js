@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '../../../../lib/auth';
 import { analyzeNarrativeTextWithModels } from '../../../../lib/mlFullAnalysis';
 import { transcribeAudioForTask1 } from '../../../../lib/task1Transcription';
-import { buildStorySummary } from '../../../../lib/storySummary';
 import { createSignedMediaRead } from '../../../../lib/mediaStorage';
 import { shouldTranslateToEnglish, translateLongText } from '../../../../lib/translation';
 
@@ -45,7 +44,6 @@ export async function POST(request) {
         truncatedForAnalysis: analysisInput.truncated,
         originalAnalysisTextLength: analysisInput.originalLength,
         translatedToEnglish: preparedText.translatedToEnglish,
-        summary: buildStorySummary(analysisInput.text, { maxChars: 320 }),
       },
     });
   } catch (error) {
@@ -147,7 +145,6 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
           truncatedForAnalysis: analysisInput.truncated,
           originalAnalysisTextLength: analysisInput.originalLength,
           translatedToEnglish: preparedFallbackText.translatedToEnglish,
-          summary: buildStorySummary(analysisInput.text, { maxChars: 320 }),
           task1: {
             status: 'SKIPPED',
             tool: process.env.TASK1_WHISPER_MODEL || 'small',
@@ -196,7 +193,6 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
           truncatedForAnalysis: analysisInput.truncated,
           originalAnalysisTextLength: analysisInput.originalLength,
           translatedToEnglish: preparedFallbackText.translatedToEnglish,
-          summary: buildStorySummary(analysisInput.text, { maxChars: 320 }),
           task1: {
             ...task1,
             status: task1.status || 'SKIPPED',
@@ -226,7 +222,6 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
         inputField: 'audio',
         source: 'audio-upload',
         status: 'PARTIAL',
-        summary: buildStorySummary(narrativeText, { maxChars: 320 }),
         task1,
       },
     });
@@ -248,7 +243,6 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
           truncatedForAnalysis: analysisInput.truncated,
           originalAnalysisTextLength: analysisInput.originalLength,
           translatedToEnglish: preparedFallbackText.translatedToEnglish,
-          summary: buildStorySummary(analysisInput.text, { maxChars: 320 }),
           task1,
         },
       });
@@ -266,7 +260,6 @@ async function analyzeAudioFile({ audioFile, taskMode, fallbackNarrativeText, au
       analysisText: analysisInput.text,
       truncatedForAnalysis: analysisInput.truncated,
       originalAnalysisTextLength: analysisInput.originalLength,
-      summary: buildStorySummary(analysisInput.text, { maxChars: 320 }),
       task1,
     },
   });
