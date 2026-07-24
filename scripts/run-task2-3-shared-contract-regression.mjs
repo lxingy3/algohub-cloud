@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-process.env.TASK25_DISABLE_LOCAL_RUNNER = 'true';
+process.env.VERCEL = '1';
 delete process.env.ML_BART_ENDPOINT;
 delete process.env.ML_IMPACT_ENDPOINT;
 delete process.env.ML_SPACY_ENDPOINT;
