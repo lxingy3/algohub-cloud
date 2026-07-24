@@ -11,6 +11,8 @@ export const dynamic = 'force-dynamic';
 const briefingTypes = ['ALGORITHM_SPECIFIC', 'THEMATIC', 'SILENCE_REPORT', 'CROSS_CUTTING'];
 
 export default async function BriefingsPage({ searchParams }) {
+  redirect('/briefings/explore?lens=community&scope=overview&language=en&reading=standard');
+
   const query = await searchParams;
   if (query?.lens || query?.scope || query?.algorithm || query?.language || query?.reading) {
     redirect(`/briefings/explore?${toSearchParams(query).toString()}`);
