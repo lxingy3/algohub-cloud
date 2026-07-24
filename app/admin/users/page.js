@@ -23,6 +23,10 @@ const notices = {
     tone: 'error',
     message: 'The user could not be deleted. Please try again.',
   },
+  'audit-protected': {
+    tone: 'error',
+    message: 'This user is part of the Briefing review audit trail and cannot be deleted.',
+  },
   'role-missing': {
     tone: 'error',
     message: 'The selected role could not be found.',

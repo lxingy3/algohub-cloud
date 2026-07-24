@@ -18,9 +18,22 @@ export async function POST(request, { params }) {
 
   const user = await prisma.user.findFirst({
     where: { id, jurisdictionId: admin.jurisdictionId },
-    select: { id: true },
+    select: {
+      id: true,
+      _count: {
+        select: {
+          briefingReviewNotes: true,
+          assignedBriefingPartnerReviews: true,
+          completedBriefingPartnerReviews: true,
+          partnerReviewOverriddenBriefings: true,
+        },
+      },
+    },
   });
   if (!user) return NextResponse.json({ error: 'User not found.' }, { status: 404 });
+  if (Object.values(user._count).some(Boolean)) {
+    return redirectWithNotice(request, returnTo, 'error', 'audit-protected');
+  }
 
   try {
     await prisma.user.delete({ where: { id } });

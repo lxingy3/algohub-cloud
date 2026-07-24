@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '../../../../lib/auth';
+import { canAccessPartnerReview, canChangePartnerDecision } from '../../../../lib/briefingPartnerReview';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { prisma } from '../../../../lib/prisma';
 import { SiteNav } from '../../../components/SiteNav';
@@ -13,10 +14,23 @@ export default async function PartnerBriefingReviewPage({ params, searchParams }
   if (!user) redirect(`/login?callbackUrl=${encodeURIComponent(`/briefings/review/${slug}`)}`);
   if (![...roles].some((role) => ['ADMIN', 'FACILITATOR', 'ORG_MEMBER'].includes(role))) notFound();
   const isAdmin = roles.has('ADMIN');
+  if (!isAdmin && !user.organizationId) notFound();
   const briefing = await prisma.briefing.findFirst({
-    where: { jurisdictionId: getJurisdictionId(), slug },
+    where: {
+      jurisdictionId: getJurisdictionId(),
+      slug,
+      ...(isAdmin ? {} : { partnerReviews: { some: { organizationId: user.organizationId, organization: { isActive: true } } } }),
+    },
     include: {
       targetAlgorithm: { select: { name: true } },
+      partnerReviews: {
+        where: isAdmin ? {} : { organizationId: user.organizationId, organization: { isActive: true } },
+        orderBy: { deadline: 'asc' },
+        include: {
+          organization: { select: { name: true } },
+          reviewedBy: { select: { name: true, email: true } },
+        },
+      },
       reviewNotes: {
         where: isAdmin ? {} : user.organizationId ? { organizationId: user.organizationId } : { userId: user.id },
         orderBy: { createdAt: 'desc' },
@@ -25,6 +39,8 @@ export default async function PartnerBriefingReviewPage({ params, searchParams }
     },
   });
   if (!briefing) notFound();
+  const assignment = briefing.partnerReviews[0];
+  if (!isAdmin && !canAccessPartnerReview(user, assignment?.organizationId)) notFound();
   const query = await searchParams;
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -39,14 +55,26 @@ export default async function PartnerBriefingReviewPage({ params, searchParams }
           <ReviewList title="Key findings" rows={briefing.keyFindings} />
           <ReviewList title="Recommendations" rows={briefing.recommendations} />
         </div>
-        <form action={`/api/briefings/${slug}/review-notes`} method="post" className="mt-5 rounded-lg border bg-white p-5">
-          <h2 className="text-lg font-bold">Leave a review note</h2>
-          <p className="mt-1 text-sm text-slate-600">Notes are visible to the admin team and reviewers from your organization. They do not publish the briefing.</p>
-          <textarea name="content" minLength={10} maxLength={4000} required className="mt-4 min-h-36 w-full rounded-md border px-3 py-2" />
-          <button className="mt-3 min-h-11 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Submit note</button>
-          {query?.saved ? <span className="ml-3 text-sm font-semibold text-emerald-700">Review note saved.</span> : null}
-        </form>
-        {briefing.reviewNotes.length ? <section className="mt-5"><h2 className="text-lg font-bold">Review history</h2><div className="mt-3 grid gap-3">{briefing.reviewNotes.map((note) => <article key={note.id} className="rounded-lg border bg-white p-4"><strong>{note.user.name || note.user.email}{note.organization ? ` - ${note.organization.name}` : ''}</strong><p className="mt-2 whitespace-pre-wrap text-slate-700">{note.content}</p></article>)}</div></section> : null}
+        <section className="mt-5 grid gap-3">
+          {briefing.partnerReviews.map((review) => <article key={review.id} className="rounded-lg border bg-white p-4 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2"><strong>{review.organization.name}</strong><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold">{review.status}</span></div>
+            <p className="mt-2 text-slate-600">Deadline: {review.deadline.toLocaleString()} {review.reviewedBy ? `- reviewed by ${review.reviewedBy.name || review.reviewedBy.email}` : ''}</p>
+          </article>)}
+        </section>
+        {!canChangePartnerDecision(briefing.reviewStatus) ? <p className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">This briefing is published, so partner decisions are read-only. An admin must move it back to review before a partner can change the decision.</p> : !isAdmin ? <form action={`/api/briefings/${slug}/review-notes`} method="post" className="mt-5 rounded-lg border bg-white p-5">
+          <h2 className="text-lg font-bold">Submit your organization review</h2>
+          <p className="mt-1 text-sm text-slate-600">Choose a decision and explain it. The decision and note are visible to admins and reviewers from your organization.</p>
+          <select name="status" required defaultValue="" className="mt-4 min-h-11 w-full rounded-md border bg-white px-3 py-2">
+            <option value="" disabled>Select a decision</option>
+            <option value="APPROVED">Approve</option>
+            <option value="CONCERN">Raise concern</option>
+            <option value="REVISION_REQUESTED">Request revision</option>
+          </select>
+          <textarea name="content" minLength={10} maxLength={4000} required className="mt-3 min-h-36 w-full rounded-md border px-3 py-2" />
+          <button className="mt-3 min-h-11 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Submit review</button>
+          {query?.saved ? <span className="ml-3 text-sm font-semibold text-emerald-700">Review saved as {query.status}.</span> : null}
+        </form> : <p className="mt-5 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">Admins can view every assigned organization here. Partner decisions must be submitted by a reviewer in that organization.</p>}
+        {briefing.reviewNotes.length ? <section className="mt-5"><h2 className="text-lg font-bold">Review history</h2><div className="mt-3 grid gap-3">{briefing.reviewNotes.map((note) => <article key={note.id} className="rounded-lg border bg-white p-4"><div className="flex flex-wrap items-center justify-between gap-2"><strong>{note.user.name || note.user.email}{note.organization ? ` - ${note.organization.name}` : ''}</strong>{note.partnerReviewStatus ? <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold">{note.partnerReviewStatus}</span> : null}</div><p className="mt-2 whitespace-pre-wrap text-slate-700">{note.content}</p></article>)}</div></section> : null}
       </section>
     </main>
   );

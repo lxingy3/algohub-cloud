@@ -17,7 +17,7 @@ export async function POST(request, { params }) {
   });
   if (!organization) return NextResponse.json({ error: 'Organization not found.' }, { status: 404 });
   if (formData.get('action') === 'delete') {
-    await prisma.organization.delete({ where: { id } });
+    await prisma.organization.update({ where: { id }, data: { isActive: false } });
   } else {
     const approved = formData.get('action') === 'approve';
     await prisma.organization.update({

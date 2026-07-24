@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { PrismaClient } from '@prisma/client';
+import { emptyPartnerReviewOverride, pendingPartnerReviewDecision } from '../lib/briefingPartnerReview.js';
 import { BRIEFINGS_EMBEDDING_MODEL, cosineSimilarity, SEMANTIC_RELEVANCE_THRESHOLD } from '../lib/semanticEmbeddings.js';
 import { compatibleBriefingDomain } from '../lib/briefingDomainMatch.js';
 import { buildSilenceAnalysis } from '../lib/silenceAnalysis.js';
@@ -44,9 +45,9 @@ function loadEnvFile(file) {
 }
 
 function normalizeThemes(value) {
-  return (Array.isArray(value) ? value : [])
+  return [...new Set((Array.isArray(value) ? value : [])
     .map((item) => typeof item === 'string' ? item : item?.theme || item?.label || item?.name)
-    .filter(Boolean);
+    .filter(Boolean))];
 }
 
 function topCounts(items, limit = 5) {
@@ -181,6 +182,7 @@ function toBriefingWrite(draft) {
 async function main() {
   if (args['self-check']) {
     assert.deepEqual(topCounts(['b', 'a', 'b']), [{ label: 'B', count: 2 }, { label: 'A', count: 1 }]);
+    assert.deepEqual(normalizeThemes(['a', 'a', { theme: 'b' }]), ['a', 'b']);
     assert.equal(labels([]), 'not enough reviewed data yet');
     assert.equal(toBriefingWrite({ dateRangeStart: '2026-02-08', dateRangeEnd: null }).dateRangeStart.toISOString(), '2026-02-08T00:00:00.000Z');
     assert.equal(cosineSimilarity([1, 0], [1, 0]), 1);
@@ -297,10 +299,22 @@ async function main() {
   if (apply) {
     for (const draft of drafts) {
       const data = toBriefingWrite(draft);
-      await prisma.briefing.upsert({
-        where: { slug: draft.slug },
-        update: { ...data, reviewedByUserId: null, publishedAt: null },
-        create: { jurisdictionId, ...data },
+      await prisma.$transaction(async (tx) => {
+        const briefing = await tx.briefing.upsert({
+          where: { slug: draft.slug },
+          update: {
+            ...data,
+            ...emptyPartnerReviewOverride(),
+            reviewedByUserId: null,
+            reviewedAt: null,
+            publishedAt: null,
+          },
+          create: { jurisdictionId, ...data },
+        });
+        await tx.briefingPartnerReview.updateMany({
+          where: { briefingId: briefing.id },
+          data: pendingPartnerReviewDecision(),
+        });
       });
     }
   }

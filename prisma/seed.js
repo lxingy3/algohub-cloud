@@ -15,6 +15,7 @@ import {
   TestimonyLinkType,
   SubmissionMethod,
 } from '@prisma/client';
+import { emptyPartnerReviewOverride, pendingPartnerReviewDecision } from '../lib/briefingPartnerReview.js';
 
 const prisma = new PrismaClient();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -1050,31 +1051,76 @@ async function main() {
     const targetAlgorithm = briefing.targetUseCase
       ? algorithmsByUseCase.get(briefing.targetUseCase)?.[0]
       : null;
-
-    await prisma.briefing.upsert({
-      where: { slug: briefing.slug },
-      update: {
-        title: briefing.title,
-        executiveSummary: briefing.executiveSummary,
-        keyFindings: briefing.keyFindings,
-        recommendations: briefing.recommendations,
-        testimonyCount: approvedTestimonies.length,
-      },
-      create: {
-        jurisdictionId: jurisdiction.id,
-        title: briefing.title,
-        slug: briefing.slug,
-        briefingType: BriefingType[briefing.briefingType],
-        targetAlgorithmId: targetAlgorithm?.id,
-        targetTheme: briefing.targetTheme || briefing.targetUseCase,
-        testimonyCount: approvedTestimonies.length,
-        executiveSummary: briefing.executiveSummary,
-        keyFindings: briefing.keyFindings,
-        recommendations: briefing.recommendations,
-        generatedBy: 'seed',
-        reviewStatus: ReviewStatus.PUBLISHED,
-        publishedAt: new Date('2026-05-01T12:00:00.000Z'),
-      },
+    const admin = usersByRole.get('ADMIN');
+    const partner = usersByRole.get('ORG_MEMBER');
+    await prisma.$transaction(async (tx) => {
+      const savedBriefing = await tx.briefing.upsert({
+        where: { slug: briefing.slug },
+        update: {
+          title: briefing.title,
+          executiveSummary: briefing.executiveSummary,
+          keyFindings: briefing.keyFindings,
+          recommendations: briefing.recommendations,
+          testimonyCount: approvedTestimonies.length,
+          reviewStatus: ReviewStatus.DRAFT,
+          reviewedByUserId: null,
+          reviewedAt: null,
+          publishedAt: null,
+          ...emptyPartnerReviewOverride(),
+        },
+        create: {
+          jurisdictionId: jurisdiction.id,
+          title: briefing.title,
+          slug: briefing.slug,
+          briefingType: BriefingType[briefing.briefingType],
+          targetAlgorithmId: targetAlgorithm?.id,
+          targetTheme: briefing.targetTheme || briefing.targetUseCase,
+          testimonyCount: approvedTestimonies.length,
+          executiveSummary: briefing.executiveSummary,
+          keyFindings: briefing.keyFindings,
+          recommendations: briefing.recommendations,
+          generatedBy: 'seed',
+          reviewStatus: ReviewStatus.DRAFT,
+        },
+      });
+      await tx.briefingPartnerReview.updateMany({
+        where: { briefingId: savedBriefing.id },
+        data: pendingPartnerReviewDecision(),
+      });
+      await tx.briefingPartnerReview.upsert({
+        where: {
+          briefingId_organizationId: {
+            briefingId: savedBriefing.id,
+            organizationId: partner.organizationId,
+          },
+        },
+        update: {
+          assignedByUserId: admin.id,
+          deadline: new Date('2030-01-01T00:00:00.000Z'),
+          status: 'APPROVED',
+          reviewedByUserId: partner.id,
+          reviewedAt: new Date('2026-05-01T11:00:00.000Z'),
+        },
+        create: {
+          jurisdictionId: jurisdiction.id,
+          briefingId: savedBriefing.id,
+          organizationId: partner.organizationId,
+          assignedByUserId: admin.id,
+          deadline: new Date('2030-01-01T00:00:00.000Z'),
+          status: 'APPROVED',
+          reviewedByUserId: partner.id,
+          reviewedAt: new Date('2026-05-01T11:00:00.000Z'),
+        },
+      });
+      await tx.briefing.update({
+        where: { id: savedBriefing.id },
+        data: {
+          reviewStatus: ReviewStatus.PUBLISHED,
+          reviewedByUserId: admin.id,
+          reviewedAt: new Date('2026-05-01T11:30:00.000Z'),
+          publishedAt: new Date('2026-05-01T12:00:00.000Z'),
+        },
+      });
     });
   }
 

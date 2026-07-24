@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Eye, Save, Send, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export function BriefingReviewEditor({ briefing }) {
+  const router = useRouter();
   const [fields, setFields] = useState({
     title: briefing.title,
     executiveSummary: briefing.executiveSummary || '',
@@ -33,6 +35,7 @@ export function BriefingReviewEditor({ briefing }) {
       if (!response.ok) throw new Error(body.error || 'The briefing could not be saved.');
       setStatus(body.reviewStatus);
       setResult(body);
+      router.refresh();
     } catch (error) {
       setResult({ error: error.message });
     } finally {

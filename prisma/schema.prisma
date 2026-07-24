@@ -77,6 +77,13 @@ enum ReviewStatus {
   PUBLISHED
 }
 
+enum BriefingPartnerReviewStatus {
+  PENDING
+  APPROVED
+  CONCERN
+  REVISION_REQUESTED
+}
+
 enum GenerationJobStatus {
   PENDING
   RUNNING
@@ -122,6 +129,7 @@ model Jurisdiction {
   eventRegistrations     EventRegistration[]
   briefingGenerationJobs BriefingGenerationJob[]
   briefingReviewNotes    BriefingReviewNote[]
+  briefingPartnerReviews BriefingPartnerReview[]
 
   @@map("jurisdictions")
 }
@@ -473,6 +481,9 @@ model User {
   submissionDrafts                  SubmissionDraft[]
   requestedBriefingJobs             BriefingGenerationJob[]    @relation("RequestedBriefingJobs")
   briefingReviewNotes               BriefingReviewNote[]
+  assignedBriefingPartnerReviews    BriefingPartnerReview[]    @relation("BriefingPartnerAssignedBy")
+  completedBriefingPartnerReviews   BriefingPartnerReview[]    @relation("BriefingPartnerReviewedBy")
+  partnerReviewOverriddenBriefings  Briefing[]                 @relation("BriefingPartnerOverrideBy")
 
   @@unique([jurisdictionId, email])
   @@index([jurisdictionId])
@@ -567,22 +578,23 @@ model VerificationToken {
 }
 
 model Organization {
-  id                  String               @id @default(uuid()) @db.Uuid
-  jurisdictionId      String               @map("jurisdiction_id") @db.VarChar(50)
-  name                String               @db.VarChar(255)
-  slug                String               @unique @db.VarChar(255)
-  description         String?
-  contactEmail        String?              @map("contact_email") @db.VarChar(255)
-  websiteUrl          String?              @map("website_url")
-  logoUrl             String?              @map("logo_url")
-  role                String?              @db.VarChar(50)
-  isActive            Boolean              @default(true) @map("is_active")
-  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  jurisdiction        Jurisdiction         @relation(fields: [jurisdictionId], references: [id])
-  users               User[]
-  testimonies         Testimony[]          @relation("PartnerTestimonies")
-  events              CommunityEvent[]
-  briefingReviewNotes BriefingReviewNote[]
+  id                     String                  @id @default(uuid()) @db.Uuid
+  jurisdictionId         String                  @map("jurisdiction_id") @db.VarChar(50)
+  name                   String                  @db.VarChar(255)
+  slug                   String                  @unique @db.VarChar(255)
+  description            String?
+  contactEmail           String?                 @map("contact_email") @db.VarChar(255)
+  websiteUrl             String?                 @map("website_url")
+  logoUrl                String?                 @map("logo_url")
+  role                   String?                 @db.VarChar(50)
+  isActive               Boolean                 @default(true) @map("is_active")
+  createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  jurisdiction           Jurisdiction            @relation(fields: [jurisdictionId], references: [id])
+  users                  User[]
+  testimonies            Testimony[]             @relation("PartnerTestimonies")
+  events                 CommunityEvent[]
+  briefingReviewNotes    BriefingReviewNote[]
+  briefingPartnerReviews BriefingPartnerReview[]
 
   @@index([jurisdictionId])
   @@map("organizations")
@@ -632,33 +644,38 @@ model EventRegistration {
 }
 
 model Briefing {
-  id                String                  @id @default(uuid()) @db.Uuid
-  jurisdictionId    String                  @map("jurisdiction_id") @db.VarChar(50)
-  title             String                  @db.VarChar(255)
-  slug              String                  @unique @db.VarChar(255)
-  briefingType      BriefingType            @map("briefing_type")
-  targetAlgorithmId String?                 @map("target_algorithm_id") @db.Uuid
-  targetTheme       String?                 @map("target_theme") @db.VarChar(255)
-  dateRangeStart    DateTime?               @map("date_range_start") @db.Date
-  dateRangeEnd      DateTime?               @map("date_range_end") @db.Date
-  testimonyCount    Int?                    @map("testimony_count")
-  executiveSummary  String?                 @map("executive_summary")
-  keyFindings       Json?                   @map("key_findings")
-  patternAnalysis   String?                 @map("pattern_analysis")
-  silenceGaps       Json?                   @map("silence_gaps")
-  recommendations   Json?
-  claimVsExperience Json?                   @map("claim_vs_experience")
-  generatedBy       String?                 @map("generated_by") @db.VarChar(50)
-  reviewedByUserId  String?                 @map("reviewed_by") @db.Uuid
-  reviewedAt        DateTime?               @map("reviewed_at") @db.Timestamptz(6)
-  reviewStatus      ReviewStatus            @default(DRAFT) @map("review_status")
-  publishedAt       DateTime?               @map("published_at") @db.Timestamptz(6)
-  createdAt         DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
-  jurisdiction      Jurisdiction            @relation(fields: [jurisdictionId], references: [id])
-  targetAlgorithm   Algorithm?              @relation(fields: [targetAlgorithmId], references: [id])
-  reviewedBy        User?                   @relation("ReviewedBriefings", fields: [reviewedByUserId], references: [id])
-  generationJobs    BriefingGenerationJob[]
-  reviewNotes       BriefingReviewNote[]
+  id                              String                  @id @default(uuid()) @db.Uuid
+  jurisdictionId                  String                  @map("jurisdiction_id") @db.VarChar(50)
+  title                           String                  @db.VarChar(255)
+  slug                            String                  @unique @db.VarChar(255)
+  briefingType                    BriefingType            @map("briefing_type")
+  targetAlgorithmId               String?                 @map("target_algorithm_id") @db.Uuid
+  targetTheme                     String?                 @map("target_theme") @db.VarChar(255)
+  dateRangeStart                  DateTime?               @map("date_range_start") @db.Date
+  dateRangeEnd                    DateTime?               @map("date_range_end") @db.Date
+  testimonyCount                  Int?                    @map("testimony_count")
+  executiveSummary                String?                 @map("executive_summary")
+  keyFindings                     Json?                   @map("key_findings")
+  patternAnalysis                 String?                 @map("pattern_analysis")
+  silenceGaps                     Json?                   @map("silence_gaps")
+  recommendations                 Json?
+  claimVsExperience               Json?                   @map("claim_vs_experience")
+  generatedBy                     String?                 @map("generated_by") @db.VarChar(50)
+  reviewedByUserId                String?                 @map("reviewed_by") @db.Uuid
+  reviewedAt                      DateTime?               @map("reviewed_at") @db.Timestamptz(6)
+  reviewStatus                    ReviewStatus            @default(DRAFT) @map("review_status")
+  publishedAt                     DateTime?               @map("published_at") @db.Timestamptz(6)
+  partnerReviewOverrideReason     String?                 @map("partner_review_override_reason")
+  partnerReviewOverriddenByUserId String?                 @map("partner_review_overridden_by") @db.Uuid
+  partnerReviewOverriddenAt       DateTime?               @map("partner_review_overridden_at") @db.Timestamptz(6)
+  createdAt                       DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  jurisdiction                    Jurisdiction            @relation(fields: [jurisdictionId], references: [id])
+  targetAlgorithm                 Algorithm?              @relation(fields: [targetAlgorithmId], references: [id])
+  reviewedBy                      User?                   @relation("ReviewedBriefings", fields: [reviewedByUserId], references: [id])
+  partnerReviewOverriddenBy       User?                   @relation("BriefingPartnerOverrideBy", fields: [partnerReviewOverriddenByUserId], references: [id], onDelete: Restrict)
+  generationJobs                  BriefingGenerationJob[]
+  reviewNotes                     BriefingReviewNote[]
+  partnerReviews                  BriefingPartnerReview[]
 
   @@index([jurisdictionId])
   @@index([briefingType])
@@ -689,21 +706,47 @@ model BriefingGenerationJob {
 }
 
 model BriefingReviewNote {
-  id             String        @id @default(uuid()) @db.Uuid
-  jurisdictionId String        @map("jurisdiction_id") @db.VarChar(50)
-  briefingId     String        @map("briefing_id") @db.Uuid
-  userId         String        @map("user_id") @db.Uuid
-  organizationId String?       @map("organization_id") @db.Uuid
-  content        String
-  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  jurisdiction   Jurisdiction  @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
-  briefing       Briefing      @relation(fields: [briefingId], references: [id], onDelete: Cascade)
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  id                  String                       @id @default(uuid()) @db.Uuid
+  jurisdictionId      String                       @map("jurisdiction_id") @db.VarChar(50)
+  briefingId          String                       @map("briefing_id") @db.Uuid
+  userId              String                       @map("user_id") @db.Uuid
+  organizationId      String?                      @map("organization_id") @db.Uuid
+  partnerReviewStatus BriefingPartnerReviewStatus? @map("partner_review_status")
+  content             String
+  createdAt           DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
+  jurisdiction        Jurisdiction                 @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  briefing            Briefing                     @relation(fields: [briefingId], references: [id], onDelete: Cascade)
+  user                User                         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  organization        Organization?                @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   @@index([briefingId, createdAt])
   @@index([organizationId])
   @@map("briefing_review_notes")
+}
+
+model BriefingPartnerReview {
+  id               String                      @id @default(uuid()) @db.Uuid
+  jurisdictionId   String                      @map("jurisdiction_id") @db.VarChar(50)
+  briefingId       String                      @map("briefing_id") @db.Uuid
+  organizationId   String                      @map("organization_id") @db.Uuid
+  assignedByUserId String                      @map("assigned_by") @db.Uuid
+  assignedAt       DateTime                    @default(now()) @map("assigned_at") @db.Timestamptz(6)
+  deadline         DateTime                    @db.Timestamptz(6)
+  status           BriefingPartnerReviewStatus @default(PENDING)
+  reviewedByUserId String?                     @map("reviewed_by") @db.Uuid
+  reviewedAt       DateTime?                   @map("reviewed_at") @db.Timestamptz(6)
+  createdAt        DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime                    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  jurisdiction     Jurisdiction                @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  briefing         Briefing                    @relation(fields: [briefingId], references: [id], onDelete: Cascade)
+  organization     Organization                @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  assignedBy       User                        @relation("BriefingPartnerAssignedBy", fields: [assignedByUserId], references: [id], onDelete: Restrict)
+  reviewedBy       User?                       @relation("BriefingPartnerReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([briefingId, organizationId])
+  @@index([jurisdictionId, status])
+  @@index([organizationId, deadline])
+  @@map("briefing_partner_reviews")
 }
 
 model ThemeImprovementMap {

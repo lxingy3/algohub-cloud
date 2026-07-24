@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, ChevronDown, Database, ExternalLink, FileText, Filter, Landmark, Maximize2, MessageSquare, Search, Users, X } from 'lucide-react';
 import { AlgorithmModal } from '../components/AlgorithmsRegistry';
 import { InfoTooltip } from '../components/InfoTooltip';
@@ -155,6 +155,7 @@ export function BriefingsClient() {
   const [languageMode, setLanguageMode] = useState('en');
   const [readingLevel, setReadingLevel] = useState('standard');
   const [paramsReady, setParamsReady] = useState(false);
+  const [algorithmsLoaded, setAlgorithmsLoaded] = useState(false);
   const [liveSnapshot, setLiveSnapshot] = useState(null);
   const [activeEvidenceBlock, setActiveEvidenceBlock] = useState(null);
   const view = briefingViews[scope][lens];
@@ -205,20 +206,39 @@ export function BriefingsClient() {
 
     if (lenses.some((item) => item.id === nextLens)) setLens(nextLens);
     if (scopes.some((item) => item.id === nextScope)) setScope(nextScope);
-    if (domains.includes(nextDomain)) setDomain(nextDomain);
-    if (algorithms.some((item) => item.slug === nextAlgorithm)) setAlgorithm(nextAlgorithm);
+    if (nextDomain) setDomain(nextDomain);
+    if (nextAlgorithm) setAlgorithm(nextAlgorithm);
     if (languageModes.some((item) => item.id === nextLanguage)) setLanguageMode(nextLanguage);
     if (readingLevels.some((item) => item.id === nextReading)) setReadingLevel(nextReading);
     setParamsReady(true);
   }, [domains, paramsReady]);
 
   useEffect(() => {
-    if (!paramsReady || activeEvidenceBlock) return;
-    const evidenceCode = new URLSearchParams(window.location.search).get('evidence');
-    if (!evidenceCode) return;
-    const nextBlock = view.blocks.find((block) => block.code === evidenceCode);
-    if (nextBlock) setActiveEvidenceBlock(nextBlock);
-  }, [activeEvidenceBlock, paramsReady, view]);
+    if (!paramsReady) return undefined;
+    const syncFromHistory = () => {
+      const params = new URLSearchParams(window.location.search);
+      const requestedLens = params.get('lens');
+      const requestedScope = params.get('scope');
+      const nextLens = lenses.some((item) => item.id === requestedLens) ? requestedLens : 'community';
+      const nextScope = scopes.some((item) => item.id === requestedScope) ? requestedScope : 'overview';
+      const requestedLanguage = params.get('language');
+      const requestedReading = params.get('reading');
+      const requestedAlgorithm = params.get('algorithm');
+      setLens(nextLens);
+      setScope(nextScope);
+      setDomain(params.get('domain') || 'All domains');
+      if (requestedAlgorithm) setAlgorithm(requestedAlgorithm);
+      setLanguageMode(languageModes.some((item) => item.id === requestedLanguage) ? requestedLanguage : 'en');
+      setReadingLevel(readingLevels.some((item) => item.id === requestedReading) ? requestedReading : 'standard');
+      const evidenceCode = params.get('evidence');
+      setActiveEvidenceBlock(
+        briefingViews[nextScope][nextLens].blocks.find((block) => block.code === evidenceCode) || null,
+      );
+    };
+    syncFromHistory();
+    window.addEventListener('popstate', syncFromHistory);
+    return () => window.removeEventListener('popstate', syncFromHistory);
+  }, [paramsReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -233,16 +253,20 @@ export function BriefingsClient() {
         })).filter((item) => item.slug && item.name);
         if (!nextAlgorithms.length) return;
         setAlgorithms(nextAlgorithms);
+        setDomain((current) => current === 'All domains' || nextAlgorithms.some((item) => item.domain === current) ? current : 'All domains');
         setAlgorithm((current) => nextAlgorithms.some((item) => item.slug === current) ? current : nextAlgorithms[0].slug);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setAlgorithmsLoaded(true);
+      });
     return () => {
       cancelled = true;
     };
   }, []);
 
   useEffect(() => {
-    if (!paramsReady) return;
+    if (!paramsReady || !algorithmsLoaded) return;
     const params = new URLSearchParams();
     params.set('lens', lens);
     params.set('scope', scope);
@@ -253,8 +277,8 @@ export function BriefingsClient() {
     params.set('language', languageMode);
     params.set('reading', readingLevel);
     if (activeEvidenceBlock) params.set('evidence', activeEvidenceBlock.code);
-    window.history.replaceState(null, '', `/briefings?${params.toString()}`);
-  }, [activeEvidenceBlock, domain, languageMode, lens, paramsReady, readingLevel, scope, selectedVisibleAlgorithm]);
+    window.history.replaceState(null, '', `/briefings/explore?${params.toString()}`);
+  }, [activeEvidenceBlock, algorithmsLoaded, domain, languageMode, lens, paramsReady, readingLevel, scope, selectedVisibleAlgorithm]);
 
   useEffect(() => {
     if (lens !== 'intermediary') return;
@@ -270,43 +294,65 @@ export function BriefingsClient() {
     setActiveEvidenceBlock(block);
     const params = new URLSearchParams(window.location.search);
     params.set('evidence', block.code);
-    window.history.pushState(null, '', `/briefings?${params.toString()}`);
+    window.history.pushState(null, '', `/briefings/explore?${params.toString()}`);
   };
 
   const closeEvidence = () => {
     setActiveEvidenceBlock(null);
     const params = new URLSearchParams(window.location.search);
     params.delete('evidence');
-    window.history.replaceState(null, '', `/briefings?${params.toString()}`);
+    window.history.replaceState(null, '', `/briefings/explore?${params.toString()}`);
   };
 
   useEffect(() => {
+    if (!paramsReady || !algorithmsLoaded) return undefined;
     let cancelled = false;
+    const controller = new AbortController();
     setLiveSnapshot(null);
-    const getJson = (path, query = liveQuery) => fetch(`${path}${query}`).then((response) => {
+    const getJson = (path, query = liveQuery) => fetch(`${path}${query}`, { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error(`${path} returned ${response.status}`);
       return response.json();
     });
-    const requests = [
-      ['landscape', getJson('/api/explore/landscape')],
-      ['impact', getJson('/api/explore/impact')],
-      ['themes', getJson('/api/explore/cross-cutting-themes')],
-      ['patterns', getJson('/api/explore/patterns')],
-      ['coverage', getJson('/api/explore/coverage')],
-      ['evidence', getJson('/api/explore/evidence-strength')],
-      ['silence', getJson('/api/explore/silence')],
-      ['themeMatrix', getJson('/api/explore/theme-matrix')],
-      ['trend', getJson('/api/explore/trend')],
-      ['recognition', getJson('/api/explore/recognition')],
-      ['compare', getJson('/api/explore/compare')],
-      ['claimVsExperience', getJson('/api/explore/claim-vs-experience')],
-      ['crossJurisdiction', getJson('/api/explore/cross-jurisdiction')],
-      ['excerpts', getJson('/api/testimonies', excerptQuery)],
-      ['organizations', getJson('/api/organizations?role=library&limit=6', '')],
-      ['events', getJson('/api/events?limit=6', '')],
-      ['proposedAlgorithms', getJson('/api/algorithms?status=PROPOSED,UNDER_REVIEW&limit=6', '')],
-      ['briefings', getJson(`/api/briefings${briefingQuery}`, '')],
+    const apiUsage = view.blocks.map((block) => block.api.toLowerCase()).join(' ');
+    const required = new Set(['landscape', 'patterns', 'themeMatrix', 'trend', 'excerpts', 'claimVsExperience', 'briefings']);
+    for (const [needle, key] of [
+      ['impact', 'impact'],
+      ['themes', 'themes'],
+      ['coverage', 'coverage'],
+      ['evidence-strength', 'evidence'],
+      ['silence', 'silence'],
+      ['recognition', 'recognition'],
+      ['compare', 'compare'],
+      ['cross-jurisdiction', 'crossJurisdiction'],
+      ['organizations', 'organizations'],
+      ['events', 'events'],
+      ['status=proposed', 'proposedAlgorithms'],
+    ]) {
+      if (apiUsage.includes(needle)) required.add(key);
+    }
+    const requestSpecs = [
+      ['landscape', '/api/explore/landscape'],
+      ['impact', '/api/explore/impact'],
+      ['themes', '/api/explore/cross-cutting-themes'],
+      ['patterns', '/api/explore/patterns'],
+      ['coverage', '/api/explore/coverage'],
+      ['evidence', '/api/explore/evidence-strength'],
+      ['silence', '/api/explore/silence'],
+      ['themeMatrix', '/api/explore/theme-matrix'],
+      ['trend', '/api/explore/trend'],
+      ['recognition', '/api/explore/recognition'],
+      ['compare', '/api/explore/compare'],
+      ['claimVsExperience', '/api/explore/claim-vs-experience'],
+      ['crossJurisdiction', '/api/explore/cross-jurisdiction'],
+      ['excerpts', '/api/testimonies', excerptQuery],
+      ['organizations', '/api/organizations?role=library&limit=6', ''],
+      ['events', '/api/events?limit=6', ''],
+      ['proposedAlgorithms', '/api/algorithms?status=PROPOSED,UNDER_REVIEW&limit=6', ''],
+      ['briefings', `/api/briefings${briefingQuery}`, ''],
     ];
+    const requests = requestSpecs
+      .filter(([key]) => required.has(key))
+      .map(([key, path, query]) => [key, getJson(path, query)]);
     Promise.allSettled(requests.map(([, request]) => request)).then((results) => {
       if (!cancelled) {
         const snapshot = Object.fromEntries(results.map((result, index) => [
@@ -319,8 +365,9 @@ export function BriefingsClient() {
     });
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [briefingQuery, excerptQuery, liveQuery]);
+  }, [algorithmsLoaded, briefingQuery, excerptQuery, liveQuery, paramsReady, view.blocks]);
 
   const cachedBriefing = liveSnapshot && !liveSnapshot.error ? liveSnapshot.briefings?.items?.[0] : null;
 
@@ -668,22 +715,21 @@ function BriefingBlock({ block, snapshot, lens, readingLevel, privateNote, onPri
 
 function ChartExpandDialog({ block, snapshot, lens, open, onClose }) {
   const { preview, previewItem, setPreview, closePreview } = useEvidencePreview();
-  useEffect(() => {
-    if (!open) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open]);
+  const dialogRef = useRef(null);
+  const closeButtonRef = useRef(null);
+  useDialogFocus(open, closeButtonRef);
   if (!open) return null;
   const rows = evidenceRowsWithFallback(block, snapshot, lens);
   return (
     <>
       <div
+        ref={dialogRef}
         className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 sm:p-4"
         role="dialog"
         aria-modal="true"
+        aria-labelledby={`chart-expand-title-${block.code}`}
+        tabIndex={-1}
+        onKeyDown={(event) => handleDialogKeyDown(event, dialogRef.current, onClose)}
         onClick={(event) => {
           if (event.target === event.currentTarget) onClose();
         }}
@@ -692,10 +738,10 @@ function ChartExpandDialog({ block, snapshot, lens, open, onClose }) {
           <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-slate-950 px-5 py-4 text-white">
             <div>
               <p className="text-sm font-black uppercase tracking-[0.18em] text-amber-300">{block.code}</p>
-              <h3 className="mt-1 text-2xl font-black">{block.title}</h3>
+              <h3 id={`chart-expand-title-${block.code}`} className="mt-1 text-2xl font-black">{block.title}</h3>
               <p className="mt-1 text-sm text-slate-300">{block.visual}</p>
             </div>
-            <button type="button" onClick={onClose} className="rounded-md border border-white/20 p-2 text-white hover:bg-white/10" aria-label="Close expanded chart">
+            <button ref={closeButtonRef} type="button" onClick={onClose} className="rounded-md border border-white/20 p-2 text-white hover:bg-white/10" aria-label="Close expanded chart">
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -724,16 +770,65 @@ function ChartExpandDialog({ block, snapshot, lens, open, onClose }) {
   );
 }
 
+function useDialogFocus(open, initialFocusRef) {
+  useEffect(() => {
+    if (!open) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const previousFocus = document.activeElement;
+    document.body.style.overflow = 'hidden';
+    initialFocusRef.current?.focus();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus?.();
+    };
+  }, [initialFocusRef, open]);
+}
+
+function handleDialogKeyDown(event, dialog, onClose) {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    event.stopPropagation();
+    onClose();
+    return;
+  }
+  if (event.key !== 'Tab' || !dialog) return;
+  event.stopPropagation();
+  const focusable = [...dialog.querySelectorAll(
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  )].filter((element) => element.getAttribute('aria-hidden') !== 'true');
+  if (!focusable.length) {
+    event.preventDefault();
+    dialog.focus();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
 function EvidenceDrawer({ block, snapshot, lens, onClose }) {
   const { preview, previewItem, setPreview, closePreview } = useEvidencePreview();
+  const dialogRef = useRef(null);
+  const closeButtonRef = useRef(null);
+  useDialogFocus(Boolean(block), closeButtonRef);
   if (!block) return null;
   const visibleRows = evidenceRowsWithFallback(block, snapshot, lens);
   return (
     <>
       <div
+        ref={dialogRef}
         className="fixed inset-0 z-50 bg-slate-950/35"
         role="dialog"
         aria-modal="true"
+        aria-labelledby={`evidence-drawer-title-${block.code}`}
+        tabIndex={-1}
+        onKeyDown={(event) => handleDialogKeyDown(event, dialogRef.current, onClose)}
         onClick={(event) => {
           if (event.target === event.currentTarget) onClose();
         }}
@@ -746,10 +841,10 @@ function EvidenceDrawer({ block, snapshot, lens, onClose }) {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-700">Evidence</p>
-                <h3 className="mt-2 text-xl font-bold text-slate-950">{block.code} {block.title}</h3>
+                <h3 id={`evidence-drawer-title-${block.code}`} className="mt-2 text-xl font-bold text-slate-950">{block.code} {block.title}</h3>
                 <p className="mt-1 text-sm text-slate-600">{block.api}</p>
               </div>
-              <button type="button" onClick={onClose} className="rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" aria-label="Close evidence">
+              <button ref={closeButtonRef} type="button" onClick={onClose} className="rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" aria-label="Close evidence">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -858,20 +953,11 @@ function EvidenceRowsList({ rows, onPreview }) {
           return (
           <div
             key={evidenceRowKey(row, index)}
-            role={canDrill ? 'button' : undefined}
-            tabIndex={canDrill ? 0 : undefined}
-            onClick={() => canDrill && setDrilldown(row.drilldown)}
-            onKeyDown={(event) => {
-              if (canDrill && (event.key === 'Enter' || event.key === ' ')) {
-                event.preventDefault();
-                setDrilldown(row.drilldown);
-              }
-            }}
-            className={`rounded-md border border-slate-200 bg-slate-50 p-3 ${canDrill ? 'cursor-pointer hover:border-amber-300 hover:bg-amber-50' : ''}`}
+            className="rounded-md border border-slate-200 bg-slate-50 p-3"
           >
             <div className="flex items-start justify-between gap-3">
               <p className="font-semibold text-slate-950">{row.title}</p>
-              <div className="flex shrink-0 flex-wrap justify-end gap-2" onClick={(event) => event.stopPropagation()}>
+              <div className="flex shrink-0 flex-wrap justify-end gap-2">
                 {canDrill ? (
                   <button type="button" onClick={() => setDrilldown(row.drilldown)} className="rounded border border-amber-200 bg-white px-2 py-1 text-xs font-bold text-amber-800 hover:bg-amber-50">
                     Details
@@ -974,30 +1060,33 @@ function EvidencePreviewModal({ preview, item, onClose }) {
 }
 
 function DrilldownModal({ drilldown, onClose, onPreview }) {
-  useEffect(() => {
-    if (!drilldown) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [drilldown]);
-
+  const dialogRef = useRef(null);
+  const closeButtonRef = useRef(null);
+  useDialogFocus(Boolean(drilldown), closeButtonRef);
   if (!drilldown) return null;
   const stories = drilldown.stories || [];
   const algorithms = drilldown.algorithms || [];
   const metaRows = drilldown.metaRows || [];
   const hasDetails = stories.length || algorithms.length || metaRows.length;
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 p-3 sm:p-4" role="dialog" aria-modal="true" onClick={(event) => event.target === event.currentTarget && onClose()}>
+    <div
+      ref={dialogRef}
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 p-3 sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="drilldown-modal-title"
+      tabIndex={-1}
+      onKeyDown={(event) => handleDialogKeyDown(event, dialogRef.current, onClose)}
+      onClick={(event) => event.target === event.currentTarget && onClose()}
+    >
       <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Count details</p>
-            <h3 className="mt-2 text-xl font-black text-slate-950">{drilldown.title}</h3>
+            <h3 id="drilldown-modal-title" className="mt-2 text-xl font-black text-slate-950">{drilldown.title}</h3>
             <p className="mt-1 text-sm text-slate-600">Counted total: <span className="font-bold text-slate-900">{drilldown.count ?? stories.length + algorithms.length + metaRows.length}</span></p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" aria-label="Close count details">
+          <button ref={closeButtonRef} type="button" onClick={onClose} className="rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" aria-label="Close count details">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -1097,7 +1186,16 @@ function monthKey(value) {
 }
 
 function storyHasTheme(story, theme) {
-  return (story.themes || []).some((item) => item.theme === theme);
+  const target = normalizeThemeValue(theme);
+  return (story.themes || []).some((item) => {
+    const confidence = typeof item === 'object' && Number.isFinite(Number(item?.confidence)) ? Number(item.confidence) : null;
+    if (confidence !== null && confidence <= 0.5) return false;
+    return normalizeThemeValue(typeof item === 'string' ? item : item?.theme || item?.label || item?.name) === target;
+  });
+}
+
+function normalizeThemeValue(value) {
+  return String(value || '').trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
 }
 
 function storyAlgorithms(stories) {
@@ -1565,22 +1663,36 @@ function LivePolicyTable({ themes, expanded = false }) {
 
 function LiveTreemap({ rows, expanded = false }) {
   const [hoveredCell, setHoveredCell] = useState(null);
+  const [aspectRatio, setAspectRatio] = useState(1);
+  const containerRef = useRef(null);
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return undefined;
+    const updateAspectRatio = () => {
+      const next = Math.max(0.5, Math.min(4, container.clientWidth / container.clientHeight || 1));
+      setAspectRatio((current) => Math.abs(current - next) < 0.01 ? current : next);
+    };
+    updateAspectRatio();
+    const observer = new ResizeObserver(updateAspectRatio);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [expanded]);
   const cleanRows = rows
     .map(([label, value]) => ({ label, value: Number(value) || 0 }))
     .filter((row) => row.value > 0)
     .sort((a, b) => b.value - a.value);
   if (!cleanRows.length) return <EmptyLive />;
   const total = cleanRows.reduce((sum, row) => sum + row.value, 0);
-  const rects = squarifyTreemap(cleanRows.map((row) => ({ ...row, area: (row.value / total) * 10000 })));
-  const colors = ['#facc15', '#22c55e', '#38bdf8', '#f472b6', '#a78bfa', '#fb923c', '#14b8a6', '#ef4444'];
+  const rects = squarifyTreemap(cleanRows.map((row) => ({ ...row, area: (row.value / total) * 10000 })), aspectRatio);
+  const colors = ['#fde68a', '#fcd34d', '#fbbf24', '#fef3c7', '#e7e5e4', '#d6d3d1'];
   return (
     <div className="mt-5">
       <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
-        <span>Area: domain</span>
-        <span>Size: count</span>
+        <span>Domains</span>
+        <span>Area = algorithm count · {total} total</span>
       </div>
       <div className="relative">
-        <div className={`relative overflow-hidden rounded-md border border-white/15 bg-white/5 p-1 ${expanded ? 'h-[min(70vh,720px)]' : 'h-72'}`}>
+        <div ref={containerRef} className={`relative overflow-hidden rounded-md border border-white/15 bg-white/5 p-1 ${expanded ? 'h-[min(70vh,720px)]' : 'h-72'}`}>
           {rects.map((row, index) => (
             <TreemapCell
               key={`${row.label}-${index}`}
@@ -1609,14 +1721,19 @@ function TreemapCell({ row, color, expanded, onHover, onLeave }) {
       };
   return (
     <div
+      data-treemap-cell
+      data-treemap-value={row.value}
       className="absolute p-0.5"
       style={{ left: `${row.x}%`, top: `${row.y}%`, width: `${row.w}%`, height: `${row.h}%` }}
     >
       <span
         role="img"
         aria-label={`${row.label}: ${row.value}`}
+        tabIndex={0}
         onMouseEnter={() => onHover(row)}
         onMouseLeave={onLeave}
+        onFocus={() => onHover(row)}
+        onBlur={onLeave}
         className={`flex h-full w-full cursor-help overflow-hidden rounded-sm border border-slate-950/20 text-slate-950 shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-white/80 ${showLabel ? 'flex-col justify-between px-2 py-1' : 'items-center justify-center'}`}
         style={{ backgroundColor: color }}
       >
@@ -1645,45 +1762,70 @@ function TreemapTooltip({ cell }) {
         transform: showBelow ? 'translate(-50%, 8px)' : 'translate(-50%, calc(-100% - 8px))',
       }}
     >
-      <span className="block text-sm font-black text-amber-200">{cell.value}</span>
+      <span className="block text-sm font-black text-amber-200">{cell.label}</span>
+      <span>{cell.value} {cell.value === 1 ? 'algorithm' : 'algorithms'}</span>
     </div>
   );
 }
 
-function squarifyTreemap(items) {
-  return binaryTreemap(items, { x: 0, y: 0, w: 100, h: 100 });
-}
-
-function binaryTreemap(items, bounds) {
-  if (!items.length) return [];
-  if (items.length === 1) return [{ ...items[0], ...bounds }];
-  const total = items.reduce((value, item) => value + item.area, 0);
-  let running = 0;
-  let splitIndex = 1;
-  let bestDistance = Infinity;
-  for (let index = 1; index < items.length; index += 1) {
-    running += items[index - 1].area;
-    const distance = Math.abs(total / 2 - running);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      splitIndex = index;
+function squarifyTreemap(items, aspectRatio = 1) {
+  const width = Math.max(0.5, Math.min(4, aspectRatio)) * 100;
+  const pending = items
+    .filter((item) => item.area > 0)
+    .map((item) => ({ ...item, area: item.area * width / 100 }))
+    .sort((a, b) => b.area - a.area);
+  const rects = [];
+  let bounds = { x: 0, y: 0, w: width, h: 100 };
+  let row = [];
+  while (pending.length) {
+    const candidate = pending[0];
+    const side = Math.min(bounds.w, bounds.h);
+    if (!row.length || worstTreemapRatio([...row, candidate], side) <= worstTreemapRatio(row, side)) {
+      row.push(pending.shift());
+    } else {
+      bounds = layoutTreemapRow(row, bounds, rects);
+      row = [];
     }
   }
-  const left = items.slice(0, splitIndex);
-  const right = items.slice(splitIndex);
-  const leftTotal = left.reduce((value, item) => value + item.area, 0);
+  if (row.length) layoutTreemapRow(row, bounds, rects);
+  return rects.map((rect) => ({
+    ...rect,
+    area: rect.area * 100 / width,
+    x: rect.x * 100 / width,
+    w: rect.w * 100 / width,
+  }));
+}
+
+function worstTreemapRatio(row, side) {
+  const areas = row.map((item) => item.area);
+  const sum = areas.reduce((total, area) => total + area, 0);
+  const sideSquared = side * side;
+  return Math.max(
+    sideSquared * Math.max(...areas) / (sum * sum),
+    (sum * sum) / (sideSquared * Math.min(...areas)),
+  );
+}
+
+function layoutTreemapRow(row, bounds, rects) {
+  const area = row.reduce((total, item) => total + item.area, 0);
   if (bounds.w >= bounds.h) {
-    const leftWidth = bounds.w * (leftTotal / total);
-    return [
-      ...binaryTreemap(left, { x: bounds.x, y: bounds.y, w: leftWidth, h: bounds.h }),
-      ...binaryTreemap(right, { x: bounds.x + leftWidth, y: bounds.y, w: bounds.w - leftWidth, h: bounds.h }),
-    ];
+    const width = area / bounds.h;
+    let y = bounds.y;
+    row.forEach((item) => {
+      const height = item.area / width;
+      rects.push({ ...item, x: bounds.x, y, w: width, h: height });
+      y += height;
+    });
+    return { x: bounds.x + width, y: bounds.y, w: bounds.w - width, h: bounds.h };
   }
-  const topHeight = bounds.h * (leftTotal / total);
-  return [
-    ...binaryTreemap(left, { x: bounds.x, y: bounds.y, w: bounds.w, h: topHeight }),
-    ...binaryTreemap(right, { x: bounds.x, y: bounds.y + topHeight, w: bounds.w, h: bounds.h - topHeight }),
-  ];
+  const height = area / bounds.w;
+  let x = bounds.x;
+  row.forEach((item) => {
+    const width = item.area / height;
+    rects.push({ ...item, x, y: bounds.y, w: width, h: height });
+    x += width;
+  });
+  return { x: bounds.x, y: bounds.y + height, w: bounds.w, h: bounds.h - height };
 }
 
 function LiveBars({ rows, expanded = false }) {

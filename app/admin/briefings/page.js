@@ -1,6 +1,7 @@
 import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { BriefingReviewEditor } from './BriefingReviewEditor';
+import { PartnerReviewGateEditor } from './PartnerReviewGateEditor';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +12,8 @@ export default async function AdminBriefingsPage({ searchParams }) {
     : '';
   const search = String(params?.search || '').trim();
   const jurisdictionId = getJurisdictionId();
-  const [briefings, statusCounts, algorithms, generationJobs] = await Promise.all([
+  const defaultPartnerDeadline = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)).toISOString().slice(0, 10);
+  const [briefings, statusCounts, algorithms, generationJobs, organizations] = await Promise.all([
     prisma.briefing.findMany({
       where: {
         jurisdictionId,
@@ -27,6 +29,15 @@ export default async function AdminBriefingsPage({ searchParams }) {
       include: {
         targetAlgorithm: { select: { name: true, slug: true } },
         reviewedBy: { select: { name: true, email: true } },
+        partnerReviewOverriddenBy: { select: { name: true, email: true } },
+        partnerReviews: {
+          orderBy: { deadline: 'asc' },
+          include: {
+          organization: { select: { id: true, name: true, slug: true, isActive: true } },
+            assignedBy: { select: { name: true, email: true } },
+            reviewedBy: { select: { name: true, email: true } },
+          },
+        },
         reviewNotes: { orderBy: { createdAt: 'desc' }, include: { user: { select: { name: true, email: true } }, organization: { select: { name: true } } } },
       },
     }),
@@ -41,6 +52,11 @@ export default async function AdminBriefingsPage({ searchParams }) {
       take: 10,
       orderBy: { createdAt: 'desc' },
       include: { targetAlgorithm: { select: { name: true } }, requestedBy: { select: { name: true, email: true } } },
+    }),
+    prisma.organization.findMany({
+      where: { jurisdictionId, isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
     }),
   ]);
   const counts = Object.fromEntries(statusCounts.map((item) => [item.reviewStatus, item._count.reviewStatus]));
@@ -90,7 +106,10 @@ export default async function AdminBriefingsPage({ searchParams }) {
       <p className="mt-3 text-sm text-slate-500">Showing {briefings.length} briefing{briefings.length === 1 ? '' : 's'}</p>
 
       <div className="mt-6 space-y-4">
-        {briefings.map((briefing) => <BriefingReviewEditor key={briefing.id} briefing={serializeBriefing(briefing)} />)}
+        {briefings.map((briefing) => <div key={briefing.id}>
+          <BriefingReviewEditor briefing={serializeBriefing(briefing)} />
+          <PartnerReviewGateEditor initialGate={serializePartnerGate(briefing)} organizations={organizations} defaultDeadline={defaultPartnerDeadline} />
+        </div>)}
         {!briefings.length ? <p className="rounded-lg border bg-white p-4 text-sm text-slate-600">No briefings match this filter.</p> : null}
       </div>
     </div>
@@ -114,7 +133,7 @@ function serializeBriefing(briefing) {
     targetAlgorithmName: algorithm?.name || null,
     reviewedByLabel: briefing.reviewedBy?.name || briefing.reviewedBy?.email || null,
     reviewedAt: briefing.reviewedAt?.toISOString() || null,
-    previewUrl: `/briefings?scope=${algorithm ? 'algorithm' : 'overview'}${algorithm ? `&algorithm=${algorithm.slug}` : ''}`,
+    previewUrl: `/briefings/${briefing.slug}`,
     partnerReviewUrl: `/briefings/review/${briefing.slug}`,
     reviewNotes: briefing.reviewNotes.map((note) => ({
       id: note.id,
@@ -123,6 +142,32 @@ function serializeBriefing(briefing) {
       organization: note.organization?.name || null,
       createdAt: note.createdAt.toISOString(),
     })),
+  };
+}
+
+function serializePartnerGate(briefing) {
+  return {
+    briefing: {
+      id: briefing.id,
+      slug: briefing.slug,
+      title: briefing.title,
+      reviewStatus: briefing.reviewStatus,
+    },
+    assignments: briefing.partnerReviews.map((assignment) => ({
+      id: assignment.id,
+      organization: assignment.organization,
+      status: assignment.status,
+      deadline: assignment.deadline.toISOString(),
+      assignedAt: assignment.assignedAt.toISOString(),
+      assignedBy: assignment.assignedBy,
+      reviewedAt: assignment.reviewedAt?.toISOString() || null,
+      reviewedBy: assignment.reviewedBy,
+    })),
+    override: briefing.partnerReviewOverriddenAt ? {
+      reason: briefing.partnerReviewOverrideReason,
+      at: briefing.partnerReviewOverriddenAt.toISOString(),
+      by: briefing.partnerReviewOverriddenBy,
+    } : null,
   };
 }
 

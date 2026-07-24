@@ -52,6 +52,25 @@ try {
       for (const code of route.codes) {
         await page.getByText(code, { exact: true }).first().waitFor({ timeout: 15000 });
       }
+      if (route.lens === 'community' && route.scope === 'overview') {
+        const treemapArticle = page.locator('article').filter({ hasText: 'CC1' }).first();
+        await treemapArticle.getByText('Loading live data for this chart...').waitFor({ state: 'detached', timeout: 90000 });
+        const cells = await treemapArticle.locator('[data-treemap-cell]').evaluateAll((nodes) => nodes.map((node) => {
+          const rect = node.getBoundingClientRect();
+          return {
+            value: Number(node.dataset.treemapValue),
+            area: Number.parseFloat(node.style.width) * Number.parseFloat(node.style.height),
+            aspect: Math.max(rect.width / rect.height, rect.height / rect.width),
+          };
+        }));
+        assert(cells.length > 0, `${viewport.name} CC1 returned no treemap cells.`);
+        const areaPerValue = cells.map((cell) => cell.area / cell.value);
+        const maxAreaPerValue = Math.max(...areaPerValue);
+        const areaRange = Math.max(...areaPerValue) - Math.min(...areaPerValue);
+        assert(areaRange / maxAreaPerValue < 0.00001, `${viewport.name} CC1 cell area was not proportional to count (relative range ${areaRange / maxAreaPerValue}).`);
+        const maxAspect = Math.max(...cells.map((cell) => cell.aspect));
+        assert(maxAspect < 5, `${viewport.name} CC1 contained an excessively narrow cell (aspect ratio ${maxAspect}).`);
+      }
       const unexpected = await page.locator('article').evaluateAll((articles, expected) => articles
         .map((article) => article.textContent.match(/\b(?:CC|IC|GC|C|L|G)\d+\b/)?.[0])
         .filter(Boolean)
@@ -103,6 +122,28 @@ try {
   }
   await auditContext.close();
 
+  const navigationContext = await browser.newContext({ viewport: viewports[0] });
+  const navigationPage = await navigationContext.newPage();
+  await openPage(navigationPage, `${baseUrl}/briefings/explore?lens=community&scope=algorithm&algorithm=energy-consumption-predictor&domain=Energy+Forecasting&reading=detailed&language=en`);
+  const algorithmSelect = navigationPage.getByLabel('Algorithm');
+  await algorithmSelect.waitFor();
+  for (let attempt = 0; attempt < 100 && await algorithmSelect.inputValue() !== 'energy-consumption-predictor'; attempt += 1) await navigationPage.waitForTimeout(100);
+  await navigationPage.waitForTimeout(1000);
+  assert(new URL(navigationPage.url()).searchParams.get('algorithm') === 'energy-consumption-predictor', 'A dynamic algorithm deep link was replaced by a fallback algorithm.');
+  assert(new URL(navigationPage.url()).searchParams.get('domain') === 'Energy Forecasting', 'A dynamic domain deep link was discarded.');
+  await openPage(navigationPage, `${baseUrl}/briefings/explore?lens=community&scope=overview&reading=detailed&language=en`);
+  const evidenceButton = navigationPage.getByRole('button', { name: 'View evidence' }).first();
+  await evidenceButton.click();
+  assert(await navigationPage.getByRole('button', { name: 'Close evidence' }).evaluate((node) => node === document.activeElement), 'Evidence dialog did not receive initial focus.');
+  await navigationPage.goBack();
+  await navigationPage.getByRole('button', { name: 'Close evidence' }).waitFor({ state: 'detached' });
+  await navigationPage.goForward();
+  await navigationPage.getByRole('button', { name: 'Close evidence' }).waitFor();
+  await navigationPage.keyboard.press('Escape');
+  await navigationPage.getByRole('button', { name: 'Close evidence' }).waitFor({ state: 'detached' });
+  assert(await evidenceButton.evaluate((node) => node === document.activeElement), 'Evidence dialog did not restore focus after Escape.');
+  await navigationContext.close();
+
   const [briefings, communityClaims, governmentClaims] = await Promise.all([
     fetch(`${baseUrl}/api/briefings`).then((response) => response.json()),
     fetch(`${baseUrl}/api/explore/claim-vs-experience?lens=community`).then((response) => response.json()),
@@ -116,6 +157,7 @@ try {
     views: results.length,
     blocksChecked: results.reduce((sum, item) => sum + item.blocks, 0),
     drilldownsChecked: 4,
+    navigationAndDialogState: 'verified',
     publishedReviewProvenance: 'verified',
     governmentStoryPrivacy: 'verified',
     results,
