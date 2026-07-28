@@ -29,6 +29,10 @@ for (const write of ['tx.user.create', 'tx.userRole.create', 'tx.account.create'
 const nextAuthSource = await readFile(new URL('../lib/nextauth.js', import.meta.url), 'utf8');
 assert.match(nextAuthSource, /profile\.preferred_username/);
 assert.match(nextAuthSource, /profile\.upn/);
+const authSource = await readFile(new URL('../lib/auth.js', import.meta.url), 'utf8');
+assert.doesNotMatch(authSource, /include:\s*\{\s*user:/);
+assert.match(authSource, /select:\s*\{\s*expires:\s*true,\s*user:\s*\{\s*select:\s*currentUserSelect/);
+assert.doesNotMatch(authSource, /refreshToken|accessToken|idToken|sessionToken:\s*true/);
 const loginSource = await readFile(new URL('../app/api/auth/login/route.js', import.meta.url), 'utf8');
 assert.doesNotMatch(loginSource, /'not-found'|'invalid-password'|'password-not-set'/);
 assert.match(loginSource, /'invalid-credentials'/);

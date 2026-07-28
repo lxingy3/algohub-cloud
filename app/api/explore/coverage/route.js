@@ -1,28 +1,53 @@
+import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { countBy, getApprovedBriefingCorpus, minGroupCountForLens, parseExploreFilters } from '../../../../lib/briefingsExplore';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { prisma } from '../../../../lib/prisma';
-import { BRIEFINGS_EMBEDDING_MODEL, getSemanticEmbeddingMap } from '../../../../lib/semanticEmbeddings';
+import { BRIEFINGS_EMBEDDING_MODEL } from '../../../../lib/semanticEmbeddings';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   const filters = parseExploreFilters(request);
-  const rows = await getApprovedBriefingCorpus(filters, { includeExperiences: true });
+  const jurisdictionId = getJurisdictionId();
+  const rows = await getApprovedBriefingCorpus(filters);
   const minCount = minGroupCountForLens(filters.lens);
-  const [briefings, embeddings] = await Promise.all([prisma.briefing.findMany({
-    where: {
-      jurisdictionId: getJurisdictionId(),
-      ...(filters.algorithm ? { targetAlgorithm: { slug: filters.algorithm } } : {}),
-    },
-    select: {
-      reviewStatus: true,
-      generatedBy: true,
-      reviewedByUserId: true,
-    },
-  }), getSemanticEmbeddingMap('testimony', rows.map((row) => row.id))]);
+  const testimonyIds = rows.map((row) => row.id);
+  const [briefings, embeddingCoverage, [entityCoverage]] = await Promise.all([
+    prisma.briefing.findMany({
+      where: {
+        jurisdictionId,
+        ...(filters.algorithm ? { targetAlgorithm: { slug: filters.algorithm } } : {}),
+      },
+      select: {
+        reviewStatus: true,
+        generatedBy: true,
+        reviewedByUserId: true,
+      },
+    }),
+    testimonyIds.length
+      ? prisma.semanticEmbedding.aggregate({
+          where: {
+            jurisdictionId,
+            entityType: 'testimony',
+            entityId: { in: testimonyIds },
+            model: BRIEFINGS_EMBEDDING_MODEL,
+          },
+          _count: { _all: true },
+          _max: { generatedAt: true },
+        })
+      : Promise.resolve({ _count: { _all: 0 }, _max: { generatedAt: null } }),
+    testimonyIds.length
+      ? prisma.$queryRaw`
+          SELECT COUNT(*)::int AS count
+          FROM testimonies
+          WHERE id = ANY(ARRAY[${Prisma.join(testimonyIds)}]::uuid[])
+            AND ai_extracted_experiences->'entities' IS NOT NULL
+            AND ai_extracted_experiences->'entities' <> 'null'::jsonb
+        `
+      : Promise.resolve([{ count: 0 }]),
+  ]);
   const dates = rows.map((row) => row.submittedAt).filter(Boolean).sort((a, b) => a - b);
-  const latestEmbedding = [...embeddings.values()].map((row) => row.generatedAt).filter(Boolean).sort((a, b) => a - b).at(-1) || null;
   const count = (predicate) => rows.filter(predicate).length;
 
   return NextResponse.json({
@@ -45,15 +70,15 @@ export async function GET(request) {
       impactClassified: count((row) => Boolean(row.aiImpactClassification)),
       themesAssigned: count((row) => Array.isArray(row.aiThemes) && row.aiThemes.length > 0),
       summariesAvailable: count((row) => Boolean(row.brief?.summary || row.summary)),
-      entitiesExtracted: count((row) => Boolean(row.aiExtractedExperiences?.entities)),
+      entitiesExtracted: entityCoverage.count,
       perTestimonyProcessed: count((row) => Boolean(row.aiProcessedAt)),
       corpusMapped: count((row) => row.clusterId !== null && Number.isFinite(row.umapX) && Number.isFinite(row.umapY)),
       topicAssigned: count((row) => row.topicId !== null),
       outliers: count((row) => row.isOutlier),
-      semanticEmbeddings: embeddings.size,
+      semanticEmbeddings: embeddingCoverage._count._all,
       totalApprovedStories: rows.length,
       embeddingModel: BRIEFINGS_EMBEDDING_MODEL,
-      lastEmbeddingBatchAt: latestEmbedding,
+      lastEmbeddingBatchAt: embeddingCoverage._max.generatedAt,
     },
     whatsMissing: {
       noNeighbourhood: rows.filter((row) => !row.neighbourhood).length,

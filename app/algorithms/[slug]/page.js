@@ -19,7 +19,15 @@ export default async function AlgorithmDetailPage({ params }) {
       where: { slug, jurisdictionId },
       include: {
         claims: { orderBy: { createdAt: 'asc' } },
-        documents: { orderBy: { uploadedAt: 'desc' } },
+        documents: {
+          orderBy: { uploadedAt: 'desc' },
+          select: {
+            id: true,
+            title: true,
+            sourceType: true,
+            sourceUrl: true,
+          },
+        },
         testimonyLinks: {
           where: { testimony: { moderationStatus: 'APPROVED', publicPosting: true } },
           include: {

@@ -240,7 +240,7 @@ export function BriefingsClient() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/algorithms?limit=50')
+    fetch('/api/algorithms?limit=50&projection=briefings')
       .then((response) => response.json())
       .then((payload) => {
         if (cancelled || !Array.isArray(payload.items) || !payload.items.length) return;
@@ -350,8 +350,8 @@ export function BriefingsClient() {
       ['crossJurisdiction', '/api/explore/cross-jurisdiction'],
       ['excerpts', '/api/testimonies', excerptQuery],
       ['organizations', '/api/organizations?role=library&limit=6', ''],
-      ['events', '/api/events?limit=6', ''],
-      ['proposedAlgorithms', '/api/algorithms?status=PROPOSED,UNDER_REVIEW&limit=6', ''],
+      ['events', '/api/events?limit=6&projection=briefings', ''],
+      ['proposedAlgorithms', '/api/algorithms?status=PROPOSED,UNDER_REVIEW&limit=6&projection=briefings', ''],
       ['briefings', `/api/briefings${briefingQuery}`, ''],
     ];
     const requests = requestSpecs

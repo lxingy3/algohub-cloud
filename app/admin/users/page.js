@@ -67,13 +67,27 @@ export default async function AdminUsersPage({ searchParams }) {
     prisma.user.findMany({
       where: { jurisdictionId },
       orderBy: [{ primaryRoleName: 'asc' }, { email: 'asc' }],
-      include: {
-        organization: true,
-        userRoles: { include: { role: true } },
+      select: {
+        id: true,
+        email: true,
+        primaryRoleName: true,
+        emailVerified: true,
+        name: true,
+        passwordHash: true,
+        organizationId: true,
+        createdAt: true,
+        organization: { select: { name: true } },
+        userRoles: {
+          select: {
+            roleId: true,
+            role: { select: { name: true } },
+          },
+        },
         passwordResetTokens: {
           where: { expiresAt: { gt: now } },
           orderBy: { createdAt: 'desc' },
           take: 1,
+          select: { id: true },
         },
         accounts: { select: { provider: true } },
         _count: { select: { submittedTestimonies: true, comments: true } },

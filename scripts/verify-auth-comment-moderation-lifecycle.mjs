@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
 import { getJurisdictionId } from '../lib/jurisdiction.js';
+import { hashPasswordResetToken } from '../lib/password.js';
 import { requireTestDatabase } from './lib/require-test-database.mjs';
 
 const baseUrl = (process.argv[2] || 'http://127.0.0.1:3000').replace(/\/$/, '');
@@ -10,13 +11,18 @@ const { prisma } = await import('../lib/prisma.js');
 const jurisdictionId = getJurisdictionId();
 const suffix = randomUUID();
 const password = `Lifecycle-${suffix.slice(0, 8)}!A7`;
+const resetPassword = `Reset-${suffix.slice(0, 8)}!B8`;
 const communityEmail = `lifecycle-community-${suffix}@example.invalid`;
 const adminEmail = `lifecycle-admin-${suffix}@example.invalid`;
+const deletableEmail = `lifecycle-delete-${suffix}@example.invalid`;
 const commentMarker = `Lifecycle parent ${suffix}`;
 const replyMarker = `Lifecycle reply ${suffix}`;
+const testimonyMarker = `Lifecycle testimony ${suffix}`;
 
 let communityUser;
 let adminUser;
+let deletableUser;
+let lifecycleTestimony;
 
 function cookieFrom(response) {
   const value = response.headers.get('set-cookie') || '';
@@ -39,6 +45,20 @@ async function post(path, body, cookie = '', headers = {}) {
       ...headers,
     },
     body: new URLSearchParams(body),
+    redirect: 'manual',
+  });
+}
+
+async function postJson(path, body, cookie = '', headers = {}) {
+  return fetch(`${baseUrl}${path}`, {
+    method: 'POST',
+    headers: {
+      ...(cookie ? { cookie } : {}),
+      'content-type': 'application/json',
+      origin: baseUrl,
+      ...headers,
+    },
+    body: JSON.stringify(body),
     redirect: 'manual',
   });
 }
@@ -72,10 +92,22 @@ async function moderate(commentId, status, cookie, currentStatus) {
   }, cookie);
 }
 
+async function moderateTestimony(testimonyId, status, cookie, notes = '') {
+  return post(`/api/admin/testimonies/${testimonyId}/moderate`, {
+    status,
+    notes,
+    returnTo: '/admin/testimonies',
+  }, cookie);
+}
+
 async function publicStoryHtml(testimonyId) {
   const response = await fetch(`${baseUrl}/stories/${testimonyId}`);
   assert.equal(response.status, 200);
   return response.text();
+}
+
+async function publicTestimonyStatus(testimonyId) {
+  return (await fetch(`${baseUrl}/api/testimonies/${testimonyId}`)).status;
 }
 
 async function main() {
@@ -128,6 +160,153 @@ async function main() {
       data: { primaryRoleName: 'ADMIN' },
     }),
   ]);
+
+  const resetRequest = await post('/api/auth/request-password-reset', { email: communityEmail });
+  assert.equal(resetRequest.status, 200);
+  assert.equal((await resetRequest.json()).ok, true);
+  const requestedReset = await prisma.passwordResetToken.findMany({
+    where: { userId: communityUser.id },
+    select: { id: true, expiresAt: true },
+  });
+  assert.equal(requestedReset.length, 1);
+  assert.ok(requestedReset[0].expiresAt > new Date());
+
+  const repeatedResetRequest = await post('/api/auth/request-password-reset', { email: communityEmail });
+  assert.equal(repeatedResetRequest.status, 200);
+  assert.equal((await repeatedResetRequest.json()).ok, true);
+  assert.deepEqual(
+    await prisma.passwordResetToken.findMany({
+      where: { userId: communityUser.id },
+      select: { id: true },
+    }),
+    [{ id: requestedReset[0].id }],
+  );
+
+  const preResetSessionToken = sessionToken(communityCookie);
+  const adminReset = await post(`/api/admin/users/${communityUser.id}/password-reset`, {}, adminCookie);
+  assert.equal(adminReset.status, 200);
+  const adminResetBody = await adminReset.json();
+  const resetUrl = new URL(adminResetBody.resetUrl);
+  const resetToken = resetUrl.searchParams.get('resetToken');
+  assert.ok(resetToken);
+  assert.ok(await prisma.passwordResetToken.findUnique({
+    where: { tokenHash: hashPasswordResetToken(resetToken) },
+  }));
+
+  const mismatchedReset = await postJson('/api/auth/set-password', {
+    resetToken,
+    password: resetPassword,
+    confirmPassword: `${resetPassword}-mismatch`,
+  });
+  assert.equal(mismatchedReset.status, 400);
+
+  const completedReset = await postJson('/api/auth/set-password', {
+    resetToken,
+    password: resetPassword,
+    confirmPassword: resetPassword,
+  });
+  assert.equal(completedReset.status, 200);
+  assert.equal((await completedReset.json()).ok, true);
+  const resetCookie = cookieFrom(completedReset);
+  assert.equal(await prisma.session.findUnique({ where: { sessionToken: preResetSessionToken } }), null);
+  assert.ok(await prisma.session.findUnique({ where: { sessionToken: sessionToken(resetCookie) } }));
+  assert.equal(await prisma.passwordResetToken.count({ where: { userId: communityUser.id } }), 0);
+  assert.equal((await postJson('/api/auth/set-password', {
+    resetToken,
+    password: resetPassword,
+    confirmPassword: resetPassword,
+  })).status, 400);
+
+  const rejectedOldPassword = await login(communityEmail, password);
+  assert.equal(new URL(rejectedOldPassword.headers.get('location')).searchParams.get('authError'), 'invalid-credentials');
+  const acceptedResetPassword = await login(communityEmail, resetPassword);
+  assert.equal(acceptedResetPassword.status, 303);
+  communityCookie = cookieFrom(acceptedResetPassword);
+
+  const selfDelete = await post(
+    `/api/admin/users/${adminUser.id}/delete`,
+    { returnTo: '/admin/users' },
+    adminCookie,
+  );
+  assert.equal(selfDelete.status, 303);
+  assert.equal(new URL(selfDelete.headers.get('location')).searchParams.get('error'), 'self-delete');
+
+  const deletableCookie = await signup(deletableEmail, 'Lifecycle Delete');
+  deletableUser = await prisma.user.findUnique({
+    where: { jurisdictionId_email: { jurisdictionId, email: deletableEmail } },
+  });
+  assert.ok(deletableUser);
+  const deletableSessionToken = sessionToken(deletableCookie);
+  assert.equal((await post(
+    `/api/admin/users/${deletableUser.id}/delete`,
+    { returnTo: '/admin/users' },
+    communityCookie,
+  )).status, 403);
+  const deletedAccount = await post(
+    `/api/admin/users/${deletableUser.id}/delete`,
+    { returnTo: '/admin/users' },
+    adminCookie,
+  );
+  assert.equal(deletedAccount.status, 303);
+  assert.equal(new URL(deletedAccount.headers.get('location')).searchParams.get('success'), 'deleted');
+  assert.equal(await prisma.user.findUnique({ where: { id: deletableUser.id } }), null);
+  assert.equal(await prisma.session.findUnique({ where: { sessionToken: deletableSessionToken } }), null);
+  assert.equal(await prisma.userRole.count({ where: { userId: deletableUser.id } }), 0);
+
+  const createTestimony = await postJson('/api/testimonies', {
+    title: testimonyMarker,
+    city: 'Pittsburgh',
+    narrativeText: `${testimonyMarker} exercises the complete moderation lifecycle.`,
+    affectedDomain: 'Community Services',
+    selfReportedImpact: 'MIXED',
+    publicPosting: true,
+    followupConsent: true,
+    isAnonymous: true,
+    storyType: 'text',
+  }, communityCookie);
+  assert.equal(createTestimony.status, 201);
+  const createTestimonyBody = await createTestimony.json();
+  lifecycleTestimony = await prisma.testimony.findUnique({
+    where: { id: createTestimonyBody.id },
+    select: { id: true, userId: true, moderationStatus: true, publicPosting: true },
+  });
+  assert.ok(lifecycleTestimony);
+  assert.equal(lifecycleTestimony.userId, communityUser.id);
+  assert.equal(lifecycleTestimony.moderationStatus, 'PENDING');
+  assert.equal(lifecycleTestimony.publicPosting, true);
+  assert.equal(await publicTestimonyStatus(lifecycleTestimony.id), 404);
+  assert.equal((await moderateTestimony(
+    lifecycleTestimony.id,
+    'APPROVED',
+    communityCookie,
+  )).status, 403);
+
+  const flagTestimony = await moderateTestimony(
+    lifecycleTestimony.id,
+    'FLAGGED',
+    adminCookie,
+    'Lifecycle flag review.',
+  );
+  assert.equal(flagTestimony.status, 303);
+  assert.deepEqual(
+    await prisma.testimony.findUnique({
+      where: { id: lifecycleTestimony.id },
+      select: { moderationStatus: true, moderatorId: true, moderationNotes: true },
+    }),
+    {
+      moderationStatus: 'FLAGGED',
+      moderatorId: adminUser.id,
+      moderationNotes: 'Lifecycle flag review.',
+    },
+  );
+  assert.equal((await moderateTestimony(lifecycleTestimony.id, 'APPROVED', adminCookie)).status, 303);
+  assert.equal(await publicTestimonyStatus(lifecycleTestimony.id), 200);
+  assert.equal((await moderateTestimony(lifecycleTestimony.id, 'FLAGGED', adminCookie)).status, 400);
+  assert.equal((await moderateTestimony(lifecycleTestimony.id, 'REJECTED', adminCookie)).status, 303);
+  assert.equal(await publicTestimonyStatus(lifecycleTestimony.id), 404);
+  assert.equal((await moderateTestimony(lifecycleTestimony.id, 'PENDING', adminCookie)).status, 303);
+  assert.equal((await moderateTestimony(lifecycleTestimony.id, 'APPROVED', adminCookie)).status, 303);
+  assert.equal(await publicTestimonyStatus(lifecycleTestimony.id), 200);
 
   const createComment = await post(
     `/api/stories/${testimony.id}/comments`,
@@ -220,16 +399,23 @@ async function main() {
     status: 'PASS',
     storyId: testimony.id,
     auth: 'signup -> logout -> rejected login -> accepted login -> logout',
+    passwordReset: 'request -> cooldown -> admin token -> validation -> consume -> sessions revoked -> new password login',
+    accounts: 'non-admin denied; self-delete denied; disposable account deleted with session and role cleanup',
+    testimonyModeration: 'pending hidden -> flagged -> approved visible -> rejected hidden -> pending -> approved visible',
     comments: 'pending response -> approved; reply pending response -> flagged -> approved',
     moderation: 'non-admin denied; stale state conflicted; invalid transition denied; approved -> rejected -> pending -> approved',
     likes: '0 -> 1 -> 0',
     reactions: '0 -> 1 -> 0',
+    sso: 'NOT_RUN: external OAuth callback cannot be simulated deterministically without a provider.',
   }, null, 2));
 }
 
 async function cleanup() {
-  const userIds = [communityUser?.id, adminUser?.id].filter(Boolean);
+  const userIds = [communityUser?.id, adminUser?.id, deletableUser?.id].filter(Boolean);
   if (!userIds.length) return;
+  if (lifecycleTestimony?.id) {
+    await prisma.testimony.deleteMany({ where: { id: lifecycleTestimony.id } });
+  }
   const comments = await prisma.comment.findMany({
     where: { userId: { in: userIds } },
     select: { id: true, parentCommentId: true },

@@ -32,10 +32,12 @@ export async function GET(request) {
       : null,
   ]);
 
-  const [insightEmbeddings, algorithmEmbeddings] = await Promise.all([
-    getSemanticEmbeddingMap('cross_jurisdiction_insight', insights.map((insight) => insight.id), { jurisdictionId }),
-    getSemanticEmbeddingMap('algorithm', algorithm ? [algorithm.id] : [], { jurisdictionId }),
-  ]);
+  const [insightEmbeddings, algorithmEmbeddings] = algorithm
+    ? await Promise.all([
+      getSemanticEmbeddingMap('cross_jurisdiction_insight', insights.map((insight) => insight.id), { jurisdictionId }),
+      getSemanticEmbeddingMap('algorithm', [algorithm.id], { jurisdictionId }),
+    ])
+    : [new Map(), new Map()];
   const algorithmVector = algorithm ? algorithmEmbeddings.get(algorithm.id)?.vector : null;
   const rows = insights.map((insight) => {
     const similarity = algorithmVector

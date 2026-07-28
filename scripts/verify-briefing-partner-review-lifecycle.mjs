@@ -106,6 +106,7 @@ async function main() {
   });
 
   const adminPath = `/api/admin/briefings/${briefing.id}`;
+  const gatePath = `${adminPath}/partner-reviews`;
   const blockedWithoutAssignment = await post(
     adminPath,
     briefingBody('publish', briefing),
@@ -113,13 +114,22 @@ async function main() {
   );
   assert.equal(blockedWithoutAssignment.status, 409);
 
-  const deadline = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const deadline = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const assigned = await post(
-    `${adminPath}/partner-reviews`,
+    gatePath,
     { action: 'assign', organizationId: organization.id, deadline },
     admin.cookie,
   );
   assert.equal(assigned.status, 200);
+  const overdueAssignment = await prisma.briefingPartnerReview.findUnique({
+    where: { briefingId_organizationId: { briefingId: briefing.id, organizationId: organization.id } },
+    select: { deadline: true, status: true },
+  });
+  assert.ok(overdueAssignment.deadline.getTime() < Date.now());
+  assert.equal(overdueAssignment.status, 'PENDING');
+  const overduePending = await post(adminPath, briefingBody('publish', briefing), admin.cookie);
+  assert.equal(overduePending.status, 409);
+  assert.equal((await overduePending.json()).partnerReview.pending[0].status, 'PENDING');
 
   const partnerPath = `/api/briefings/${briefing.slug}/review-notes`;
   const unauthorized = await post(
@@ -150,6 +160,31 @@ async function main() {
   );
   assert.equal((await post(adminPath, briefingBody('publish', briefing), admin.cookie)).status, 409);
 
+  const revisionRequested = await post(
+    partnerPath,
+    { status: 'REVISION_REQUESTED', content: 'Please revise the evidence window before this Briefing is published.' },
+    partner.cookie,
+    'text/html',
+  );
+  assert.equal(revisionRequested.status, 303);
+  assert.equal(
+    (await prisma.briefingPartnerReview.findUnique({
+      where: { briefingId_organizationId: { briefingId: briefing.id, organizationId: organization.id } },
+    })).status,
+    'REVISION_REQUESTED',
+  );
+  assert.equal(
+    await prisma.briefingReviewNote.count({
+      where: {
+        briefingId: briefing.id,
+        organizationId: organization.id,
+        partnerReviewStatus: 'REVISION_REQUESTED',
+      },
+    }),
+    1,
+  );
+  assert.equal((await post(adminPath, briefingBody('publish', briefing), admin.cookie)).status, 409);
+
   const approved = await post(
     partnerPath,
     { status: 'APPROVED', content: 'The organization approves this synthetic Briefing for publication.' },
@@ -157,6 +192,37 @@ async function main() {
     'text/html',
   );
   assert.equal(approved.status, 303);
+
+  const secondDeadline = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  assert.equal((await post(
+    gatePath,
+    { action: 'assign', organizationId: otherOrganization.id, deadline: secondDeadline },
+    admin.cookie,
+  )).status, 200);
+  const blockedBySecondOrganization = await post(
+    adminPath,
+    briefingBody('publish', briefing),
+    admin.cookie,
+  );
+  assert.equal(blockedBySecondOrganization.status, 409);
+  const blockedGate = (await blockedBySecondOrganization.json()).partnerReview;
+  assert.equal(blockedGate.assignmentCount, 2);
+  assert.ok(blockedGate.pending.some((row) => (
+    row.organization.id === otherOrganization.id && row.status === 'PENDING'
+  )));
+  assert.equal((await post(
+    partnerPath,
+    { status: 'APPROVED', content: 'The second assigned organization also approves this synthetic Briefing.' },
+    unassignedPartner.cookie,
+    'text/html',
+  )).status, 303);
+  assert.equal(
+    await prisma.briefingPartnerReview.count({
+      where: { briefingId: briefing.id, status: 'APPROVED' },
+    }),
+    2,
+  );
+
   const [racedDecision, racedPublication] = await Promise.all([
     post(
       partnerPath,
@@ -204,6 +270,57 @@ async function main() {
   assert.equal(afterPublication.status, 409);
 
   await prisma.briefing.update({ where: { id: briefing.id }, data: { reviewStatus: 'REVIEWED', publishedAt: null } });
+  const recordedOverrideReason = 'Synthetic editable override used to verify explicit clearing.';
+  assert.equal((await post(
+    gatePath,
+    { action: 'override', reason: recordedOverrideReason },
+    admin.cookie,
+  )).status, 200);
+  const recordedOverride = await prisma.briefing.findUnique({
+    where: { id: briefing.id },
+    select: {
+      partnerReviewOverrideReason: true,
+      partnerReviewOverriddenByUserId: true,
+      partnerReviewOverriddenAt: true,
+    },
+  });
+  assert.equal(recordedOverride.partnerReviewOverrideReason, recordedOverrideReason);
+  assert.equal(recordedOverride.partnerReviewOverriddenByUserId, admin.user.id);
+  assert.ok(recordedOverride.partnerReviewOverriddenAt);
+  assert.equal((await post(gatePath, { action: 'clear_override' }, admin.cookie)).status, 200);
+  assert.deepEqual(
+    await prisma.briefing.findUnique({
+      where: { id: briefing.id },
+      select: {
+        partnerReviewOverrideReason: true,
+        partnerReviewOverriddenByUserId: true,
+        partnerReviewOverriddenAt: true,
+      },
+    }),
+    {
+      partnerReviewOverrideReason: null,
+      partnerReviewOverriddenByUserId: null,
+      partnerReviewOverriddenAt: null,
+    },
+  );
+
+  assert.equal((await post(
+    gatePath,
+    { action: 'remove', organizationId: otherOrganization.id },
+    admin.cookie,
+  )).status, 200);
+  assert.equal(
+    await prisma.briefingPartnerReview.findUnique({
+      where: {
+        briefingId_organizationId: {
+          briefingId: briefing.id,
+          organizationId: otherOrganization.id,
+        },
+      },
+    }),
+    null,
+  );
+
   const revised = {
     ...briefing,
     executiveSummary: `${briefing.executiveSummary} Revised after partner feedback.`,
@@ -232,13 +349,15 @@ async function main() {
 
   console.log(JSON.stringify({
     status: 'PASS',
-    assignment: 'admin assigned one organization with a seven-day deadline',
+    assignment: 'admin assigned and removed organizations through the gate API',
     authorization: 'unassigned organization denied; admin impersonation denied',
-    decisions: 'concern blocked publication; approval allowed publication',
+    decisions: 'concern and revision request blocked publication; approval allowed publication',
+    deadline: 'an overdue pending review remained blocked by status; its later approval remained eligible',
+    multiOrganization: 'publication required every assigned organization to approve',
     concurrency: 'publication and partner decision serialized; no published concern state',
     revision: 'content change reset approval to pending',
     publishedLock: 'partner decision change after publication denied',
-    override: 'admin override required an auditable reason',
+    override: 'admin override was recorded, cleared, and later required an auditable publication reason',
   }, null, 2));
 }
 

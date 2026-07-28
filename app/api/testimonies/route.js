@@ -8,12 +8,13 @@ import {
   mediaStorageProvider,
   mediaStorageUri,
 } from '../../../lib/mediaStorage';
-import { rankStoriesForSearch } from '../../../lib/searchRanking';
+import { rankStoriesForSearch, searchTokens } from '../../../lib/searchRanking';
 import { buildStorySummary } from '../../../lib/storySummary';
 import { anonymizedExcerpt, parseExploreFilters, storedKeywords, storyHasTheme } from '../../../lib/briefingsExplore';
 import { cosineSimilarity, getSemanticEmbeddingMap, meanEmbedding } from '../../../lib/semanticEmbeddings';
 
 export const dynamic = 'force-dynamic';
+const impactValues = new Set(['POSITIVE', 'NEGATIVE', 'MIXED', 'UNCLEAR']);
 
 const testimonySchema = z.object({
   title: z.string().trim().min(1).max(255),
@@ -75,10 +76,25 @@ const testimonyListSelect = {
   _count: { select: { comments: true, reactions: true } },
 };
 
-const testimonySearchSelect = {
-  ...testimonyListSelect,
+const testimonySearchCandidateSelect = {
+  id: true,
+  title: true,
+  summary: true,
+  city: true,
+  narrativeText: true,
   transcriptionText: true,
+  affectedDomain: true,
+  selfReportedImpact: true,
+  aiImpactClassification: true,
+  submittedAt: true,
   brief: { select: { summary: true } },
+};
+
+const testimonyExcerptCandidateSelect = {
+  id: true,
+  aiThemes: true,
+  clusterId: true,
+  isOutlier: true,
 };
 
 const testimonyExcerptSelect = {
@@ -131,7 +147,7 @@ function cleanExcerptText(story) {
   return anonymizedExcerpt(story);
 }
 
-function pickBriefingExcerpts(stories, limit, embeddings) {
+function pickBriefingExcerptCandidates(stories, limit, embeddings) {
   const picked = [];
   const seenIds = new Set();
 
@@ -170,7 +186,11 @@ function pickBriefingExcerpts(stories, limit, embeddings) {
     addStory(story, 'Recent approved story matching the current filters.');
   }
 
-  return picked.map(({ story, whyShown }) => ({
+  return picked.map(({ story, whyShown }) => ({ id: story.id, whyShown }));
+}
+
+function briefingExcerptItem(story, whyShown) {
+  return {
     id: story.id,
     title: story.title || 'Untitled story',
     excerpt: cleanExcerptText(story),
@@ -197,19 +217,19 @@ function pickBriefingExcerpts(stories, limit, embeddings) {
       linkType: link.linkType,
       confidence: link.confidence,
     })),
-  }));
+  };
 }
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const filters = parseExploreFilters(request);
   const fields = searchParams.get('fields') || '';
-  const page = Math.max(Number(searchParams.get('page') || 1), 1);
+  const page = Math.max(Number.parseInt(searchParams.get('page') || '1', 10) || 1, 1);
   // ponytail: Briefings can inspect up to 200 excerpts in one snapshot; switch to cursor loading when the corpus outgrows this.
   const maxLimit = fields === 'excerpt' ? 200 : 50;
-  const limit = Math.min(Math.max(Number(searchParams.get('limit') || 20), 1), maxLimit);
+  const limit = Math.min(Math.max(Number.parseInt(searchParams.get('limit') || '20', 10) || 20, 1), maxLimit);
   const jurisdictionId = getJurisdictionId();
-  const search = searchParams.get('search') || '';
+  const search = (searchParams.get('search') || '').trim().slice(0, 100);
   const { algorithm, domain, impact, language, lens, submissionMethod, theme } = filters;
   const submittedAt = {
     ...(filters.dateFrom ? { gte: filters.dateFrom } : {}),
@@ -250,6 +270,7 @@ export async function GET(request) {
   }
 
   if (fields === 'excerpt') {
+    const start = (page - 1) * limit;
     const candidates = await prisma.testimony.findMany({
       where,
       orderBy: [
@@ -257,12 +278,23 @@ export async function GET(request) {
         { submittedAt: 'desc' },
       ],
       take: 500,
-      select: testimonyExcerptSelect,
+      select: testimonyExcerptCandidateSelect,
     });
     const matchingStories = candidates.filter((story) => storyHasTheme(story, theme));
     const embeddings = await getSemanticEmbeddingMap('testimony', matchingStories.map((story) => story.id), { jurisdictionId });
-    const start = (page - 1) * limit;
-    const items = pickBriefingExcerpts(matchingStories, start + limit, embeddings).slice(start, start + limit);
+    const selected = pickBriefingExcerptCandidates(matchingStories, start + limit, embeddings).slice(start, start + limit);
+    const selectedIds = selected.map(({ id }) => id);
+    const selectedStories = selectedIds.length
+      ? await prisma.testimony.findMany({
+          where: { ...where, id: { in: selectedIds } },
+          select: testimonyExcerptSelect,
+        })
+      : [];
+    const selectedById = new Map(selectedStories.map((story) => [story.id, story]));
+    const items = selected.flatMap(({ id, whyShown }) => {
+      const story = selectedById.get(id);
+      return story ? [briefingExcerptItem(story, whyShown)] : [];
+    });
 
     return NextResponse.json({
       items,
@@ -275,23 +307,45 @@ export async function GET(request) {
       notes: [
         'Excerpts are shortened and avoid submitter contact details.',
         'Representative rows are nearest the saved cluster centroid; minority rows use is_outlier when available.',
+        `Selection sampled ${matchingStories.length} candidates from the existing 500-row ceiling and loaded full text for ${items.length} displayed rows.`,
       ],
     });
   }
 
   if (search) {
+    const searchFilters = searchTokens(search).slice(0, 8).map((token) => ({
+      OR: [
+        { title: { contains: token, mode: 'insensitive' } },
+        { summary: { contains: token, mode: 'insensitive' } },
+        { narrativeText: { contains: token, mode: 'insensitive' } },
+        { transcriptionText: { contains: token, mode: 'insensitive' } },
+        { affectedDomain: { contains: token, mode: 'insensitive' } },
+        { city: { contains: token, mode: 'insensitive' } },
+        { aiImpactClassification: { contains: token, mode: 'insensitive' } },
+        { brief: { is: { summary: { contains: token, mode: 'insensitive' } } } },
+        ...(impactValues.has(token.toUpperCase()) ? [{ selfReportedImpact: token.toUpperCase() }] : []),
+        ...(token === 'impact' ? [{ selfReportedImpact: { not: null } }] : []),
+      ],
+    }));
+    const searchWhere = {
+      ...where,
+      ...(searchFilters.length ? { AND: [...(where.AND || []), ...searchFilters] } : {}),
+    };
     const candidates = await prisma.testimony.findMany({
-      where,
+      where: searchWhere,
       orderBy: { submittedAt: 'desc' },
-      select: testimonySearchSelect,
+      select: testimonySearchCandidateSelect,
     });
     const ranked = rankStoriesForSearch(candidates, search);
-    const items = ranked.slice((page - 1) * limit, page * limit).map((story) => {
-      const item = { ...story };
-      delete item.brief;
-      delete item.transcriptionText;
-      return item;
-    });
+    const selectedIds = ranked.slice((page - 1) * limit, page * limit).map(({ id }) => id);
+    const selectedRows = selectedIds.length
+      ? await prisma.testimony.findMany({
+          where: { ...searchWhere, id: { in: selectedIds } },
+          select: testimonyListSelect,
+        })
+      : [];
+    const selectedById = new Map(selectedRows.map((story) => [story.id, story]));
+    const items = selectedIds.map((id) => selectedById.get(id)).filter(Boolean);
 
     return NextResponse.json({ items, page, limit, total: ranked.length });
   }

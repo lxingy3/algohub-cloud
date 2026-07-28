@@ -13,7 +13,14 @@ export async function GET(_request, { params }) {
     },
     include: {
       claims: true,
-      documents: true,
+      documents: {
+        select: {
+          id: true,
+          title: true,
+          sourceType: true,
+          sourceUrl: true,
+        },
+      },
       testimonyLinks: {
         where: { testimony: { moderationStatus: 'APPROVED', publicPosting: true } },
         include: {

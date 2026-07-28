@@ -4,15 +4,28 @@ import { getJurisdictionId } from '../../../lib/jurisdiction';
 
 export const dynamic = 'force-dynamic';
 
+const briefingSelect = {
+  id: true,
+  title: true,
+  date: true,
+  location: true,
+  isVirtual: true,
+  registrationUrl: true,
+};
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const limit = Number(searchParams.get('limit') || 0);
-  const compact = limit > 0;
+  const requestedLimit = Number(searchParams.get('limit') || 0);
+  const limit = Number.isFinite(requestedLimit)
+    ? Math.min(Math.max(Math.trunc(requestedLimit), 0), 50)
+    : 0;
+  const bounded = limit > 0;
+  const compact = searchParams.get('projection') === 'briefings';
   const events = await prisma.communityEvent.findMany({
     where: { jurisdictionId: getJurisdictionId() },
     orderBy: { date: 'asc' },
-    ...(compact ? { take: Math.min(Math.max(limit, 1), 50) } : {}),
-    select: {
+    ...(bounded ? { take: limit } : {}),
+    select: compact ? briefingSelect : {
       id: true,
       title: true,
       description: true,
@@ -31,7 +44,10 @@ export async function GET(request) {
     },
   });
 
-  return NextResponse.json({ items: events.map((event) => ({ ...event, imageUrl: imageUrlForEvent(event) })), total: events.length });
+  const items = compact
+    ? events
+    : events.map((event) => ({ ...event, imageUrl: imageUrlForEvent(event) }));
+  return NextResponse.json({ items, total: events.length });
 }
 
 function imageUrlForEvent(event) {

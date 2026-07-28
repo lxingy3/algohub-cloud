@@ -5,6 +5,15 @@ import { rankAlgorithmsForSearch, searchTokens } from '../../../lib/searchRankin
 
 export const dynamic = 'force-dynamic';
 
+const briefingSelect = {
+  id: true,
+  slug: true,
+  name: true,
+  useCase: true,
+  status: true,
+  agencyName: true,
+};
+
 const listSelect = {
   id: true,
   sourceId: true,
@@ -69,6 +78,7 @@ export async function GET(request) {
   const agency = searchParams.get('agency') || '';
   const impactLevel = normalizeImpactLevel(searchParams.get('impact_level'));
   const statuses = normalizeStatusList(searchParams.get('status') || '');
+  const compact = searchParams.get('projection') === 'briefings';
 
   const where = {
     jurisdictionId,
@@ -129,9 +139,13 @@ export async function GET(request) {
       orderBy: { name: 'asc' },
       skip,
       take: limit,
-      include: {
-        _count: { select: { testimonyLinks: { where: { testimony: { moderationStatus: 'APPROVED', publicPosting: true } } } } },
-      },
+      ...(compact
+        ? { select: briefingSelect }
+        : {
+            include: {
+              _count: { select: { testimonyLinks: { where: { testimony: { moderationStatus: 'APPROVED', publicPosting: true } } } } },
+            },
+          }),
     }),
     prisma.algorithm.count({ where }),
   ]);
