@@ -63,19 +63,19 @@ try {
 
   for (const viewport of viewports) {
     const context = await browser.newContext({ viewport });
-    const page = await context.newPage();
     const errors = [];
-    const apiRequests = [];
-    page.on('pageerror', (error) => errors.push(error.message));
-    page.on('console', (message) => {
-      if (message.type() === 'error') errors.push(message.text());
-    });
-    page.on('request', (request) => {
-      const url = new URL(request.url());
-      if (url.pathname.startsWith('/api/')) apiRequests.push(url);
-    });
     for (const route of routes) {
-      const requestStart = apiRequests.length;
+      const page = await context.newPage();
+      const activeRoute = `${route.lens}/${route.scope}`;
+      const apiRequests = [];
+      page.on('pageerror', (error) => errors.push(`${activeRoute}: ${error.message}`));
+      page.on('console', (message) => {
+        if (message.type() === 'error') errors.push(`${activeRoute}: ${message.text()}`);
+      });
+      page.on('request', (request) => {
+        const url = new URL(request.url());
+        if (url.pathname.startsWith('/api/')) apiRequests.push(url);
+      });
       const url = `${baseUrl}/briefings/explore?lens=${route.lens}&scope=${route.scope}&reading=detailed&language=en`;
       await openPage(page, url);
       await page.getByRole('heading', { name: 'Briefings' }).waitFor();
@@ -90,7 +90,7 @@ try {
       assert(await page.locator('#briefing-views[tabindex="-1"]').count() === 1, `${viewport.name} ${route.lens}/${route.scope} is missing the briefing view focus target.`);
       const firstArticle = page.locator('article').first();
       await firstArticle.getByText('Loading live data for this chart...').waitFor({ state: 'detached', timeout: 90000 });
-      const routeRequests = apiRequests.slice(requestStart);
+      const routeRequests = apiRequests;
       const expectedPaths = expectedApiPaths(route);
       const actualPaths = new Set(routeRequests.map((requestUrl) => requestUrl.pathname));
       const unexpectedPaths = [...actualPaths].filter((path) => !expectedPaths.has(path));
@@ -106,30 +106,45 @@ try {
         assert(excerptRequests.length === 1, `${viewport.name} ${route.lens}/${route.scope} requested excerpts ${excerptRequests.length} times.`);
         assert(excerptRequests[0].searchParams.get('limit') === '20', `${viewport.name} ${route.lens}/${route.scope} did not cap excerpts at 20.`);
       }
-      if (route.lens === 'community' && route.scope === 'overview') {
-        const treemapArticle = page.locator('article').filter({ hasText: 'CC1' }).first();
+      const treemapCode = route.scope === 'overview'
+        ? route.lens === 'community' ? 'CC1' : route.lens === 'government' ? 'GC1' : null
+        : null;
+      if (treemapCode) {
+        const treemapArticle = page.locator('article').filter({ hasText: treemapCode }).first();
         const cells = await treemapArticle.locator('[data-treemap-cell]').evaluateAll((nodes) => nodes.map((node) => {
           const rect = node.getBoundingClientRect();
+          const rgb = getComputedStyle(node.firstElementChild).backgroundColor.match(/\d+(?:\.\d+)?/g)?.slice(0, 3).map(Number) || [];
           return {
             value: Number(node.dataset.treemapValue),
             area: Number.parseFloat(node.style.width) * Number.parseFloat(node.style.height),
             aspect: Math.max(rect.width / rect.height, rect.height / rect.width),
+            color: getComputedStyle(node.firstElementChild).backgroundColor,
+            brightness: rgb.reduce((sum, channel) => sum + channel, 0),
           };
         }));
-        assert(cells.length > 0, `${viewport.name} CC1 returned no treemap cells.`);
+        assert(cells.length > 0, `${viewport.name} ${treemapCode} returned no treemap cells.`);
         const areaPerValue = cells.map((cell) => cell.area / cell.value);
         const maxAreaPerValue = Math.max(...areaPerValue);
         const areaRange = Math.max(...areaPerValue) - Math.min(...areaPerValue);
-        assert(areaRange / maxAreaPerValue < 0.00001, `${viewport.name} CC1 cell area was not proportional to count (relative range ${areaRange / maxAreaPerValue}).`);
+        assert(areaRange / maxAreaPerValue < 0.00001, `${viewport.name} ${treemapCode} cell area was not proportional to count (relative range ${areaRange / maxAreaPerValue}).`);
         const maxAspect = Math.max(...cells.map((cell) => cell.aspect));
-        assert(maxAspect < 5, `${viewport.name} CC1 contained an excessively narrow cell (aspect ratio ${maxAspect}).`);
-        const tooltipTrigger = page.locator('article [aria-describedby]').first();
-        await tooltipTrigger.waitFor();
-        const tooltipId = await tooltipTrigger.getAttribute('aria-describedby');
-        const tooltip = page.locator(`[id="${tooltipId}"][role="tooltip"]`);
-        assert(await tooltip.count() === 1, `${viewport.name} chart tooltip is not linked by aria-describedby.`);
+        assert(maxAspect < 5, `${viewport.name} ${treemapCode} contained an excessively narrow cell (aspect ratio ${maxAspect}).`);
+        const colorsByValue = new Map();
+        for (const cell of cells) {
+          const previous = colorsByValue.get(cell.value);
+          assert(!previous || previous.color === cell.color, `${viewport.name} ${treemapCode} used different colors for the same count ${cell.value}.`);
+          colorsByValue.set(cell.value, cell);
+        }
+        assert(colorsByValue.size >= 2, `${viewport.name} ${treemapCode} did not expose multiple counts for color-scale verification.`);
+        const colorScale = [...colorsByValue.entries()].sort(([first], [second]) => first - second);
+        for (let index = 1; index < colorScale.length; index += 1) {
+          const [previousValue, previousCell] = colorScale[index - 1];
+          const [value, cell] = colorScale[index];
+          assert(cell.color !== previousCell.color && cell.brightness < previousCell.brightness, `${viewport.name} ${treemapCode} did not render count ${value} darker than count ${previousValue}.`);
+        }
+        const tooltipTrigger = treemapArticle.locator('[data-treemap-cell] [role="img"]').first();
         await tooltipTrigger.focus();
-        assert(await tooltip.isVisible(), `${viewport.name} chart tooltip did not open on keyboard focus.`);
+        assert(await treemapArticle.getByRole('tooltip').isVisible(), `${viewport.name} ${treemapCode} tooltip did not open on keyboard focus.`);
       }
       if (route.lens === 'government' && route.scope === 'overview') {
         const procurement = page.locator('article').filter({ hasText: 'GC7' }).first();
@@ -142,6 +157,99 @@ try {
         await page.getByText(/^Peer comparable:/).first().waitFor();
         assert(await page.locator('a[href^="/algorithms/"]').count() > 0, `${viewport.name} GC7 algorithm evidence did not use a direct detail link.`);
         await page.getByRole('button', { name: 'Close evidence' }).click();
+      }
+      if (viewport.name === 'desktop' && route.lens === 'intermediary' && route.scope === 'overview') {
+        const networkArticle = page.locator('article').filter({ hasText: 'IC2' }).first();
+        await networkArticle.getByRole('button', { name: 'Expand' }).click();
+        let expandedDialog = page.getByRole('dialog');
+        await expandedDialog.getByRole('heading', { name: 'Cross-cutting themes + co-occurrence' }).waitFor();
+        const networkLabels = await expandedDialog.locator('[data-network-label]').evaluateAll((nodes) => {
+          const boxes = nodes.map((node) => ({ label: node.textContent.trim(), rect: node.getBoundingClientRect() }));
+          const collisions = [];
+          for (let first = 0; first < boxes.length; first += 1) {
+            for (let second = first + 1; second < boxes.length; second += 1) {
+              const horizontal = Math.min(boxes[first].rect.right, boxes[second].rect.right) - Math.max(boxes[first].rect.left, boxes[second].rect.left);
+              const vertical = Math.min(boxes[first].rect.bottom, boxes[second].rect.bottom) - Math.max(boxes[first].rect.top, boxes[second].rect.top);
+              if (horizontal > 1 && vertical > 1) collisions.push(`${boxes[first].label} / ${boxes[second].label}`);
+            }
+          }
+          return { count: boxes.length, collisions };
+        });
+        assert(networkLabels.count >= 2, 'IC2 network did not render enough labels for overlap verification.');
+        assert(!networkLabels.collisions.length, `IC2 network labels overlap: ${networkLabels.collisions.join(', ')}`);
+        assert(await expandedDialog.getByRole('img', { name: /: \d+/ }).count() > 0, 'IC2 network nodes do not expose their labels and counts to assistive technology.');
+        await expandedDialog.getByRole('button', { name: 'Close expanded chart' }).click();
+
+        const scatterArticle = page.locator('article').filter({ hasText: 'IC4' }).first();
+        await scatterArticle.getByRole('button', { name: 'Expand' }).click();
+        expandedDialog = page.getByRole('dialog');
+        await expandedDialog.getByRole('heading', { name: 'Corpus story map / emergent topics' }).waitFor();
+        const plot = expandedDialog.locator('[data-scatter-plot]');
+        await plot.waitFor();
+        const controlSizes = await expandedDialog.getByRole('button', { name: /story map/ }).evaluateAll((buttons) => buttons.map((button) => {
+          const rect = button.getBoundingClientRect();
+          return { width: rect.width, height: rect.height };
+        }));
+        assert(controlSizes.length === 3 && controlSizes.every((size) => size.width >= 44 && size.height >= 44), 'IC4 zoom controls are smaller than 44px.');
+        const selectedPoints = await plot.locator('[data-scatter-point]').evaluateAll((nodes) => {
+          const plotRect = nodes[0]?.parentElement?.getBoundingClientRect();
+          if (!plotRect) return [];
+          const centerX = plotRect.left + plotRect.width / 2;
+          const centerY = plotRect.top + plotRect.height / 2;
+          return nodes.map((node) => {
+            const rect = node.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            return { id: node.dataset.scatterId, distance: Math.hypot(x - centerX, y - centerY) };
+          }).sort((first, second) => first.distance - second.distance).slice(0, 2);
+        });
+        assert(selectedPoints.length === 2, 'IC4 did not expose two points for zoom verification.');
+        const firstPoint = plot.locator(`[data-scatter-id="${selectedPoints[0].id}"]`);
+        const secondPoint = plot.locator(`[data-scatter-id="${selectedPoints[1].id}"]`);
+        const initialFirst = await firstPoint.boundingBox();
+        const initialSecond = await secondPoint.boundingBox();
+        const initialDistance = Math.hypot(initialFirst.x - initialSecond.x, initialFirst.y - initialSecond.y);
+        await expandedDialog.getByRole('button', { name: 'Zoom in story map' }).click();
+        await expandedDialog.getByText('1.5×', { exact: true }).waitFor();
+        const zoomedFirst = await firstPoint.boundingBox();
+        const zoomedSecond = await secondPoint.boundingBox();
+        const zoomedDistance = Math.hypot(zoomedFirst.x - zoomedSecond.x, zoomedFirst.y - zoomedSecond.y);
+        assert(zoomedDistance > initialDistance * 1.35, `IC4 zoom did not separate dense points (${initialDistance} -> ${zoomedDistance}).`);
+        await firstPoint.click();
+        assert(await firstPoint.getAttribute('data-scatter-active') === 'true', 'IC4 selected point was not highlighted.');
+        assert(await expandedDialog.locator('[data-scatter-details][role="tooltip"]').isVisible(), 'IC4 selected point did not show its details.');
+        await plot.focus();
+        const beforeKeyboardPan = await firstPoint.boundingBox();
+        await plot.press('ArrowLeft');
+        const afterKeyboardPan = await firstPoint.boundingBox();
+        assert(Math.hypot(afterKeyboardPan.x - beforeKeyboardPan.x, afterKeyboardPan.y - beforeKeyboardPan.y) > 20, 'IC4 arrow key did not pan the zoomed plot.');
+        const beforePan = await firstPoint.boundingBox();
+        const plotBox = await plot.boundingBox();
+        await page.mouse.move(plotBox.x + plotBox.width * 0.08, plotBox.y + plotBox.height * 0.9);
+        await page.mouse.down();
+        await page.mouse.move(plotBox.x + plotBox.width * 0.14, plotBox.y + plotBox.height * 0.84);
+        await page.mouse.up();
+        const afterPan = await firstPoint.boundingBox();
+        assert(Math.hypot(afterPan.x - beforePan.x, afterPan.y - beforePan.y) > 20, 'IC4 drag did not pan the zoomed plot.');
+        await expandedDialog.getByRole('button', { name: 'Reset story map' }).click();
+        await expandedDialog.getByText('1.0×', { exact: true }).waitFor();
+        const resetFirst = await firstPoint.boundingBox();
+        assert(Math.hypot(resetFirst.x - initialFirst.x, resetFirst.y - initialFirst.y) < 2, 'IC4 reset did not restore the original point position.');
+        await expandedDialog.getByRole('button', { name: 'Close expanded chart' }).click();
+      }
+      if (viewport.name === 'mobile' && route.lens === 'intermediary' && route.scope === 'overview') {
+        const scatterArticle = page.locator('article').filter({ hasText: 'IC4' }).first();
+        await scatterArticle.getByRole('button', { name: 'Expand' }).click();
+        const expandedDialog = page.getByRole('dialog');
+        await expandedDialog.getByRole('heading', { name: 'Corpus story map / emergent topics' }).waitFor();
+        const controlSizes = await expandedDialog.getByRole('button', { name: /story map/ }).evaluateAll((buttons) => buttons.map((button) => {
+          const rect = button.getBoundingClientRect();
+          return { width: rect.width, height: rect.height };
+        }));
+        assert(controlSizes.length === 3 && controlSizes.every((size) => size.width >= 44 && size.height >= 44), 'Mobile IC4 zoom controls are smaller than 44px.');
+        const dialogOverflow = await expandedDialog.evaluate((dialog) => dialog.scrollWidth - dialog.clientWidth);
+        assert(dialogOverflow <= 2, `Mobile IC4 expanded dialog overflowed by ${dialogOverflow}px.`);
+        await expandedDialog.getByRole('button', { name: 'Close expanded chart' }).click();
       }
       const unexpected = await page.locator('article').evaluateAll((articles, expected) => articles
         .map((article) => article.textContent.match(/\b(?:CC|IC|GC|C|L|G)\d+\b/)?.[0])
@@ -170,10 +278,34 @@ try {
       assert(await evidenceDialog.getByRole('button', { name: 'Close evidence' }).count() === 1, `${viewport.name} ${route.lens}/${route.scope} evidence dialog has no named close button.`);
       await page.getByRole('button', { name: 'Close evidence' }).click();
       results.push({ viewport: viewport.name, lens: route.lens, scope: route.scope, blocks: route.codes.length });
+      await page.close();
     }
     assert(!errors.length, `${viewport.name} browser errors: ${errors.join(' | ')}`);
     await context.close();
   }
+  const breakpointContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const breakpointPage = await breakpointContext.newPage();
+  for (const target of [
+    { lens: 'community', code: 'CC1' },
+    { lens: 'government', code: 'GC1' },
+  ]) {
+    await openPage(breakpointPage, `${baseUrl}/briefings/explore?lens=${target.lens}&scope=overview&reading=detailed&language=en`);
+    const article = breakpointPage.locator('article').filter({ hasText: target.code }).first();
+    await article.getByText('Loading live data for this chart...').waitFor({ state: 'detached', timeout: 90000 });
+    const visualBox = await article.locator('[data-briefing-visual]').boundingBox();
+    const explanationBox = await article.locator('[data-briefing-explanation]').boundingBox();
+    assert(visualBox && explanationBox && explanationBox.x > visualBox.x + visualBox.width - 2 && Math.abs(explanationBox.y - visualBox.y) < 4, `${target.code} did not use the intended two-column card layout at 1280px.`);
+    await article.getByRole('button', { name: 'Expand' }).click();
+    const expandedDialog = breakpointPage.getByRole('dialog');
+    await expandedDialog.getByRole('heading').waitFor();
+    const expandedVisual = await expandedDialog.locator('[data-expanded-visual]').boundingBox();
+    const expandedAside = await expandedDialog.locator('[data-expanded-aside]').boundingBox();
+    assert(expandedVisual?.width > 0 && expandedVisual?.height > 0 && expandedAside?.width > 0 && expandedAside?.height > 0, `${target.code} expanded chart or explanation was not visible.`);
+    const dialogOverflow = await expandedDialog.evaluate((dialog) => dialog.scrollWidth - dialog.clientWidth);
+    assert(dialogOverflow <= 2, `${target.code} expanded dialog overflowed by ${dialogOverflow}px.`);
+    await expandedDialog.getByRole('button', { name: 'Close expanded chart' }).click();
+  }
+  await breakpointContext.close();
   const auditContext = await browser.newContext({ viewport: viewports[0] });
   const auditPage = await auditContext.newPage();
   for (const audit of [

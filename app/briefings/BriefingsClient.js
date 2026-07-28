@@ -693,62 +693,60 @@ function listJson(value) {
 function BriefingBlock({ block, snapshot, lens, readingLevel, privateNote, onPrivateNoteChange, onOpenEvidence, showPrivateNotes }) {
   const [expanded, setExpanded] = useState(false);
   return (
-    <article className="grid overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:grid-cols-[minmax(420px,1.15fr)_minmax(360px,0.85fr)]">
-      <div className="flex flex-col border-b border-slate-200 bg-slate-950 p-4 text-white sm:p-6 lg:border-b-0 lg:border-r">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-3xl font-black tracking-tight text-amber-300">{block.code}</p>
-            <h3 className="mt-3 text-xl font-bold leading-tight">{block.title}</h3>
-          </div>
-          <div className="flex shrink-0 flex-col items-end gap-2">
-            <span className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-slate-200">{block.visual}</span>
-            <button
-              type="button"
-              onClick={() => setExpanded(true)}
-              className="inline-flex min-h-11 items-center gap-1 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/15"
-            >
-              <Maximize2 className="h-3.5 w-3.5" />
-              Expand
-            </button>
-          </div>
+    <article className="overflow-hidden rounded-2xl border border-[#d7d0c2] bg-[#fffdf8] shadow-[0_18px_45px_-35px_rgba(15,23,42,0.5)]">
+      <header className="flex flex-col gap-4 border-b border-[#d7d0c2] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="flex items-baseline gap-3">
+          <p className="font-mono text-sm font-black tracking-[0.16em] text-amber-800">{block.code}</p>
+          <h3 className="text-xl font-bold leading-tight text-slate-950">{block.title}</h3>
         </div>
-        <div className="flex min-h-[180px] flex-1 items-center md:min-h-[220px] [&>*]:w-full">
-          <LiveVisual block={block} snapshot={snapshot} />
-        </div>
-      </div>
-      <div className="p-4 sm:p-5">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">{block.framing}</span>
-          </div>
-        </div>
-        <details className="group md:hidden">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800">
-            What this chart means
-            <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
-          </summary>
-          <div className="mt-3 hidden group-open:block">
-            <BlockExplanation block={block} readingLevel={readingLevel} />
-          </div>
-        </details>
-        <div className="hidden md:block">
-          <BlockExplanation block={block} readingLevel={readingLevel} />
-        </div>
-        <div className="mt-5 flex justify-center">
-          <button type="button" onClick={onOpenEvidence} className="rounded-md bg-emerald-600 px-5 py-3 text-sm font-black uppercase tracking-wide text-white shadow-sm hover:bg-emerald-700">
-            View evidence
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <span className="rounded-full border border-[#d7d0c2] bg-[#f4efe4] px-3 py-1 text-xs font-semibold text-slate-700">{block.visual}</span>
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-md bg-[#171a1f] px-3 py-2 text-xs font-bold text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+          >
+            <Maximize2 className="h-3.5 w-3.5" />
+            Expand
           </button>
         </div>
-        {showPrivateNotes ? (
-          <label className="mt-4 block rounded-md border border-slate-200 bg-slate-50 p-3 text-sm font-semibold text-slate-700">
-            Private notes
-            <textarea
-              value={privateNote}
-              onChange={(event) => onPrivateNoteChange(event.target.value)}
-              className="mt-2 min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 font-normal text-slate-900"
-            />
-          </label>
-        ) : null}
+      </header>
+      <div className="grid items-start gap-5 p-4 sm:p-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.55fr)]">
+        <div data-briefing-visual className="flex min-h-[260px] items-center rounded-xl bg-[#171a1f] p-4 text-white shadow-inner sm:p-5 [&>*]:w-full">
+          <LiveVisual block={block} snapshot={snapshot} />
+        </div>
+        <div data-briefing-explanation className="min-w-0">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">{block.framing}</span>
+          </div>
+          <details className="group md:hidden">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between border-y border-[#d7d0c2] py-2 text-sm font-bold text-slate-800">
+              What this chart means
+              <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
+            </summary>
+            <div className="hidden group-open:block">
+              <BlockExplanation block={block} readingLevel={readingLevel} />
+            </div>
+          </details>
+          <div className="hidden md:block">
+            <BlockExplanation block={block} readingLevel={readingLevel} />
+          </div>
+          <div className="mt-5">
+            <button type="button" onClick={onOpenEvidence} className="min-h-11 rounded-md bg-[#171a1f] px-5 py-3 text-sm font-black uppercase tracking-wide text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
+              View evidence
+            </button>
+          </div>
+          {showPrivateNotes ? (
+            <label className="mt-4 block rounded-md border border-[#d7d0c2] bg-[#f4efe4] p-3 text-sm font-semibold text-slate-700">
+              Private notes
+              <textarea
+                value={privateNote}
+                onChange={(event) => onPrivateNoteChange(event.target.value)}
+                className="mt-2 min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 font-normal text-slate-900"
+              />
+            </label>
+          ) : null}
+        </div>
       </div>
       <ChartExpandDialog block={block} snapshot={snapshot} lens={lens} open={expanded} onClose={() => setExpanded(false)} />
     </article>
@@ -775,8 +773,8 @@ function ChartExpandDialog({ block, snapshot, lens, open, onClose }) {
           if (event.target === event.currentTarget) onClose();
         }}
       >
-        <div className="flex max-h-[94vh] w-full max-w-[min(96vw,1500px)] flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
-          <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-slate-950 px-5 py-4 text-white">
+        <div className="flex max-h-[94vh] w-full max-w-[min(96vw,1500px)] flex-col overflow-hidden rounded-2xl bg-[#fffdf8] shadow-2xl">
+          <div className="flex items-start justify-between gap-4 border-b border-slate-700 bg-[#171a1f] px-5 py-4 text-white">
             <div>
               <p className="text-sm font-black uppercase tracking-[0.18em] text-amber-300">{block.code}</p>
               <h3 id={`chart-expand-title-${block.code}`} className="mt-1 text-2xl font-black">{block.title}</h3>
@@ -786,16 +784,18 @@ function ChartExpandDialog({ block, snapshot, lens, open, onClose }) {
               <X className="h-5 w-5" />
             </button>
           </div>
-          <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
-            <section className="min-h-0 overflow-auto bg-slate-950 p-5 text-white">
-              <LiveVisual block={block} snapshot={snapshot} expanded />
+          <div className="grid min-h-0 flex-1 overflow-hidden bg-[#ede8dd] lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
+            <section data-expanded-visual className="min-h-0 overflow-auto p-4 text-white sm:p-5">
+              <div className="min-h-full rounded-xl bg-[#171a1f] p-4 sm:p-5">
+                <LiveVisual block={block} snapshot={snapshot} expanded />
+              </div>
             </section>
-            <aside className="min-h-0 overflow-y-auto border-t border-slate-200 bg-white p-5 lg:border-l lg:border-t-0">
+            <aside data-expanded-aside className="min-h-0 overflow-y-auto border-t border-[#d7d0c2] bg-[#fffdf8] p-5 lg:border-l lg:border-t-0">
               <div className="mb-4 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">{block.framing}</span>
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Full expanded view</span>
               </div>
-              <dl className="grid gap-3">
+              <dl className="divide-y divide-[#d7d0c2] border-y border-[#d7d0c2]">
                 <SpecDetails block={block} />
               </dl>
               <div className="mt-5 border-t border-slate-200 pt-4">
@@ -924,7 +924,7 @@ function BlockExplanation({ block, readingLevel = 'standard' }) {
 
 function PlainInfo({ title, text }) {
   return (
-    <section className="rounded-md border border-slate-200 bg-slate-50 p-3">
+    <section className="border-b border-[#d7d0c2] py-3 first:pt-0 last:border-b-0">
       <h4 className="text-xs font-black uppercase tracking-wide text-slate-500">{title}</h4>
       <p className="mt-1 text-sm leading-6 text-slate-800">{text}</p>
     </section>
@@ -1544,11 +1544,11 @@ function LivePortfolioDashboard({ snapshot, expanded = false }) {
       <LiveTreemap rows={(snapshot.landscape?.byDomain || []).map((row) => [row.label, row.count])} expanded={expanded} />
       <LiveImpactSplit rows={snapshot.impact?.aiSuggested || []} compact />
       <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="rounded bg-white/10 p-2">
+        <div className="border-t border-white/15 pt-3">
           <p className="text-lg font-black text-amber-200">{snapshot.landscape?.totalAlgorithms ?? 0}</p>
           <p className="text-[10px] font-bold uppercase text-slate-300">systems</p>
         </div>
-        <div className="rounded bg-white/10 p-2">
+        <div className="border-t border-white/15 pt-3">
           <p className="text-lg font-black text-amber-200">{snapshot.landscape?.totalApprovedStories ?? 0}</p>
           <p className="text-[10px] font-bold uppercase text-slate-300">stories</p>
         </div>
@@ -1691,25 +1691,29 @@ function LiveTreemap({ rows, expanded = false }) {
   if (!cleanRows.length) return <EmptyLive />;
   const total = cleanRows.reduce((sum, row) => sum + row.value, 0);
   const rects = squarifyTreemap(cleanRows.map((row) => ({ ...row, area: (row.value / total) * 10000 })), aspectRatio);
-  const colors = ['#fde68a', '#fcd34d', '#fbbf24', '#fef3c7', '#e7e5e4', '#d6d3d1'];
+  const minValue = cleanRows.at(-1).value;
+  const maxValue = cleanRows[0].value;
   return (
     <div className="mt-5">
       <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
         <span>Domains</span>
-        <span>Area = algorithm count · {total} total</span>
+        <span>Area + shade = algorithm count · {total} total</span>
       </div>
       <div className="relative">
         <div ref={containerRef} className={`relative overflow-hidden rounded-md border border-white/15 bg-white/5 p-1 ${expanded ? 'h-[min(70vh,720px)]' : 'h-72'}`}>
-          {rects.map((row, index) => (
-            <TreemapCell
-              key={`${row.label}-${index}`}
-              row={row}
-              color={colors[index % colors.length]}
-              expanded={expanded}
-              onHover={setHoveredCell}
-              onLeave={() => setHoveredCell(null)}
-            />
-          ))}
+          {rects.map((row, index) => {
+            const strength = maxValue === minValue ? 0.5 : (row.value - minValue) / (maxValue - minValue);
+            return (
+              <TreemapCell
+                key={`${row.label}-${index}`}
+                row={row}
+                color={`hsl(43 88% ${Math.round(88 - strength * 24)}%)`}
+                expanded={expanded}
+                onHover={setHoveredCell}
+                onLeave={() => setHoveredCell(null)}
+              />
+            );
+          })}
         </div>
         {hoveredCell ? <TreemapTooltip cell={hoveredCell} /> : null}
       </div>
@@ -1741,7 +1745,7 @@ function TreemapCell({ row, color, expanded, onHover, onLeave }) {
         onMouseLeave={onLeave}
         onFocus={() => onHover(row)}
         onBlur={onLeave}
-        className={`flex h-full w-full cursor-help overflow-hidden rounded-sm border border-slate-950/20 text-slate-950 shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-white/80 ${showLabel ? 'flex-col justify-between px-2 py-1' : 'items-center justify-center'}`}
+        className={`flex h-full w-full cursor-help overflow-hidden rounded-[5px] border border-amber-950/20 text-slate-950 outline-none transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-white/80 ${showLabel ? 'flex-col justify-between px-2 py-1' : 'items-center justify-center'}`}
         style={{ backgroundColor: color }}
       >
         {showLabel ? (
@@ -1964,6 +1968,7 @@ function LiveCoOccurrenceMatrix({ rows, themes, expanded = false }) {
 
 function LiveThemeNetwork({ rows, themes, expanded = false }) {
   const [hoveredNode, setHoveredNode] = useState(null);
+  const networkRef = useRef(null);
   const topPairs = expanded ? rows : rows.slice(0, 12);
   const topThemes = (expanded ? themes || [] : (themes || []).slice(0, 4)).map((row) => [displayBriefingLabel(row.theme), row.count]);
   const themeMax = Math.max(1, ...topThemes.map(([, count]) => Number(count) || 0));
@@ -1983,6 +1988,17 @@ function LiveThemeNetwork({ rows, themes, expanded = false }) {
     };
   });
   const nodeByLabel = new Map(nodes.map((node) => [node.label, node]));
+  const showNodeTooltip = (event, node) => {
+    const container = networkRef.current?.getBoundingClientRect();
+    const circle = event.currentTarget.querySelector('circle')?.getBoundingClientRect();
+    if (!container || !circle) return;
+    setHoveredNode({
+      ...node,
+      count: countByTheme.get(node.label),
+      left: ((circle.left + circle.width / 2 - container.left) / container.width) * 100,
+      top: ((circle.top + circle.height / 2 - container.top) / container.height) * 100,
+    });
+  };
   return (
     <div className="mt-5">
       <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
@@ -2002,8 +2018,8 @@ function LiveThemeNetwork({ rows, themes, expanded = false }) {
           ))}
         </div>
       ) : null}
-      <div className="relative">
-        <svg aria-label="Theme co-occurrence network" className={`${expanded ? 'h-80' : 'h-52'} w-full rounded-md border border-white/15 bg-white/5`} viewBox="0 0 100 100">
+      <div ref={networkRef} className="relative">
+        <svg aria-label="Theme co-occurrence network" className={`${expanded ? 'h-[min(48vh,480px)]' : 'h-52'} w-full rounded-md border border-white/15 bg-white/5`} viewBox="0 0 100 100">
           {topPairs.map((row) => {
             const source = nodeByLabel.get(displayBriefingLabel(row.source));
             const target = nodeByLabel.get(displayBriefingLabel(row.target));
@@ -2022,22 +2038,56 @@ function LiveThemeNetwork({ rows, themes, expanded = false }) {
               />
             );
           })}
-          {nodes.map((node) => (
-            <g key={node.label} onMouseEnter={() => setHoveredNode({ ...node, count: countByTheme.get(node.label) })} onMouseLeave={() => setHoveredNode(null)}>
-              <circle cx={node.x} cy={node.y} r="5" fill="#fde047" stroke="#020617" strokeWidth="1.2" vectorEffect="non-scaling-stroke" className="cursor-help" />
-              <text x={node.x} y={node.y + 10} textAnchor="middle" className={`${expanded ? 'text-[3.3px]' : 'text-[4px]'} fill-slate-200 font-bold`}>
-                {expanded ? node.label : node.label.length > 13 ? `${node.label.slice(0, 12)}...` : node.label}
-              </text>
-            </g>
-          ))}
+          {nodes.map((node) => {
+            const bottomArc = node.y > 72 && Math.abs(node.x - 50) > 2;
+            const labelX = bottomArc ? node.x + (node.x < 50 ? -2 : 2) : node.x;
+            const textAnchor = bottomArc ? (node.x < 50 ? 'end' : 'start') : 'middle';
+            return (
+              <g
+                key={node.label}
+                role="img"
+                tabIndex={0}
+                aria-label={`${node.label}: ${countByTheme.get(node.label) ?? 'count unavailable'}`}
+                onMouseEnter={(event) => showNodeTooltip(event, node)}
+                onMouseLeave={() => setHoveredNode(null)}
+                onFocus={(event) => showNodeTooltip(event, node)}
+                onBlur={() => setHoveredNode(null)}
+              >
+                <circle
+                  cx={node.x}
+                  cy={node.y}
+                  r={hoveredNode?.label === node.label ? 5.8 : 5}
+                  fill="#fde047"
+                  stroke={hoveredNode?.label === node.label ? '#ffffff' : '#020617'}
+                  strokeWidth="1.2"
+                  vectorEffect="non-scaling-stroke"
+                  className="cursor-help transition-all"
+                />
+                <text
+                  data-network-label
+                  x={labelX}
+                  y={node.y + 10}
+                  textAnchor={textAnchor}
+                  className={`${expanded ? 'text-[3.3px]' : 'text-[4px]'} fill-slate-200 font-bold`}
+                >
+                  {expanded ? node.label : node.label.length > 13 ? `${node.label.slice(0, 12)}...` : node.label}
+                </text>
+              </g>
+            );
+          })}
         </svg>
         {hoveredNode ? (
           <div
             role="tooltip"
-            className="pointer-events-none absolute z-[120] -translate-x-1/2 rounded-md border border-white/15 bg-slate-950 px-3 py-2 text-xs font-medium leading-5 text-white shadow-xl"
-            style={{ left: `${hoveredNode.x}%`, top: `${Math.min(86, hoveredNode.y + 8)}%` }}
+            className="pointer-events-none absolute z-[120] rounded-md border border-white/15 bg-slate-950 px-3 py-2 text-xs font-medium leading-5 text-white shadow-xl"
+            style={{
+              left: `${Math.max(12, Math.min(88, hoveredNode.left))}%`,
+              top: `${hoveredNode.top}%`,
+              transform: `translate(-50%, ${hoveredNode.top > 55 ? 'calc(-100% - 12px)' : '12px'})`,
+            }}
           >
-            {hoveredNode.count ?? hoveredNode.label}
+            <span className="block font-bold text-amber-200">{hoveredNode.label}</span>
+            <span>{hoveredNode.count ?? 'Count unavailable'} stories</span>
           </div>
         ) : null}
       </div>
@@ -2259,7 +2309,11 @@ function LiveTrend({ buckets, expanded = false }) {
 }
 
 function LiveScatter({ points, expanded = false }) {
-  const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [hoveredPointId, setHoveredPointId] = useState(null);
+  const [view, setView] = useState({ zoom: 1, x: 0, y: 0 });
+  const plotRef = useRef(null);
+  const dragRef = useRef(null);
+  const scatterHelpId = useId();
   const visible = expanded ? points : points.slice(0, 40);
   if (!visible.length) return <EmptyLive label="No story-level points shown for this lens." />;
   const xs = visible.map((point) => point.umapX);
@@ -2280,11 +2334,127 @@ function LiveScatter({ points, expanded = false }) {
     ].filter(Boolean).join(' | ');
     return { ...point, left, top, tooltip };
   });
+  const displayedPoints = plottedPoints
+    .map((point) => ({
+      ...point,
+      left: 50 + (point.left - 50) * view.zoom + view.x,
+      top: 50 + (point.top - 50) * view.zoom + view.y,
+    }))
+    .filter((point) => point.left >= 0 && point.left <= 100 && point.top >= 0 && point.top <= 100);
+  const hoveredPoint = displayedPoints.find((point) => point.id === hoveredPointId);
+  const zoomBy = (delta) => {
+    setHoveredPointId(null);
+    setView((current) => {
+      const zoom = Math.max(1, Math.min(4, current.zoom + delta));
+      if (zoom === current.zoom) return current;
+      const ratio = zoom / current.zoom;
+      const maxPanX = 44 * (zoom - 1);
+      const maxPanY = 40 * (zoom - 1);
+      return {
+        zoom,
+        x: Math.max(-maxPanX, Math.min(maxPanX, current.x * ratio)),
+        y: Math.max(-maxPanY, Math.min(maxPanY, current.y * ratio)),
+      };
+    });
+  };
+  const resetView = () => {
+    setHoveredPointId(null);
+    setView({ zoom: 1, x: 0, y: 0 });
+  };
+  const handlePointerDown = (event) => {
+    if (view.zoom === 1 || event.button !== 0 || event.target.closest('[data-scatter-point]')) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = {
+      pointerId: event.pointerId,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      x: view.x,
+      y: view.y,
+    };
+    setHoveredPointId(null);
+  };
+  const handlePointerMove = (event) => {
+    const drag = dragRef.current;
+    const plot = plotRef.current;
+    if (!drag || drag.pointerId !== event.pointerId || !plot) return;
+    const bounds = plot.getBoundingClientRect();
+    const deltaX = (event.clientX - drag.clientX) / bounds.width * 100;
+    const deltaY = (event.clientY - drag.clientY) / bounds.height * 100;
+    setView((current) => {
+      const maxPanX = 44 * (current.zoom - 1);
+      const maxPanY = 40 * (current.zoom - 1);
+      return {
+        ...current,
+        x: Math.max(-maxPanX, Math.min(maxPanX, drag.x + deltaX)),
+        y: Math.max(-maxPanY, Math.min(maxPanY, drag.y + deltaY)),
+      };
+    });
+  };
+  const handlePointerUp = (event) => {
+    if (dragRef.current?.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    dragRef.current = null;
+  };
+  const handlePlotKeyDown = (event) => {
+    const direction = {
+      ArrowLeft: [1, 0],
+      ArrowRight: [-1, 0],
+      ArrowUp: [0, 1],
+      ArrowDown: [0, -1],
+    }[event.key];
+    if (!direction || view.zoom === 1) return;
+    event.preventDefault();
+    const step = event.shiftKey ? 10 : 4;
+    setHoveredPointId(null);
+    setView((current) => {
+      const maxPanX = 44 * (current.zoom - 1);
+      const maxPanY = 40 * (current.zoom - 1);
+      return {
+        ...current,
+        x: Math.max(-maxPanX, Math.min(maxPanX, current.x + direction[0] * step)),
+        y: Math.max(-maxPanY, Math.min(maxPanY, current.y + direction[1] * step)),
+      };
+    });
+  };
   return (
     <div className="mt-5">
       <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
         <span>Y: UMAP-2</span>
         <span>X: UMAP-1</span>
+      </div>
+      <div className="mb-2 flex justify-end">
+        <div className="flex items-center overflow-hidden rounded-md border border-white/20 bg-slate-950/90 shadow-lg">
+          <button
+            type="button"
+            aria-label="Zoom out story map"
+            disabled={view.zoom === 1}
+            onClick={() => zoomBy(-0.5)}
+            className="flex h-11 w-11 items-center justify-center text-xl font-bold text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:text-slate-600"
+          >
+            −
+          </button>
+          <span aria-live="polite" className="flex h-11 min-w-14 items-center justify-center border-x border-white/15 px-2 text-xs font-bold text-amber-200">
+            {view.zoom.toFixed(1)}×
+          </span>
+          <button
+            type="button"
+            aria-label="Zoom in story map"
+            disabled={view.zoom === 4}
+            onClick={() => zoomBy(0.5)}
+            className="flex h-11 w-11 items-center justify-center text-xl font-bold text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:text-slate-600"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            aria-label="Reset story map"
+            disabled={view.zoom === 1 && view.x === 0 && view.y === 0}
+            onClick={resetView}
+            className="h-11 border-l border-white/15 px-3 text-xs font-bold text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:text-slate-600"
+          >
+            Reset
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-[34px_1fr] gap-2">
         <div className="flex flex-col justify-between text-right text-[10px] text-slate-400">
@@ -2292,37 +2462,62 @@ function LiveScatter({ points, expanded = false }) {
           <span>{minY.toFixed(1)}</span>
         </div>
         <div>
-          <div className={`${expanded ? 'h-96' : 'h-52'} relative rounded-md border border-white/15 bg-white/5`}>
-            {plottedPoints.map((point) => (
-              <button
-                key={point.id}
-                type="button"
-                aria-label={point.tooltip}
-                onMouseEnter={() => setHoveredPoint(point)}
-                onMouseLeave={() => setHoveredPoint(null)}
-                className={`${expanded ? 'h-4 w-4' : 'h-3 w-3'} absolute -translate-x-1/2 -translate-y-1/2 rounded-full outline-none ring-offset-2 ring-offset-slate-950 focus-visible:ring-2 focus-visible:ring-yellow-400 ${point.isOutlier ? 'bg-white' : 'bg-amber-300'}`}
-                style={{ left: `${point.left}%`, top: `${point.top}%` }}
-              />
-            ))}
-            {hoveredPoint ? (
-              <div
-                role="tooltip"
-                className="pointer-events-none absolute z-[120] max-w-[280px] -translate-x-1/2 rounded-md border border-white/15 bg-slate-950 px-3 py-2 text-xs font-medium leading-5 text-white shadow-xl"
-                style={{ left: `${hoveredPoint.left}%`, top: `${Math.max(3, hoveredPoint.top - 10)}%` }}
-              >
-                {hoveredPoint.tooltip}
-              </div>
-            ) : null}
+          <div
+            ref={plotRef}
+            data-scatter-plot
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onKeyDown={handlePlotKeyDown}
+            onClick={(event) => {
+              if (event.target === event.currentTarget) setHoveredPointId(null);
+            }}
+            tabIndex={0}
+            aria-label="Zoomable story map"
+            aria-describedby={scatterHelpId}
+            className={`${expanded ? 'h-96' : 'h-52'} relative select-none overflow-hidden rounded-md border border-white/15 bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-amber-300 ${view.zoom > 1 ? 'touch-none cursor-grab active:cursor-grabbing' : ''}`}
+          >
+            {displayedPoints.map((point) => {
+              const active = point.id === hoveredPointId;
+              return (
+                <button
+                  key={point.id}
+                  type="button"
+                  data-scatter-point
+                  data-scatter-id={point.id}
+                  data-scatter-active={active ? 'true' : 'false'}
+                  aria-label={point.tooltip}
+                  aria-pressed={active}
+                  onMouseEnter={() => setHoveredPointId(point.id)}
+                  onMouseLeave={() => setHoveredPointId(null)}
+                  onFocus={() => setHoveredPointId(point.id)}
+                  onBlur={() => setHoveredPointId(null)}
+                  onClick={() => setHoveredPointId(point.id)}
+                  className={`${expanded ? 'h-4 w-4' : 'h-3 w-3'} absolute -translate-x-1/2 -translate-y-1/2 rounded-full outline-none ring-offset-2 ring-offset-slate-950 transition ${active ? 'z-20 scale-150 ring-2 ring-white' : 'hover:scale-125 focus-visible:scale-150 focus-visible:ring-2 focus-visible:ring-white'} ${point.isOutlier ? 'bg-white' : 'bg-amber-300'}`}
+                  style={{ left: `${point.left}%`, top: `${point.top}%` }}
+                />
+              );
+            })}
           </div>
           <div className="mt-1 flex justify-between text-[10px] text-slate-400">
             <span>{minX.toFixed(1)}</span>
             <span>{maxX.toFixed(1)}</span>
           </div>
+          <div
+            data-scatter-details
+            role={hoveredPoint ? 'tooltip' : 'status'}
+            aria-live="polite"
+            className={`mt-2 min-h-12 rounded-md border px-3 py-2 text-xs leading-5 ${hoveredPoint ? 'border-amber-300/40 bg-amber-300/10 text-white' : 'border-white/10 bg-white/5 text-slate-400'}`}
+          >
+            {hoveredPoint?.tooltip || 'Hover, focus, or tap a point to inspect its story and coordinates.'}
+          </div>
         </div>
       </div>
-      <div className="mt-2 flex gap-3 text-[10px] text-slate-400">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-400">
         <span><span className="inline-block h-2 w-2 rounded-full bg-amber-300" /> clustered story</span>
         <span><span className="inline-block h-2 w-2 rounded-full bg-white" /> outlier</span>
+        <span id={scatterHelpId} className="sm:ml-auto">Zoom, then drag or use arrow keys to inspect dense areas.</span>
       </div>
     </div>
   );
@@ -2428,7 +2623,7 @@ function EmptyLive({ label = 'No live rows for the current filters.' }) {
 
 function SpecRow({ icon: Icon, label, value }) {
   return (
-    <div className="grid gap-2 rounded-md border border-slate-200 bg-slate-50 p-3 sm:grid-cols-[150px_1fr]">
+    <div className="grid gap-2 py-3 sm:grid-cols-[150px_1fr]">
       <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
         <Icon className="h-4 w-4" />
         {label}
