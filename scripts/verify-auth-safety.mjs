@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import { idleDraftKey, idleRestoreKey, isDraftableField, isOwnedDraft } from '../lib/idleDraft.js';
-import { allowLegacyEmptyPasswordLogin } from '../lib/password.js';
 import { isSameOriginRequest, publicAppOrigin } from '../lib/requestSecurity.js';
 import { safeInternalPath, withCompleteProfileModal } from '../lib/safeRedirect.js';
 
@@ -36,6 +35,9 @@ assert.doesNotMatch(authSource, /refreshToken|accessToken|idToken|sessionToken:\
 const loginSource = await readFile(new URL('../app/api/auth/login/route.js', import.meta.url), 'utf8');
 assert.doesNotMatch(loginSource, /'not-found'|'invalid-password'|'password-not-set'/);
 assert.match(loginSource, /'invalid-credentials'/);
+assert.match(loginSource, /if \(user\.passwordHash\)/);
+assert.match(loginSource, /else if \(password\)/);
+assert.doesNotMatch(loginSource, /ALLOW_LEGACY_EMPTY_PASSWORD_LOGIN|allowLegacyEmptyPasswordLogin/);
 const resetRequestSource = await readFile(new URL('../app/api/auth/request-password-reset/route.js', import.meta.url), 'utf8');
 assert.match(resetRequestSource, /RESET_REQUEST_COOLDOWN_MS = 5 \* 60 \* 1000/);
 assert.match(resetRequestSource, /createdAt: \{ gt:/);
@@ -69,17 +71,5 @@ assert.equal(idleDraftKey('user-a'), 'algohub_auto_logout_draft:user-a');
 assert.equal(idleRestoreKey('user-a'), 'algohub_restore_auto_logout_draft:user-a');
 assert.equal(isOwnedDraft({ ownerUserId: 'user-a', fields: [] }, 'user-a'), true);
 assert.equal(isOwnedDraft({ ownerUserId: 'user-a', fields: [] }, 'user-b'), false);
-
-const originalNodeEnv = process.env.NODE_ENV;
-const originalLegacyFlag = process.env.ALLOW_LEGACY_EMPTY_PASSWORD_LOGIN;
-process.env.NODE_ENV = 'production';
-process.env.ALLOW_LEGACY_EMPTY_PASSWORD_LOGIN = 'true';
-assert.equal(allowLegacyEmptyPasswordLogin(), false);
-process.env.NODE_ENV = 'test';
-assert.equal(allowLegacyEmptyPasswordLogin(), true);
-if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
-else process.env.NODE_ENV = originalNodeEnv;
-if (originalLegacyFlag === undefined) delete process.env.ALLOW_LEGACY_EMPTY_PASSWORD_LOGIN;
-else process.env.ALLOW_LEGACY_EMPTY_PASSWORD_LOGIN = originalLegacyFlag;
 
 console.log('auth safety self-check PASS');

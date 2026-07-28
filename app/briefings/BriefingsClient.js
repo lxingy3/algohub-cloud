@@ -524,26 +524,26 @@ function LiveSnapshot({ snapshot, lens }) {
   const cardClass = 'rounded-md border px-3 py-2 text-left transition';
   const topCardClass = `${cardClass} border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50`;
   const pipelineCardClass = `${cardClass} border-emerald-200 bg-emerald-50 hover:border-emerald-400 hover:bg-emerald-100`;
+  const cards = [
+    ...stats.map((card) => [...card, topCardClass]),
+    ...pipelines.map((card) => [...card, pipelineCardClass]),
+  ];
   return (
-    <div className="mt-5 max-w-5xl">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {stats.map(([label, value, drill]) => (
-          <button key={label} type="button" onClick={() => drill && setDrilldown(drill)} className={topCardClass}>
+    <div className="mt-5 w-full">
+      <div data-snapshot-metrics className="flex flex-wrap gap-2">
+        {cards.map(([label, value, drill, className]) => (
+          <button
+            key={label}
+            type="button"
+            data-snapshot-card
+            onClick={() => drill && setDrilldown(drill)}
+            className={`${className} min-w-40 flex-1`}
+          >
             <div className="text-xl font-bold text-slate-950">{value}</div>
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
           </button>
         ))}
       </div>
-      {pipelines.length ? (
-        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {pipelines.map(([label, value, drill]) => (
-            <button key={label} type="button" onClick={() => drill && setDrilldown(drill)} className={pipelineCardClass}>
-              <div className="text-lg font-bold text-emerald-900">{value}</div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">{label}</div>
-            </button>
-          ))}
-        </div>
-      ) : null}
       <DrilldownModal drilldown={drilldown} onClose={() => setDrilldown(null)} />
     </div>
   );
@@ -694,12 +694,12 @@ function BriefingBlock({ block, snapshot, lens, readingLevel, privateNote, onPri
   const [expanded, setExpanded] = useState(false);
   return (
     <article className="overflow-hidden rounded-2xl border border-[#d7d0c2] bg-[#fffdf8] shadow-[0_18px_45px_-35px_rgba(15,23,42,0.5)]">
-      <header className="flex flex-col gap-4 border-b border-[#d7d0c2] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div className="flex items-baseline gap-3">
-          <p className="font-mono text-sm font-black tracking-[0.16em] text-amber-800">{block.code}</p>
-          <h3 className="text-xl font-bold leading-tight text-slate-950">{block.title}</h3>
+      <header className="flex flex-col gap-4 border-b border-[#d7d0c2] px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 flex-1 items-baseline gap-3">
+          <p className="shrink-0 font-mono text-lg font-black tracking-[0.12em] text-amber-800 sm:text-xl">{block.code}</p>
+          <h3 className="min-w-0 break-words text-2xl font-black leading-tight text-slate-950 sm:text-3xl">{block.title}</h3>
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+        <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
           <span className="rounded-full border border-[#d7d0c2] bg-[#f4efe4] px-3 py-1 text-xs font-semibold text-slate-700">{block.visual}</span>
           <button
             type="button"
@@ -2314,7 +2314,8 @@ function LiveScatter({ points, expanded = false }) {
   const plotRef = useRef(null);
   const dragRef = useRef(null);
   const scatterHelpId = useId();
-  const visible = expanded ? points : points.slice(0, 40);
+  const validPoints = points.filter((point) => Number.isFinite(point.umapX) && Number.isFinite(point.umapY));
+  const visible = expanded ? validPoints : validPoints.slice(0, 40);
   if (!visible.length) return <EmptyLive label="No story-level points shown for this lens." />;
   const xs = visible.map((point) => point.umapX);
   const ys = visible.map((point) => point.umapY);
@@ -2322,6 +2323,13 @@ function LiveScatter({ points, expanded = false }) {
   const maxX = Math.max(...xs);
   const minY = Math.min(...ys);
   const maxY = Math.max(...ys);
+  const spanX = maxX - minX;
+  const spanY = maxY - minY;
+  const unproject = (screen, pan) => 50 + ((screen - 50 - pan) / view.zoom);
+  const axisMinX = spanX === 0 ? minX : minX + (((unproject(6, view.x) - 6) / 88) * spanX);
+  const axisMaxX = spanX === 0 ? maxX : minX + (((unproject(94, view.x) - 6) / 88) * spanX);
+  const axisMaxY = spanY === 0 ? maxY : maxY - (((unproject(12, view.y) - 12) / 72) * spanY);
+  const axisMinY = spanY === 0 ? minY : maxY - (((unproject(84, view.y) - 12) / 72) * spanY);
   const plottedPoints = visible.map((point) => {
     const left = maxX === minX ? 50 : ((point.umapX - minX) / (maxX - minX)) * 88 + 6;
     const top = maxY === minY ? 50 : ((maxY - point.umapY) / (maxY - minY)) * 72 + 12;
@@ -2458,8 +2466,8 @@ function LiveScatter({ points, expanded = false }) {
       </div>
       <div className="grid grid-cols-[34px_1fr] gap-2">
         <div className="flex flex-col justify-between text-right text-[10px] text-slate-400">
-          <span>{maxY.toFixed(1)}</span>
-          <span>{minY.toFixed(1)}</span>
+          <span data-scatter-axis="y-max">{axisMaxY.toFixed(1)}</span>
+          <span data-scatter-axis="y-min">{axisMinY.toFixed(1)}</span>
         </div>
         <div>
           <div
@@ -2501,8 +2509,8 @@ function LiveScatter({ points, expanded = false }) {
             })}
           </div>
           <div className="mt-1 flex justify-between text-[10px] text-slate-400">
-            <span>{minX.toFixed(1)}</span>
-            <span>{maxX.toFixed(1)}</span>
+            <span data-scatter-axis="x-min">{axisMinX.toFixed(1)}</span>
+            <span data-scatter-axis="x-max">{axisMaxX.toFixed(1)}</span>
           </div>
           <div
             data-scatter-details

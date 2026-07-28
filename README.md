@@ -66,7 +66,7 @@ The build script runs `prisma generate` before `next build`.
 - `community@algostories.local`
 - `jamal.community@algostories.local`
 
-The current login flow uses email-only accounts for access checks.
+Accounts without a password can log in with email only. Accounts with a password must enter it.
 
 ## Useful Commands
 

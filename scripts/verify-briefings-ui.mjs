@@ -90,6 +90,44 @@ try {
       assert(await page.locator('#briefing-views[tabindex="-1"]').count() === 1, `${viewport.name} ${route.lens}/${route.scope} is missing the briefing view focus target.`);
       const firstArticle = page.locator('article').first();
       await firstArticle.getByText('Loading live data for this chart...').waitFor({ state: 'detached', timeout: 90000 });
+      const headerMetrics = await page.locator('article > header').evaluateAll((headers) => headers.map((header) => {
+        const code = header.querySelector('p');
+        const title = header.querySelector('h3');
+        const titleGroup = header.children[0]?.getBoundingClientRect();
+        const controls = header.children[1]?.getBoundingClientRect();
+        const overlaps = titleGroup && controls
+          ? Math.min(titleGroup.right, controls.right) - Math.max(titleGroup.left, controls.left) > 1
+            && Math.min(titleGroup.bottom, controls.bottom) - Math.max(titleGroup.top, controls.top) > 1
+          : true;
+        return {
+          codeSize: Number.parseFloat(getComputedStyle(code).fontSize),
+          titleSize: Number.parseFloat(getComputedStyle(title).fontSize),
+          overflow: header.scrollWidth - header.clientWidth,
+          overlaps,
+        };
+      }));
+      assert(headerMetrics.length === route.codes.length, `${viewport.name} ${route.lens}/${route.scope} did not render every briefing header.`);
+      assert(headerMetrics.every((header) => header.codeSize >= 18 && header.titleSize >= 24), `${viewport.name} ${route.lens}/${route.scope} rendered an undersized briefing code or title.`);
+      assert(headerMetrics.every((header) => header.overflow <= 2 && !header.overlaps), `${viewport.name} ${route.lens}/${route.scope} briefing header overflowed or overlapped its controls.`);
+      if (viewport.name === 'desktop' && route.lens === 'community' && route.scope === 'overview') {
+        const metricLayout = await page.locator('[data-snapshot-metrics]').evaluate((grid) => {
+          const gridBox = grid.getBoundingClientRect();
+          const cards = [...grid.querySelectorAll('[data-snapshot-card]')].map((card) => card.getBoundingClientRect());
+          return {
+            count: cards.length,
+            gridLeft: gridBox.left,
+            gridRight: gridBox.right,
+            cardLeft: cards[0]?.left,
+            cardRight: cards.at(-1)?.right,
+            widths: cards.map((card) => card.width),
+            tops: cards.map((card) => card.top),
+          };
+        });
+        assert(metricLayout.count === 5, `Community overview rendered ${metricLayout.count} snapshot cards instead of 5.`);
+        assert(Math.max(...metricLayout.tops) - Math.min(...metricLayout.tops) < 2, 'Community overview snapshot cards did not share one row.');
+        assert(Math.max(...metricLayout.widths) - Math.min(...metricLayout.widths) < 2, 'Community overview snapshot cards were not evenly sized.');
+        assert(Math.abs(metricLayout.cardLeft - metricLayout.gridLeft) < 2 && Math.abs(metricLayout.cardRight - metricLayout.gridRight) < 2, 'Community overview snapshot cards did not fill their container.');
+      }
       const routeRequests = apiRequests;
       const expectedPaths = expectedApiPaths(route);
       const actualPaths = new Set(routeRequests.map((requestUrl) => requestUrl.pathname));
@@ -186,6 +224,8 @@ try {
         await expandedDialog.getByRole('heading', { name: 'Corpus story map / emergent topics' }).waitFor();
         const plot = expandedDialog.locator('[data-scatter-plot]');
         await plot.waitFor();
+        const readAxes = async () => Object.fromEntries(await expandedDialog.locator('[data-scatter-axis]').evaluateAll((nodes) => nodes.map((node) => [node.dataset.scatterAxis, Number(node.textContent)])));
+        const initialAxes = await readAxes();
         const controlSizes = await expandedDialog.getByRole('button', { name: /story map/ }).evaluateAll((buttons) => buttons.map((button) => {
           const rect = button.getBoundingClientRect();
           return { width: rect.width, height: rect.height };
@@ -211,6 +251,10 @@ try {
         const initialDistance = Math.hypot(initialFirst.x - initialSecond.x, initialFirst.y - initialSecond.y);
         await expandedDialog.getByRole('button', { name: 'Zoom in story map' }).click();
         await expandedDialog.getByText('1.5×', { exact: true }).waitFor();
+        const zoomedAxes = await readAxes();
+        const xSpanRatio = (zoomedAxes['x-max'] - zoomedAxes['x-min']) / (initialAxes['x-max'] - initialAxes['x-min']);
+        const ySpanRatio = (zoomedAxes['y-max'] - zoomedAxes['y-min']) / (initialAxes['y-max'] - initialAxes['y-min']);
+        assert(Math.abs(xSpanRatio - (1 / 1.5)) < 0.03 && Math.abs(ySpanRatio - (1 / 1.5)) < 0.03, `IC4 axes did not rescale with zoom (${xSpanRatio}, ${ySpanRatio}).`);
         const zoomedFirst = await firstPoint.boundingBox();
         const zoomedSecond = await secondPoint.boundingBox();
         const zoomedDistance = Math.hypot(zoomedFirst.x - zoomedSecond.x, zoomedFirst.y - zoomedSecond.y);
@@ -222,7 +266,9 @@ try {
         const beforeKeyboardPan = await firstPoint.boundingBox();
         await plot.press('ArrowLeft');
         const afterKeyboardPan = await firstPoint.boundingBox();
+        const keyboardAxes = await readAxes();
         assert(Math.hypot(afterKeyboardPan.x - beforeKeyboardPan.x, afterKeyboardPan.y - beforeKeyboardPan.y) > 20, 'IC4 arrow key did not pan the zoomed plot.');
+        assert(keyboardAxes['x-min'] < zoomedAxes['x-min'] && keyboardAxes['x-max'] < zoomedAxes['x-max'], 'IC4 X axis did not move with keyboard panning.');
         const beforePan = await firstPoint.boundingBox();
         const plotBox = await plot.boundingBox();
         await page.mouse.move(plotBox.x + plotBox.width * 0.08, plotBox.y + plotBox.height * 0.9);
@@ -230,11 +276,15 @@ try {
         await page.mouse.move(plotBox.x + plotBox.width * 0.14, plotBox.y + plotBox.height * 0.84);
         await page.mouse.up();
         const afterPan = await firstPoint.boundingBox();
+        const draggedAxes = await readAxes();
         assert(Math.hypot(afterPan.x - beforePan.x, afterPan.y - beforePan.y) > 20, 'IC4 drag did not pan the zoomed plot.');
+        assert(['x-min', 'x-max', 'y-min', 'y-max'].some((key) => Math.abs(draggedAxes[key] - keyboardAxes[key]) >= 0.1), 'IC4 axes did not move with pointer dragging.');
         await expandedDialog.getByRole('button', { name: 'Reset story map' }).click();
         await expandedDialog.getByText('1.0×', { exact: true }).waitFor();
         const resetFirst = await firstPoint.boundingBox();
+        const resetAxes = await readAxes();
         assert(Math.hypot(resetFirst.x - initialFirst.x, resetFirst.y - initialFirst.y) < 2, 'IC4 reset did not restore the original point position.');
+        assert(['x-min', 'x-max', 'y-min', 'y-max'].every((key) => resetAxes[key] === initialAxes[key]), 'IC4 reset did not restore the original axes.');
         await expandedDialog.getByRole('button', { name: 'Close expanded chart' }).click();
       }
       if (viewport.name === 'mobile' && route.lens === 'intermediary' && route.scope === 'overview') {

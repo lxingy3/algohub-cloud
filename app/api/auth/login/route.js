@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { prisma } from '../../../../lib/prisma';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { sessionCookieName } from '../../../../lib/auth';
-import { allowLegacyEmptyPasswordLogin, verifyPassword } from '../../../../lib/password';
+import { verifyPassword } from '../../../../lib/password';
 import { safeInternalPath } from '../../../../lib/safeRedirect';
 import { isSameOriginRequest } from '../../../../lib/requestSecurity';
 
@@ -32,7 +32,7 @@ export async function POST(request) {
     if (!passwordMatches) {
       return redirectToLogin(request, callbackUrl, 'invalid-credentials');
     }
-  } else if (password || !allowLegacyEmptyPasswordLogin()) {
+  } else if (password) {
     return redirectToLogin(request, callbackUrl, 'invalid-credentials');
   }
 
