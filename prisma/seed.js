@@ -35,6 +35,10 @@ const algorithmsData = readStaticData('algorithmsData.jsx', 'algorithmsData');
 const storiesData = readStaticData('storiesData.jsx', 'storiesData');
 const eventsData = readStaticData('eventsData.jsx', 'eventsData');
 
+if (storiesData.some((story) => !story.zip_code || !story.neighbourhood)) {
+  throw new Error('Every seeded story must include zip_code and neighbourhood.');
+}
+
 const extraOrganizations = [
   {
     name: 'CAASI',
@@ -843,6 +847,8 @@ async function main() {
       update: {
         title: story.title,
         summary: story.summary,
+        zipCode: story.zip_code,
+        neighbourhood: story.neighbourhood,
         narrativeText: story.content,
         moderationStatus: story.moderation_status || ModerationStatus.APPROVED,
       },
@@ -852,6 +858,8 @@ async function main() {
         title: story.title,
         summary: story.summary,
         city: story.city,
+        zipCode: story.zip_code,
+        neighbourhood: story.neighbourhood,
         imageUrl: story.image_url,
         submitterName: null,
         isAnonymous: true,
