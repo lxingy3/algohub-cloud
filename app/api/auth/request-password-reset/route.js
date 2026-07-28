@@ -3,10 +3,16 @@ import { prisma } from '../../../../lib/prisma';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { createPasswordResetToken, hashPasswordResetToken } from '../../../../lib/password';
 import { isPasswordResetEmailConfigured, sendPasswordResetEmail } from '../../../../lib/email';
+import { isSameOriginRequest, publicAppOrigin } from '../../../../lib/requestSecurity';
 
 export const dynamic = 'force-dynamic';
+const RESET_REQUEST_COOLDOWN_MS = 5 * 60 * 1000;
 
 export async function POST(request) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: 'Cross-site password reset requests are not allowed.' }, { status: 403 });
+  }
+
   const formData = await request.formData();
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const emailConfigured = isPasswordResetEmailConfigured();
@@ -28,6 +34,22 @@ export async function POST(request) {
   }
 
   if (user) {
+    const recentRequest = await prisma.passwordResetToken.findFirst({
+      where: {
+        userId: user.id,
+        createdAt: { gt: new Date(Date.now() - RESET_REQUEST_COOLDOWN_MS) },
+      },
+      select: { id: true },
+    });
+    if (recentRequest) {
+      return NextResponse.json({
+        ok: true,
+        emailConfigured,
+        emailSendingEnabled,
+        message: genericEmailMessage,
+      });
+    }
+
     const token = createPasswordResetToken();
     const tokenHash = hashPasswordResetToken(token);
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
@@ -60,7 +82,7 @@ export async function POST(request) {
       });
     }
 
-    const resetUrl = new URL('/', request.url);
+    const resetUrl = new URL('/', publicAppOrigin(request));
     resetUrl.searchParams.set('authModal', 'reset-password');
     resetUrl.searchParams.set('resetToken', token);
     const emailResult = await sendPasswordResetEmail({

@@ -5,6 +5,7 @@ import { useEffect, useId, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useTranslation } from 'react-i18next';
 import { Github, Mail, X } from 'lucide-react';
+import { safeInternalPath, withCompleteProfileModal } from '../../lib/safeRedirect';
 
 const ssoProviders = [
   { id: 'google', label: 'Google', icon: 'G' },
@@ -12,15 +13,10 @@ const ssoProviders = [
   { id: 'github', label: 'GitHub', icon: null },
 ];
 
-function safeCallbackUrl(value) {
-  if (typeof value !== 'string') return null;
-  return value.startsWith('/') && !value.startsWith('//') ? value : null;
-}
-
 export function LoginModal({ open, onClose, onSignup, forceOpen = false, error = false, errorMessage, initialCallbackUrl }) {
   const { t } = useTranslation();
   const titleId = useId();
-  const [callbackUrl, setCallbackUrl] = useState(() => safeCallbackUrl(initialCallbackUrl) || '/');
+  const [callbackUrl, setCallbackUrl] = useState(() => safeInternalPath(initialCallbackUrl, '/'));
   const [mode, setMode] = useState('login');
   const [loginEmail, setLoginEmail] = useState('admin@algostories.local');
   const [resetEmail, setResetEmail] = useState('');
@@ -48,7 +44,7 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
   }, [open]);
 
   useEffect(() => {
-    const explicitCallbackUrl = safeCallbackUrl(initialCallbackUrl);
+    const explicitCallbackUrl = safeInternalPath(initialCallbackUrl);
     if (explicitCallbackUrl) {
       setCallbackUrl(explicitCallbackUrl);
       return;
@@ -221,10 +217,4 @@ export function LoginModal({ open, onClose, onSignup, forceOpen = false, error =
       </div>
     </div>
   );
-}
-
-function withCompleteProfileModal(callbackUrl) {
-  const url = new URL(safeCallbackUrl(callbackUrl) || '/', window.location.origin);
-  url.searchParams.set('authModal', 'complete-profile');
-  return `${url.pathname}${url.search}${url.hash}`;
 }

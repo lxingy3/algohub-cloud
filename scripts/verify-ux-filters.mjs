@@ -11,7 +11,12 @@ const loginBody = new URLSearchParams({
   password: process.env.ADMIN_PASSWORD || '',
   callbackUrl: '/admin',
 });
-const loginResponse = await fetch(`${baseUrl}/api/auth/login`, { method: 'POST', body: loginBody, redirect: 'manual' });
+const loginResponse = await fetch(`${baseUrl}/api/auth/login`, {
+  method: 'POST',
+  headers: { origin: baseUrl },
+  body: loginBody,
+  redirect: 'manual',
+});
 const sessionToken = /algohub_session=([^;]+)/.exec(loginResponse.headers.get('set-cookie') || '')?.[1];
 if (!sessionToken) throw new Error(`Admin login failed: ${loginResponse.status} ${loginResponse.headers.get('location') || ''}`);
 
@@ -127,7 +132,10 @@ try {
   await browser.close();
   await fetch(`${baseUrl}/api/auth/logout`, {
     method: 'POST',
-    headers: { cookie: `algohub_session=${sessionToken}` },
+    headers: {
+      cookie: `algohub_session=${sessionToken}`,
+      origin: baseUrl,
+    },
     redirect: 'manual',
   }).catch((error) => console.warn(`Temporary session cleanup was skipped: ${error.message}`));
 }

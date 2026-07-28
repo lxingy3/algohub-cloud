@@ -2,9 +2,11 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
 import { getJurisdictionId } from '../lib/jurisdiction.js';
-import { prisma } from '../lib/prisma.js';
+import { requireTestDatabase } from './lib/require-test-database.mjs';
 
 const baseUrl = (process.argv[2] || 'http://127.0.0.1:3000').replace(/\/$/, '');
+await requireTestDatabase('verify-briefing-partner-review-lifecycle', baseUrl);
+const { prisma } = await import('../lib/prisma.js');
 const jurisdictionId = getJurisdictionId();
 const suffix = randomUUID();
 const createdUserIds = [];
@@ -111,7 +113,7 @@ async function main() {
   );
   assert.equal(blockedWithoutAssignment.status, 409);
 
-  const deadline = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const deadline = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const assigned = await post(
     `${adminPath}/partner-reviews`,
     { action: 'assign', organizationId: organization.id, deadline },

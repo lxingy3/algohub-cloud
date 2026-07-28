@@ -3,6 +3,7 @@ import { PenLine } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
+import { hasFirebaseStorageConfig } from '../../lib/mediaStorage';
 import { SiteNav } from '../components/SiteNav';
 import { SubmitTestimonyForm } from '../components/SubmitTestimonyForm';
 
@@ -36,6 +37,8 @@ export default async function SubmitTestimonyPage({ searchParams }) {
           algorithms={algorithms}
           selectedAlgorithmId={params?.algorithmId || ''}
           currentUserEmail={user?.email || ''}
+          isLoggedIn={Boolean(user)}
+          mediaUploadEnabled={hasFirebaseStorageConfig()}
         />
         <div className="mt-6 text-center text-sm text-gray-500">
           <Link href="/stories" className="inline-flex min-h-10 items-center rounded-md px-2 font-semibold text-amber-800 hover:bg-amber-100 hover:text-amber-950">Read public stories</Link>

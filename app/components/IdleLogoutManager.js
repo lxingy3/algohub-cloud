@@ -1,34 +1,48 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import {
+  idleDraftKey,
+  idleRestoreKey,
+  isDraftableField,
+  isOwnedDraft,
+  LEGACY_IDLE_DRAFT_KEY,
+  LEGACY_IDLE_RESTORE_KEY,
+} from '../../lib/idleDraft';
 
 const IDLE_LIMIT_MS = 60 * 60 * 1000;
-const DRAFT_KEY = 'algohub_auto_logout_draft';
-const RESTORE_KEY = 'algohub_restore_auto_logout_draft';
 const activityEvents = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
 
-export function IdleLogoutManager({ isLoggedIn }) {
+export function IdleLogoutManager({ isLoggedIn, currentUserId }) {
   const [draft, setDraft] = useState(null);
+  const draftKey = idleDraftKey(currentUserId);
+  const restoreKey = idleRestoreKey(currentUserId);
 
   useEffect(() => {
-    if (!isLoggedIn) return;
-    const savedDraft = readDraft();
-    if (savedDraft) setDraft(savedDraft);
-  }, [isLoggedIn]);
-
-  useEffect(() => {
-    restorePendingDraft();
+    localStorage.removeItem(LEGACY_IDLE_DRAFT_KEY);
+    sessionStorage.removeItem(LEGACY_IDLE_RESTORE_KEY);
   }, []);
 
   useEffect(() => {
-    if (!isLoggedIn) return undefined;
+    if (!isLoggedIn || !draftKey || !currentUserId) return;
+    const savedDraft = readDraft(draftKey, currentUserId);
+    if (savedDraft) setDraft(savedDraft);
+  }, [currentUserId, draftKey, isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !restoreKey || !currentUserId) return;
+    restorePendingDraft(restoreKey, currentUserId);
+  }, [currentUserId, isLoggedIn, restoreKey]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !draftKey || !currentUserId) return undefined;
 
     let timer;
     const resetTimer = () => {
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
-        const currentDraft = collectDraft();
-        if (currentDraft) localStorage.setItem(DRAFT_KEY, JSON.stringify(currentDraft));
+        const currentDraft = collectDraft(currentUserId);
+        if (currentDraft) localStorage.setItem(draftKey, JSON.stringify(currentDraft));
         void fetch('/api/auth/logout', { method: 'POST', keepalive: true }).finally(() => {
           window.location.assign('/');
         });
@@ -42,7 +56,7 @@ export function IdleLogoutManager({ isLoggedIn }) {
       window.clearTimeout(timer);
       activityEvents.forEach((eventName) => window.removeEventListener(eventName, resetTimer));
     };
-  }, [isLoggedIn]);
+  }, [currentUserId, draftKey, isLoggedIn]);
 
   if (!isLoggedIn || !draft) return null;
 
@@ -66,8 +80,9 @@ export function IdleLogoutManager({ isLoggedIn }) {
           <button
             type="button"
             onClick={() => {
-              sessionStorage.setItem(RESTORE_KEY, JSON.stringify(draft));
-              localStorage.removeItem(DRAFT_KEY);
+              if (!restoreKey || !draftKey) return;
+              sessionStorage.setItem(restoreKey, JSON.stringify(draft));
+              localStorage.removeItem(draftKey);
               window.location.assign(draft.url || '/');
             }}
             className="inline-flex min-h-11 items-center rounded-md bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800"
@@ -77,7 +92,7 @@ export function IdleLogoutManager({ isLoggedIn }) {
           <button
             type="button"
             onClick={() => {
-              localStorage.removeItem(DRAFT_KEY);
+              if (draftKey) localStorage.removeItem(draftKey);
               setDraft(null);
             }}
             className="inline-flex min-h-11 items-center rounded-md border border-slate-300 px-4 py-2 font-semibold text-slate-800 hover:bg-slate-50"
@@ -90,18 +105,22 @@ export function IdleLogoutManager({ isLoggedIn }) {
   );
 }
 
-function readDraft() {
+function readDraft(key, userId) {
   try {
-    return JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+    const draft = JSON.parse(localStorage.getItem(key) || 'null');
+    if (isOwnedDraft(draft, userId)) return draft;
+    localStorage.removeItem(key);
+    return null;
   } catch {
+    localStorage.removeItem(key);
     return null;
   }
 }
 
-function collectDraft() {
+function collectDraft(userId) {
   const fields = [];
   document.querySelectorAll('input, textarea, select').forEach((field) => {
-    if (!field.name || field.type === 'hidden' || field.type === 'button' || field.type === 'submit') return;
+    if (!isDraftableField(field)) return;
     const value = field.type === 'checkbox' || field.type === 'radio' ? field.checked : field.value;
     const initialValue = field.type === 'checkbox' || field.type === 'radio' ? field.defaultChecked : field.defaultValue;
     const hasChanged = value !== initialValue;
@@ -113,6 +132,7 @@ function collectDraft() {
   if (!fields.length) return null;
 
   return {
+    ownerUserId: userId,
     url: `${window.location.pathname}${window.location.search}${window.location.hash}`,
     title: document.title,
     savedAt: new Date().toISOString(),
@@ -120,14 +140,20 @@ function collectDraft() {
   };
 }
 
-function restorePendingDraft() {
+function restorePendingDraft(key, userId) {
   let draft;
   try {
-    draft = JSON.parse(sessionStorage.getItem(RESTORE_KEY) || 'null');
+    draft = JSON.parse(sessionStorage.getItem(key) || 'null');
   } catch {
     draft = null;
   }
-  if (!draft || draft.url !== `${window.location.pathname}${window.location.search}${window.location.hash}`) return;
+  if (
+    !isOwnedDraft(draft, userId)
+    || draft.url !== `${window.location.pathname}${window.location.search}${window.location.hash}`
+  ) {
+    sessionStorage.removeItem(key);
+    return;
+  }
 
   window.setTimeout(() => {
     for (const item of draft.fields || []) {
@@ -141,6 +167,6 @@ function restorePendingDraft() {
       field.dispatchEvent(new Event('input', { bubbles: true }));
       field.dispatchEvent(new Event('change', { bubbles: true }));
     }
-    sessionStorage.removeItem(RESTORE_KEY);
+    sessionStorage.removeItem(key);
   }, 500);
 }

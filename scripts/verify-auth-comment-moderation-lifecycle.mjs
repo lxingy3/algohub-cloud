@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
-import { prisma } from '../lib/prisma.js';
 import { getJurisdictionId } from '../lib/jurisdiction.js';
+import { requireTestDatabase } from './lib/require-test-database.mjs';
 
 const baseUrl = (process.argv[2] || 'http://127.0.0.1:3000').replace(/\/$/, '');
+await requireTestDatabase('verify-auth-comment-moderation-lifecycle', baseUrl);
+const { prisma } = await import('../lib/prisma.js');
 const jurisdictionId = getJurisdictionId();
 const suffix = randomUUID();
 const password = `Lifecycle-${suffix.slice(0, 8)}!A7`;
@@ -33,6 +35,7 @@ async function post(path, body, cookie = '', headers = {}) {
     headers: {
       ...(cookie ? { cookie } : {}),
       'content-type': 'application/x-www-form-urlencoded',
+      origin: baseUrl,
       ...headers,
     },
     body: new URLSearchParams(body),
@@ -61,9 +64,10 @@ async function login(email, submittedPassword) {
   });
 }
 
-async function moderate(commentId, status, cookie) {
+async function moderate(commentId, status, cookie, currentStatus) {
   return post(`/api/admin/comments/${commentId}/moderate`, {
     status,
+    currentStatus,
     returnTo: '/admin/comments',
   }, cookie);
 }
@@ -97,7 +101,7 @@ async function main() {
 
   const rejectedLogin = await login(communityEmail, `${password}-wrong`);
   assert.equal(rejectedLogin.status, 303);
-  assert.equal(new URL(rejectedLogin.headers.get('location')).searchParams.get('authError'), 'invalid-password');
+  assert.equal(new URL(rejectedLogin.headers.get('location')).searchParams.get('authError'), 'invalid-credentials');
 
   const acceptedLogin = await login(communityEmail, password);
   assert.equal(acceptedLogin.status, 303);
@@ -132,19 +136,26 @@ async function main() {
     { 'x-story-mutation': 'true' },
   );
   assert.equal(createComment.status, 200);
+  const createCommentBody = await createComment.json();
+  assert.equal(createCommentBody.ok, true);
+  assert.equal(createCommentBody.comment.moderationStatus, 'PENDING');
+  assert.equal(createCommentBody.comment.parentCommentId, null);
+  assert.match(createCommentBody.message, /awaiting moderation/i);
   const parent = await prisma.comment.findFirst({
     where: { userId: communityUser.id, content: commentMarker },
   });
   assert.ok(parent);
+  assert.equal(createCommentBody.comment.id, parent.id);
   assert.equal(parent.moderationStatus, 'PENDING');
   assert.doesNotMatch(await publicStoryHtml(testimony.id), new RegExp(commentMarker));
 
-  const forbiddenModeration = await moderate(parent.id, 'APPROVED', communityCookie);
+  const forbiddenModeration = await moderate(parent.id, 'APPROVED', communityCookie, 'PENDING');
   assert.equal(forbiddenModeration.status, 403);
 
-  const approveParent = await moderate(parent.id, 'APPROVED', adminCookie);
+  const approveParent = await moderate(parent.id, 'APPROVED', adminCookie, 'PENDING');
   assert.equal(approveParent.status, 303);
   assert.match(await publicStoryHtml(testimony.id), new RegExp(commentMarker));
+  assert.equal((await moderate(parent.id, 'REJECTED', adminCookie, 'PENDING')).status, 409);
 
   const likePath = `/api/stories/${testimony.id}/comments/${parent.id}/like`;
   const toggleLike = () => post(likePath, {}, communityCookie, { 'x-story-mutation': 'true' });
@@ -175,19 +186,25 @@ async function main() {
     { 'x-story-mutation': 'true' },
   );
   assert.equal(createReply.status, 200);
+  const createReplyBody = await createReply.json();
+  assert.equal(createReplyBody.ok, true);
+  assert.equal(createReplyBody.comment.moderationStatus, 'PENDING');
+  assert.equal(createReplyBody.comment.parentCommentId, parent.id);
+  assert.match(createReplyBody.message, /awaiting moderation/i);
   const reply = await prisma.comment.findFirst({
     where: { userId: communityUser.id, content: replyMarker },
   });
   assert.ok(reply);
-  assert.equal((await moderate(reply.id, 'FLAGGED', adminCookie)).status, 303);
-  assert.equal((await moderate(reply.id, 'APPROVED', adminCookie)).status, 303);
+  assert.equal(createReplyBody.comment.id, reply.id);
+  assert.equal((await moderate(reply.id, 'FLAGGED', adminCookie, 'PENDING')).status, 303);
+  assert.equal((await moderate(reply.id, 'APPROVED', adminCookie, 'FLAGGED')).status, 303);
   assert.match(await publicStoryHtml(testimony.id), new RegExp(replyMarker));
 
-  assert.equal((await moderate(parent.id, 'FLAGGED', adminCookie)).status, 400);
-  assert.equal((await moderate(parent.id, 'REJECTED', adminCookie)).status, 303);
+  assert.equal((await moderate(parent.id, 'FLAGGED', adminCookie, 'APPROVED')).status, 400);
+  assert.equal((await moderate(parent.id, 'REJECTED', adminCookie, 'APPROVED')).status, 303);
   assert.doesNotMatch(await publicStoryHtml(testimony.id), new RegExp(commentMarker));
-  assert.equal((await moderate(parent.id, 'PENDING', adminCookie)).status, 303);
-  assert.equal((await moderate(parent.id, 'APPROVED', adminCookie)).status, 303);
+  assert.equal((await moderate(parent.id, 'PENDING', adminCookie, 'REJECTED')).status, 303);
+  assert.equal((await moderate(parent.id, 'APPROVED', adminCookie, 'PENDING')).status, 303);
   const restoredHtml = await publicStoryHtml(testimony.id);
   assert.match(restoredHtml, new RegExp(commentMarker));
   assert.match(restoredHtml, new RegExp(replyMarker));
@@ -203,8 +220,8 @@ async function main() {
     status: 'PASS',
     storyId: testimony.id,
     auth: 'signup -> logout -> rejected login -> accepted login -> logout',
-    comments: 'pending -> approved; reply pending -> flagged -> approved',
-    moderation: 'non-admin denied; invalid transition denied; approved -> rejected -> pending -> approved',
+    comments: 'pending response -> approved; reply pending response -> flagged -> approved',
+    moderation: 'non-admin denied; stale state conflicted; invalid transition denied; approved -> rejected -> pending -> approved',
     likes: '0 -> 1 -> 0',
     reactions: '0 -> 1 -> 0',
   }, null, 2));

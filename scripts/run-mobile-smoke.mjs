@@ -37,7 +37,7 @@ async function runProfile(profile) {
   await runEventModalSmoke(page, name);
   await runPartnerApplicationSmoke(page, name);
   await runSubmitReviewSmoke(page, name);
-  await runSubmitVideoMediaSmoke(page, name);
+  await runAnonymousMediaGateSmoke(page, name);
 
   await goto(page, '/');
   const navigationMenu = page.getByRole('button', { name: /^Open navigation menu$/i });
@@ -50,6 +50,7 @@ async function runProfile(profile) {
 
   await login(page);
   await dismissPasswordReminder(page);
+  await runSubmitVideoMediaSmoke(page, name);
   await runMyStoriesSmoke(page, name);
 
   for (const route of adminRoutes) {
@@ -351,6 +352,13 @@ async function runSubmitReviewSmoke(page, profile) {
   await assertNoTinyTapTargets(page, `${profile} submit review`);
 }
 
+async function runAnonymousMediaGateSmoke(page, profile) {
+  await goto(page, '/submit-testimony');
+  const voiceMethod = page.getByRole('button', { name: /Record your story/i });
+  if (!await voiceMethod.isDisabled()) throw new Error(`${profile} anonymous voice submission is not gated.`);
+  await page.getByText(/Sign in to record or upload audio or video/i).waitFor();
+}
+
 async function runSubmitVideoMediaSmoke(page, profile) {
   let presignBody = null;
   let uploaded = false;
@@ -362,6 +370,7 @@ async function runSubmitVideoMediaSmoke(page, profile) {
       contentType: 'application/json',
       body: JSON.stringify({
         uploadUrl: `${baseUrl}/submit-video-smoke-upload`,
+        uploadFields: { key: 'testimonies/video/submit-video-smoke.mov', policy: 'mobile-smoke' },
         objectKey: 'testimonies/video/submit-video-smoke.mov',
         storageUri: 'gcs://mobile-smoke/testimonies/video/submit-video-smoke.mov',
         provider: 'firebase-gcs',
@@ -370,7 +379,7 @@ async function runSubmitVideoMediaSmoke(page, profile) {
     });
   });
   await page.route('**/submit-video-smoke-upload', async (route) => {
-    uploaded = route.request().method() === 'PUT';
+    uploaded = route.request().method() === 'POST';
     await route.fulfill({ status: 200, body: '' });
   });
 
@@ -379,7 +388,12 @@ async function runSubmitVideoMediaSmoke(page, profile) {
     await page.evaluate(() => window.localStorage.removeItem('algostories-submit-draft'));
     await goto(page, '/submit-testimony');
 
-    await page.getByRole('button', { name: /Record your story/i }).click();
+    const voiceMethod = page.getByRole('button', { name: /Record your story/i });
+    if (await voiceMethod.isDisabled()) {
+      await page.getByText(/Audio and video upload is temporarily unavailable/i).waitFor();
+      return;
+    }
+    await voiceMethod.click();
     await page.getByRole('button', { name: /^Next$/i }).click();
     await page.locator('input[name="uncertainSystem"]').check();
     await page.locator('select[name="affectedDomain"]').selectOption('Housing');
@@ -396,7 +410,7 @@ async function runSubmitVideoMediaSmoke(page, profile) {
     if (presignBody?.kind !== 'video') {
       throw new Error(`Submit video media used wrong presign kind: ${JSON.stringify(presignBody)}`);
     }
-    if (!uploaded) throw new Error('Submit video media did not PUT the selected video file.');
+    if (!uploaded) throw new Error('Submit video media did not POST the selected video file.');
 
     await page.locator('input[name="city"]').fill('Pittsburgh');
     await assertNoHorizontalOverflow(page, `${profile} submit video details`);
@@ -454,6 +468,7 @@ async function runMlQuickTestVideoSmoke(page) {
       contentType: 'application/json',
       body: JSON.stringify({
         uploadUrl: `${baseUrl}/mobile-smoke-video-upload`,
+        uploadFields: { key: 'testimonies/video/mobile-smoke.mov', policy: 'mobile-smoke' },
         objectKey: 'testimonies/video/mobile-smoke.mov',
         storageUri: 'gcs://mobile-smoke/testimonies/video/mobile-smoke.mov',
         provider: 'firebase-gcs',
@@ -462,7 +477,7 @@ async function runMlQuickTestVideoSmoke(page) {
     });
   });
   await page.route('**/mobile-smoke-video-upload', async (route) => {
-    uploaded = route.request().method() === 'PUT';
+    uploaded = route.request().method() === 'POST';
     await route.fulfill({ status: 200, body: '' });
   });
   await page.route('**/api/ml/quick-test', async (route) => {
@@ -505,7 +520,7 @@ async function runMlQuickTestVideoSmoke(page) {
     if (presignBody?.kind !== 'video') {
       throw new Error(`ML Quick Test video upload used wrong presign kind: ${JSON.stringify(presignBody)}`);
     }
-    if (!uploaded) throw new Error('ML Quick Test video upload did not PUT the selected video file.');
+    if (!uploaded) throw new Error('ML Quick Test video upload did not POST the selected video file.');
     if (!quickTestBodies.some((body) => body?.mediaObjectKey === 'testimonies/video/mobile-smoke.mov')) {
       throw new Error(`ML Quick Test video did not run from stored media: ${JSON.stringify(quickTestBodies)}`);
     }

@@ -31,7 +31,7 @@ export async function POST(request, { params }) {
   if (!testimony) return NextResponse.json({ error: 'Story not found.' }, { status: 404 });
   if (parentCommentId && !parentComment) return NextResponse.json({ error: 'Parent comment not found.' }, { status: 404 });
 
-  await prisma.comment.create({
+  const comment = await prisma.comment.create({
     data: {
       jurisdictionId,
       testimonyId: id,
@@ -41,10 +41,21 @@ export async function POST(request, { params }) {
       parentCommentId,
       moderationStatus: 'PENDING',
     },
+    select: {
+      id: true,
+      parentCommentId: true,
+      moderationStatus: true,
+    },
   });
 
   if (request.headers.get('x-story-mutation') === 'true') {
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      ok: true,
+      comment,
+      message: parentCommentId
+        ? 'Your reply is awaiting moderation.'
+        : 'Your comment is awaiting moderation.',
+    });
   }
   return NextResponse.redirect(new URL(`/stories/${id}`, request.url), { status: 303 });
 }

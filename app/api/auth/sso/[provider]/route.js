@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { safeInternalPath } from '../../../../../lib/safeRedirect';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +12,7 @@ export async function GET(request, { params }) {
   }
 
   const { searchParams } = new URL(request.url);
-  const callbackUrl = safeReturnTo(searchParams.get('callbackUrl')) || '/';
+  const callbackUrl = safeInternalPath(searchParams.get('callbackUrl'), '/');
   const setupCallbackUrl = withCompleteProfileModal(callbackUrl, request.url);
   const response = NextResponse.redirect(new URL(`/api/auth/signin/${provider}?callbackUrl=${encodeURIComponent(setupCallbackUrl)}`, request.url));
 
@@ -24,12 +25,6 @@ export async function GET(request, { params }) {
   });
 
   return response;
-}
-
-function safeReturnTo(value) {
-  const returnTo = String(value || '');
-  if (!returnTo.startsWith('/') || returnTo.startsWith('//')) return null;
-  return returnTo;
 }
 
 function withCompleteProfileModal(callbackUrl, requestUrl) {

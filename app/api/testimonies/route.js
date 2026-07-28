@@ -3,7 +3,11 @@ import { z } from 'zod';
 import { prisma } from '../../../lib/prisma';
 import { getJurisdictionId } from '../../../lib/jurisdiction';
 import { getCurrentUser } from '../../../lib/auth';
-import { mediaStorageProvider, mediaStorageUri } from '../../../lib/mediaStorage';
+import {
+  isOwnedTestimonyMediaObjectKey,
+  mediaStorageProvider,
+  mediaStorageUri,
+} from '../../../lib/mediaStorage';
 import { rankStoriesForSearch } from '../../../lib/searchRanking';
 import { buildStorySummary } from '../../../lib/storySummary';
 import { anonymizedExcerpt, parseExploreFilters, storedKeywords, storyHasTheme } from '../../../lib/briefingsExplore';
@@ -361,7 +365,7 @@ export async function POST(request) {
   if (storyType === 'voice' && !mediaObjectKey) {
     return NextResponse.json({ error: 'Please record or upload media before submitting.' }, { status: 400 });
   }
-  if (mediaObjectKey && !/^testimonies\/(audio|video)\//.test(mediaObjectKey)) {
+  if (mediaObjectKey && !isOwnedTestimonyMediaObjectKey({ objectKey: mediaObjectKey, userId: user?.id })) {
     return NextResponse.json({ error: 'Invalid testimony media reference.' }, { status: 400 });
   }
   if (algorithmId) {

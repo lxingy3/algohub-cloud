@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   const filters = parseExploreFilters(request);
-  const rows = await getApprovedBriefingCorpus(filters);
+  const rows = await getApprovedBriefingCorpus(filters, { includeExperiences: true });
   const minCount = minGroupCountForLens(filters.lens);
   const [briefings, embeddings] = await Promise.all([prisma.briefing.findMany({
     where: {

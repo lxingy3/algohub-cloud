@@ -22,14 +22,11 @@ const navItems = [
 const passwordReminderPrefix = 'algohub_password_setup_later:';
 
 const loginErrors = {
-  'not-found': 'No account was found for that email.',
-  'invalid-password': 'The password is incorrect.',
-  'password-not-set': 'This account does not have a password yet. For this test phase, leave the password blank or use social login, then set a password after login.',
+  'invalid-credentials': 'Email or password is incorrect. You can also use social login or reset the password.',
 };
 
 const signupErrors = {
-  'account-exists': 'This email already has an account. Please log in with the existing account.',
-  'name-conflict': 'This email already belongs to another user name. Use the existing account.',
+  'account-unavailable': 'An account could not be created with those details. Try logging in or resetting the password.',
   'password-too-short': 'Password must be at least 8 characters.',
   'password-too-long': 'Password must be no more than 128 characters.',
   'password-mismatch': 'Passwords do not match.',
@@ -253,7 +250,7 @@ export function SiteNavClient({ isLoggedIn, isAdmin, currentUserId = '', needsPa
         }}
         resetToken={authModal === 'reset-password' ? resetToken : ''}
       />
-      <IdleLogoutManager isLoggedIn={isLoggedIn} />
+      <IdleLogoutManager isLoggedIn={isLoggedIn} currentUserId={currentUserId} />
     </>
   );
 }

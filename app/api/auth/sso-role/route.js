@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
+import { safeInternalPath } from '../../../../lib/safeRedirect';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
   const body = await request.json().catch(() => ({}));
   const role = 'COMMUNITY_MEMBER';
-  const returnTo = safeReturnTo(body.returnTo) || '/';
+  const returnTo = safeInternalPath(body.returnTo, '/');
   const response = NextResponse.json({ ok: true, role });
 
   response.cookies.set('algohub_sso_role', role, {
@@ -32,10 +33,4 @@ export async function POST(request) {
   });
 
   return response;
-}
-
-function safeReturnTo(value) {
-  const returnTo = String(value || '');
-  if (!returnTo.startsWith('/') || returnTo.startsWith('//')) return null;
-  return returnTo;
 }

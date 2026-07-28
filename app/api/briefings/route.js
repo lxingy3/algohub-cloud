@@ -18,6 +18,10 @@ function dateValue(value) {
 export async function GET(request) {
   const params = new URL(request.url).searchParams;
   const jurisdictionId = getJurisdictionId();
+  const requestedLimit = Number(params.get('limit'));
+  const limit = Number.isInteger(requestedLimit) && requestedLimit > 0
+    ? Math.min(requestedLimit, 100)
+    : undefined;
   const algorithm = params.get('algorithm') || '';
   const dateFrom = dateValue(params.get('date_from'));
   const dateTo = dateValue(params.get('date_to'));
@@ -39,6 +43,7 @@ export async function GET(request) {
       ...(targetTheme ? { targetTheme } : {}),
     },
     orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+    ...(limit ? { take: limit } : {}),
     select: {
       id: true,
       title: true,

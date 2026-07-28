@@ -167,10 +167,14 @@ function EventForm({ action, event, organizations, submitLabel, returnTo }) {
         });
         const presign = await presignResponse.json();
         if (!presignResponse.ok) throw new Error(presign.error || 'Image upload could not be prepared.');
+        const uploadFormData = new FormData();
+        for (const [field, value] of Object.entries(presign.uploadFields || {})) {
+          uploadFormData.append(field, String(value));
+        }
+        uploadFormData.append('file', imageFile);
         const uploadResponse = await fetch(presign.uploadUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': imageFile.type },
-          body: imageFile,
+          method: 'POST',
+          body: uploadFormData,
         });
         if (!uploadResponse.ok) throw new Error('Image upload failed.');
         formData.set('imageUrl', presign.storageUri);

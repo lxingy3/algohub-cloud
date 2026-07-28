@@ -32,7 +32,7 @@ export async function GET(request) {
     },
     orderBy: { name: 'asc' },
   });
-  const rows = await getApprovedBriefingCorpus(filters);
+  const rows = await getApprovedBriefingCorpus(filters, { includeExcerpts: filters.lens !== 'government' });
   const [storyEmbeddings, claimEmbeddings] = await Promise.all([
     getSemanticEmbeddingMap('testimony', rows.map((row) => row.id), { jurisdictionId }),
     getSemanticEmbeddingMap('claim', algorithms.flatMap((algorithm) => algorithm.claims.map((claim) => claim.id)), { jurisdictionId }),

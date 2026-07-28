@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   const filters = parseExploreFilters(request);
-  const rows = await getApprovedBriefingCorpus(filters);
+  const rows = await getApprovedBriefingCorpus(filters, { includeExcerpts: filters.lens !== 'government' });
   const minCount = minGroupCountForLens(filters.lens);
   const topicIds = [...new Set(rows.map((row) => row.topicId).filter((topicId) => topicId !== null))];
   const storedTopics = topicIds.length

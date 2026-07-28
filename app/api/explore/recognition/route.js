@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request) {
   const filters = parseExploreFilters(request);
   const sourceId = new URL(request.url).searchParams.get('story') || '';
-  const rows = await getApprovedBriefingCorpus(filters);
+  const rows = await getApprovedBriefingCorpus(filters, { includeExcerpts: filters.lens !== 'government' });
   const theme = filters.theme;
   const matched = theme
     ? rows.filter((row) => normalizeThemes(row.aiThemes).some((item) => item.theme === theme))

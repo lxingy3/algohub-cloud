@@ -184,13 +184,17 @@ function OrganizationForm({ action, organization, submitLabel, returnTo }) {
             throw new Error(presign.error || 'Logo upload could not be prepared.');
           }
         } else {
-        const uploadResponse = await fetch(presign.uploadUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': logoFile.type },
-          body: logoFile,
-        });
-        if (!uploadResponse.ok) throw new Error('Logo upload failed.');
-        formData.set('logoUrl', presign.storageUri);
+          const uploadFormData = new FormData();
+          for (const [field, value] of Object.entries(presign.uploadFields || {})) {
+            uploadFormData.append(field, String(value));
+          }
+          uploadFormData.append('file', logoFile);
+          const uploadResponse = await fetch(presign.uploadUrl, {
+            method: 'POST',
+            body: uploadFormData,
+          });
+          if (!uploadResponse.ok) throw new Error('Logo upload failed.');
+          formData.set('logoUrl', presign.storageUri);
         }
       } catch (uploadError) {
         setError(uploadError.message || 'Logo upload failed.');

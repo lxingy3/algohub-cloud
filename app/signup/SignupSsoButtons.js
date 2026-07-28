@@ -2,7 +2,7 @@
 
 import { signIn } from 'next-auth/react';
 import { Github } from 'lucide-react';
-import { useState } from 'react';
+import { withCompleteProfileModal } from '../../lib/safeRedirect';
 
 const providers = [
   { id: 'google', label: 'Google', icon: 'G' },
@@ -11,32 +11,21 @@ const providers = [
 ];
 
 export function SignupSsoButtons() {
-  const [displayName, setDisplayName] = useState('');
-
   async function startSso(providerId) {
+    const returnTo = `${window.location.pathname}${window.location.search}`;
     await fetch('/api/auth/sso-role', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         role: 'COMMUNITY_MEMBER',
-        displayName,
-        returnTo: `${window.location.pathname}${window.location.search}`,
+        returnTo,
       }),
     });
-    await signIn(providerId, { callbackUrl: '/' });
+    await signIn(providerId, { callbackUrl: withCompleteProfileModal(returnTo) });
   }
 
   return (
     <div className="mt-5 space-y-3">
-      <label className="block text-sm font-medium text-slate-700">
-        Display name
-        <input
-          value={displayName}
-          onChange={(event) => setDisplayName(event.target.value)}
-          placeholder="Use the name from your SSO account"
-          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-        />
-      </label>
       <div className="grid gap-2">
         {providers.map((provider) => (
           <button
@@ -51,7 +40,7 @@ export function SignupSsoButtons() {
         ))}
       </div>
       <p className="text-xs leading-5 text-slate-500">
-        Leave display name blank to use the name from your SSO account. Social signup creates a community member account.
+        After your provider verifies the account, choose the display name used on AlgoStories.
       </p>
     </div>
   );

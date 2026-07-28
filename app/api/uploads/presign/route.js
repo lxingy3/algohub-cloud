@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireAdmin } from '../../../../lib/auth';
+import { getCurrentUser, requireAdmin } from '../../../../lib/auth';
 import {
   assertMediaUpload,
   createSignedMediaUpload,
   hasFirebaseStorageConfig,
+  MAX_MEDIA_BYTES,
+  mediaUploadUserPrefix,
   mediaStorageProvider,
   mediaStorageUri,
 } from '../../../../lib/mediaStorage';
@@ -51,9 +53,10 @@ export async function POST(request) {
   }
 
   const { kind, scope, fileName, contentType, size } = result.data;
+  const user = kind === 'image' ? await requireAdmin() : await getCurrentUser();
 
   if (kind === 'image') {
-    if (!await requireAdmin()) {
+    if (!user) {
       return NextResponse.json({ error: 'Admin access is required for site images.' }, { status: 403 });
     }
     if (!IMAGE_CONTENT_TYPES.has(contentType)) {
@@ -63,6 +66,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Please upload an image smaller than 10 MB.' }, { status: 400 });
     }
   } else {
+    if (!user) {
+      return NextResponse.json({ error: 'Please log in before uploading audio or video.' }, { status: 401 });
+    }
     try {
       assertMediaUpload({ contentType, size });
     } catch (error) {
@@ -79,13 +85,20 @@ export async function POST(request) {
 
   const extension = cleanExtension(fileName, contentType);
   const datePrefix = new Date().toISOString().slice(0, 10);
+  const userPrefix = mediaUploadUserPrefix(user.id);
   const objectKey = kind === 'image'
-    ? imageObjectKey({ scope, datePrefix, extension })
-    : `testimonies/${kind}/${datePrefix}/${randomUUID()}.${extension}`;
-  const uploadUrl = await createSignedMediaUpload({ objectKey, contentType });
+    ? imageObjectKey({ userPrefix, scope, datePrefix, extension })
+    : `testimonies/${kind}/${userPrefix}/${datePrefix}/${randomUUID()}.${extension}`;
+  const { uploadUrl, uploadFields } = await createSignedMediaUpload({
+    objectKey,
+    contentType,
+    maxBytes: kind === 'image' ? MAX_IMAGE_BYTES : MAX_MEDIA_BYTES,
+  });
 
   return NextResponse.json({
+    uploadMethod: 'POST',
     uploadUrl,
+    uploadFields,
     objectKey,
     storageUri: mediaStorageUri(objectKey),
     provider: mediaStorageProvider,
@@ -93,9 +106,9 @@ export async function POST(request) {
   });
 }
 
-function imageObjectKey({ scope, datePrefix, extension }) {
+function imageObjectKey({ userPrefix, scope, datePrefix, extension }) {
   if (scope === 'organizationLogo') {
-    return `organizations/logos/${datePrefix}/${randomUUID()}.${extension}`;
+    return `organizations/logos/${userPrefix}/${datePrefix}/${randomUUID()}.${extension}`;
   }
-  return `events/images/${datePrefix}/${randomUUID()}.${extension}`;
+  return `events/images/${userPrefix}/${datePrefix}/${randomUUID()}.${extension}`;
 }

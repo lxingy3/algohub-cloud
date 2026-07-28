@@ -310,10 +310,14 @@ async function uploadAudioForQuickTest(audioFile, signal) {
     throw error;
   }
 
+  const uploadFormData = new FormData();
+  for (const [field, value] of Object.entries(presignPayload.uploadFields || {})) {
+    uploadFormData.append(field, String(value));
+  }
+  uploadFormData.append('file', audioFile);
   const uploadResponse = await fetch(presignPayload.uploadUrl, {
-    method: 'PUT',
-    headers: { 'content-type': presignPayload.contentType || contentType },
-    body: audioFile,
+    method: 'POST',
+    body: uploadFormData,
     signal,
   });
   if (!uploadResponse.ok) throw new Error(`Audio upload failed (${uploadResponse.status}).`);

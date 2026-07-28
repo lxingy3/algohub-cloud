@@ -4,29 +4,36 @@ import { prisma } from '../../../../lib/prisma';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { sessionCookieName } from '../../../../lib/auth';
 import { allowLegacyEmptyPasswordLogin, verifyPassword } from '../../../../lib/password';
+import { safeInternalPath } from '../../../../lib/safeRedirect';
+import { isSameOriginRequest } from '../../../../lib/requestSecurity';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: 'Cross-site login requests are not allowed.' }, { status: 403 });
+  }
+
   const formData = await request.formData();
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const password = String(formData.get('password') || '');
-  const callbackUrl = safeCallbackUrl(formData.get('callbackUrl')) || '/';
+  const callbackUrl = safeInternalPath(formData.get('callbackUrl'), '/');
   const user = await prisma.user.findFirst({
     where: { email, jurisdictionId: getJurisdictionId() },
+    select: { id: true, passwordHash: true },
   });
 
   if (!user) {
-    return redirectToLogin(request, callbackUrl, 'not-found');
+    return redirectToLogin(request, callbackUrl, 'invalid-credentials');
   }
 
   if (user.passwordHash) {
     const passwordMatches = await verifyPassword(password, user.passwordHash);
     if (!passwordMatches) {
-      return redirectToLogin(request, callbackUrl, 'invalid-password');
+      return redirectToLogin(request, callbackUrl, 'invalid-credentials');
     }
   } else if (password || !allowLegacyEmptyPasswordLogin()) {
-    return redirectToLogin(request, callbackUrl, 'password-not-set');
+    return redirectToLogin(request, callbackUrl, 'invalid-credentials');
   }
 
   const session = await prisma.session.create({
@@ -46,12 +53,6 @@ export async function POST(request) {
     secure: process.env.NODE_ENV === 'production',
   });
   return response;
-}
-
-function safeCallbackUrl(value) {
-  const callbackUrl = String(value || '');
-  if (!callbackUrl.startsWith('/') || callbackUrl.startsWith('//')) return null;
-  return callbackUrl;
 }
 
 function redirectToLogin(request, callbackUrl, error) {

@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { chromium } from 'playwright';
 
-import { prisma } from '../lib/prisma.js';
 import { getJurisdictionId } from '../lib/jurisdiction.js';
+import { requireTestDatabase } from './lib/require-test-database.mjs';
 
 const baseUrl = (process.argv[2] || 'http://127.0.0.1:3000').replace(/\/$/, '');
+await requireTestDatabase('verify-story-reaction-toggle', baseUrl);
+const { prisma } = await import('../lib/prisma.js');
 const testimonyId = process.argv[3] || '820e2beb-adc0-43a9-a27e-8762ef8fb287';
 const jurisdictionId = getJurisdictionId();
 const suffix = randomUUID();

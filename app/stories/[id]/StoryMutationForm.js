@@ -8,6 +8,7 @@ export function StoryMutationForm({ action, children, className = '', resetOnSuc
   const pendingRef = useRef(false);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -17,6 +18,7 @@ export function StoryMutationForm({ action, children, className = '', resetOnSuc
     pendingRef.current = true;
     setIsPending(true);
     setError('');
+    setMessage('');
 
     try {
       const response = await fetch(action, {
@@ -31,12 +33,13 @@ export function StoryMutationForm({ action, children, className = '', resetOnSuc
         return;
       }
 
+      const result = await response.json().catch(() => null);
       if (!response.ok) {
-        const result = await response.json().catch(() => null);
         throw new Error(result?.error || 'This action could not be completed. Please try again.');
       }
 
       if (resetOnSuccess) form.reset();
+      setMessage(result?.message || '');
       router.refresh();
     } catch (submitError) {
       setError(submitError.message || 'This action could not be completed. Please try again.');
@@ -57,6 +60,7 @@ export function StoryMutationForm({ action, children, className = '', resetOnSuc
     >
       {children}
       {error ? <p role="alert" className="mt-2 text-sm text-red-700">{error}</p> : null}
+      {message ? <p role="status" className="mt-2 text-sm font-medium text-emerald-700">{message}</p> : null}
     </form>
   );
 }

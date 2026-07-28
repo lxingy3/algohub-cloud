@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { sessionCookieName } from '../../../../lib/auth';
+import { isSameOriginRequest } from '../../../../lib/requestSecurity';
 
 const knownCookieNames = [
   sessionCookieName,
@@ -61,9 +62,8 @@ async function logout(request) {
 }
 
 export async function POST(request) {
-  return logout(request);
-}
-
-export async function GET(request) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: 'Cross-site logout requests are not allowed.' }, { status: 403 });
+  }
   return logout(request);
 }

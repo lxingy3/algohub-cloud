@@ -4,18 +4,24 @@ import { prisma } from '../../../../lib/prisma';
 import { getJurisdictionId } from '../../../../lib/jurisdiction';
 import { sessionCookieName } from '../../../../lib/auth';
 import { hashPassword, validatePassword } from '../../../../lib/password';
+import { safeInternalPath } from '../../../../lib/safeRedirect';
+import { isSameOriginRequest } from '../../../../lib/requestSecurity';
 
 export const dynamic = 'force-dynamic';
 
 const DEFAULT_ROLE = 'COMMUNITY_MEMBER';
 
 export async function POST(request) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: 'Cross-site signup requests are not allowed.' }, { status: 403 });
+  }
+
   const formData = await request.formData();
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const name = String(formData.get('name') || '').trim() || email;
   const password = String(formData.get('password') || '');
   const confirmPassword = String(formData.get('confirmPassword') || '');
-  const callbackUrl = safeCallbackUrl(formData.get('callbackUrl')) || '/';
+  const callbackUrl = safeInternalPath(formData.get('callbackUrl'), '/');
   const jurisdictionId = getJurisdictionId();
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255) {
@@ -41,13 +47,11 @@ export async function POST(request) {
         email,
       },
     },
+    select: { id: true },
   });
 
   if (existingUser) {
-    const normalizedExistingName = existingUser.name.trim().toLowerCase();
-    const normalizedSubmittedName = name.trim().toLowerCase();
-    const error = normalizedExistingName === normalizedSubmittedName ? 'account-exists' : 'name-conflict';
-    return redirectToSignup(request, callbackUrl, error);
+    return redirectToSignup(request, callbackUrl, 'account-unavailable');
   }
 
   const role = await prisma.role.upsert({
@@ -84,7 +88,7 @@ export async function POST(request) {
     });
   } catch (error) {
     if (error?.code === 'P2002') {
-      return redirectToSignup(request, callbackUrl, 'account-exists');
+      return redirectToSignup(request, callbackUrl, 'account-unavailable');
     }
     throw error;
   }
@@ -98,12 +102,6 @@ export async function POST(request) {
     secure: process.env.NODE_ENV === 'production',
   });
   return response;
-}
-
-function safeCallbackUrl(value) {
-  const callbackUrl = String(value || '');
-  if (!callbackUrl.startsWith('/') || callbackUrl.startsWith('//')) return null;
-  return callbackUrl;
 }
 
 function redirectToSignup(request, callbackUrl, error) {

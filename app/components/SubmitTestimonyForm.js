@@ -29,9 +29,10 @@ function formatTime(seconds) {
   return `${minutes}:${String(rest).padStart(2, '0')}`;
 }
 
-function sanitizeDraft(draft) {
+function sanitizeDraft(draft, allowVoice = true) {
   if (!draft || typeof draft !== 'object') return {};
   const safeDraft = { ...draft };
+  if (!allowVoice && safeDraft.storyType === 'voice') safeDraft.storyType = 'text';
   delete safeDraft.mediaObjectKey;
   delete safeDraft.mediaUrl;
   delete safeDraft.mediaMimeType;
@@ -39,7 +40,13 @@ function sanitizeDraft(draft) {
   return safeDraft;
 }
 
-export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUserEmail }) {
+export function SubmitTestimonyForm({
+  algorithms,
+  selectedAlgorithmId,
+  currentUserEmail,
+  isLoggedIn = false,
+  mediaUploadEnabled = false,
+}) {
   const { t } = useTranslation();
   const [step, setStep] = useState(0);
   const [message, setMessage] = useState('');
@@ -102,7 +109,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
           const response = await fetch('/api/submission-draft', { cache: 'no-store' });
           const payload = await response.json().catch(() => null);
           if (active && response.ok && payload?.payload) {
-            form.reset({ ...form.getValues(), ...sanitizeDraft(payload.payload), algorithmId: selectedAlgorithmId || payload.payload.algorithmId || '' });
+            form.reset({ ...form.getValues(), ...sanitizeDraft(payload.payload, isLoggedIn), algorithmId: selectedAlgorithmId || payload.payload.algorithmId || '' });
           }
         } catch {
           if (active) setDraftStatus(t('submit.draftSaveFailed'));
@@ -119,7 +126,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
-          form.reset({ ...form.getValues(), ...sanitizeDraft(parsed), algorithmId: selectedAlgorithmId || parsed.algorithmId || '' });
+          form.reset({ ...form.getValues(), ...sanitizeDraft(parsed, isLoggedIn), algorithmId: selectedAlgorithmId || parsed.algorithmId || '' });
         } catch {
           window.localStorage.removeItem(DRAFT_KEY);
         }
@@ -135,12 +142,12 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
       active = false;
       if (draftSaveRef.current) clearTimeout(draftSaveRef.current);
     };
-  }, [form, selectedAlgorithmId, t, usesDatabaseDraft]);
+  }, [form, isLoggedIn, selectedAlgorithmId, t, usesDatabaseDraft]);
 
   useEffect(() => {
     const subscription = form.watch((draft) => {
       if (!draftReady) return;
-      const safeDraft = sanitizeDraft(draft);
+      const safeDraft = sanitizeDraft(draft, isLoggedIn);
 
       if (!usesDatabaseDraft) {
         window.localStorage.setItem(DRAFT_KEY, JSON.stringify(safeDraft));
@@ -163,7 +170,7 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
       }, 600);
     });
     return () => subscription.unsubscribe();
-  }, [draftReady, form, t, usesDatabaseDraft]);
+  }, [draftReady, form, isLoggedIn, t, usesDatabaseDraft]);
 
   useEffect(() => {
     return () => {
@@ -272,6 +279,8 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
 
   async function uploadMediaIfNeeded() {
     if (storyType !== 'voice') return null;
+    if (!isLoggedIn) throw new Error('Sign in before uploading audio or video.');
+    if (!mediaUploadEnabled) throw new Error('Audio and video upload is temporarily unavailable.');
     if (uploadedMedia) return uploadedMedia;
     if (!mediaFile) throw new Error(t('submit.uploadFailed'));
 
@@ -296,12 +305,16 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
     const upload = await presign.json().catch(() => null);
     if (!presign.ok) throw new Error(upload?.error || t('submit.storageMissing', { defaultValue: t('submit.r2Missing') }));
 
-    const put = await fetch(upload.uploadUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': upload.contentType },
-      body: uploadFile,
+    const uploadFormData = new FormData();
+    for (const [field, value] of Object.entries(upload.uploadFields || {})) {
+      uploadFormData.append(field, String(value));
+    }
+    uploadFormData.append('file', uploadFile);
+    const uploaded = await fetch(upload.uploadUrl, {
+      method: 'POST',
+      body: uploadFormData,
     });
-    if (!put.ok) throw new Error(t('submit.uploadFailed'));
+    if (!uploaded.ok) throw new Error(t('submit.uploadFailed'));
 
     const nextMedia = {
       objectKey: upload.objectKey,
@@ -435,22 +448,29 @@ export function SubmitTestimonyForm({ algorithms, selectedAlgorithmId, currentUs
             {methods.map((method) => {
               const Icon = method.icon;
               const active = storyType === method.id;
+              const disabled = method.id === 'voice' && (!isLoggedIn || !mediaUploadEnabled);
               return (
                 <button
                   key={method.id}
                   type="button"
+                  disabled={disabled}
                   aria-pressed={active}
                   onClick={() => {
                     form.setValue('storyType', method.id);
                     clearMedia();
                   }}
-                  className={`rounded-xl border p-5 text-left transition ${active ? 'border-yellow-400 bg-yellow-50 shadow-md' : 'border-gray-200 bg-white hover:border-yellow-300'}`}
+                  className={`rounded-xl border p-5 text-left transition disabled:cursor-not-allowed disabled:opacity-50 ${active ? 'border-yellow-400 bg-yellow-50 shadow-md' : 'border-gray-200 bg-white hover:border-yellow-300'}`}
                 >
                   <Icon className="mb-4 h-7 w-7 text-yellow-700" />
                   <span className="font-semibold text-gray-900">{t(method.label)}</span>
                 </button>
               );
             })}
+            {!isLoggedIn ? (
+              <p className="sm:col-span-2 text-sm leading-6 text-slate-600">Sign in to record or upload audio or video. Written and facilitated submissions remain available.</p>
+            ) : !mediaUploadEnabled ? (
+              <p className="sm:col-span-2 text-sm leading-6 text-slate-600">Audio and video upload is temporarily unavailable. Written and facilitated submissions remain available.</p>
+            ) : null}
           </div>
         ) : null}
 

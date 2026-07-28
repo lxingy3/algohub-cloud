@@ -1,10 +1,7 @@
 'use client';
 
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { BookOpen, ChevronDown, Database, ExternalLink, FileText, Filter, Landmark, Maximize2, MessageSquare, Search, Users, X } from 'lucide-react';
-import { AlgorithmModal } from '../components/AlgorithmsRegistry';
-import { InfoTooltip } from '../components/InfoTooltip';
-import { EventModal } from '../events/EventsClient';
 
 const lenses = [
   { id: 'community', label: 'Community', short: 'Community Members', icon: Users },
@@ -76,7 +73,7 @@ const briefingViews = {
       title: 'Local Government - portfolio governance',
       subtitle: 'All algorithms and stories, shown as aggregate portfolio information.',
       blocks: [
-        b('GC1', 'Portfolio dashboard', 'treemap + bars + counts', 'PORTFOLIO / GLOBAL', 'algorithms.status, use_case, agency_name, impact_level; testimony aggregates', 'GET /api/explore/landscape', 'aggregation', 'treemap'),
+        b('GC1', 'Portfolio dashboard', 'treemap + bars + counts', 'PORTFOLIO / GLOBAL', 'algorithms.status, use_case, agency_name, impact_level; testimony aggregates', 'GET /api/explore/landscape + /impact', 'aggregation', 'treemap'),
         b('GC2', 'Cross-cutting theme profile', 'bars + matrix', 'SUGGESTED', 'testimonies.ai_themes', 'GET /api/explore/cross-cutting-themes', 'multi-label BART-MNLI aggregation; BERTopic', 'bars'),
         b('GC3', 'Intent vs. reality across systems', 'ranked divergence + table', 'SDM/PDM GAP', 'algorithm_claims.*; briefings.claim_vs_experience; testimonies.ai_extracted_experiences', 'GET /api/explore/claim-vs-experience?scope=corpus', 'Open Source LLM; sentence-transformers candidate retrieval', 'table'),
         b('GC4', 'Silence map = accountability gaps', 'ranked silence matrix', 'ABSENCE != SAFETY', 'algorithms.impact_level, use_case; testimonies.affected_domain; briefings.silence_gaps', 'GET /api/explore/silence-map', 'rule-based + sentence-transformers four-factor silence detector', 'heatmap'),
@@ -179,7 +176,7 @@ export function BriefingsClient() {
   const excerptQuery = useMemo(() => {
     const params = new URLSearchParams();
     params.set('fields', 'excerpt');
-    params.set('limit', '200');
+    params.set('limit', '20');
     params.set('lens', lens);
     params.set('scope', scope === 'algorithm' ? 'algorithm' : 'corpus');
     if (scope === 'algorithm') params.set('algorithm', selectedVisibleAlgorithm);
@@ -190,6 +187,7 @@ export function BriefingsClient() {
   const briefingQuery = useMemo(() => {
     const params = new URLSearchParams();
     params.set('type', scope === 'algorithm' ? 'ALGORITHM_SPECIFIC' : 'CROSS_CUTTING');
+    params.set('limit', '1');
     if (scope === 'algorithm') params.set('algorithm', selectedVisibleAlgorithm);
     return `?${params.toString()}`;
   }, [scope, selectedVisibleAlgorithm]);
@@ -314,10 +312,16 @@ export function BriefingsClient() {
       return response.json();
     });
     const apiUsage = view.blocks.map((block) => block.api.toLowerCase()).join(' ');
-    const required = new Set(['landscape', 'patterns', 'themeMatrix', 'trend', 'excerpts', 'claimVsExperience', 'briefings']);
+    const required = new Set(['landscape', 'briefings']);
+    if (lens !== 'government') required.add('excerpts');
     for (const [needle, key] of [
+      ['testimonies', 'excerpts'],
       ['impact', 'impact'],
       ['themes', 'themes'],
+      ['theme-matrix', 'themeMatrix'],
+      ['trend', 'trend'],
+      ['patterns', 'patterns'],
+      ['claim-vs-experience', 'claimVsExperience'],
       ['coverage', 'coverage'],
       ['evidence-strength', 'evidence'],
       ['silence', 'silence'],
@@ -373,6 +377,12 @@ export function BriefingsClient() {
 
   return (
     <>
+      <a
+        href="#briefing-views"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-20 focus:z-[70] focus:rounded-md focus:bg-white focus:px-4 focus:py-3 focus:font-bold focus:text-slate-950 focus:shadow-lg"
+      >
+        Skip to briefing views
+      </a>
       <section className="relative overflow-hidden border-b border-white/15 bg-gradient-to-r from-[#201805] via-[#4b3508] to-[#0a0a0a] text-white">
         <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(rgba(255,255,255,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:38px_38px]" />
         <svg aria-hidden="true" viewBox="0 0 1200 220" preserveAspectRatio="none" className="absolute inset-0 h-full w-full opacity-[0.24]">
@@ -440,7 +450,7 @@ export function BriefingsClient() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <section id="briefing-views" tabIndex={-1} className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="mb-6 rounded-lg border border-slate-200 bg-white p-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
@@ -489,7 +499,6 @@ export function BriefingsClient() {
 
 function LiveSnapshot({ snapshot, lens }) {
   const [drilldown, setDrilldown] = useState(null);
-  const { preview, previewItem, setPreview, closePreview } = useEvidencePreview();
   if (!snapshot) {
     return <div className="mt-5 text-sm font-semibold text-amber-50/70">Loading live corpus snapshot...</div>;
   }
@@ -501,17 +510,17 @@ function LiveSnapshot({ snapshot, lens }) {
   const aggregateOnly = lens === 'government';
   const stories = briefingStories(snapshot);
   const stats = [
-    ['Approved stories', snapshot.landscape?.totalApprovedStories ?? 0, storyDrilldown('Approved stories', stories, lens)],
+    ['Approved stories', snapshot.landscape?.totalApprovedStories ?? 0, storyDrilldown('Approved stories', stories, lens, snapshot.landscape?.totalApprovedStories ?? stories.length)],
     ['Algorithms', snapshot.landscape?.totalAlgorithms ?? 0, algorithmDrilldown('Algorithms', snapshot.landscape?.algorithms || [])],
-    ['Suggested topics', snapshot.patterns?.topics?.length ?? 0, metaDrilldown('Suggested topics', snapshot.patterns?.topics || [], 'Topic')],
-    ['Less common stories', aggregateOnly ? 'Aggregate only' : outliers, storyDrilldown('Less common stories', stories.filter((story) => story.cluster?.isOutlier), lens, outliers)],
-  ];
+    snapshot.patterns === undefined ? null : ['Suggested topics', snapshot.patterns?.topics?.length ?? 0, metaDrilldown('Suggested topics', snapshot.patterns?.topics || [], 'Topic')],
+    snapshot.patterns === undefined ? null : ['Less common stories', aggregateOnly ? 'Aggregate only' : outliers, storyDrilldown('Less common stories', stories.filter((story) => story.cluster?.isOutlier), lens, outliers)],
+  ].filter(Boolean);
   const pipelines = [
-    ['Theme matrix', snapshot.themeMatrix?.rows?.length ?? 0, metaDrilldown('Theme matrix cells', snapshot.themeMatrix?.rows || [], 'Cell')],
-    ['Trend buckets', snapshot.trend?.buckets?.length ?? 0, metaDrilldown('Trend buckets', snapshot.trend?.buckets || [], 'Month')],
-    ['Story excerpts', aggregateOnly ? 'Hidden' : snapshot.excerpts?.items?.length ?? 0, storyDrilldown('Story excerpts', stories, lens)],
-    ['Claim rows', snapshot.claimVsExperience?.rows?.length ?? 0, metaDrilldown('Claim rows', snapshot.claimVsExperience?.rows || [], 'Claim row')],
-  ];
+    snapshot.themeMatrix === undefined ? null : ['Theme matrix', snapshot.themeMatrix?.rows?.length ?? 0, metaDrilldown('Theme matrix cells', snapshot.themeMatrix?.rows || [], 'Cell')],
+    snapshot.trend === undefined ? null : ['Trend buckets', snapshot.trend?.buckets?.length ?? 0, metaDrilldown('Trend buckets', snapshot.trend?.buckets || [], 'Month')],
+    snapshot.excerpts === undefined ? null : ['Story excerpts', aggregateOnly ? 'Hidden' : snapshot.excerpts?.items?.length ?? 0, storyDrilldown('Story excerpts', stories, lens)],
+    snapshot.claimVsExperience === undefined ? null : ['Claim rows', snapshot.claimVsExperience?.rows?.length ?? 0, metaDrilldown('Claim rows', snapshot.claimVsExperience?.rows || [], 'Claim row')],
+  ].filter(Boolean);
   const cardClass = 'rounded-md border px-3 py-2 text-left transition';
   const topCardClass = `${cardClass} border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50`;
   const pipelineCardClass = `${cardClass} border-emerald-200 bg-emerald-50 hover:border-emerald-400 hover:bg-emerald-100`;
@@ -525,16 +534,17 @@ function LiveSnapshot({ snapshot, lens }) {
           </button>
         ))}
       </div>
-      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {pipelines.map(([label, value, drill]) => (
-          <button key={label} type="button" onClick={() => drill && setDrilldown(drill)} className={pipelineCardClass}>
-            <div className="text-lg font-bold text-emerald-900">{value}</div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">{label}</div>
-          </button>
-        ))}
-      </div>
-      <DrilldownModal drilldown={drilldown} onClose={() => setDrilldown(null)} onPreview={setPreview} />
-      <EvidencePreviewModal preview={preview} item={previewItem} onClose={closePreview} />
+      {pipelines.length ? (
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {pipelines.map(([label, value, drill]) => (
+            <button key={label} type="button" onClick={() => drill && setDrilldown(drill)} className={pipelineCardClass}>
+              <div className="text-lg font-bold text-emerald-900">{value}</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">{label}</div>
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <DrilldownModal drilldown={drilldown} onClose={() => setDrilldown(null)} />
     </div>
   );
 }
@@ -553,6 +563,38 @@ function ControlSelect({ label, value, options, onChange }) {
         {options.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
       </select>
     </label>
+  );
+}
+
+function InfoTooltip({ label, children, className = '', side = 'top', block = false, style }) {
+  const tooltipId = useId();
+  const TriggerElement = block ? 'div' : 'span';
+  const textClass = /\btext-/.test(className) ? '' : 'text-yellow-600';
+  const positionClass = side === 'bottom'
+    ? 'left-1/2 top-full mt-2 -translate-x-1/2'
+    : 'bottom-full left-1/2 mb-2 -translate-x-1/2';
+  const arrowClass = side === 'bottom'
+    ? 'bottom-full left-1/2 -translate-x-1/2 border-x-4 border-b-4 border-x-transparent border-b-slate-950'
+    : 'left-1/2 top-full -translate-x-1/2 border-x-4 border-t-4 border-x-transparent border-t-slate-950';
+
+  return (
+    <TriggerElement
+      tabIndex={0}
+      aria-label={label}
+      aria-describedby={tooltipId}
+      className={`group/tooltip relative ${block ? 'flex' : 'inline-flex'} cursor-help items-center ${textClass} outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 ${className}`}
+      style={style}
+    >
+      {children}
+      <span
+        id={tooltipId}
+        role="tooltip"
+        className={`pointer-events-none absolute ${positionClass} z-[120] hidden w-max max-w-[250px] rounded-md border border-white/15 bg-slate-950 px-3 py-2 text-xs font-medium leading-5 text-white shadow-xl group-hover/tooltip:block group-focus/tooltip:block`}
+      >
+        {label}
+        <span className={`absolute h-0 w-0 ${arrowClass}`} />
+      </span>
+    </TriggerElement>
   );
 }
 
@@ -589,20 +631,20 @@ function NarrativePanel({ briefing, scope, lens, onLensChange, onScopeChange }) 
 function BriefingViewControls({ lens, scope, onLensChange, onScopeChange }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-      <div className="grid grid-cols-3 gap-2">
+      <div role="group" aria-label="Audience view" className="grid grid-cols-3 gap-2">
         {lenses.map((item) => {
           const Icon = item.icon;
           return (
-            <button key={item.id} type="button" onClick={() => onLensChange(item.id)} className={buttonClass(lens === item.id)}>
-              <Icon className="h-4 w-4" />
+            <button key={item.id} type="button" aria-pressed={lens === item.id} onClick={() => onLensChange(item.id)} className={buttonClass(lens === item.id)}>
+              <Icon className="h-4 w-4" aria-hidden="true" />
               {item.label}
             </button>
           );
         })}
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div role="group" aria-label="Briefing scope" className="mt-3 grid grid-cols-2 gap-2">
         {scopes.map((item) => (
-          <button key={item.id} type="button" onClick={() => onScopeChange(item.id)} className={buttonClass(scope === item.id)}>
+          <button key={item.id} type="button" aria-pressed={scope === item.id} onClick={() => onScopeChange(item.id)} className={buttonClass(scope === item.id)}>
             {item.label}
           </button>
         ))}
@@ -714,7 +756,6 @@ function BriefingBlock({ block, snapshot, lens, readingLevel, privateNote, onPri
 }
 
 function ChartExpandDialog({ block, snapshot, lens, open, onClose }) {
-  const { preview, previewItem, setPreview, closePreview } = useEvidencePreview();
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
   useDialogFocus(open, closeButtonRef);
@@ -759,13 +800,12 @@ function ChartExpandDialog({ block, snapshot, lens, open, onClose }) {
               </dl>
               <div className="mt-5 border-t border-slate-200 pt-4">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Evidence rows</p>
-                <EvidenceRowsList rows={rows} onPreview={setPreview} />
+                <EvidenceRowsList rows={rows} />
               </div>
             </aside>
           </div>
         </div>
       </div>
-      <EvidencePreviewModal preview={preview} item={previewItem} onClose={closePreview} />
     </>
   );
 }
@@ -813,7 +853,6 @@ function handleDialogKeyDown(event, dialog, onClose) {
 }
 
 function EvidenceDrawer({ block, snapshot, lens, onClose }) {
-  const { preview, previewItem, setPreview, closePreview } = useEvidencePreview();
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
   useDialogFocus(Boolean(block), closeButtonRef);
@@ -850,7 +889,7 @@ function EvidenceDrawer({ block, snapshot, lens, onClose }) {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto overscroll-contain p-5">
-            <EvidenceRowsList rows={visibleRows} onPreview={setPreview} />
+            <EvidenceRowsList rows={visibleRows} />
             {lens === 'government' ? (
               <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
                 Government view keeps story-level excerpts hidden and shows aggregate evidence only.
@@ -859,7 +898,6 @@ function EvidenceDrawer({ block, snapshot, lens, onClose }) {
           </div>
         </div>
       </div>
-      <EvidencePreviewModal preview={preview} item={previewItem} onClose={closePreview} />
     </>
   );
 }
@@ -942,7 +980,7 @@ function currentMethod(block) {
   return block.ml?.toLowerCase().includes('none') ? 'This section groups reviewed records or metadata.' : 'This section reads saved fields and counts them for the current filters.';
 }
 
-function EvidenceRowsList({ rows, onPreview }) {
+function EvidenceRowsList({ rows }) {
   const [drilldown, setDrilldown] = useState(null);
   return (
     <>
@@ -964,7 +1002,7 @@ function EvidenceRowsList({ rows, onPreview }) {
                   </button>
                 ) : null}
                 {actions.map((action, actionIndex) => (
-                  <EvidenceActionButton key={`${action.type}-${action.href || action.slug || action.id || actionIndex}`} action={action} onPreview={onPreview} />
+                  <EvidenceActionLink key={`${action.type}-${action.href || action.slug || action.id || actionIndex}`} action={action} />
                 ))}
                 {row.value ? <span className="rounded bg-white px-2 py-1 text-xs font-bold text-slate-800">{row.value}</span> : null}
               </div>
@@ -974,20 +1012,15 @@ function EvidenceRowsList({ rows, onPreview }) {
           );
         })}
       </div>
-      <DrilldownModal drilldown={drilldown} onClose={() => setDrilldown(null)} onPreview={onPreview} />
+      <DrilldownModal drilldown={drilldown} onClose={() => setDrilldown(null)} embedded />
     </>
   );
 }
 
-function EvidenceActionButton({ action, onPreview }) {
+function EvidenceActionLink({ action }) {
   const className = 'inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100';
-  if (action.type === 'algorithm' || action.type === 'event') {
-    return (
-      <button type="button" onClick={() => onPreview(action)} className={className}>
-        {action.label || 'Open'}
-      </button>
-    );
-  }
+  if (action.type === 'algorithm') return <a href={action.slug ? `/algorithms/${encodeURIComponent(action.slug)}` : '/algorithms'} className={className}>{action.label || 'Open'}</a>;
+  if (action.type === 'event') return <a href={action.id ? `/events?eventId=${encodeURIComponent(action.id)}` : '/events'} className={className}>{action.label || 'Open'}</a>;
   if (action.type === 'external') {
     return (
       <a href={action.href} target="_blank" rel="noreferrer" className={className}>
@@ -1010,56 +1043,7 @@ function evidenceRowKey(row, index) {
   return `${row.title || 'row'}-${row.value || ''}-${row.detail || ''}-${index}`;
 }
 
-function useEvidencePreview() {
-  const [preview, setPreview] = useState(null);
-  const [previewItem, setPreviewItem] = useState(null);
-
-  useEffect(() => {
-    if (!preview) {
-      setPreviewItem(null);
-      return undefined;
-    }
-    if (preview.type === 'event') {
-      setPreviewItem(preview.item || null);
-      return undefined;
-    }
-    if (preview.type !== 'algorithm') return undefined;
-    let cancelled = false;
-    setPreviewItem(preview.item ? normalizeAlgorithmForModal(preview.item) : null);
-    if (!preview.slug) return undefined;
-    fetch(`/api/algorithms/${encodeURIComponent(preview.slug)}`)
-      .then((response) => response.ok ? response.json() : null)
-      .then((payload) => {
-        if (!cancelled && payload) setPreviewItem(normalizeAlgorithmForModal(payload));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [preview]);
-
-  return {
-    preview,
-    previewItem,
-    setPreview,
-    closePreview: () => setPreview(null),
-  };
-}
-
-function EvidencePreviewModal({ preview, item, onClose }) {
-  if (!preview) return null;
-  if (preview.type === 'algorithm' && item) return <AlgorithmModal algorithm={item} onClose={onClose} />;
-  if (preview.type === 'event' && item) return <EventModal event={item} onClose={onClose} />;
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 px-4">
-      <div className="rounded-lg bg-white p-5 text-sm font-semibold text-slate-700 shadow-2xl">
-        Loading details...
-      </div>
-    </div>
-  );
-}
-
-function DrilldownModal({ drilldown, onClose, onPreview }) {
+function DrilldownModal({ drilldown, onClose, embedded = false }) {
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
   useDialogFocus(Boolean(drilldown), closeButtonRef);
@@ -1067,13 +1051,15 @@ function DrilldownModal({ drilldown, onClose, onPreview }) {
   const stories = drilldown.stories || [];
   const algorithms = drilldown.algorithms || [];
   const metaRows = drilldown.metaRows || [];
+  const countedTotal = Number(drilldown.count ?? stories.length + algorithms.length + metaRows.length);
+  const isStorySample = stories.length > 0 && Number.isFinite(countedTotal) && countedTotal > stories.length;
   const hasDetails = stories.length || algorithms.length || metaRows.length;
   return (
     <div
       ref={dialogRef}
       className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 p-3 sm:p-4"
-      role="dialog"
-      aria-modal="true"
+      role={embedded ? 'region' : 'dialog'}
+      aria-modal={embedded ? undefined : 'true'}
       aria-labelledby="drilldown-modal-title"
       tabIndex={-1}
       onKeyDown={(event) => handleDialogKeyDown(event, dialogRef.current, onClose)}
@@ -1084,7 +1070,7 @@ function DrilldownModal({ drilldown, onClose, onPreview }) {
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Count details</p>
             <h3 id="drilldown-modal-title" className="mt-2 text-xl font-black text-slate-950">{drilldown.title}</h3>
-            <p className="mt-1 text-sm text-slate-600">Counted total: <span className="font-bold text-slate-900">{drilldown.count ?? stories.length + algorithms.length + metaRows.length}</span></p>
+            <p className="mt-1 text-sm text-slate-600">Counted total: <span className="font-bold text-slate-900">{countedTotal}</span></p>
           </div>
           <button ref={closeButtonRef} type="button" onClick={onClose} className="rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" aria-label="Close count details">
             <X className="h-4 w-4" />
@@ -1107,9 +1093,9 @@ function DrilldownModal({ drilldown, onClose, onPreview }) {
                         <p className="mt-1 text-sm text-slate-600">{algorithm.useCase || algorithm.domain || 'Uncategorized'}{algorithm.approvedTestimonyCount !== undefined ? `; ${algorithm.approvedTestimonyCount} approved stories` : ''}</p>
                       </div>
                       {algorithm.slug ? (
-                        <button type="button" onClick={() => onPreview?.(algorithmAction(algorithm.slug, algorithm, 'System'))} className="rounded border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100">
+                        <a href={`/algorithms/${encodeURIComponent(algorithm.slug)}`} className="rounded border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100">
                           Open
-                        </button>
+                        </a>
                       ) : null}
                     </div>
                   </div>
@@ -1120,6 +1106,7 @@ function DrilldownModal({ drilldown, onClose, onPreview }) {
           {stories.length ? (
             <section className="mt-4">
               <h4 className="text-xs font-black uppercase tracking-wide text-slate-500">Stories</h4>
+              {isStorySample ? <p className="mt-2 text-sm text-slate-600">Showing {stories.length} reviewed story records from this view.</p> : null}
               <div className="mt-2 grid max-h-[45vh] gap-2 overflow-y-auto pr-1">
                 {stories.map((story) => (
                   <div key={story.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
@@ -1159,22 +1146,6 @@ function DrilldownSection({ title, rows }) {
       </div>
     </section>
   );
-}
-
-function normalizeAlgorithmForModal(algorithm) {
-  const testimonyLinks = Array.isArray(algorithm.testimonyLinks) ? algorithm.testimonyLinks : [];
-  const relatedStories = Array.isArray(algorithm.relatedStories)
-    ? algorithm.relatedStories
-    : testimonyLinks
-      .map((link) => link.testimony)
-      .filter((story) => story && (!story.moderationStatus || story.moderationStatus === 'APPROVED'));
-  return {
-    ...algorithm,
-    documents: Array.isArray(algorithm.documents) ? algorithm.documents : [],
-    claims: Array.isArray(algorithm.claims) ? algorithm.claims : [],
-    relatedStories,
-    storyCount: algorithm.storyCount ?? relatedStories.length,
-  };
 }
 
 function briefingStories(snapshot) {
@@ -1361,6 +1332,22 @@ function evidenceRows(block, snapshot, lens) {
     actions: [algorithmAction(row.algorithmSlug)],
     drilldown: groupStoriesByClaim(row, lens),
   }));
+  if (block.code === 'GC7') return [
+    ...(snapshot.proposedAlgorithms?.items || []).map((row) => ({
+      title: `Proposed system: ${row.name}`,
+      value: row.status,
+      detail: row.useCase || row.agencyName,
+      actions: [algorithmAction(row.slug, row)],
+    })),
+    ...(snapshot.crossJurisdiction?.rows || []).map((row) => {
+      const [title, value] = crossJurisdictionRow(row);
+      return {
+        title: `Peer comparable: ${title}`,
+        value,
+        detail: row.summary || row.detail || snapshot.crossJurisdiction?.reviewStatus || 'Approved peer-jurisdiction aggregate.',
+      };
+    }),
+  ];
   if (api.includes('status=proposed')) return (snapshot.proposedAlgorithms?.items || []).map((row) => ({
     title: row.name,
     value: row.status,
@@ -1517,6 +1504,7 @@ function LiveVisual({ block, snapshot, expanded = false }) {
   if (snapshot.error) return <EmptyLive label="Live chart data is unavailable." />;
   const api = block.api.toLowerCase();
   if (block.code === 'GC1') return <LivePortfolioDashboard snapshot={snapshot} expanded={expanded} />;
+  if (block.code === 'GC7') return <LiveProcurementComparables proposed={snapshot.proposedAlgorithms?.items || []} peers={snapshot.crossJurisdiction?.rows || []} expanded={expanded} />;
   if (block.code === 'G2') return <LiveImpactTrend impact={snapshot.impact} buckets={snapshot.trend?.buckets || []} expanded={expanded} />;
   if (block.code === 'IC3') return <LiveSilenceCoverage silence={snapshot.silence} coverage={snapshot.coverage} expanded={expanded} />;
   if (block.code === 'GC2') return <LiveThemeBarsMatrix themes={snapshot.themes?.themes || []} matrix={snapshot.themes?.coOccurrences || []} expanded={expanded} />;
@@ -1657,6 +1645,25 @@ function LivePolicyTable({ themes, expanded = false }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function LiveProcurementComparables({ proposed, peers, expanded = false }) {
+  return (
+    <div className="mt-5 space-y-5">
+      <section>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-300">Proposed systems</p>
+        <LiveAlgorithmCards algorithms={proposed} emptyLabel="No proposed systems returned." expanded={expanded} />
+      </section>
+      <section>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-300">Approved peer comparables</p>
+        <LiveTable
+          rows={peers.map(crossJurisdictionRow)}
+          emptyLabel="No approved peer-jurisdiction comparables returned."
+          expanded={expanded}
+        />
+      </section>
     </div>
   );
 }

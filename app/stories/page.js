@@ -1,75 +1,131 @@
 import Link from 'next/link';
-import { BarChart3, BookOpen, Calendar, ChevronDown, PenLine, Search } from 'lucide-react';
+import { redirect } from 'next/navigation';
+import { BarChart3, BookOpen, Calendar, PenLine, Search } from 'lucide-react';
 import { prisma } from '../../lib/prisma';
 import { getJurisdictionId } from '../../lib/jurisdiction';
 import { getCurrentUser } from '../../lib/auth';
-import { rankStoriesForSearch } from '../../lib/searchRanking';
+import { searchTokens } from '../../lib/searchRanking';
 import { isOpenAiGeneratedSummary } from '../../lib/storySummary';
 import { SiteNav } from '../components/SiteNav';
 import { formatDate } from '../components/Formatters';
 import { getUseCaseIcon, getUseCaseIconTone } from '../components/useCaseIcons';
 
 export const dynamic = 'force-dynamic';
+const pageSize = 12;
+const impactValues = new Set(['POSITIVE', 'NEGATIVE', 'MIXED', 'UNCLEAR']);
 
 export default async function StoriesPage({ searchParams }) {
   const params = await searchParams;
-  const search = String(params?.search || '');
+  const search = String(params?.search || '').trim();
   const useCase = String(params?.useCase || 'all');
   const city = String(params?.city || 'all');
-  const hasFilters = Boolean(search.trim() || useCase !== 'all' || city !== 'all');
+  const pageNumber = Math.max(1, Number.parseInt(String(params?.page || '1'), 10) || 1);
+  const hasFilters = Boolean(search || useCase !== 'all' || city !== 'all');
   const jurisdictionId = getJurisdictionId();
   const user = await getCurrentUser();
 
-  const where = {
+  const publicWhere = {
     jurisdictionId,
     moderationStatus: 'APPROVED',
     publicPosting: true,
+  };
+  const searchFilters = searchTokens(search).slice(0, 8).map((token) => ({
+    OR: [
+      { title: { contains: token, mode: 'insensitive' } },
+      { summary: { contains: token, mode: 'insensitive' } },
+      { narrativeText: { contains: token, mode: 'insensitive' } },
+      { transcriptionText: { contains: token, mode: 'insensitive' } },
+      { affectedDomain: { contains: token, mode: 'insensitive' } },
+      { city: { contains: token, mode: 'insensitive' } },
+      { aiImpactClassification: { contains: token, mode: 'insensitive' } },
+      { brief: { is: { summary: { contains: token, mode: 'insensitive' } } } },
+      ...(impactValues.has(token.toUpperCase()) ? [{ selfReportedImpact: token.toUpperCase() }] : []),
+      ...(token === 'impact' ? [{ selfReportedImpact: { not: null } }] : []),
+    ],
+  }));
+  const where = {
+    ...publicWhere,
     ...(useCase !== 'all' ? { affectedDomain: useCase } : {}),
     ...(city !== 'all' ? { city } : {}),
+    ...(searchFilters.length ? { AND: searchFilters } : {}),
   };
 
-  const [testimonies, allStories] = await Promise.all([
+  const [
+    testimonies,
+    useCaseRows,
+    cityRows,
+    filteredUseCaseRows,
+    filteredCityRows,
+    reactionCount,
+  ] = await Promise.all([
     prisma.testimony.findMany({
       where,
       orderBy: { submittedAt: 'desc' },
+      skip: (pageNumber - 1) * pageSize,
+      take: pageSize,
       select: {
         id: true,
         title: true,
         summary: true,
-        narrativeText: true,
-        city: true,
         affectedDomain: true,
-        selfReportedImpact: true,
-        aiImpactClassification: true,
-        transcriptionText: true,
         submittedAt: true,
         brief: { select: { summary: true, modelName: true } },
-        _count: { select: { comments: true, reactions: true } },
+        _count: {
+          select: {
+            comments: { where: { moderationStatus: 'APPROVED', parentCommentId: null } },
+            reactions: true,
+          },
+        },
       },
     }),
-    prisma.testimony.findMany({
-      where: { jurisdictionId, moderationStatus: 'APPROVED', publicPosting: true },
-      select: { affectedDomain: true, city: true, _count: { select: { reactions: true } } },
+    prisma.testimony.groupBy({
+      by: ['affectedDomain'],
+      where: publicWhere,
+      orderBy: { affectedDomain: 'asc' },
+      _count: { _all: true },
+    }),
+    prisma.testimony.groupBy({
+      by: ['city'],
+      where: { ...publicWhere, city: { not: null } },
+      orderBy: { city: 'asc' },
+    }),
+    prisma.testimony.groupBy({
+      by: ['affectedDomain'],
+      where,
+      _count: { _all: true },
+    }),
+    prisma.testimony.groupBy({
+      by: ['city'],
+      where: { AND: [where, { city: { not: null } }] },
+    }),
+    prisma.testimonyReaction.count({
+      where: {
+        jurisdictionId,
+        testimony: { is: where },
+      },
     }),
   ]);
 
-  const rankedTestimonies = search ? rankStoriesForSearch(testimonies, search) : testimonies;
-  const initialStories = rankedTestimonies.slice(0, 12);
-  const remainingStories = rankedTestimonies.slice(12);
-  const useCases = [...new Set(allStories.map((item) => item.affectedDomain).filter(Boolean))];
-  const cities = [...new Set(allStories.map((item) => item.city).filter(Boolean))];
-  const storiesByUseCase = rankedTestimonies.reduce((acc, story) => {
-    const key = story.affectedDomain || 'Other';
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {});
+  const useCases = useCaseRows.map((item) => item.affectedDomain).filter(Boolean);
+  const cities = cityRows.map((item) => item.city);
+  const totalCount = useCaseRows.reduce((sum, item) => sum + item._count._all, 0);
+  const filteredCount = filteredUseCaseRows.reduce((sum, item) => sum + item._count._all, 0);
+  const storiesByUseCase = Object.fromEntries(filteredUseCaseRows.map((item) => [
+    item.affectedDomain || 'Other',
+    item._count._all,
+  ]));
   const metrics = {
-    storiesShared: rankedTestimonies.length,
+    storiesShared: filteredCount,
     algorithmsAffected: Object.keys(storiesByUseCase).length,
-    statesRepresented: new Set(rankedTestimonies.map((story) => story.city).filter(Boolean)).size,
-    voicesUnited: rankedTestimonies.reduce((sum, story) => sum + story._count.reactions, 0),
+    citiesRepresented: filteredCityRows.length,
+    voicesUnited: reactionCount,
     storiesByUseCase,
   };
+  const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
+  if (pageNumber > totalPages) redirect(storiesHref({ search, useCase, city }, totalPages));
+  const firstShown = testimonies.length ? (pageNumber - 1) * pageSize + 1 : 0;
+  const lastShown = testimonies.length ? firstShown + testimonies.length - 1 : 0;
+  const currentFilters = { search, useCase, city };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 to-slate-100 text-gray-900">
@@ -136,31 +192,35 @@ export default async function StoriesPage({ searchParams }) {
       </div>
 
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
-        <p className="mb-4 text-sm text-gray-600">Showing <span className="font-semibold text-gray-900">{rankedTestimonies.length}</span> of {allStories.length} stories</p>
-        {rankedTestimonies.length ? <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          {initialStories.map((story) => <StoryRow key={story.id} story={story} />)}
-          {remainingStories.length ? (
-            <>
-              <details className="group border-t border-gray-200 md:hidden">
-                <summary className="flex min-h-12 cursor-pointer list-none items-center justify-center gap-2 px-4 py-3 text-sm font-bold text-amber-800">
-                  Show {remainingStories.length} more stories
-                  <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
-                </summary>
-                <div className="hidden border-t border-gray-100 group-open:block">
-                  {remainingStories.map((story) => <StoryRow key={story.id} story={story} />)}
-                </div>
-              </details>
-              <div className="hidden md:contents">
-                {remainingStories.map((story) => <StoryRow key={story.id} story={story} />)}
-              </div>
-            </>
-          ) : null}
+        <p className="mb-4 text-sm text-gray-600">
+          Showing <span className="font-semibold text-gray-900">{firstShown}-{lastShown}</span> of {filteredCount} matching stories
+          {hasFilters ? ` (${totalCount} total)` : ''}
+        </p>
+        {testimonies.length ? <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          {testimonies.map((story) => <StoryRow key={story.id} story={story} />)}
         </div> : (
           <div className="rounded-xl border border-gray-200 bg-white px-5 py-14 text-center shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900">No stories match these filters</h2>
             <Link href="/stories" className="mt-4 inline-flex min-h-11 items-center rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-gray-900">Clear filters</Link>
           </div>
         )}
+        {filteredCount > pageSize ? (
+          <nav className="mt-5 flex flex-col items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white p-3 text-sm sm:flex-row" aria-label="Story pages">
+            <span className="text-gray-600">Page {Math.min(pageNumber, totalPages)} of {totalPages}</span>
+            <div className="flex gap-2">
+              {pageNumber > 1 ? (
+                <Link href={storiesHref(currentFilters, pageNumber - 1)} className="inline-flex min-h-10 items-center rounded-md border px-3 py-2 font-semibold hover:bg-amber-50">Previous</Link>
+              ) : (
+                <span className="inline-flex min-h-10 items-center rounded-md border px-3 py-2 text-gray-400">Previous</span>
+              )}
+              {pageNumber < totalPages ? (
+                <Link href={storiesHref(currentFilters, pageNumber + 1)} className="inline-flex min-h-10 items-center rounded-md bg-gray-900 px-3 py-2 font-semibold text-white hover:bg-gray-800">Next</Link>
+              ) : (
+                <span className="inline-flex min-h-10 items-center rounded-md border px-3 py-2 text-gray-400">Next</span>
+              )}
+            </div>
+          </nav>
+        ) : null}
       </section>
 
       <CommunityImpact metrics={metrics} />
@@ -228,7 +288,7 @@ function CommunityImpact({ metrics }) {
               ))}
             </ul>
           </div>
-          <MetricCard label="States Represented" value={metrics.statesRepresented} />
+          <MetricCard label="Cities Represented" value={metrics.citiesRepresented} />
           <MetricCard label="Voices United" value={metrics.voicesUnited} />
         </div>
       </div>
@@ -258,4 +318,14 @@ function MetricCard({ label, value }) {
       <span className="text-4xl font-bold tabular-nums text-gray-900 md:text-5xl">{value}</span>
     </div>
   );
+}
+
+function storiesHref({ search, useCase, city }, page) {
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (useCase !== 'all') params.set('useCase', useCase);
+  if (city !== 'all') params.set('city', city);
+  if (page > 1) params.set('page', String(page));
+  const query = params.toString();
+  return `/stories${query ? `?${query}` : ''}`;
 }

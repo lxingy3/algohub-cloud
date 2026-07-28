@@ -16,47 +16,71 @@ export const dynamic = 'force-dynamic';
 export default async function StoryPage({ params }) {
   const { id } = await params;
   const user = await getCurrentUser();
-  const testimony = await prisma.testimony.findFirst({
-    where: { id, jurisdictionId: getJurisdictionId(), moderationStatus: 'APPROVED', publicPosting: true },
-    select: {
-      id: true,
-      sourceId: true,
-      title: true,
-      summary: true,
-      affectedDomain: true,
-      submittedAt: true,
-      storyType: true,
-      narrativeText: true,
-      transcriptionText: true,
-      audioFileUrl: true,
-      videoFileUrl: true,
-      brief: { select: { summary: true, keyExcerpts: true, modelName: true, reviewStatus: true } },
-      reactions: { select: { reactionType: true, userId: true } },
-      comments: {
-        where: { moderationStatus: 'APPROVED', parentCommentId: null },
-        orderBy: { createdAt: 'asc' },
-        select: {
-          id: true,
-          authorName: true,
-          content: true,
-          createdAt: true,
-          user: { select: { id: true, name: true } },
-          replies: {
-            where: { moderationStatus: 'APPROVED' },
-            select: {
-              id: true,
-              authorName: true,
-              content: true,
-              createdAt: true,
-              user: { select: { id: true, name: true } },
-              likes: { select: { id: true, userId: true } },
-            },
+  const jurisdictionId = getJurisdictionId();
+  const publicStoryWhere = { id, jurisdictionId, moderationStatus: 'APPROVED', publicPosting: true };
+  const currentUserLikeSelect = user
+    ? { likes: { where: { userId: user.id }, take: 1, select: { id: true } } }
+    : {};
+  const [testimony, reactionCounts] = await Promise.all([
+    prisma.testimony.findFirst({
+      where: publicStoryWhere,
+      select: {
+        id: true,
+        sourceId: true,
+        title: true,
+        summary: true,
+        affectedDomain: true,
+        submittedAt: true,
+        narrativeText: true,
+        transcriptionText: true,
+        brief: { select: { summary: true, keyExcerpts: true, modelName: true, reviewStatus: true } },
+        ...(user ? {
+          reactions: {
+            where: { userId: user.id },
+            select: { reactionType: true },
           },
-          likes: { select: { id: true, userId: true } },
+        } : {}),
+        _count: {
+          select: {
+            comments: { where: { moderationStatus: 'APPROVED', parentCommentId: null } },
+          },
+        },
+        comments: {
+          where: { moderationStatus: 'APPROVED', parentCommentId: null },
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true,
+            authorName: true,
+            content: true,
+            createdAt: true,
+            user: { select: { name: true } },
+            replies: {
+              where: { moderationStatus: 'APPROVED' },
+              select: {
+                id: true,
+                authorName: true,
+                content: true,
+                createdAt: true,
+                user: { select: { name: true } },
+                _count: { select: { likes: true } },
+                ...currentUserLikeSelect,
+              },
+            },
+            _count: { select: { likes: true } },
+            ...currentUserLikeSelect,
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.testimonyReaction.groupBy({
+      by: ['reactionType'],
+      where: {
+        jurisdictionId,
+        testimony: { is: publicStoryWhere },
+      },
+      _count: { _all: true },
+    }),
+  ]);
 
   if (!testimony) notFound();
 
@@ -70,10 +94,11 @@ export default async function StoryPage({ params }) {
     : 'Summary';
   const hasTask1Transcript = Boolean(testimony.transcriptionText);
   const citation = getCitation(testimony);
-  const eyeOpening = testimony.reactions.filter((reaction) => reaction.reactionType === 'EYE_OPENING').length;
-  const support = testimony.reactions.filter((reaction) => reaction.reactionType === 'SUPPORT').length;
-  const eyeOpeningSelected = testimony.reactions.some((reaction) => reaction.reactionType === 'EYE_OPENING' && reaction.userId === user?.id);
-  const supportSelected = testimony.reactions.some((reaction) => reaction.reactionType === 'SUPPORT' && reaction.userId === user?.id);
+  const reactionCountByType = new Map(reactionCounts.map((reaction) => [reaction.reactionType, reaction._count._all]));
+  const eyeOpening = reactionCountByType.get('EYE_OPENING') || 0;
+  const support = reactionCountByType.get('SUPPORT') || 0;
+  const eyeOpeningSelected = testimony.reactions?.some((reaction) => reaction.reactionType === 'EYE_OPENING') || false;
+  const supportSelected = testimony.reactions?.some((reaction) => reaction.reactionType === 'SUPPORT') || false;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 text-slate-950">
@@ -102,7 +127,7 @@ export default async function StoryPage({ params }) {
             </span>
           </div>
 
-          <EngagementBar testimonyId={testimony.id} title={testimony.title} eyeOpening={eyeOpening} support={support} eyeOpeningSelected={eyeOpeningSelected} supportSelected={supportSelected} commentCount={testimony.comments.length} />
+          <EngagementBar testimonyId={testimony.id} title={testimony.title} eyeOpening={eyeOpening} support={support} eyeOpeningSelected={eyeOpeningSelected} supportSelected={supportSelected} commentCount={testimony._count.comments} />
 
           <h1 className="mb-4 text-3xl font-bold leading-tight text-gray-900">{testimony.title}</h1>
 
@@ -231,7 +256,7 @@ function StoryText({ text }) {
 }
 
 function CommentBlock({ comment, testimonyId, user }) {
-  const likedByUser = comment.likes.some((like) => like.userId === user?.id);
+  const likedByUser = Boolean(comment.likes?.length);
   return (
     <div className="rounded-md bg-slate-50 p-4">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
@@ -241,7 +266,7 @@ function CommentBlock({ comment, testimonyId, user }) {
       </div>
       <p className="mt-1 leading-6">{comment.content}</p>
       <StoryMutationForm action={`/api/stories/${testimonyId}/comments/${comment.id}/like`} className="mt-3">
-        <button aria-pressed={likedByUser} className={`min-h-9 rounded-md border px-2 py-1 text-xs ${likedByUser ? 'border-amber-400 bg-amber-50 font-semibold text-amber-900' : 'border-slate-200 bg-white'}`}>{comment.likes.length} likes</button>
+        <button aria-pressed={likedByUser} className={`min-h-9 rounded-md border px-2 py-1 text-xs ${likedByUser ? 'border-amber-400 bg-amber-50 font-semibold text-amber-900' : 'border-slate-200 bg-white'}`}>{comment._count.likes} likes</button>
       </StoryMutationForm>
       {user ? (
         <StoryMutationForm action={`/api/stories/${testimonyId}/comments`} className="mt-3 flex flex-col gap-2 sm:flex-row" resetOnSuccess>
@@ -259,7 +284,7 @@ function CommentBlock({ comment, testimonyId, user }) {
           </div>
           <p className="mt-1 leading-6">{reply.content}</p>
           <StoryMutationForm action={`/api/stories/${testimonyId}/comments/${reply.id}/like`} className="mt-2">
-            <button aria-pressed={reply.likes.some((like) => like.userId === user?.id)} className={`min-h-9 rounded-md border px-2 py-1 text-xs ${reply.likes.some((like) => like.userId === user?.id) ? 'border-amber-400 bg-amber-50 font-semibold text-amber-900' : 'border-slate-200 bg-white'}`}>{reply.likes.length} likes</button>
+            <button aria-pressed={Boolean(reply.likes?.length)} className={`min-h-9 rounded-md border px-2 py-1 text-xs ${reply.likes?.length ? 'border-amber-400 bg-amber-50 font-semibold text-amber-900' : 'border-slate-200 bg-white'}`}>{reply._count.likes} likes</button>
           </StoryMutationForm>
         </div>
       ))}

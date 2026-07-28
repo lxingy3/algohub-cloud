@@ -56,6 +56,7 @@ export default async function AdminCommentsPage({ searchParams }) {
         {comments.map((comment) => (
           <form key={comment.id} action={`/api/admin/comments/${comment.id}/moderate`} method="post" className="rounded-lg border bg-white p-4">
             <input type="hidden" name="returnTo" value={returnTo} />
+            <input type="hidden" name="currentStatus" value={comment.moderationStatus} />
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm text-slate-500">
