@@ -1,6 +1,6 @@
 # Cloud Deployment Notes
 
-This project needs two cloud services:
+The current production deployment uses two cloud services:
 
 - Neon for the PostgreSQL database.
 - Vercel for the Next.js website.
@@ -26,10 +26,10 @@ JURISDICTION_ID="pittsburgh"
 
 ## Initialize Database
 
-After `DATABASE_URL` is available:
+After `DATABASE_URL` is available, run these commands from the `_deploy_algohub_cloud` repository:
 
 ```powershell
-cd C:\Users\33672\Desktop\Capstone\Algo-Hub-main
+cd C:\Users\33672\Desktop\Capstone\_deploy_algohub_cloud
 $env:DATABASE_URL="PASTE_NEON_POOLED_CONNECTION_STRING_HERE"
 $env:JURISDICTION_ID="pittsburgh"
 npm run db:deploy
@@ -95,4 +95,22 @@ Open the Vercel site and test:
 - `community@algostories.local`
 - `jamal.community@algostories.local`
 
-The current login flow uses email-only accounts for access checks.
+Accounts with a stored password hash require that password. Legacy accounts without a hash can still use the passwordless compatibility path.
+
+## Google Cloud ML test
+
+The August 7 meeting asked for a Google Cloud performance test of the model pipeline. It did not require moving the Next.js site or the Neon database.
+
+The smallest test deployment is the worker in `ml-worker-hf-space/`. Keep Vercel and Neon unchanged, deploy only the worker, then configure the worker endpoint environment variables from `.env.example` in the test deployment.
+
+Before creating a paid resource, record the project ID, active billing account, budget alerts, region, quota, machine type, expected hourly cost, and teardown command. Do not claim a complete Task 1 through Task 7 result until the Task 6 sentence-transformer service and Task 7 Llama 3.1/Ollama service exist and run in the measured path.
+
+After the worker is reachable, run the timed Task 1 through Task 5 check with the agreed audio file:
+
+```powershell
+$env:ML_WORKER_BASE_URL="https://WORKER_URL"
+$env:ML_WORKER_TOKEN="LOCAL_SECRET_VALUE"
+npm run ml:worker:benchmark -- "C:\path\to\30-minute-audio.mp3" "output\gcp-ml-worker-benchmark.json"
+```
+
+The report records timing and model metadata without copying the transcript into the JSON file. It marks Tasks 6 and 7 as unimplemented instead of counting the current matcher and rule summary as the requested models.

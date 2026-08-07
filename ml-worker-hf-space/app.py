@@ -19,6 +19,8 @@ app = FastAPI(title="AlgoStories ML Worker")
 TASK2_MODEL = os.environ.get("TASK2_IMPACT_MODEL", "facebook/bart-large-mnli")
 TASK3_MODEL = os.environ.get("TASK3_THEME_MODEL", "facebook/bart-large-mnli")
 TASK1_MODEL = os.environ.get("TASK1_WHISPER_MODEL", "small")
+TASK4_MODEL = "en_core_web_sm"
+TASK5_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 TASK1_LANGUAGE = os.environ.get("TASK1_WHISPER_LANGUAGE") or None
 SUPPORTED_MEDIA_EXTENSIONS = {".wav", ".mp3", ".webm", ".flac", ".ogg", ".m4a", ".mp4", ".mov", ".m4v", ".ogv"}
 TERMINAL_PUNCTUATION = (".", "?", "!")
@@ -188,12 +190,12 @@ def require_token(authorization: str | None) -> None:
 
 @lru_cache(maxsize=1)
 def get_nlp():
-    return spacy.load("en_core_web_sm")
+    return spacy.load(TASK4_MODEL)
 
 
 @lru_cache(maxsize=1)
 def get_keybert():
-    return KeyBERT("sentence-transformers/all-MiniLM-L6-v2")
+    return KeyBERT(TASK5_MODEL)
 
 
 @lru_cache(maxsize=1)
@@ -212,8 +214,17 @@ def get_whisper_model():
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health() -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "models": {
+            "task1": TASK1_MODEL,
+            "task2": TASK2_MODEL,
+            "task3": TASK3_MODEL,
+            "task4": TASK4_MODEL,
+            "task5": TASK5_MODEL,
+        },
+    }
 
 
 @app.post("/transcribe")

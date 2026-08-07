@@ -8,12 +8,17 @@ app_port: 7860
 
 # AlgoStories ML Worker
 
-Small API worker for the ML tools required by the AlgoStories Task 4 and Task 5 plan.
+Self-hosted API worker for AlgoStories Tasks 1 through 5.
 
 ## Endpoints
 
+- `GET /health`
+- `POST /transcribe`
+- `POST /impact-classification`
+- `POST /bart-themes`
 - `POST /spacy-entities`
 - `POST /keybert-keywords`
-- `GET /health`
 
-Both POST endpoints accept JSON with a `text` field. Set `ML_WORKER_TOKEN` if the caller should send `Authorization: Bearer <token>`.
+The transcription endpoint accepts a media file. The other POST endpoints accept JSON. Set `ML_WORKER_TOKEN` to require `Authorization: Bearer <token>` on every model request.
+
+Task 6 sentence-transformer linking and Task 7 Llama 3.1/Ollama summarization are not part of this worker.

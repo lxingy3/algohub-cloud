@@ -16,6 +16,8 @@
     "ml:matcher:self-check": "node scripts/check-algorithm-matcher.mjs",
     "ml:matcher:backfill": "node scripts/backfill-testimony-algorithm-matches.mjs",
     "ml:task1:evaluate": "node scripts/evaluate-task1-transcription.mjs",
+    "ml:worker:benchmark": "node scripts/benchmark-ml-worker.mjs",
+    "ml:worker:benchmark:self-check": "node scripts/benchmark-ml-worker.mjs --self-check",
     "ml:eval:production": "node scripts/run-task2-5-production-regression.mjs",
     "ml:eval:ui": "node scripts/run-ml-quick-test-ui-regression.mjs",
     "ml:eval:pittsburgh": "node scripts/evaluate-task2-5-results.mjs task345-results/production-regression/task2-5-pittsburgh-production-results.json data/task2-5-pittsburgh-eval-set.json",

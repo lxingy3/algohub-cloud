@@ -77,3 +77,7 @@ npm run db:generate
 npm run db:deploy
 npm run db:seed
 ```
+
+## Developer handoff
+
+Start with `docs/codebase-handoff.md`. It maps each feature to its page, API route, shared library, database models, and smallest verification command.

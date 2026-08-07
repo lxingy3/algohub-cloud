@@ -35,7 +35,7 @@ const isOwnedTestimonyMediaObjectKey = Function(
   }; return isOwnedTestimonyMediaObjectKey;`,
 )();
 
-const now = Date.UTC(2026, 6, 28, 12, 0, 0);
+const now = Date.now();
 const contentType = 'audio/webm';
 const options = signedMediaUploadPolicyOptions({
   contentType,
